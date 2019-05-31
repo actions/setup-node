@@ -1,0 +1,13 @@
+name: 'Setup Node.js for use with actions'
+description: 'Setup a Node.js environment and add it to the PATH, additionally providing proxy support'
+author: 'GitHub'
+inputs: 
+  version:
+    description: 'Version Spec of the version to use.  Examples: 10.x, 10.15.1, >=10.15.0'
+    default: '10.x'
+  checkLatest:
+    description: 'Always checks online for the latest available version that satisfies the version spec. This is typically false unless you have a specific scenario to always get latest. This will cause it to incur download costs when potentially not necessary, especially with the hosted build pool.'
+    default: 'false'
+runs:
+  using: 'node'
+  main: 'usenode.js'
