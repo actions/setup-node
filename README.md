@@ -4,7 +4,7 @@ This action sets by node environment for use in actions by:
 
 - optionally downloading and caching a version of node - npm by version spec and add to PATH
 - TODO: registering problem matchers for error output 
-- TODO: configuring authentication for npm packages 
+- optionally configuring authentication for npm packages 
 - TODO: configuring proxy if the runner is configured to use a proxy (coming with private runners)
 
 # Usage
@@ -36,6 +36,17 @@ workflow:
           version: ${{ matrix.node }}
       - run: npm install
       - run: npm test
+```
+
+Auth:
+```yaml
+actions:
+- uses: actions/setup-node@latest
+  with:
+    registryUrl: 'https://mycustomregistry.example.org'
+    registryToken: $ {{ token }}
+    authFile: 'optional/path/to/.npmrc/file'
+- run: npm publish
 ```
 
 # License

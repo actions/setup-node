@@ -62,8 +62,7 @@ export async function getNode(versionSpec: string) {
   //
   // prepend the tools path. instructs the agent to prepend for future tasks
   //
-  // TODO - addPath not implemented yet (this should probably actually be in core)
-  // tc.addPath(toolPath);
+  core.addPath(toolPath);
 }
 
 async function queryLatestMatch(versionSpec: string): Promise<string> {
