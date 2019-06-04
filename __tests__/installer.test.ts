@@ -1,26 +1,18 @@
 import installer = require('../src/installer');
 import io = require('@actions/io');
-import fs = require('fs')
-import os = require('os')
+import fs = require('fs');
+import os = require('os');
 import path = require('path');
 
-const toolDir = path.join(
-    __dirname,
-    'runner',
-    'tools'
-  );
+const toolDir = path.join(__dirname, 'runner', 'tools');
 
-const tempDir = path.join(
-    __dirname,
-    'runner',
-    'temp'
-  );
+const tempDir = path.join(__dirname, 'runner', 'temp');
 
 describe('installer tests', () => {
   beforeAll(() => {});
   beforeAll(async () => {
     // TODO - these should eventually be changed to match new method of loading dir
-    process.env['Runner.ToolsDirectory'] = toolDir
+    process.env['Runner.ToolsDirectory'] = toolDir;
     process.env['Runner.TempDirectory'] = tempDir;
     await io.rmRF(toolDir);
     await io.rmRF(tempDir);
@@ -38,7 +30,7 @@ describe('installer tests', () => {
     it('Falls back to backup location if first one doesnt contain correct version', async () => {
       await installer.getNode('5.10.1');
       const nodeDir = path.join(toolDir, 'node', '5.10.1', os.arch());
-      
+
       expect(fs.existsSync(`${nodeDir}.complete`)).toBe(true);
       expect(fs.existsSync(path.join(nodeDir, 'node.exe'))).toBe(true);
     }, 100000);
@@ -46,7 +38,7 @@ describe('installer tests', () => {
     it('Falls back to third location if second one doesnt contain correct version', async () => {
       await installer.getNode('0.12.18');
       const nodeDir = path.join(toolDir, 'node', '0.12.18', os.arch());
-      
+
       expect(fs.existsSync(`${nodeDir}.complete`)).toBe(true);
       expect(fs.existsSync(path.join(nodeDir, 'node.exe'))).toBe(true);
     }, 100000);
@@ -71,11 +63,7 @@ describe('installer tests', () => {
   }, 100000);
 
   it('Uses version of node installed in cache', async () => {
-    const nodeDir: string = path.join(
-      toolDir,
-      '250.0.0',
-      os.arch()
-    );
+    const nodeDir: string = path.join(toolDir, '250.0.0', os.arch());
     await io.mkdirP(nodeDir);
     fs.writeFileSync(`${nodeDir}.complete`, 'hello');
     // This will throw if it doesn't find it in the cache (because no such version exists)
@@ -84,15 +72,10 @@ describe('installer tests', () => {
   });
 
   it('Doesnt use version of node that was only partially installed in cache', async () => {
-    const nodeDir: string = path.join(
-      toolDir,
-      '250.0.0',
-      os.arch()
-    );
+    const nodeDir: string = path.join(toolDir, '250.0.0', os.arch());
     await io.mkdirP(nodeDir);
     let thrown = false;
     try {
-        
       // This will throw if it doesn't find it in the cache (because no such version exists)
       await installer.getNode('251.0.0');
     } catch {
@@ -103,11 +86,7 @@ describe('installer tests', () => {
   });
 
   it('Resolves semantic versions of node installed in cache', async () => {
-    const nodeDir: string = path.join(
-      toolDir,
-      '250.0.0',
-      os.arch()
-    );
+    const nodeDir: string = path.join(toolDir, '250.0.0', os.arch());
     await io.mkdirP(nodeDir);
     fs.writeFileSync(`${nodeDir}.complete`, 'hello');
     // These will throw if it doesn't find it in the cache (because no such version exists)

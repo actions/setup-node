@@ -147,8 +147,6 @@ async function acquireNode(version: string): Promise<string> {
   } catch (err) {
     if (err['httpStatusCode'] && err['httpStatusCode'] === '404') {
       return await acquireNodeFromFallbackLocation(version);
-    } else {
-      console.log('Message', err.message.statusCode);
     }
 
     throw err;
@@ -159,6 +157,7 @@ async function acquireNode(version: string): Promise<string> {
   //
   let extPath: string;
   if (osPlat == 'win32') {
+    let _7zPath = path.join(__dirname, '7zr.exe');
     extPath = await tc.extract7z(downloadPath);
   } else {
     extPath = await tc.extractTar(downloadPath);
