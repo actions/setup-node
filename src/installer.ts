@@ -61,9 +61,7 @@ export async function getNode(versionSpec: string) {
 
   //
   // prepend the tools path. instructs the agent to prepend for future tasks
-  //
-  // TODO - addPath not implemented yet (this should probably actually be in core)
-  // tc.addPath(toolPath);
+  core.addPath(toolPath);
 }
 
 async function queryLatestMatch(versionSpec: string): Promise<string> {
@@ -149,6 +147,8 @@ async function acquireNode(version: string): Promise<string> {
   } catch (err) {
     if (err['httpStatusCode'] && err['httpStatusCode'] === '404') {
       return await acquireNodeFromFallbackLocation(version);
+    } else {
+      console.log('Message', err.message.statusCode);
     }
 
     throw err;
@@ -159,13 +159,7 @@ async function acquireNode(version: string): Promise<string> {
   //
   let extPath: string;
   if (osPlat == 'win32') {
-    extPath = getAgentTemp();
-    if (!extPath) {
-      throw new Error('Expected Agent.TempDirectory to be set');
-    }
-
-    let _7zPath = path.join(__dirname, '7zr.exe');
-    extPath = await tc.extract7z(downloadPath, extPath);
+    extPath = await tc.extract7z(downloadPath);
   } else {
     extPath = await tc.extractTar(downloadPath);
   }
@@ -195,7 +189,7 @@ async function acquireNodeFromFallbackLocation(
   // Create temporary folder to download in to
   let tempDownloadFolder: string =
     'temp_' + Math.floor(Math.random() * 2000000000);
-  let tempDir: string = path.join(getAgentTemp(), tempDownloadFolder);
+  let tempDir: string = path.join(__dirname, tempDownloadFolder);
   await io.mkdirP(tempDir);
   let exeUrl: string;
   let libUrl: string;
@@ -221,14 +215,4 @@ async function acquireNodeFromFallbackLocation(
     }
   }
   return await tc.cacheDir(tempDir, 'node', version);
-}
-
-function getAgentTemp(): string {
-  // TODO - we need an actual protocol for this (this is just a placeholder)
-  const tempDirectory = process.env['Runner.TempDirectory'];
-  if (!tempDirectory) {
-    throw new Error('Runner.TempDirectory is not set');
-  }
-
-  return tempDirectory;
 }
