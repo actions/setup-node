@@ -1,0 +1,1 @@
+{"version":3,"file":"createSpy.d.ts","sourceRoot":"","sources":["../../src/jasmine/createSpy.ts"],"names":[],"mappings":"AAAA;;;;;;GAMG;AA0BH,OAAO,EAAC,GAAG,EAAC,MAAM,UAAU,CAAC;AAI7B,UAAU,EAAE;IACV,IAAI,GAAG,CAAC;IACR,CAAC,GAAG,EAAE,MAAM,GAAG,GAAG,CAAC;CACpB;AAED,iBAAS,SAAS,CAAC,IAAI,EAAE,MAAM,EAAE,UAAU,EAAE,EAAE,GAAG,GAAG,CAqCpD;AAED,eAAe,SAAS,CAAC"}
