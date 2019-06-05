@@ -174,8 +174,8 @@ async function acquireNode(version: string): Promise<string> {
   //
   let extPath: string;
   if (osPlat == 'win32') {
-    let _7zPath = path.join(__dirname, '7zr.exe');
-    extPath = await tc.extract7z(downloadPath);
+    let _7zPath = path.join(__dirname, '..', 'externals', '7zr.exe');
+    extPath = await tc.extract7z(downloadPath, undefined, _7zPath);
   } else {
     extPath = await tc.extractTar(downloadPath);
   }
