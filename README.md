@@ -3,9 +3,9 @@
 This action sets by node environment for use in actions by:
 
 - optionally downloading and caching a version of node - npm by version spec and add to PATH
-- registering problem matchers for error output 
-- configuring authentication for npm packages 
-- configuring proxy if the runner is configured to use a proxy (coming with private runners)
+- TODO: registering problem matchers for error output 
+- TODO: configuring authentication for npm packages 
+- TODO: configuring proxy if the runner is configured to use a proxy (coming with private runners)
 
 # Usage
 
@@ -41,3 +41,7 @@ workflow:
 # License
 
 The scripts and documentation in this project are released under the [MIT License](LICENSE)
+
+# Contributions
+
+Contributions are welcome!  See [Contributor's Guide](docs/contributors.md)
