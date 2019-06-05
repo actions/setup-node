@@ -10,6 +10,8 @@ process.env['RUNNER_TOOLSDIRECTORY'] = toolDir;
 process.env['RUNNER_TEMPDIRECTORY'] = tempDir;
 import * as installer from '../src/installer';
 
+const IS_WINDOWS = process.platform === 'win32';
+
 describe('installer tests', () => {
   beforeAll(() => {});
   beforeAll(async () => {
@@ -25,7 +27,7 @@ describe('installer tests', () => {
     expect(fs.existsSync(path.join(nodeDir, 'node.exe'))).toBe(true);
   }, 100000);
 
-  if (process.platform === 'win32') {
+  if (IS_WINDOWS) {
     it('Falls back to backup location if first one doesnt contain correct version', async () => {
       await installer.getNode('5.10.1');
       const nodeDir = path.join(toolDir, 'node', '5.10.1', os.arch());
@@ -39,7 +41,11 @@ describe('installer tests', () => {
       const nodeDir = path.join(toolDir, 'node', '0.12.18', os.arch());
 
       expect(fs.existsSync(`${nodeDir}.complete`)).toBe(true);
-      expect(fs.existsSync(path.join(nodeDir, 'node.exe'))).toBe(true);
+      if (IS_WINDOWS) {
+        expect(fs.existsSync(path.join(nodeDir, 'node.exe'))).toBe(true);
+      } else {
+        expect(fs.existsSync(path.join(nodeDir, 'bin', 'node'))).toBe(true);
+      }
     }, 100000);
   }
 
@@ -58,7 +64,11 @@ describe('installer tests', () => {
     const nodeDir = path.join(toolDir, 'node', '8.8.1', os.arch());
 
     expect(fs.existsSync(`${nodeDir}.complete`)).toBe(true);
-    expect(fs.existsSync(path.join(nodeDir, 'node.exe'))).toBe(true);
+    if (IS_WINDOWS) {
+      expect(fs.existsSync(path.join(nodeDir, 'node.exe'))).toBe(true);
+    } else {
+      expect(fs.existsSync(path.join(nodeDir, 'bin', 'node'))).toBe(true);
+    }
   }, 100000);
 
   it('Uses version of node installed in cache', async () => {
