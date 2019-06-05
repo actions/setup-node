@@ -1,19 +1,18 @@
-import installer = require('../src/installer');
 import io = require('@actions/io');
 import fs = require('fs');
 import os = require('os');
 import path = require('path');
 
 const toolDir = path.join(__dirname, 'runner', 'tools');
-
 const tempDir = path.join(__dirname, 'runner', 'temp');
+
+process.env['RUNNER_TOOLSDIRECTORY'] = toolDir;
+process.env['RUNNER_TEMPDIRECTORY'] = tempDir;
+import * as installer from '../src/installer';
 
 describe('installer tests', () => {
   beforeAll(() => {});
   beforeAll(async () => {
-    // TODO - these should eventually be changed to match new method of loading dir
-    process.env['Runner.ToolsDirectory'] = toolDir;
-    process.env['Runner.TempDirectory'] = tempDir;
     await io.rmRF(toolDir);
     await io.rmRF(tempDir);
   });
@@ -63,7 +62,7 @@ describe('installer tests', () => {
   }, 100000);
 
   it('Uses version of node installed in cache', async () => {
-    const nodeDir: string = path.join(toolDir, '250.0.0', os.arch());
+    const nodeDir: string = path.join(toolDir, 'node', '250.0.0', os.arch());
     await io.mkdirP(nodeDir);
     fs.writeFileSync(`${nodeDir}.complete`, 'hello');
     // This will throw if it doesn't find it in the cache (because no such version exists)
@@ -72,7 +71,7 @@ describe('installer tests', () => {
   });
 
   it('Doesnt use version of node that was only partially installed in cache', async () => {
-    const nodeDir: string = path.join(toolDir, '250.0.0', os.arch());
+    const nodeDir: string = path.join(toolDir, 'node', '250.0.0', os.arch());
     await io.mkdirP(nodeDir);
     let thrown = false;
     try {
@@ -86,7 +85,7 @@ describe('installer tests', () => {
   });
 
   it('Resolves semantic versions of node installed in cache', async () => {
-    const nodeDir: string = path.join(toolDir, '250.0.0', os.arch());
+    const nodeDir: string = path.join(toolDir, 'node', '250.0.0', os.arch());
     await io.mkdirP(nodeDir);
     fs.writeFileSync(`${nodeDir}.complete`, 'hello');
     // These will throw if it doesn't find it in the cache (because no such version exists)

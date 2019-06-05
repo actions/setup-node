@@ -1,3 +1,5 @@
+// Load tempDirectory before it gets wiped by tool-cache
+let tempDirectory = process.env['RUNNER_TEMPDIRECTORY'] || '';
 import * as core from '@actions/core';
 import * as io from '@actions/io';
 import * as tc from '@actions/tool-cache';
@@ -8,6 +10,21 @@ import * as semver from 'semver';
 
 let osPlat: string = os.platform();
 let osArch: string = os.arch();
+
+if (!tempDirectory) {
+  let baseLocation;
+  if (process.platform === 'win32') {
+    // On windows use the USERPROFILE env variable
+    baseLocation = process.env['USERPROFILE'] || 'C:\\';
+  } else {
+    if (process.platform === 'darwin') {
+      baseLocation = '/Users';
+    } else {
+      baseLocation = '/home';
+    }
+  }
+  tempDirectory = path.join(baseLocation, 'actions', 'temp');
+}
 
 //
 // Node versions interface
@@ -145,7 +162,7 @@ async function acquireNode(version: string): Promise<string> {
   try {
     downloadPath = await tc.downloadTool(downloadUrl);
   } catch (err) {
-    if (err['httpStatusCode'] && err['httpStatusCode'] === '404') {
+    if (err instanceof tc.HTTPError && err.httpStatusCode == 404) {
       return await acquireNodeFromFallbackLocation(version);
     }
 
@@ -188,7 +205,7 @@ async function acquireNodeFromFallbackLocation(
   // Create temporary folder to download in to
   let tempDownloadFolder: string =
     'temp_' + Math.floor(Math.random() * 2000000000);
-  let tempDir: string = path.join(__dirname, tempDownloadFolder);
+  let tempDir: string = path.join(tempDirectory, tempDownloadFolder);
   await io.mkdirP(tempDir);
   let exeUrl: string;
   let libUrl: string;
@@ -201,7 +218,7 @@ async function acquireNodeFromFallbackLocation(
     const libPath = await tc.downloadTool(libUrl);
     await io.mv(libPath, path.join(tempDir, 'node.lib'));
   } catch (err) {
-    if (err['httpStatusCode'] && err['httpStatusCode'] === '404') {
+    if (err instanceof tc.HTTPError && err.httpStatusCode == 404) {
       exeUrl = `https://nodejs.org/dist/v${version}/node.exe`;
       libUrl = `https://nodejs.org/dist/v${version}/node.lib`;
 
