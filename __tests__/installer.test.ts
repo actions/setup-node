@@ -24,7 +24,11 @@ describe('installer tests', () => {
     const nodeDir = path.join(toolDir, 'node', '10.16.0', os.arch());
 
     expect(fs.existsSync(`${nodeDir}.complete`)).toBe(true);
-    expect(fs.existsSync(path.join(nodeDir, 'node.exe'))).toBe(true);
+    if (IS_WINDOWS) {
+      expect(fs.existsSync(path.join(nodeDir, 'node.exe'))).toBe(true);
+    } else {
+      expect(fs.existsSync(path.join(nodeDir, 'bin', 'node'))).toBe(true);
+    }
   }, 100000);
 
   if (IS_WINDOWS) {
@@ -41,11 +45,7 @@ describe('installer tests', () => {
       const nodeDir = path.join(toolDir, 'node', '0.12.18', os.arch());
 
       expect(fs.existsSync(`${nodeDir}.complete`)).toBe(true);
-      if (IS_WINDOWS) {
-        expect(fs.existsSync(path.join(nodeDir, 'node.exe'))).toBe(true);
-      } else {
-        expect(fs.existsSync(path.join(nodeDir, 'bin', 'node'))).toBe(true);
-      }
+      expect(fs.existsSync(path.join(nodeDir, 'node.exe'))).toBe(true);
     }, 100000);
   }
 
