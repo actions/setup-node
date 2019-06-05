@@ -1,3 +1,1 @@
-# runtime dependencies are checked in
-# dev dependencies are *not* checked in
 __tests__/runner/*
