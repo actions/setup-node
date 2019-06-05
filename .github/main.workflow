@@ -5,7 +5,7 @@ workflow "CI" {
 
 action "Dependencies" {
   uses = "actions/npm@v2.0.0"
-  args = "ci"
+  args = "install"
 }
 
 action "Build" {
