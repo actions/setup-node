@@ -1,6 +1,6 @@
 workflow "CI" {
   on = "push"
-  resolves = ["Format", "Test"]
+  resolves = ["Format", "Build", "Test"]
 }
 
 action "Dependencies" {
@@ -21,7 +21,7 @@ action "Format" {
 }
 
 action "Test" {
-  needs = "Build"
+  needs = "Dependencies"
   uses = "actions/npm@v2.0.0"
   args = "test"
 }
