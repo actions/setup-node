@@ -41,7 +41,7 @@
   },
   "husky": {
     "hooks": {
-      "pre-commit": "npm install && npm run build && npm test && npm run format && npm prune --production"
+      "pre-commit": "npm run build && npm run format && npm prune --production && git add node_modules/*"
     }
   }
 }
