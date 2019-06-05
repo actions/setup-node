@@ -1,17 +1,22 @@
 # Contributors
 
 
-# Checkin
+### Checkin
 
 - Do checkin source (src)
 - Do checkin build output (lib)
 - Do checkin runtime node_modules
-- Do not checkin 
+- Do not checkin devDependency node_modules (husky can help see below)
 
-# Adding a dev dependency
+### Husky
 
-Remember to update .gitignore.  
+We run [Husky](https://github.com/typicode/husky) before each commit to ensure that formatting and checkin rules are followed. To make sure Husky runs correctly, please use the following workflow:
 
-# Updating toolkit dependency
+```
+npm install                                 # installs all devDependencies including Husky
+git add abc.ext                             # Add the files you've changed. This should include files in src, lib, and node_modules (see above)
+git commit -m "Informative commit message"  # Commit. This will run Husky
+```
 
-Until released publically, update tgz packages in toolkit
+Husky will take care of formatting all files with [Prettier](https://github.com/prettier/prettier) as well as pruning out devDependencies using `npm prune --production`.
+It will also make sure these changes are appropriately included in your commit (no further work is needed)
