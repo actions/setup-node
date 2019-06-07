@@ -5,7 +5,7 @@ jobs:
     runs-on: ${{ matrix.operating-system }}
     strategy:
       matrix:
-        operating-system: [linux, macOS, windows]
+        operating-system: [Linux, macOS, Windows]
     actions:
     - name: npm install
       run: npm install
