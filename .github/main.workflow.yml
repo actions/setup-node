@@ -1,0 +1,19 @@
+version: 1
+on: push
+jobs:
+
+  build:
+    runs-on: ${{ matrix.operating-system }}
+    strategy:
+      matrix:
+        operating-system: [ubuntu-latest, macOS-latest, windows-latest]
+    actions:
+    - name: npm install
+      run: npm install
+
+    - name: Lint
+      run: npm run format-check
+
+
+    - name: npm test
+      run: npm test
