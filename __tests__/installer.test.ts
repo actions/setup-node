@@ -40,7 +40,7 @@ describe('installer tests', () => {
     try {
       await io.rmRF(toolDir);
       await io.rmRF(tempDir);
-    } finally {
+    } catch {
       console.log('Failed to remove test directories');
     }
   }, 100000);
