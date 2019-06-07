@@ -3,8 +3,26 @@ import fs = require('fs');
 import os = require('os');
 import path = require('path');
 
-const toolDir = path.join(process.cwd(), 'runner', 'tools');
-const tempDir = path.join(process.cwd(), 'runner', 'temp');
+const toolDir = path.join(
+  process.cwd(),
+  'runner',
+  path.join(
+    Math.random()
+      .toString(36)
+      .substring(7)
+  ),
+  'tools'
+);
+const tempDir = path.join(
+  process.cwd(),
+  'runner',
+  path.join(
+    Math.random()
+      .toString(36)
+      .substring(7)
+  ),
+  'temp'
+);
 
 process.env['RUNNER_TOOLSDIRECTORY'] = toolDir;
 process.env['RUNNER_TEMPDIRECTORY'] = tempDir;
@@ -14,6 +32,11 @@ const IS_WINDOWS = process.platform === 'win32';
 
 describe('installer tests', () => {
   beforeAll(async () => {
+    await io.rmRF(toolDir);
+    await io.rmRF(tempDir);
+  }, 100000);
+
+  afterAll(async () => {
     await io.rmRF(toolDir);
     await io.rmRF(tempDir);
   }, 100000);
