@@ -1,6 +1,5 @@
 on: push
 jobs:
-
   build:
     runs-on:
       pool: ${{ matrix.operating-system }}
