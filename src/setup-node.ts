@@ -14,7 +14,7 @@ async function run() {
     }
 
     // TODO: setup proxy from runner proxy config
-    // TODO: problem matchers registered
+    console.log('##[add-matcher].github/tsc.json');
   } catch (error) {
     core.setFailed(error.message);
   }
