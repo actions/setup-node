@@ -17,7 +17,7 @@ jobs:
       run: |
           node -v
           npm -v
-          echo console.log(process.env) > abc.js && node abc.js
+          echo "console.log(process.env)"> abc.js && node abc.js
 
     - name: npm install
       run: npm install
