@@ -12,12 +12,6 @@ jobs:
       uses: bryanmacfarlane/node-config@master
       with:
         version: 10.x
-        
-    - name: Get env info
-      run: |
-          node -v
-          npm -v
-          echo "console.log(process.env)"> abc.js && node abc.js
 
     - name: npm install
       run: npm install
