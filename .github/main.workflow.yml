@@ -2,7 +2,7 @@ on: push
 jobs:
 
   build:
-    pool: ${{ matrix.operating-system }}
+    queue: ${{ matrix.operating-system }}
     strategy:
       matrix:
         operating-system: [Linux, macOS, Windows]
