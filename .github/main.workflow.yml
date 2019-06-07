@@ -8,8 +8,13 @@ jobs:
       matrix:
         operating-system: [Linux, macOS, Windows]
     actions:
-    - name: npm install
-      run: npm install
+    - name: Set Node.js 10.x
+      uses: bryanmacfarlane/node-config@master
+      with:
+        version: 10.x
+
+    - name: npm ci
+      run: npm ci
 
     - name: Lint
       run: npm run format-check
