@@ -8,8 +8,8 @@ jobs:
       matrix:
         operating-system: [Linux, macOS, Windows]
     actions:
-    - name: npm install
-      run: npm install
+    - name: npm ci
+      run: npm ci
 
     - name: Lint
       run: npm run format-check
