@@ -37,8 +37,12 @@ describe('installer tests', () => {
   }, 100000);
 
   afterAll(async () => {
-    await io.rmRF(toolDir);
-    await io.rmRF(tempDir);
+    try {
+      await io.rmRF(toolDir);
+      await io.rmRF(tempDir);
+    } finally {
+      console.log('Failed to remove test directories');
+    }
   }, 100000);
 
   it('Acquires version of node if no matching version is installed', async () => {
