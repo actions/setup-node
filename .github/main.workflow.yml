@@ -2,7 +2,7 @@ on: push
 jobs:
 
   build:
-    pool: ${{ matrix.operating-system }}
+    runs-on: ${{ matrix.operating-system }}
     strategy:
       matrix:
         operating-system: [Linux, macOS, Windows]
@@ -12,7 +12,6 @@ jobs:
 
     - name: Lint
       run: npm run format-check
-
 
     - name: npm test
       run: npm test
