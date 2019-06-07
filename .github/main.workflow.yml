@@ -2,10 +2,10 @@ on: push
 jobs:
 
   build:
-    runs-on: ${{ matrix.operating-system }}
+    pool: ${{ matrix.operating-system }}
     strategy:
       matrix:
-        operating-system: [ubuntu-latest, macOS-latest, windows-latest]
+        operating-system: [Linux, macOS, Windows]
     actions:
     - name: npm install
       run: npm install
