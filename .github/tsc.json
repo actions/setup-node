@@ -1,0 +1,16 @@
+{
+    "problemMatcher": [
+        {
+            "owner": "tsc",
+            "pattern": [
+                {
+                    "regexp": "/^([^\\s].*)\\((\\d+|\\d+,\\d+|\\d+,\\d+,\\d+,\\d+)\\):\\s+(\\d+)\\s+(.*)$/",
+                    "file": 1,
+                    "location": 2,
+                    "code": 3,
+                    "message": 4
+                }
+            ]
+        }
+    ]
+}
