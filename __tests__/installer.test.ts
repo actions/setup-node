@@ -3,29 +3,61 @@ import fs = require('fs');
 import os = require('os');
 import path = require('path');
 
-const toolDir = path.join(__dirname, 'runner', 'tools');
-const tempDir = path.join(__dirname, 'runner', 'temp');
+const toolDir = path.join(
+  process.cwd(),
+  'runner',
+  path.join(
+    Math.random()
+      .toString(36)
+      .substring(7)
+  ),
+  'tools'
+);
+const tempDir = path.join(
+  process.cwd(),
+  'runner',
+  path.join(
+    Math.random()
+      .toString(36)
+      .substring(7)
+  ),
+  'temp'
+);
 
 process.env['RUNNER_TOOLSDIRECTORY'] = toolDir;
 process.env['RUNNER_TEMPDIRECTORY'] = tempDir;
 import * as installer from '../src/installer';
 
+const IS_WINDOWS = process.platform === 'win32';
+
 describe('installer tests', () => {
-  beforeAll(() => {});
   beforeAll(async () => {
     await io.rmRF(toolDir);
     await io.rmRF(tempDir);
-  });
+  }, 100000);
+
+  afterAll(async () => {
+    try {
+      await io.rmRF(toolDir);
+      await io.rmRF(tempDir);
+    } catch {
+      console.log('Failed to remove test directories');
+    }
+  }, 100000);
 
   it('Acquires version of node if no matching version is installed', async () => {
     await installer.getNode('10.16.0');
     const nodeDir = path.join(toolDir, 'node', '10.16.0', os.arch());
 
     expect(fs.existsSync(`${nodeDir}.complete`)).toBe(true);
-    expect(fs.existsSync(path.join(nodeDir, 'node.exe'))).toBe(true);
+    if (IS_WINDOWS) {
+      expect(fs.existsSync(path.join(nodeDir, 'node.exe'))).toBe(true);
+    } else {
+      expect(fs.existsSync(path.join(nodeDir, 'bin', 'node'))).toBe(true);
+    }
   }, 100000);
 
-  if (process.platform === 'win32') {
+  if (IS_WINDOWS) {
     it('Falls back to backup location if first one doesnt contain correct version', async () => {
       await installer.getNode('5.10.1');
       const nodeDir = path.join(toolDir, 'node', '5.10.1', os.arch());
@@ -58,7 +90,11 @@ describe('installer tests', () => {
     const nodeDir = path.join(toolDir, 'node', '8.8.1', os.arch());
 
     expect(fs.existsSync(`${nodeDir}.complete`)).toBe(true);
-    expect(fs.existsSync(path.join(nodeDir, 'node.exe'))).toBe(true);
+    if (IS_WINDOWS) {
+      expect(fs.existsSync(path.join(nodeDir, 'node.exe'))).toBe(true);
+    } else {
+      expect(fs.existsSync(path.join(nodeDir, 'bin', 'node'))).toBe(true);
+    }
   }, 100000);
 
   it('Uses version of node installed in cache', async () => {
@@ -71,7 +107,7 @@ describe('installer tests', () => {
   });
 
   it('Doesnt use version of node that was only partially installed in cache', async () => {
-    const nodeDir: string = path.join(toolDir, 'node', '250.0.0', os.arch());
+    const nodeDir: string = path.join(toolDir, 'node', '251.0.0', os.arch());
     await io.mkdirP(nodeDir);
     let thrown = false;
     try {
@@ -85,12 +121,12 @@ describe('installer tests', () => {
   });
 
   it('Resolves semantic versions of node installed in cache', async () => {
-    const nodeDir: string = path.join(toolDir, 'node', '250.0.0', os.arch());
+    const nodeDir: string = path.join(toolDir, 'node', '252.0.0', os.arch());
     await io.mkdirP(nodeDir);
     fs.writeFileSync(`${nodeDir}.complete`, 'hello');
     // These will throw if it doesn't find it in the cache (because no such version exists)
-    await installer.getNode('250.0.0');
-    await installer.getNode('250');
-    await installer.getNode('250.0');
+    await installer.getNode('252.0.0');
+    await installer.getNode('252');
+    await installer.getNode('252.0');
   });
 });

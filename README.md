@@ -23,7 +23,7 @@ actions:
 
 Matrix Testing:
 ```yaml
-workflow:
+jobs:
   build:
     strategy:
       matrix:
