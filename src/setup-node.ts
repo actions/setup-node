@@ -15,6 +15,8 @@ async function run() {
 
     // TODO: setup proxy from runner proxy config
     console.log('##[add-matcher].github/tsc.json');
+    console.log('##[add-matcher].github/eslint-stylish.json');
+    console.log('##[add-matcher].github/eslint-compact.json');
   } catch (error) {
     core.setFailed(error.message);
   }
