@@ -1,5 +1,6 @@
 import * as core from '@actions/core';
 import * as installer from './installer';
+import * as path from 'path';
 
 async function run() {
   try {
@@ -14,9 +15,14 @@ async function run() {
     }
 
     // TODO: setup proxy from runner proxy config
-    console.log('##[add-matcher].github/tsc.json');
-    console.log('##[add-matcher].github/eslint-stylish.json');
-    console.log('##[add-matcher].github/eslint-compact.json');
+    const matchersPath = path.join(__dirname, '..', '.github');
+    console.log(`##[add-matcher]${path.join(matchersPath, 'tsc.json')}`);
+    console.log(
+      `##[add-matcher]${path.join(matchersPath, 'eslint-stylish.json')}`
+    );
+    console.log(
+      `##[add-matcher]${path.join(matchersPath, 'eslint-compact.json')}`
+    );
   } catch (error) {
     core.setFailed(error.message);
   }
