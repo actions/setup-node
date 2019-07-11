@@ -1,0 +1,27 @@
+version: 1.0
+name: Main workflow
+on: [push]
+jobs:
+
+  run:
+    name: Run
+    runs-on: ${{ matrix.operating-system }}
+    strategy:
+      matrix:
+        operating-system: [ubuntu-latest, windows-latest]
+    actions:
+    - name: Set Node.js 10.x
+      uses: actions/setup-node@master
+      with:
+        version: 10.x
+
+    - name: npm install
+      # Explicitly uninstall husky so that we avoid issues with git hooks/node versioning.
+      # Should switch to clean checkout instead when supported.
+      run: npm prune --production && npm install && npm uninstall husky
+
+    - name: Lint
+      run: npm run format-check
+
+    - name: npm test
+      run: npm test
