@@ -1,8 +1,6 @@
-version: 1.0
 name: Main workflow
 on: [push]
 jobs:
-
   run:
     name: Run
     runs-on: ${{ matrix.operating-system }}
