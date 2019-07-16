@@ -1,4 +1,4 @@
-# @actions/setup-node
+# setup-node
 
 This action sets by node environment for use in actions by:
 
