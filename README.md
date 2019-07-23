@@ -12,8 +12,8 @@ See [action.yml](action.yml)
 Basic:
 ```yaml
 actions:
-- uses: actions/checkout@latest
-- uses: actions/setup-node@latest
+- uses: actions/checkout@master
+- uses: actions/setup-node@master
   with:
     version: 10.x 
 - run: npm install
@@ -29,9 +29,9 @@ jobs:
         node: [ 10, 8 ]
     name: Node ${{ matrix.node }} sample
     actions:
-      - uses: actions/checkout@latest
+      - uses: actions/checkout@master
       - name: Setup node
-        uses: actions/setup-node@latest
+        uses: actions/setup-node@master
         with:
           version: ${{ matrix.node }}
       - run: npm install
