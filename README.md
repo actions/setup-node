@@ -12,6 +12,7 @@ See [action.yml](action.yml)
 Basic:
 ```yaml
 actions:
+- uses: actions/checkout@latest
 - uses: actions/setup-node@latest
   with:
     version: 10.x 
@@ -28,6 +29,7 @@ jobs:
         node: [ 10, 8 ]
     name: Node ${{ matrix.node }} sample
     actions:
+      - uses: actions/checkout@latest
       - name: Setup node
         uses: actions/setup-node@latest
         with:
