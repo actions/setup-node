@@ -7,7 +7,7 @@ jobs:
     strategy:
       matrix:
         operating-system: [ubuntu-latest, windows-latest]
-    actions:
+    steps:
     - uses: actions/checkout@master
     
     - name: Set Node.js 10.x
