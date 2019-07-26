@@ -11,7 +11,7 @@ See [action.yml](action.yml)
 
 Basic:
 ```yaml
-actions:
+steps:
 - uses: actions/checkout@master
 - uses: actions/setup-node@master
   with:
@@ -28,7 +28,7 @@ jobs:
       matrix:
         node: [ 10, 8 ]
     name: Node ${{ matrix.node }} sample
-    actions:
+    steps:
       - uses: actions/checkout@master
       - name: Setup node
         uses: actions/setup-node@master
