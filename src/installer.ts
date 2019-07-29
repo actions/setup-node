@@ -36,6 +36,10 @@ interface INodeVersion {
 }
 
 export async function getNode(versionSpec: string) {
+  if (versionSpec.toLowerCase() === 'lts') {
+    versionSpec = getLtsVersion();
+  }
+
   // check cache
   let toolPath: string;
   toolPath = tc.find('node', versionSpec);
@@ -79,6 +83,18 @@ export async function getNode(versionSpec: string) {
   //
   // prepend the tools path. instructs the agent to prepend for future tasks
   core.addPath(toolPath);
+}
+
+// Schedule based off https://nodejs.org/en/about/releases/. TODO: would be nice to automate this so we don't drift
+function getLtsVersion(): string {
+  const today = new Date();
+  if (today < new Date(2019, 9, 22)) {
+    return '10.x';
+  } else if (today < new Date(2020, 9, 20)) {
+    return '12.x';
+  } else {
+    return '14.x';
+  }
 }
 
 async function queryLatestMatch(versionSpec: string): Promise<string> {
