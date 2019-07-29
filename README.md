@@ -38,6 +38,17 @@ jobs:
       - run: npm test
 ```
 
+Get the LTS version:
+```yaml
+steps:
+- uses: actions/checkout@master
+- uses: actions/setup-node@master
+  with:
+    version: lts
+- run: npm install
+- run: npm test
+```
+
 # License
 
 The scripts and documentation in this project are released under the [MIT License](LICENSE)
