@@ -24,8 +24,8 @@ const tempDir = path.join(
   'temp'
 );
 
-process.env['RUNNER_TOOLSDIRECTORY'] = toolDir;
-process.env['RUNNER_TEMPDIRECTORY'] = tempDir;
+process.env['RUNNER_TOOL_CACHE'] = toolDir;
+process.env['RUNNER_TEMP'] = tempDir;
 import * as installer from '../src/installer';
 
 const IS_WINDOWS = process.platform === 'win32';
