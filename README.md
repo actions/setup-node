@@ -13,7 +13,7 @@ Basic:
 ```yaml
 steps:
 - uses: actions/checkout@master
-- uses: actions/setup-node@master
+- uses: actions/setup-node@v1
   with:
     version: 10.x 
 - run: npm install
@@ -31,22 +31,11 @@ jobs:
     steps:
       - uses: actions/checkout@master
       - name: Setup node
-        uses: actions/setup-node@master
+        uses: actions/setup-node@v1
         with:
           version: ${{ matrix.node }}
       - run: npm install
       - run: npm test
-```
-
-Get the LTS version:
-```yaml
-steps:
-- uses: actions/checkout@master
-- uses: actions/setup-node@master
-  with:
-    version: lts
-- run: npm install
-- run: npm test
 ```
 
 # License
