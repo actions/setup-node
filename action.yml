@@ -1,0 +1,10 @@
+name: 'Setup Node.js for use with actions'
+description: 'Setup a Node.js environment and add it to the PATH, additionally providing proxy support'
+author: 'GitHub'
+inputs: 
+  version:
+    description: 'Version Spec of the version to use.  Examples: 10.x, 10.15.1, >=10.15.0, lts'
+    default: '10.x'
+runs:
+  using: 'node12'
+  main: 'lib/setup-node.js'
