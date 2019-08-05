@@ -11,7 +11,7 @@ export function configAuthentication(registryUrl: string) {
 
 function writeRegistryToFile(registryUrl: string, fileLocation: string) {
   core.debug(`Setting auth in ${fileLocation}`);
-  let newContents = '';
+  let newContents: string = '';
   if (fs.existsSync(fileLocation)) {
     const curContents: string = fs.readFileSync(fileLocation, 'utf8');
     curContents.split(os.EOL).forEach((line: string) => {
