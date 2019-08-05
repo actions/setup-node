@@ -50,7 +50,7 @@ steps:
 - run: npm install
 - run: npm publish
   env:
-    NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+    NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 ```
 
 Set up auth with yarn:
@@ -64,7 +64,7 @@ steps:
 - run: npm install
 - run: yarn publish
   env:
-    YARN_TOKEN: ${{ secrets.YARN_TOKEN }}
+    NODE_AUTH_TOKEN: ${{ secrets.YARN_TOKEN }}
 ```
 
 # License
