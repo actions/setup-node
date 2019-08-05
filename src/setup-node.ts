@@ -15,9 +15,9 @@ async function run() {
       await installer.getNode(version);
     }
 
-    const registryUrl = core.getInput('registry-url');
+    const registryUrl: string = core.getInput('registry-url');
     if (registryUrl) {
-      auth.configAuth(registryUrl);
+      auth.configAuthentication(registryUrl);
     }
 
     // TODO: setup proxy from runner proxy config

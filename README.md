@@ -61,7 +61,8 @@ steps:
   with:
     version: '10.x'
     registry-url: <registry url>
-- run: npm install
+- run: npm install -g yarn
+- run: yarn install
 - run: yarn publish
   env:
     NODE_AUTH_TOKEN: ${{ secrets.YARN_TOKEN }}
