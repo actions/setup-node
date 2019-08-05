@@ -1,6 +1,6 @@
 {
   "name": "setup-node",
-  "version": "1.0.2",
+  "version": "1.0.0",
   "private": true,
   "description": "setup node action",
   "main": "lib/setup-node.js",
