@@ -2,6 +2,7 @@ import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
 import * as core from '@actions/core';
+import * as github from '@actions/github';
 
 export function configAuthentication(registryUrl: string) {
   const npmrc: string = path.resolve(process.cwd(), '.npmrc');
@@ -10,6 +11,14 @@ export function configAuthentication(registryUrl: string) {
 }
 
 function writeRegistryToFile(registryUrl: string, fileLocation: string) {
+  let scope = core.getInput('scope');
+  if (!scope && registryUrl.indexOf('npm.pkg.github.com') > -1) {
+    scope = github.context.repo.owner;
+  }
+  if (scope && scope[0] != '@') {
+    scope = '@' + scope;
+  }
+
   core.debug(`Setting auth in ${fileLocation}`);
   let newContents: string = '';
   if (fs.existsSync(fileLocation)) {
@@ -21,13 +30,12 @@ function writeRegistryToFile(registryUrl: string, fileLocation: string) {
       }
     });
   }
-  newContents +=
-    'registry=' +
-    registryUrl +
-    os.EOL +
-    'always-auth=true' +
-    os.EOL +
-    registryUrl.replace(/(^\w+:|^)/, '') + // Remove http: or https: from front of registry.
-    ':_authToken=${NODE_AUTH_TOKEN}';
+  // Remove http: or https: from front of registry.
+  const authString =
+    registryUrl.replace(/(^\w+:|^)/, '') + ':_authToken=${NODE_AUTH_TOKEN}';
+  const registryString = scope
+    ? `${scope}:registry=${registryUrl}`
+    : `registry=${registryUrl}`;
+  newContents += `${registryString}${os.EOL}always-auth=true${os.EOL}${authString}`;
   fs.writeFileSync(fileLocation, newContents);
 }
