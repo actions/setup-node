@@ -7,15 +7,11 @@ export function configAuth(registryUrl: string) {
   let npmrc: string = path.resolve(process.cwd(), '.npmrc');
   let yarnrc: string = path.resolve(process.cwd(), '.yarnrc');
 
-  writeRegistryToFile(registryUrl, npmrc, 'NPM_TOKEN');
-  writeRegistryToFile(registryUrl, yarnrc, 'YARN_TOKEN');
+  writeRegistryToFile(registryUrl, npmrc);
+  writeRegistryToFile(registryUrl, yarnrc);
 }
 
-function writeRegistryToFile(
-  registryUrl: string,
-  fileLocation: string,
-  authTokenName: string
-) {
+function writeRegistryToFile(registryUrl: string, fileLocation: string) {
   core.debug(`Setting auth in ${fileLocation}`);
   let newContents = '';
   if (fs.existsSync(fileLocation)) {
@@ -34,8 +30,6 @@ function writeRegistryToFile(
     'always-auth=true' +
     os.EOL +
     registryUrl.replace(/(^\w+:|^)/, '') +
-    ':_authToken=${' +
-    authTokenName +
-    '}';
+    ':_authToken=${NODE_AUTH_TOKEN}';
   fs.writeFileSync(fileLocation, newContents);
 }
