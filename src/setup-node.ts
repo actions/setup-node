@@ -17,7 +17,7 @@ async function run() {
 
     const registryUrl = core.getInput('registry-url');
     if (registryUrl) {
-      auth.configAuth(registryUrl);
+      await auth.configAuth(registryUrl);
     }
 
     // TODO: setup proxy from runner proxy config
