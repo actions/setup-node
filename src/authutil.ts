@@ -1,29 +1,41 @@
-import * as core from '@actions/core';
+import * as fs from 'fs';
+import * as os from 'os';
 import * as path from 'path';
-import * as exec from '@actions/exec';
+import * as core from '@actions/core';
 
-export async function configAuth(registryUrl: string) {
+export function configAuth(registryUrl: string) {
   let npmrc: string = path.resolve(process.cwd(), '.npmrc');
   let yarnrc: string = path.resolve(process.cwd(), '.yarnrc');
 
-  await writeRegistryToFile(registryUrl, 'npm', 'NPM_TOKEN');
-  // writeRegistryToFile(registryUrl, 'yarn', 'YARN_TOKEN');
+  writeRegistryToFile(registryUrl, npmrc, 'NPM_TOKEN');
+  writeRegistryToFile(registryUrl, yarnrc, 'YARN_TOKEN');
 }
 
-async function writeRegistryToFile(
+function writeRegistryToFile(
   registryUrl: string,
-  packageManager: string,
+  fileLocation: string,
   authTokenName: string
 ) {
-  core.debug(`Setting up ${packageManager} auth`);
-  await exec.exec(`${packageManager} config set registry=${registryUrl}`);
-  await exec.exec(`${packageManager} config set always-auth=true`);
-  await exec.exec(
-    packageManager +
-      ' config set ' +
-      registryUrl.replace(/(^\w+:|^)/, '') +
-      ':_authToken ${' +
-      authTokenName +
-      '}'
-  );
+  core.debug(`Setting auth in ${fileLocation}`);
+  let newContents = '';
+  if (fs.existsSync(fileLocation)) {
+    const curContents = fs.readFileSync(fileLocation, 'utf8');
+    curContents.split(os.EOL).forEach((line: string) => {
+      // Add current contents unless they are setting the registry
+      if (!line.startsWith('registry')) {
+        newContents += line + os.EOL;
+      }
+    });
+  }
+  newContents +=
+    'registry=' +
+    registryUrl +
+    os.EOL +
+    'always-auth=true' +
+    os.EOL +
+    registryUrl.replace(/(^\w+:|^)/, '') +
+    ':_authToken=${' +
+    authTokenName +
+    '}';
+  fs.writeFileSync(fileLocation, newContents);
 }
