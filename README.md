@@ -39,6 +39,34 @@ jobs:
       - run: npm test
 ```
 
+Set up auth with npm:
+```yaml
+steps:
+- uses: actions/checkout@master
+- uses: actions/setup-node@v1
+  with:
+    version: '10.x'
+    registry-url: <registry url>
+- run: npm install
+- run: npm publish
+  env:
+    NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+```
+
+Set up auth with yarn:
+```yaml
+steps:
+- uses: actions/checkout@master
+- uses: actions/setup-node@v1
+  with:
+    version: '10.x'
+    registry-url: <registry url>
+- run: npm install
+- run: yarn publish
+  env:
+    YARN_TOKEN: ${{ secrets.YARN_TOKEN }}
+```
+
 # License
 
 The scripts and documentation in this project are released under the [MIT License](LICENSE)

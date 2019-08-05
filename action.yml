@@ -5,6 +5,8 @@ inputs:
   version:
     description: 'Version Spec of the version to use.  Examples: 10.x, 10.15.1, >=10.15.0, lts'
     default: '10.x'
+  registry-url:
+    description: 'Optional registry to set up for auth. Will set the registry in a project level .npmrc and .yarnrc file, and set up auth to read in from env.NPM_TOKEN or env.YARN_TOKEN respectively.'
 runs:
   using: 'node12'
   main: 'lib/setup-node.js'
