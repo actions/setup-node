@@ -40,7 +40,7 @@ function writeRegistryToFile(registryUrl: string, fileLocation: string) {
   const registryString = scope
     ? `${scope}:registry=${registryUrl}`
     : `registry=${registryUrl}`;
-  newContents += `${registryString}${os.EOL}${authString}`;
+  newContents += `${authString}${os.EOL}${registryString}`;
   fs.writeFileSync(fileLocation, newContents);
   //   core.exportVariable('NPM_CONFIG_USERCONFIG', fileLocation);
   // Export empty node_auth_token so npm doesn't complain about not being able to find it
