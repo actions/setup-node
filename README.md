@@ -39,21 +39,27 @@ jobs:
       - run: npm test
 ```
 
-Set up auth with npm:
+Publish to npmjs and GPR with npm:
 ```yaml
 steps:
 - uses: actions/checkout@master
 - uses: actions/setup-node@v1
   with:
     version: '10.x'
-    registry-url: <registry url>
+    registry-url: 'https://registry.npmjs.org'
 - run: npm install
 - run: npm publish
   env:
     NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+- uses: actions/setup-node@v1
+  with:
+    registry-url: 'https://npm.pkg.github.com'
+- run: npm publish
+  env:
+    NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 ```
 
-Set up auth with yarn:
+Publish to npmjs and GPR with yarn:
 ```yaml
 steps:
 - uses: actions/checkout@master
@@ -66,6 +72,12 @@ steps:
 - run: yarn publish
   env:
     NODE_AUTH_TOKEN: ${{ secrets.YARN_TOKEN }}
+- uses: actions/setup-node@v1
+  with:
+    registry-url: 'https://npm.pkg.github.com'
+- run: yarn publish
+  env:
+    NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 ```
 
 # License
