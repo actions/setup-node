@@ -36,7 +36,7 @@ function writeRegistryToFile(registryUrl: string, fileLocation: string) {
   }
   // Remove http: or https: from front of registry.
   const authString =
-    registryUrl.replace(/(^\w+:|^)/, '') + ':_authToken=${NODE_AUTH_TOKEN}';
+    registryUrl.replace(/(^\w+:|^)/, '') + `:_authToken=${NODE_AUTH_TOKEN}`;
   const registryString = scope
     ? `${scope}:registry=${registryUrl}`
     : `registry=${registryUrl}`;
