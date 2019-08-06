@@ -39,6 +39,47 @@ jobs:
       - run: npm test
 ```
 
+Publish to npmjs and GPR with npm:
+```yaml
+steps:
+- uses: actions/checkout@master
+- uses: actions/setup-node@v1
+  with:
+    version: '10.x'
+    registry-url: 'https://registry.npmjs.org'
+- run: npm install
+- run: npm publish
+  env:
+    NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+- uses: actions/setup-node@v1
+  with:
+    registry-url: 'https://npm.pkg.github.com'
+- run: npm publish
+  env:
+    NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+```
+
+Publish to npmjs and GPR with yarn:
+```yaml
+steps:
+- uses: actions/checkout@master
+- uses: actions/setup-node@v1
+  with:
+    version: '10.x'
+    registry-url: <registry url>
+- run: npm install -g yarn
+- run: yarn install
+- run: yarn publish
+  env:
+    NODE_AUTH_TOKEN: ${{ secrets.YARN_TOKEN }}
+- uses: actions/setup-node@v1
+  with:
+    registry-url: 'https://npm.pkg.github.com'
+- run: yarn publish
+  env:
+    NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+```
+
 # License
 
 The scripts and documentation in this project are released under the [MIT License](LICENSE)

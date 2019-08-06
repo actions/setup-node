@@ -4,7 +4,7 @@ import os = require('os');
 import path = require('path');
 
 const toolDir = path.join(
-  process.cwd(),
+  __dirname,
   'runner',
   path.join(
     Math.random()
@@ -14,7 +14,7 @@ const toolDir = path.join(
   'tools'
 );
 const tempDir = path.join(
-  process.cwd(),
+  __dirname,
   'runner',
   path.join(
     Math.random()
@@ -34,15 +34,6 @@ describe('installer tests', () => {
   beforeAll(async () => {
     await io.rmRF(toolDir);
     await io.rmRF(tempDir);
-  }, 100000);
-
-  afterAll(async () => {
-    try {
-      await io.rmRF(toolDir);
-      await io.rmRF(tempDir);
-    } catch {
-      console.log('Failed to remove test directories');
-    }
   }, 100000);
 
   it('Acquires version of node if no matching version is installed', async () => {

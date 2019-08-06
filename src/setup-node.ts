@@ -1,5 +1,6 @@
 import * as core from '@actions/core';
 import * as installer from './installer';
+import * as auth from './authutil';
 import * as path from 'path';
 
 async function run() {
@@ -12,6 +13,11 @@ async function run() {
     if (version) {
       // TODO: installer doesn't support proxy
       await installer.getNode(version);
+    }
+
+    const registryUrl: string = core.getInput('registry-url');
+    if (registryUrl) {
+      auth.configAuthentication(registryUrl);
     }
 
     // TODO: setup proxy from runner proxy config
