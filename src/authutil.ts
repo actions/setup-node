@@ -42,7 +42,7 @@ function writeRegistryToFile(registryUrl: string, fileLocation: string) {
     : `registry=${registryUrl}`;
   newContents += `${registryString}${os.EOL}${authString}`;
   fs.writeFileSync(fileLocation, newContents);
-  core.exportVariable('NPM_CONFIG_USERCONFIG', fileLocation);
+//   core.exportVariable('NPM_CONFIG_USERCONFIG', fileLocation);
   // Export empty node_auth_token so npm doesn't complain about not being able to find it
   // core.exportVariable('NODE_AUTH_TOKEN', 'XXXXX-XXXXX-XXXXX-XXXXX');
 }
