@@ -39,7 +39,7 @@ function writeRegistryToFile(registryUrl: string, fileLocation: string) {
   const registryString = scope
     ? `${scope}:registry=${registryUrl}`
     : `registry=${registryUrl}`;
-  newContents += `${registryString}${os.EOL}always-auth=true${os.EOL}${authString}`;
+  newContents += `${registryString}${os.EOL}${authString}`;
   fs.writeFileSync(fileLocation, newContents);
   core.exportVariable('NPM_CONFIG_USERCONFIG', fileLocation);
 }
