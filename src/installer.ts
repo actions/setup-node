@@ -214,18 +214,18 @@ async function acquireNodeFromFallbackLocation(
     libUrl = `https://nodejs.org/dist/v${version}/win-${os.arch()}/node.lib`;
 
     const exePath = await tc.downloadTool(exeUrl);
-    await io.mv(exePath, path.join(tempDir, 'node.exe'));
+    await io.cp(exePath, path.join(tempDir, 'node.exe'));
     const libPath = await tc.downloadTool(libUrl);
-    await io.mv(libPath, path.join(tempDir, 'node.lib'));
+    await io.cp(libPath, path.join(tempDir, 'node.lib'));
   } catch (err) {
     if (err instanceof tc.HTTPError && err.httpStatusCode == 404) {
       exeUrl = `https://nodejs.org/dist/v${version}/node.exe`;
       libUrl = `https://nodejs.org/dist/v${version}/node.lib`;
 
       const exePath = await tc.downloadTool(exeUrl);
-      await io.mv(exePath, path.join(tempDir, 'node.exe'));
+      await io.cp(exePath, path.join(tempDir, 'node.exe'));
       const libPath = await tc.downloadTool(libUrl);
-      await io.mv(libPath, path.join(tempDir, 'node.lib'));
+      await io.cp(libPath, path.join(tempDir, 'node.lib'));
     } else {
       throw err;
     }
