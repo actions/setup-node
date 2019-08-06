@@ -5,11 +5,13 @@ import * as core from '@actions/core';
 import * as github from '@actions/github';
 
 export function configAuthentication(registryUrl: string) {
-  // const npmrc: string = path.resolve(
-  //   process.env['RUNNER_TEMP'] || process.cwd(),
-  //   '.npmrc'
-  // );
-  const npmrc: string = path.resolve(process.cwd(), '.npmrc');
+  const npmrc: string = path.resolve(
+    process.env['RUNNER_TEMP'] || process.cwd(),
+    '.npmrc'
+  );
+  if (!registryUrl.endsWith('/')) {
+    registryUrl += '/';
+  }
 
   writeRegistryToFile(registryUrl, npmrc);
 }
@@ -42,7 +44,7 @@ function writeRegistryToFile(registryUrl: string, fileLocation: string) {
     : `registry=${registryUrl}`;
   newContents += `${authString}${os.EOL}${registryString}`;
   fs.writeFileSync(fileLocation, newContents);
-  //   core.exportVariable('NPM_CONFIG_USERCONFIG', fileLocation);
+  core.exportVariable('NPM_CONFIG_USERCONFIG', fileLocation);
   // Export empty node_auth_token so npm doesn't complain about not being able to find it
-  // core.exportVariable('NODE_AUTH_TOKEN', 'XXXXX-XXXXX-XXXXX-XXXXX');
+  core.exportVariable('NODE_AUTH_TOKEN', 'XXXXX-XXXXX-XXXXX-XXXXX');
 }
