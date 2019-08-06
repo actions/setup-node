@@ -17,7 +17,7 @@ export function configAuthentication(registryUrl: string) {
 }
 
 function writeRegistryToFile(registryUrl: string, fileLocation: string) {
-  let scope = core.getInput('scope');
+  let scope: string = core.getInput('scope');
   if (!scope && registryUrl.indexOf('npm.pkg.github.com') > -1) {
     scope = github.context.repo.owner;
   }
@@ -37,9 +37,9 @@ function writeRegistryToFile(registryUrl: string, fileLocation: string) {
     });
   }
   // Remove http: or https: from front of registry.
-  const authString =
+  const authString: string =
     registryUrl.replace(/(^\w+:|^)/, '') + ':_authToken=${NODE_AUTH_TOKEN}';
-  const registryString = scope
+  const registryString: string = scope
     ? `${scope}:registry=${registryUrl}`
     : `registry=${registryUrl}`;
   newContents += `${authString}${os.EOL}${registryString}`;
