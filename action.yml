@@ -1,4 +1,4 @@
-name: 'Setup Node.js for use with actions'
+name: 'Setup Node.js environment'
 description: 'Setup a Node.js environment and add it to the PATH, additionally providing proxy support'
 author: 'GitHub'
 inputs: 
