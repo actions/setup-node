@@ -19,7 +19,7 @@ steps:
 - uses: actions/checkout@master
 - uses: actions/setup-node@v1
   with:
-    version: '10.x'
+    node-version: '10.x'
 - run: npm install
 - run: npm test
 ```
@@ -38,7 +38,7 @@ jobs:
       - name: Setup node
         uses: actions/setup-node@v1
         with:
-          version: ${{ matrix.node }}
+          node-version: ${{ matrix.node }}
       - run: npm install
       - run: npm test
 ```
@@ -49,7 +49,7 @@ steps:
 - uses: actions/checkout@master
 - uses: actions/setup-node@v1
   with:
-    version: '10.x'
+    node-version: '10.x'
     registry-url: 'https://registry.npmjs.org'
 - run: npm install
 - run: npm publish
@@ -69,7 +69,7 @@ steps:
 - uses: actions/checkout@master
 - uses: actions/setup-node@v1
   with:
-    version: '10.x'
+    node-version: '10.x'
     registry-url: <registry url>
 - run: npm install -g yarn
 - run: yarn install
