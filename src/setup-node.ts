@@ -9,7 +9,10 @@ async function run() {
     // Version is optional.  If supplied, install / use from the tool cache
     // If not supplied then task is still used to setup proxy, auth, etc...
     //
-    const version = core.getInput('version');
+    let version = core.getInput('version');
+    if (!version) {
+      version = core.getInput('node-version');
+    }
     if (version) {
       // TODO: installer doesn't support proxy
       await installer.getNode(version);

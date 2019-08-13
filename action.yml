@@ -1,14 +1,17 @@
 name: 'Setup Node.js environment'
 description: 'Setup a Node.js environment and add it to the PATH, additionally providing proxy support'
 author: 'GitHub'
-inputs: 
-  version:
-    description: 'Version Spec of the version to use.  Examples: 10.x, 10.15.1, >=10.15.0, lts'
+inputs:
+  node-version:
+    description: 'Version Spec of the version to use.  Examples: 10.x, 10.15.1, >=10.15.0'
     default: '10.x'
   registry-url:
     description: 'Optional registry to set up for auth. Will set the registry in a project level .npmrc and .yarnrc file, and set up auth to read in from env.NODE_AUTH_TOKEN'
   scope:
     description: 'Optional scope for authenticating against scoped registries'
+# Deprecated option, do not use. Will not be supported after October 1, 2019
+  version:
+    description: 'Deprecated. Use node-version instead. Will not be supported after October 1, 2019'
 runs:
   using: 'node12'
   main: 'lib/setup-node.js'
