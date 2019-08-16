@@ -100,7 +100,7 @@ async function queryLatestMatch(versionSpec: string): Promise<string> {
 
   let versions: string[] = [];
   let dataUrl = 'https://nodejs.org/dist/index.json';
-  let rest: restm.RestClient = new restm.RestClient('vsts-node-tool');
+  let rest: restm.RestClient = new restm.RestClient('setup-node');
   let nodeVersions: INodeVersion[] =
     (await rest.get<INodeVersion[]>(dataUrl)).result || [];
   nodeVersions.forEach((nodeVersion: INodeVersion) => {
