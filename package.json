@@ -28,6 +28,7 @@
     "@actions/github": "file:toolkit/actions-github-0.0.0.tgz",
     "@actions/io": "file:toolkit/actions-io-0.0.0.tgz",
     "@actions/tool-cache": "file:toolkit/actions-tool-cache-0.0.0.tgz",
+    "typed-rest-client": "^1.5.0",
     "semver": "^6.1.1"
   },
   "devDependencies": {
