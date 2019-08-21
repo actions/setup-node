@@ -7,12 +7,12 @@ registry=https://registry.npmjs.org/"
 
 exports[`installer tests Automatically configures GPR scope 1`] = `
 "npm.pkg.github.com/:_authToken=\${NODE_AUTH_TOKEN}
-@owner:registry=npm.pkg.github.com/"
+@ownername:registry=npm.pkg.github.com/"
 `;
 
 exports[`installer tests Configures scoped npm registries 1`] = `
 "//registry.npmjs.org/:_authToken=\${NODE_AUTH_TOKEN}
-@myScope:registry=https://registry.npmjs.org/"
+@myscope:registry=https://registry.npmjs.org/"
 `;
 
 exports[`installer tests Sets up npmrc for npmjs 1`] = `

@@ -24,6 +24,9 @@ function writeRegistryToFile(registryUrl: string, fileLocation: string) {
   if (scope && scope[0] != '@') {
     scope = '@' + scope;
   }
+  if (scope) {
+    scope = scope.toLowerCase();
+  }
 
   core.debug(`Setting auth in ${fileLocation}`);
   let newContents: string = '';
