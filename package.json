@@ -22,12 +22,11 @@
   "author": "GitHub",
   "license": "MIT",
   "dependencies": {
-    "@actions/core": "file:toolkit/actions-core-0.0.0.tgz",
-    "@actions/exec": "file:toolkit/actions-exec-0.0.0.tgz",
-    "@actions/exit": "file:toolkit/actions-exit-0.0.0.tgz",
-    "@actions/github": "file:toolkit/actions-github-0.0.0.tgz",
-    "@actions/io": "file:toolkit/actions-io-0.0.0.tgz",
-    "@actions/tool-cache": "file:toolkit/actions-tool-cache-0.0.0.tgz",
+    "@actions/core": "^1.0.0",
+    "@actions/github": "^1.0.0",
+    "@actions/io": "^1.0.0",
+    "@actions/tool-cache": "^1.0.0",
+    "typed-rest-client": "^1.5.0",
     "semver": "^6.1.1"
   },
   "devDependencies": {

@@ -15,7 +15,7 @@ const tempDir = path.join(
 
 const rcFile = path.join(tempDir, '.npmrc');
 
-process.env['GITHUB_REPOSITORY'] = 'owner/repo';
+process.env['GITHUB_REPOSITORY'] = 'OwnerName/repo';
 process.env['RUNNER_TEMP'] = tempDir;
 import * as auth from '../src/authutil';
 
