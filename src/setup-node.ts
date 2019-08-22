@@ -1,6 +1,7 @@
 import * as core from '@actions/core';
 import * as installer from './installer';
 import * as auth from './authutil';
+import * as os from 'os';
 import * as path from 'path';
 
 async function run() {
@@ -13,9 +14,10 @@ async function run() {
     if (!version) {
       version = core.getInput('node-version');
     }
+    const osArch = core.getInput('node-arch') || os.arch();
     if (version) {
       // TODO: installer doesn't support proxy
-      await installer.getNode(version);
+      await installer.getNode(version, osArch);
     }
 
     const registryUrl: string = core.getInput('registry-url');

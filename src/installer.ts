@@ -9,7 +9,6 @@ import * as path from 'path';
 import * as semver from 'semver';
 
 let osPlat: string = os.platform();
-let osArch: string = os.arch();
 
 if (!tempDirectory) {
   let baseLocation;
@@ -35,10 +34,13 @@ interface INodeVersion {
   files: string[];
 }
 
-export async function getNode(versionSpec: string) {
+export async function getNode(
+  versionSpec: string,
+  osArch: string | undefined = os.arch()
+) {
   // check cache
   let toolPath: string;
-  toolPath = tc.find('node', versionSpec);
+  toolPath = tc.find('node', versionSpec, osArch);
 
   // If not found in cache, download
   if (!toolPath) {
@@ -50,7 +52,7 @@ export async function getNode(versionSpec: string) {
       version = versionSpec;
     } else {
       // query nodejs.org for a matching version
-      version = await queryLatestMatch(versionSpec);
+      version = await queryLatestMatch(versionSpec, osArch);
       if (!version) {
         throw new Error(
           `Unable to find Node version '${versionSpec}' for platform ${osPlat} and architecture ${osArch}.`
@@ -58,12 +60,12 @@ export async function getNode(versionSpec: string) {
       }
 
       // check cache
-      toolPath = tc.find('node', version);
+      toolPath = tc.find('node', version, osArch);
     }
 
     if (!toolPath) {
       // download, extract, cache
-      toolPath = await acquireNode(version);
+      toolPath = await acquireNode(version, osArch);
     }
   }
 
@@ -81,7 +83,10 @@ export async function getNode(versionSpec: string) {
   core.addPath(toolPath);
 }
 
-async function queryLatestMatch(versionSpec: string): Promise<string> {
+async function queryLatestMatch(
+  versionSpec: string,
+  osArch: string
+): Promise<string> {
   // node offers a json list of versions
   let dataFileName: string;
   switch (osPlat) {
@@ -143,15 +148,15 @@ function evaluateVersions(versions: string[], versionSpec: string): string {
   return version;
 }
 
-async function acquireNode(version: string): Promise<string> {
+async function acquireNode(version: string, osArch: string): Promise<string> {
   //
   // Download - a tool installer intimately knows how to get the tool (and construct urls)
   //
   version = semver.clean(version) || '';
   let fileName: string =
     osPlat == 'win32'
-      ? 'node-v' + version + '-win-' + os.arch()
-      : 'node-v' + version + '-' + osPlat + '-' + os.arch();
+      ? 'node-v' + version + '-win-' + osArch
+      : 'node-v' + version + '-' + osPlat + '-' + osArch;
   let urlFileName: string =
     osPlat == 'win32' ? fileName + '.7z' : fileName + '.tar.gz';
 
@@ -163,7 +168,7 @@ async function acquireNode(version: string): Promise<string> {
     downloadPath = await tc.downloadTool(downloadUrl);
   } catch (err) {
     if (err instanceof tc.HTTPError && err.httpStatusCode == 404) {
-      return await acquireNodeFromFallbackLocation(version);
+      return await acquireNodeFromFallbackLocation(version, osArch);
     }
 
     throw err;
@@ -184,7 +189,7 @@ async function acquireNode(version: string): Promise<string> {
   // Install into the local tool cache - node extracts with a root folder that matches the fileName downloaded
   //
   let toolRoot = path.join(extPath, fileName);
-  return await tc.cacheDir(toolRoot, 'node', version);
+  return await tc.cacheDir(toolRoot, 'node', version, osArch);
 }
 
 // For non LTS versions of Node, the files we need (for Windows) are sometimes located
@@ -200,7 +205,8 @@ async function acquireNode(version: string): Promise<string> {
 // Note also that the files are normally zipped but in this case they are just an exe
 // and lib file in a folder, not zipped.
 async function acquireNodeFromFallbackLocation(
-  version: string
+  version: string,
+  osArch: string
 ): Promise<string> {
   // Create temporary folder to download in to
   let tempDownloadFolder: string =
@@ -210,8 +216,8 @@ async function acquireNodeFromFallbackLocation(
   let exeUrl: string;
   let libUrl: string;
   try {
-    exeUrl = `https://nodejs.org/dist/v${version}/win-${os.arch()}/node.exe`;
-    libUrl = `https://nodejs.org/dist/v${version}/win-${os.arch()}/node.lib`;
+    exeUrl = `https://nodejs.org/dist/v${version}/win-${osArch}/node.exe`;
+    libUrl = `https://nodejs.org/dist/v${version}/win-${osArch}/node.lib`;
 
     const exePath = await tc.downloadTool(exeUrl);
     await io.cp(exePath, path.join(tempDir, 'node.exe'));
@@ -230,5 +236,5 @@ async function acquireNodeFromFallbackLocation(
       throw err;
     }
   }
-  return await tc.cacheDir(tempDir, 'node', version);
+  return await tc.cacheDir(tempDir, 'node', version, osArch);
 }

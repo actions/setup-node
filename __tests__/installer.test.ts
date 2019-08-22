@@ -120,4 +120,30 @@ describe('installer tests', () => {
     await installer.getNode('252');
     await installer.getNode('252.0');
   });
+
+  it('Acquires specified x86 version of node if no matching version is installed', async () => {
+    const arch = 'x86';
+    await installer.getNode('8.8.1', arch);
+    const nodeDir = path.join(toolDir, 'node', '8.8.1', arch);
+
+    expect(fs.existsSync(`${nodeDir}.complete`)).toBe(true);
+    if (IS_WINDOWS) {
+      expect(fs.existsSync(path.join(nodeDir, 'node.exe'))).toBe(true);
+    } else {
+      expect(fs.existsSync(path.join(nodeDir, 'bin', 'node'))).toBe(true);
+    }
+  }, 100000);
+
+  it('Acquires specified x64 version of node if no matching version is installed', async () => {
+    const arch = 'x64';
+    await installer.getNode('8.8.1', arch);
+    const nodeDir = path.join(toolDir, 'node', '8.8.1', arch);
+
+    expect(fs.existsSync(`${nodeDir}.complete`)).toBe(true);
+    if (IS_WINDOWS) {
+      expect(fs.existsSync(path.join(nodeDir, 'node.exe'))).toBe(true);
+    } else {
+      expect(fs.existsSync(path.join(nodeDir, 'bin', 'node'))).toBe(true);
+    }
+  }, 100000);
 });

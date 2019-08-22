@@ -7,7 +7,7 @@
 This action sets by node environment for use in actions by:
 
 - optionally downloading and caching a version of node - npm by version spec and add to PATH
-- registering problem matchers for error output 
+- registering problem matchers for error output
 
 # Usage
 
@@ -98,6 +98,18 @@ steps:
     NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 # `npm rebuild` will run all those post-install scritps for us.
 - run: npm rebuild && npm run prepare --if-present
+```
+
+Specifying a different architecture than the system architecture:
+```yaml
+steps:
+- uses: actions/checkout@master
+- uses: actions/setup-node@v1
+  with:
+    node-version: '10.x'
+    node-arch: 'x86'
+- run: npm install
+- run: npm test
 ```
 
 
