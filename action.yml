@@ -2,6 +2,9 @@ name: 'Setup Node.js environment'
 description: 'Setup a Node.js environment and add it to the PATH, additionally providing proxy support'
 author: 'GitHub'
 inputs:
+  always-auth:
+    description: 'Set always-auth in npmrc'
+    default: 'false'
   node-version:
     description: 'Version Spec of the version to use.  Examples: 10.x, 10.15.1, >=10.15.0'
     default: '10.x'
