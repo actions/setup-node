@@ -21,7 +21,7 @@ async function run() {
     const registryUrl: string = core.getInput('registry-url');
     const alwaysAuth: string = core.getInput('always-auth');
     if (registryUrl) {
-      auth.configAuthentication({registryUrl, alwaysAuth});
+      auth.configAuthentication(registryUrl, alwaysAuth);
     }
 
     // TODO: setup proxy from runner proxy config

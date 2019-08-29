@@ -4,14 +4,7 @@ import * as path from 'path';
 import * as core from '@actions/core';
 import * as github from '@actions/github';
 
-interface ConfigureAuthenticationParams {
-  registryUrl: string;
-  alwaysAuth: string;
-}
-export function configAuthentication({
-  registryUrl,
-  alwaysAuth
-}: ConfigureAuthenticationParams) {
+export function configAuthentication(registryUrl: string, alwaysAuth: string) {
   const npmrc: string = path.resolve(
     process.env['RUNNER_TEMP'] || process.cwd(),
     '.npmrc'
@@ -20,19 +13,14 @@ export function configAuthentication({
     registryUrl += '/';
   }
 
-  writeRegistryToFile({registryUrl, fileLocation: npmrc, alwaysAuth});
+  writeRegistryToFile(registryUrl, npmrc, alwaysAuth);
 }
 
-interface WriteRegistryToFileParams {
-  registryUrl: string;
-  fileLocation: string;
-  alwaysAuth: string;
-}
-function writeRegistryToFile({
-  registryUrl,
-  fileLocation,
-  alwaysAuth
-}: WriteRegistryToFileParams) {
+function writeRegistryToFile(
+  registryUrl: string,
+  fileLocation: string,
+  alwaysAuth: string
+) {
   let scope: string = core.getInput('scope');
   if (!scope && registryUrl.indexOf('npm.pkg.github.com') > -1) {
     scope = github.context.repo.owner;
