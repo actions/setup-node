@@ -71,7 +71,6 @@ steps:
   with:
     node-version: '10.x'
     registry-url: <registry url>
-- run: npm install -g yarn
 - run: yarn install
 - run: yarn publish
   env:
