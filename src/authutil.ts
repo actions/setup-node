@@ -4,7 +4,7 @@ import * as path from 'path';
 import * as core from '@actions/core';
 import * as github from '@actions/github';
 
-export function configAuthentication(registryUrl: string) {
+export function configAuthentication(registryUrl: string, alwaysAuth: string) {
   const npmrc: string = path.resolve(
     process.env['RUNNER_TEMP'] || process.cwd(),
     '.npmrc'
@@ -13,10 +13,14 @@ export function configAuthentication(registryUrl: string) {
     registryUrl += '/';
   }
 
-  writeRegistryToFile(registryUrl, npmrc);
+  writeRegistryToFile(registryUrl, npmrc, alwaysAuth);
 }
 
-function writeRegistryToFile(registryUrl: string, fileLocation: string) {
+function writeRegistryToFile(
+  registryUrl: string,
+  fileLocation: string,
+  alwaysAuth: string
+) {
   let scope: string = core.getInput('scope');
   if (!scope && registryUrl.indexOf('npm.pkg.github.com') > -1) {
     scope = github.context.repo.owner;
@@ -45,7 +49,8 @@ function writeRegistryToFile(registryUrl: string, fileLocation: string) {
   const registryString: string = scope
     ? `${scope}:registry=${registryUrl}`
     : `registry=${registryUrl}`;
-  newContents += `${authString}${os.EOL}${registryString}`;
+  const alwaysAuthString: string = `always-auth=${alwaysAuth}`;
+  newContents += `${authString}${os.EOL}${registryString}${os.EOL}${alwaysAuthString}`;
   fs.writeFileSync(fileLocation, newContents);
   core.exportVariable('NPM_CONFIG_USERCONFIG', fileLocation);
   // Export empty node_auth_token so npm doesn't complain about not being able to find it
