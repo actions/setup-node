@@ -95,7 +95,7 @@ steps:
 # script could steal NODE_AUTH_TOKEN.
 - run: npm install --ignore-scripts
   env:
-    NODE_AUTH_TOKEN: ${{ secrets.YARN_TOKEN }}
+    NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 # `npm rebuild` will run all those post-install scritps for us.
 - run: npm rebuild && npm run prepare --if-present
 ```
