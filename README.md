@@ -83,6 +83,24 @@ steps:
     NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 ```
 
+Use private packages:
+```yaml
+steps:
+- uses: actions/checkout@master
+- uses: actions/setup-node@v1
+  with:
+    node-version: '10.x'
+    registry-url: 'https://registry.npmjs.org'
+# Skip post-install scripts here, as a malicious
+# script could steal NODE_AUTH_TOKEN.
+- run: npm install --ignore-scripts
+  env:
+    NODE_AUTH_TOKEN: ${{ secrets.YARN_TOKEN }}
+# `npm rebuild` will run all those post-install scritps for us.
+- run: npm rebuild && npm run prepare --if-present
+```
+
+
 # License
 
 The scripts and documentation in this project are released under the [MIT License](LICENSE)
