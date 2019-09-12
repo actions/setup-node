@@ -15,6 +15,7 @@ inputs:
 # Deprecated option, do not use. Will not be supported after October 1, 2019
   version:
     description: 'Deprecated. Use node-version instead. Will not be supported after October 1, 2019'
+    deprecationMessage: 'The version property will not be supported after October 1, 2019. Use node-version instead'
 runs:
   using: 'node12'
   main: 'lib/setup-node.js'
