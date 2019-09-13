@@ -1,18 +1,15 @@
 import * as core from '@actions/core';
-import * as installer from './installer';
-import * as auth from './authutil';
 import * as path from 'path';
+import * as auth from './authutil';
+import * as installer from './installer';
 
 async function run() {
   try {
-    //
-    // Version is optional.  If supplied, install / use from the tool cache
+    // Version is optional. If supplied, install / use from the tool cache
     // If not supplied then task is still used to setup proxy, auth, etc...
-    //
-    let version = core.getInput('version');
-    if (!version) {
-      version = core.getInput('node-version');
-    }
+    const version = core.getInput('version') || core.getInput('node-version');
+    
+    // allow user to not specify a node version
     if (version) {
       // TODO: installer doesn't support proxy
       await installer.getNode(version);

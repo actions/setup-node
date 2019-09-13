@@ -1,25 +1,20 @@
-import io = require('@actions/io');
-import fs = require('fs');
-import path = require('path');
+import * as io from '@actions/io';
+import * as fs from 'fs';
+import * as path from'path';
 
-const tempDir = path.join(
-  __dirname,
-  'runner',
-  path.join(
-    Math.random()
-      .toString(36)
-      .substring(7)
-  ),
-  'temp'
-);
-
+const runnerDir = path.join(__dirname, 'runner');
+const randomizer = () =>
+  Math.random()
+    .toString(36)
+    .substring(7);
+const tempDir = path.join(runnerDir, randomizer(), 'temp');
 const rcFile = path.join(tempDir, '.npmrc');
 
 process.env['GITHUB_REPOSITORY'] = 'OwnerName/repo';
 process.env['RUNNER_TEMP'] = tempDir;
 import * as auth from '../src/authutil';
 
-describe('installer tests', () => {
+describe('auth tests', () => {
   beforeAll(async () => {
     await io.rmRF(tempDir);
     await io.mkdirP(tempDir);
@@ -32,36 +27,36 @@ describe('installer tests', () => {
     process.env['INPUT_SCOPE'] = '';
   });
 
-  it('Sets up npmrc for npmjs', async () => {
-    await auth.configAuthentication('https://registry.npmjs.org/', 'false');
+  it('Sets up npmrc for npmjs', () => {
+    auth.configAuthentication('https://registry.npmjs.org/', 'false');
     expect(fs.existsSync(rcFile)).toBe(true);
     expect(fs.readFileSync(rcFile, {encoding: 'utf8'})).toMatchSnapshot();
   });
 
-  it('Appends trailing slash to registry', async () => {
-    await auth.configAuthentication('https://registry.npmjs.org', 'false');
+  it('Appends trailing slash to registry', () => {
+    auth.configAuthentication('https://registry.npmjs.org', 'false');
 
     expect(fs.existsSync(rcFile)).toBe(true);
     expect(fs.readFileSync(rcFile, {encoding: 'utf8'})).toMatchSnapshot();
   });
 
-  it('Configures scoped npm registries', async () => {
+  it('Configures scoped npm registries', () => {
     process.env['INPUT_SCOPE'] = 'myScope';
-    await auth.configAuthentication('https://registry.npmjs.org', 'false');
+    auth.configAuthentication('https://registry.npmjs.org', 'false');
 
     expect(fs.existsSync(rcFile)).toBe(true);
     expect(fs.readFileSync(rcFile, {encoding: 'utf8'})).toMatchSnapshot();
   });
 
-  it('Automatically configures GPR scope', async () => {
-    await auth.configAuthentication('npm.pkg.github.com', 'false');
+  it('Automatically configures GPR scope', () => {
+    auth.configAuthentication('npm.pkg.github.com', 'false');
 
     expect(fs.existsSync(rcFile)).toBe(true);
     expect(fs.readFileSync(rcFile, {encoding: 'utf8'})).toMatchSnapshot();
   });
 
-  it('Sets up npmrc for always-auth true', async () => {
-    await auth.configAuthentication('https://registry.npmjs.org/', 'true');
+  it('Sets up npmrc for always-auth true', () => {
+    auth.configAuthentication('https://registry.npmjs.org/', 'true');
     expect(fs.existsSync(rcFile)).toBe(true);
     expect(fs.readFileSync(rcFile, {encoding: 'utf8'})).toMatchSnapshot();
   });

@@ -1,138 +1,149 @@
-// Load tempDirectory before it gets wiped by tool-cache
-let tempDirectory = process.env['RUNNER_TEMPDIRECTORY'] || '';
 import * as core from '@actions/core';
 import * as io from '@actions/io';
 import * as tc from '@actions/tool-cache';
-import * as restm from 'typed-rest-client/RestClient';
 import * as os from 'os';
 import * as path from 'path';
 import * as semver from 'semver';
+import * as restm from 'typed-rest-client/RestClient';
 
 let osPlat: string = os.platform();
 let osArch: string = os.arch();
+const IS_WINDOWS: boolean = osPlat === 'win32';
 
-if (!tempDirectory) {
-  let baseLocation;
-  if (process.platform === 'win32') {
-    // On windows use the USERPROFILE env variable
-    baseLocation = process.env['USERPROFILE'] || 'C:\\';
-  } else {
-    if (process.platform === 'darwin') {
-      baseLocation = '/Users';
-    } else {
-      baseLocation = '/home';
-    }
-  }
-  tempDirectory = path.join(baseLocation, 'actions', 'temp');
-}
-
-//
-// Node versions interface
-// see https://nodejs.org/dist/index.json
-//
-interface INodeVersion {
+/*
+ * Node versions interface
+ * see https://nodejs.org/dist/index.json
+ */
+export interface INodeVersion {
   version: string;
   files: string[];
+  lts: string | false;
 }
 
-export async function getNode(versionSpec: string) {
-  // check cache
-  let toolPath: string;
-  toolPath = tc.find('node', versionSpec);
+export async function getNode(versionSpec: string): Promise<void> {
+  versionSpec = versionSpec.trim();
 
-  // If not found in cache, download
-  if (!toolPath) {
-    let version: string;
-    const c = semver.clean(versionSpec) || '';
-    // If explicit version
-    if (semver.valid(c) != null) {
-      // version to download
-      version = versionSpec;
-    } else {
-      // query nodejs.org for a matching version
-      version = await queryLatestMatch(versionSpec);
-      if (!version) {
-        throw new Error(
-          `Unable to find Node version '${versionSpec}' for platform ${osPlat} and architecture ${osArch}.`
-        );
-      }
+  // resolve node codenames
+  let version = await resolve(versionSpec);
 
-      // check cache
-      toolPath = tc.find('node', version);
-    }
-
-    if (!toolPath) {
-      // download, extract, cache
-      toolPath = await acquireNode(version);
-    }
+  if (!version) {
+    throw new Error(
+      `Unable to find Node version '${versionSpec}' for platform ${osPlat} and architecture ${osArch}.`
+    );
   }
 
-  //
+  // check cache
+  let toolPath = tc.find('node', version, osArch);
+
+  // Not found in cache -> download
+  if (!toolPath) {
+    // download, extract, cache
+    toolPath = await acquireNode(version);
+  }
+
   // a tool installer initimately knows details about the layout of that tool
   // for example, node binary is in the bin folder after the extract on Mac/Linux.
   // layouts could change by version, by platform etc... but that's the tool installers job
-  //
-  if (osPlat != 'win32') {
+  if (!IS_WINDOWS) {
     toolPath = path.join(toolPath, 'bin');
   }
 
-  //
   // prepend the tools path. instructs the agent to prepend for future tasks
   core.addPath(toolPath);
 }
 
-async function queryLatestMatch(versionSpec: string): Promise<string> {
+async function resolve(versionSpec: string): Promise<string> {
+  let version = semver.clean(versionSpec) || '';
+  return semver.valid(version) || tc.find('node', versionSpec, osArch)
+    ? version || versionSpec
+    : queryNodeVersions(versionSpec);
+}
+
+async function queryNodeVersions(versionSpec: string): Promise<string> {
+  core.debug(`querying Node.js for ${versionSpec}`);
   // node offers a json list of versions
+  let dataUrl = 'https://nodejs.org/dist/index.json';
+  let rest = new restm.RestClient('setup-node');
+  let nodeVersions: INodeVersion[] =
+    (await rest.get<INodeVersion[]>(dataUrl)).result || [];
   let dataFileName: string;
   switch (osPlat) {
     case 'linux':
-      dataFileName = 'linux-' + osArch;
+      dataFileName = `linux-${osArch}`;
       break;
     case 'darwin':
-      dataFileName = 'osx-' + osArch + '-tar';
+      dataFileName = `osx-${osArch}-tar`;
       break;
     case 'win32':
-      dataFileName = 'win-' + osArch + '-exe';
+      dataFileName = `win-${osArch}-7z`;
       break;
     default:
       throw new Error(`Unexpected OS '${osPlat}'`);
   }
 
-  let versions: string[] = [];
-  let dataUrl = 'https://nodejs.org/dist/index.json';
-  let rest: restm.RestClient = new restm.RestClient('setup-node');
-  let nodeVersions: INodeVersion[] =
-    (await rest.get<INodeVersion[]>(dataUrl)).result || [];
-  nodeVersions.forEach((nodeVersion: INodeVersion) => {
-    // ensure this version supports your os and platform
-    if (nodeVersion.files.indexOf(dataFileName) >= 0) {
-      versions.push(nodeVersion.version);
-    }
-  });
+  // ensure this version supports your os and platform
+  nodeVersions = nodeVersions.filter(
+    (nodeVersion: INodeVersion) => nodeVersion.files.indexOf(dataFileName) > -1
+  );
+
+  // sort node versions by descending version
+  nodeVersions = nodeVersions.sort((a: INodeVersion, b: INodeVersion) =>
+    semver.gt(b.version, a.version) ? 1 : -1
+  );
+
+  const isLatestSpec = /^latest|current$/i.test(versionSpec);
+  const isLTSSpec = /^lts$/i.test(versionSpec);
+  const isLTSCodenameSpec =
+    !isLatestSpec && !isLTSSpec && /^[a-zA-Z]+$/.test(versionSpec);
+  const findNodeVersion = (
+    predicator: (nodeVersion: INodeVersion) => boolean
+  ): string => {
+    nodeVersions = nodeVersions.filter(predicator);
+    return nodeVersions.length
+      ? semver.clean(nodeVersions[0].version) || ''
+      : '';
+  };
+
+  // resolve latest or current node version
+  if (isLatestSpec) {
+    return findNodeVersion(
+      (nodeVersion: INodeVersion) => typeof nodeVersion.lts !== 'string'
+    );
+  }
+
+  // resolve lts node version
+  if (isLTSSpec) {
+    return findNodeVersion(
+      (nodeVersion: INodeVersion) => typeof nodeVersion.lts === 'string'
+    );
+  }
+
+  // resolve node version codename
+  if (isLTSCodenameSpec) {
+    return findNodeVersion(
+      (nodeVersion: INodeVersion) =>
+        typeof nodeVersion.lts === 'string' &&
+        nodeVersion.lts.toLowerCase() === versionSpec.toLowerCase()
+    );
+  }
 
   // get the latest version that matches the version spec
-  let version: string = evaluateVersions(versions, versionSpec);
-  return version;
+  return evaluateVersions(nodeVersions, versionSpec);
 }
 
 // TODO - should we just export this from @actions/tool-cache? Lifted directly from there
-function evaluateVersions(versions: string[], versionSpec: string): string {
-  let version = '';
-  core.debug(`evaluating ${versions.length} versions`);
-  versions = versions.sort((a, b) => {
-    if (semver.gt(a, b)) {
-      return 1;
-    }
-    return -1;
-  });
-  for (let i = versions.length - 1; i >= 0; i--) {
-    const potential: string = versions[i];
-    const satisfied: boolean = semver.satisfies(potential, versionSpec);
-    if (satisfied) {
-      version = potential;
-      break;
-    }
-  }
+function evaluateVersions(
+  nodeVersions: INodeVersion[],
+  versionSpec: string
+): string {
+  core.debug(`evaluating ${nodeVersions.length} versions`);
+  const versions = nodeVersions.map(
+    (nodeVersion: INodeVersion) => nodeVersion.version
+  );
+  const version =
+    versions.find((potential: string) =>
+      semver.satisfies(potential, versionSpec)
+    ) || '';
 
   if (version) {
     core.debug(`matched: ${version}`);
@@ -140,51 +151,39 @@ function evaluateVersions(versions: string[], versionSpec: string): string {
     core.debug('match not found');
   }
 
-  return version;
+  return semver.clean(version) || '';
 }
 
 async function acquireNode(version: string): Promise<string> {
-  //
   // Download - a tool installer intimately knows how to get the tool (and construct urls)
-  //
-  version = semver.clean(version) || '';
-  let fileName: string =
-    osPlat == 'win32'
-      ? 'node-v' + version + '-win-' + os.arch()
-      : 'node-v' + version + '-' + osPlat + '-' + os.arch();
-  let urlFileName: string =
-    osPlat == 'win32' ? fileName + '.7z' : fileName + '.tar.gz';
-
-  let downloadUrl = 'https://nodejs.org/dist/v' + version + '/' + urlFileName;
+  const fileName: string = `node-v${version}-${
+    IS_WINDOWS ? 'win' : osPlat
+  }-${osArch}`;
+  const urlFileName: string = `${fileName}.${IS_WINDOWS ? '7z' : 'tar.gz'}`;
+  const downloadUrl = `https://nodejs.org/dist/v${version}/${urlFileName}`;
 
   let downloadPath: string;
-
   try {
     downloadPath = await tc.downloadTool(downloadUrl);
   } catch (err) {
-    if (err instanceof tc.HTTPError && err.httpStatusCode == 404) {
-      return await acquireNodeFromFallbackLocation(version);
+    if (err instanceof tc.HTTPError && err.httpStatusCode === 404) {
+      if (IS_WINDOWS) {
+        return acquireNodeFromFallbackLocation(version);
+      }
     }
-
     throw err;
   }
 
-  //
   // Extract
-  //
-  let extPath: string;
-  if (osPlat == 'win32') {
-    let _7zPath = path.join(__dirname, '..', 'externals', '7zr.exe');
-    extPath = await tc.extract7z(downloadPath, undefined, _7zPath);
-  } else {
-    extPath = await tc.extractTar(downloadPath);
-  }
+  const _7zPath = path.join(__dirname, '..', 'externals', '7zr.exe');
+  const extPath: string = IS_WINDOWS
+    ? await tc.extract7z(downloadPath, undefined, _7zPath)
+    : await tc.extractTar(downloadPath);
 
-  //
-  // Install into the local tool cache - node extracts with a root folder that matches the fileName downloaded
-  //
-  let toolRoot = path.join(extPath, fileName);
-  return await tc.cacheDir(toolRoot, 'node', version);
+  // Install into the local tool cache
+  // node extracts with a root folder that matches the fileName downloaded
+  const toolRoot = path.join(extPath, fileName);
+  return tc.cacheDir(toolRoot, 'node', version, osArch);
 }
 
 // For non LTS versions of Node, the files we need (for Windows) are sometimes located
@@ -203,32 +202,42 @@ async function acquireNodeFromFallbackLocation(
   version: string
 ): Promise<string> {
   // Create temporary folder to download in to
-  let tempDownloadFolder: string =
-    'temp_' + Math.floor(Math.random() * 2000000000);
-  let tempDir: string = path.join(tempDirectory, tempDownloadFolder);
-  await io.mkdirP(tempDir);
-  let exeUrl: string;
-  let libUrl: string;
+  const tempDownloadFolder: string = `temp_${Math.floor(
+    Math.random() * 2000000000
+  )}`;
+  const tempDir: string = path.join(getTempDirectory(), tempDownloadFolder);
+  const baseUrl = `https://nodejs.org/dist/v${version}/`;
+  const tryDownload = async (url: string) => {
+    const exeFileName = 'node.exe';
+    const libFileName = 'node.lib';
+    const exePath = await tc.downloadTool(`${url}${exeFileName}`);
+    await io.cp(exePath, path.join(tempDir, exeFileName));
+    const libPath = await tc.downloadTool(`${url}${libFileName}`);
+    await io.cp(libPath, path.join(tempDir, libFileName));
+  };
+
   try {
-    exeUrl = `https://nodejs.org/dist/v${version}/win-${os.arch()}/node.exe`;
-    libUrl = `https://nodejs.org/dist/v${version}/win-${os.arch()}/node.lib`;
-
-    const exePath = await tc.downloadTool(exeUrl);
-    await io.cp(exePath, path.join(tempDir, 'node.exe'));
-    const libPath = await tc.downloadTool(libUrl);
-    await io.cp(libPath, path.join(tempDir, 'node.lib'));
+    await io.mkdirP(tempDir);
+    await tryDownload(`${baseUrl}win-${osArch}/`);
   } catch (err) {
-    if (err instanceof tc.HTTPError && err.httpStatusCode == 404) {
-      exeUrl = `https://nodejs.org/dist/v${version}/node.exe`;
-      libUrl = `https://nodejs.org/dist/v${version}/node.lib`;
-
-      const exePath = await tc.downloadTool(exeUrl);
-      await io.cp(exePath, path.join(tempDir, 'node.exe'));
-      const libPath = await tc.downloadTool(libUrl);
-      await io.cp(libPath, path.join(tempDir, 'node.lib'));
+    if (err instanceof tc.HTTPError && err.httpStatusCode === 404) {
+      await tryDownload(baseUrl);
     } else {
       throw err;
     }
   }
-  return await tc.cacheDir(tempDir, 'node', version);
+  return tc.cacheDir(tempDir, 'node', version, osArch);
+}
+
+function getTempDirectory(): string {
+  const baseLocation: string =
+    // On windows use the USERPROFILE env variable
+    process.platform === 'win32'
+      ? process.env['USERPROFILE'] || 'C:\\'
+      : process.platform === 'darwin'
+      ? '/Users'
+      : '/home';
+  return (
+    process.env['RUNNER_TEMP'] || path.join(baseLocation, 'actions', 'temp')
+  );
 }
