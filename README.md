@@ -60,7 +60,7 @@ steps:
     registry-url: 'https://npm.pkg.github.com'
 - run: npm publish
   env:
-    NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 ```
 
 Publish to npmjs and GPR with yarn:
@@ -80,7 +80,7 @@ steps:
     registry-url: 'https://npm.pkg.github.com'
 - run: yarn publish
   env:
-    NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    NODE_AUTH_TOKEN: ${{ secrets.YARN_TOKEN }}
 ```
 
 Use private packages:
