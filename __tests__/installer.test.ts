@@ -1,5 +1,6 @@
 import io = require('@actions/io');
 import fs = require('fs');
+import nock = require('nock');
 import os = require('os');
 import path = require('path');
 
@@ -35,6 +36,10 @@ describe('installer tests', () => {
     await io.rmRF(toolDir);
     await io.rmRF(tempDir);
   }, 100000);
+
+  beforeEach(() => {
+    nock.cleanAll();
+  });
 
   it('Acquires version of node if no matching version is installed', async () => {
     await installer.getNode('10.16.0');
@@ -123,9 +128,25 @@ describe('installer tests', () => {
 
   it('Acquires specified x86 version of node if no matching version is installed', async () => {
     const arch = 'x86';
-    await installer.getNode('8.8.1', arch);
-    const nodeDir = path.join(toolDir, 'node', '8.8.1', arch);
+    const version = '8.8.0';
+    const fileExtension = IS_WINDOWS ? '7z' : 'tar.gz';
+    const platform = {
+      linux: 'linux',
+      darwin: 'darwin',
+      win32: 'win'
+    }[process.platform];
+    const fileName = `node-v${version}-${platform}-${arch}.${fileExtension}`;
+    const pathOnNodeJs = `/dist/v${version}/${fileName}`;
+    const scope = nock('https://nodejs.org')
+      .get(pathOnNodeJs)
+      .replyWithFile(
+        200,
+        path.join(__dirname, '__fixtures__', `mock-${fileName}`)
+      );
+    await installer.getNode(version, arch);
+    const nodeDir = path.join(toolDir, 'node', version, arch);
 
+    expect(scope.isDone()).toBe(true);
     expect(fs.existsSync(`${nodeDir}.complete`)).toBe(true);
     if (IS_WINDOWS) {
       expect(fs.existsSync(path.join(nodeDir, 'node.exe'))).toBe(true);
@@ -136,9 +157,25 @@ describe('installer tests', () => {
 
   it('Acquires specified x64 version of node if no matching version is installed', async () => {
     const arch = 'x64';
-    await installer.getNode('8.8.1', arch);
-    const nodeDir = path.join(toolDir, 'node', '8.8.1', arch);
+    const version = '8.9.1';
+    const fileExtension = IS_WINDOWS ? '7z' : 'tar.gz';
+    const platform = {
+      linux: 'linux',
+      darwin: 'darwin',
+      win32: 'win'
+    }[process.platform];
+    const fileName = `node-v${version}-${platform}-${arch}.${fileExtension}`;
+    const pathOnNodeJs = `/dist/v${version}/${fileName}`;
+    const scope = nock('https://nodejs.org')
+      .get(pathOnNodeJs)
+      .replyWithFile(
+        200,
+        path.join(__dirname, '__fixtures__', `mock-${fileName}`)
+      );
+    await installer.getNode(version, arch);
+    const nodeDir = path.join(toolDir, 'node', version, arch);
 
+    expect(scope.isDone()).toBe(true);
     expect(fs.existsSync(`${nodeDir}.complete`)).toBe(true);
     if (IS_WINDOWS) {
       expect(fs.existsSync(path.join(nodeDir, 'node.exe'))).toBe(true);

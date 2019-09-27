@@ -14,8 +14,9 @@ async function run() {
     if (!version) {
       version = core.getInput('node-version');
     }
-    const osArch = core.getInput('node-arch') || os.arch();
+
     if (version) {
+      const osArch = core.getInput('node-arch') || os.arch();
       // TODO: installer doesn't support proxy
       await installer.getNode(version, osArch);
     }

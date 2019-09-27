@@ -26,8 +26,8 @@
     "@actions/github": "^1.0.0",
     "@actions/io": "^1.0.0",
     "@actions/tool-cache": "^1.0.0",
-    "typed-rest-client": "^1.5.0",
-    "semver": "^6.1.1"
+    "semver": "^6.1.1",
+    "typed-rest-client": "^1.5.0"
   },
   "devDependencies": {
     "@types/jest": "^24.0.13",
@@ -36,6 +36,7 @@
     "husky": "^2.3.0",
     "jest": "^24.8.0",
     "jest-circus": "^24.7.1",
+    "nock": "^11.3.5",
     "prettier": "^1.17.1",
     "ts-jest": "^24.0.2",
     "typescript": "^3.5.1"
