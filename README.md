@@ -100,18 +100,8 @@ steps:
 - run: npm rebuild && npm run prepare --if-present
 ```
 
-Specifying a different architecture than the system architecture:
-```yaml
-steps:
-- uses: actions/checkout@master
-- uses: actions/setup-node@v1
-  with:
-    node-version: '10.x'
-    node-arch: 'x86'
-- run: npm install
-- run: npm test
-```
 
+Additionally, the architecture can be selected using `node-arch`. Values are `x86`, `x64`, `arm64`, `armv6l`, `armv7l, `ppc64le`, `s390x`. **Not all architectures are available on all platforms.**
 
 # License
 
