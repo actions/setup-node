@@ -16,7 +16,7 @@ See [action.yml](action.yml)
 Basic:
 ```yaml
 steps:
-- uses: actions/checkout@master
+- uses: actions/checkout@v1
 - uses: actions/setup-node@v1
   with:
     node-version: '10.x'
