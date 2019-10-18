@@ -96,7 +96,7 @@ steps:
 - run: npm install --ignore-scripts
   env:
     NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-# `npm rebuild` will run all those post-install scritps for us.
+# `npm rebuild` will run all those post-install scripts for us.
 - run: npm rebuild && npm run prepare --if-present
 ```
 
