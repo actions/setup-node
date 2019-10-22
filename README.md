@@ -4,7 +4,7 @@
   <a href="https://github.com/actions/setup-node"><img alt="GitHub Actions status" src="https://github.com/actions/setup-node/workflows/Main%20workflow/badge.svg"></a>
 </p>
 
-This action sets by node environment for use in actions by:
+This action sets the node environment for use in actions by:
 
 - optionally downloading and caching a version of node - npm by version spec and add to PATH
 - registering problem matchers for error output 
