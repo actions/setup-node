@@ -1,15 +1,5 @@
-<<<<<<< Updated upstream
-name: 'Setup Node.js'
-description: 'Set up a specific version of Node.js and add the command-line tools to the PATH'
-=======
-<<<<<<< Updated upstream
-name: 'Setup Node.js'
-description: 'Set up a specific version of Node.js and add the command-line tools to the PATH'
-=======
 name: 'Setup Node.js environment'
-description: 'Setup a Node.js environment by adding problem matchers and optionally downloading and adding it to the PATH'
->>>>>>> Stashed changes
->>>>>>> Stashed changes
+description: 'Setup a Node.js environment and add it to the PATH, additionally providing proxy support'
 author: 'GitHub'
 inputs:
   always-auth:
@@ -38,7 +28,7 @@ inputs:
   token:
     description: Used to pull node distributions from node-versions.  Since there's a default, this is typically not supplied by the user.
     default: ${{ github.token }}
-# TODO: add input to control forcing to pull from cloud or dist. 
+# TODO: add input to control forcing to pull from cloud or dist.
 #       escape valve for someone having issues or needing the absolute latest which isn't cached yet
 >>>>>>> Stashed changes
 >>>>>>> Stashed changes
