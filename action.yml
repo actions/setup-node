@@ -1,5 +1,5 @@
-name: 'Setup Node.js environment'
-description: 'Setup a Node.js environment and add it to the PATH, additionally providing proxy support'
+name: 'Setup Node.js'
+description: 'Set up a specific version of Node.js and add the command-line tools to the PATH'
 author: 'GitHub'
 inputs:
   always-auth:
