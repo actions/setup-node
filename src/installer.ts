@@ -234,6 +234,9 @@ async function acquireNodeFromFallbackLocation(
 
 // os.arch does not always match the relative download url, e.g.
 // os.arch == 'arm' != node-v12.13.1-linux-armv7l.tar.gz
+// All other currently supported architectures match, e.g.:
+//   os.arch = arm64 => https://nodejs.org/dist/v{VERSION}/node-v{VERSION}-{OS}-arm64.tar.gz
+//   os.arch = x64 => https://nodejs.org/dist/v{VERSION}/node-v{VERSION}-{OS}-x64.tar.gz
 function translateArchToDistUrl(arch: string): string {
   switch (arch) {
     case 'arm':
