@@ -9,7 +9,7 @@ import * as path from 'path';
 import * as semver from 'semver';
 
 let osPlat: string = os.platform();
-let osArch: string = os.arch();
+let osArch: string = translateArchToDistUrl(os.arch());
 
 if (!tempDirectory) {
   let baseLocation;
@@ -86,13 +86,13 @@ async function queryLatestMatch(versionSpec: string): Promise<string> {
   let dataFileName: string;
   switch (osPlat) {
     case 'linux':
-      dataFileName = 'linux-' + osArch;
+      dataFileName = `linux-${osArch}`;
       break;
     case 'darwin':
-      dataFileName = 'osx-' + osArch + '-tar';
+      dataFileName = `osx-${osArch}-tar`;
       break;
     case 'win32':
-      dataFileName = 'win-' + osArch + '-exe';
+      dataFileName = `win-${osArch}-exe`;
       break;
     default:
       throw new Error(`Unexpected OS '${osPlat}'`);
@@ -150,12 +150,11 @@ async function acquireNode(version: string): Promise<string> {
   version = semver.clean(version) || '';
   let fileName: string =
     osPlat == 'win32'
-      ? 'node-v' + version + '-win-' + os.arch()
-      : 'node-v' + version + '-' + osPlat + '-' + os.arch();
+      ? `node-v${version}-win-${osArch}`
+      : `node-v${version}-${osPlat}-${osArch}`;
   let urlFileName: string =
-    osPlat == 'win32' ? fileName + '.7z' : fileName + '.tar.gz';
-
-  let downloadUrl = 'https://nodejs.org/dist/v' + version + '/' + urlFileName;
+    osPlat == 'win32' ? `${fileName}.7z` : `${fileName}.tar.gz`;
+  let downloadUrl = `https://nodejs.org/dist/v${version}/${urlFileName}`;
 
   let downloadPath: string;
 
@@ -210,8 +209,8 @@ async function acquireNodeFromFallbackLocation(
   let exeUrl: string;
   let libUrl: string;
   try {
-    exeUrl = `https://nodejs.org/dist/v${version}/win-${os.arch()}/node.exe`;
-    libUrl = `https://nodejs.org/dist/v${version}/win-${os.arch()}/node.lib`;
+    exeUrl = `https://nodejs.org/dist/v${version}/win-${osArch}/node.exe`;
+    libUrl = `https://nodejs.org/dist/v${version}/win-${osArch}/node.lib`;
 
     const exePath = await tc.downloadTool(exeUrl);
     await io.cp(exePath, path.join(tempDir, 'node.exe'));
@@ -231,4 +230,15 @@ async function acquireNodeFromFallbackLocation(
     }
   }
   return await tc.cacheDir(tempDir, 'node', version);
+}
+
+// os.arch does not always match the relative download url, e.g.
+// os.arch == 'arm' != node-v12.13.1-linux-armv7l.tar.gz
+function translateArchToDistUrl(arch: string): string {
+  switch (arch) {
+    case 'arm':
+      return 'armv7l';
+    default:
+      return arch;
+  }
 }
