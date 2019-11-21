@@ -1,4 +1,5 @@
 import * as core from '@actions/core';
+import {exec} from '@actions/exec';
 import * as installer from './installer';
 import * as auth from './authutil';
 import * as path from 'path';
@@ -33,6 +34,8 @@ async function run() {
     console.log(
       `##[add-matcher]${path.join(matchersPath, 'eslint-compact.json')}`
     );
+    await exec('npm --version');
+    await exec('yarn --version');
   } catch (error) {
     core.setFailed(error.message);
   }
