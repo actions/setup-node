@@ -19,3 +19,5 @@ inputs:
 runs:
   using: 'node12'
   main: 'lib/setup-node.js'
+- name: Setup Node.js for use with actions
+  uses: actions/setup-node@v1.1.0
