@@ -1,0 +1,17 @@
+{
+  "problemMatcher": [
+    {
+      "owner": "tslint-prose",
+      "pattern": [
+        {
+          "regexp": "^(WARNING|ERROR):\\s\\\/home\\\/runner\\\/work\\\/[^\\\/]+\\\/[^\\\/]+\\\/(\\S+):(\\d+):(\\d+)\\s-\\s(.+)$",
+          "severity": 1,
+          "file": 2,
+          "line": 3,
+          "column": 4,
+          "message": 5
+        }
+      ]
+    }
+  ]
+}
