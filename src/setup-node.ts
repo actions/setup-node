@@ -33,6 +33,9 @@ async function run() {
     console.log(
       `##[add-matcher]${path.join(matchersPath, 'eslint-compact.json')}`
     );
+    console.log(
+      `##[add-matcher]${path.join(matchersPath, 'tslint-prose.json')}`
+    );
   } catch (error) {
     core.setFailed(error.message);
   }
