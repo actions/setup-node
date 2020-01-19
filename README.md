@@ -20,7 +20,7 @@ steps:
 - uses: actions/setup-node@v1
   with:
     node-version: '10.x'
-- run: npm install
+- run: npm ci
 - run: npm test
 ```
 
@@ -39,7 +39,7 @@ jobs:
         uses: actions/setup-node@v1
         with:
           node-version: ${{ matrix.node }}
-      - run: npm install
+      - run: npm ci
       - run: npm test
 ```
 
@@ -51,7 +51,7 @@ steps:
   with:
     node-version: '10.x'
     registry-url: 'https://registry.npmjs.org'
-- run: npm install
+- run: npm ci
 - run: npm publish
   env:
     NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
@@ -93,7 +93,7 @@ steps:
     registry-url: 'https://registry.npmjs.org'
 # Skip post-install scripts here, as a malicious
 # script could steal NODE_AUTH_TOKEN.
-- run: npm install --ignore-scripts
+- run: npm ci --ignore-scripts
   env:
     NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 # `npm rebuild` will run all those post-install scripts for us.
