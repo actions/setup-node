@@ -4,7 +4,7 @@
   <a href="https://github.com/actions/setup-node"><img alt="GitHub Actions status" src="https://github.com/actions/setup-node/workflows/Main%20workflow/badge.svg"></a>
 </p>
 
-This action sets by node environment for use in actions by:
+This action sets the node environment for use in actions by:
 
 - optionally downloading and caching a version of node - npm by version spec and add to PATH
 - registering problem matchers for error output 
@@ -12,6 +12,12 @@ This action sets by node environment for use in actions by:
 # Usage
 
 See [action.yml](action.yml)
+
+You can use any valid [SemVer](https://semver.org/) range supported by the [sem-ver](https://www.npmjs.com/package/semver#ranges) module.
+
+For example [`node-version: '*'`](https://www.npmjs.com/package/semver#x-ranges-12x-1x-12-) would satisfy the latest version.
+
+See also the [`evaluateVersions`](https://github.com/actions/setup-node/blob/93313caf82afbdb49b8e4790ac7f1c97c8034826/src/installer.ts#L114) method and its usage of [`semver.satisfies`](https://github.com/actions/setup-node/blob/93313caf82afbdb49b8e4790ac7f1c97c8034826/src/installer.ts#L130)
 
 Basic:
 ```yaml
