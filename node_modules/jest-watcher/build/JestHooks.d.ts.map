@@ -1,1 +1,0 @@
-{"version":3,"file":"JestHooks.d.ts","sourceRoot":"","sources":["../src/JestHooks.ts"],"names":[],"mappings":"AAAA;;;;;GAKG;AAEH,OAAO,EACL,kBAAkB,EAClB,eAAe,EAIhB,MAAM,SAAS,CAAC;AAEjB,aAAK,cAAc,GACf,cAAc,GACd,mBAAmB,GACnB,oBAAoB,CAAC;AAEzB,cAAM,SAAS;IACb,OAAO,CAAC,UAAU,CAIhB;;IAUF,MAAM,CAAC,IAAI,EAAE,cAAc;IAI3B,aAAa,IAAI,kBAAkB;IAcnC,UAAU,IAAI,eAAe;CAmB9B;AAED,eAAe,SAAS,CAAC"}

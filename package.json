@@ -8,7 +8,9 @@
     "build": "tsc",
     "format": "prettier --write **/*.ts",
     "format-check": "prettier --check **/*.ts",
-    "test": "jest"
+    "pack": "ncc build",
+    "test": "jest",
+    "all": "npm run build && npm run format && npm run pack && npm test"
   },
   "repository": {
     "type": "git",
@@ -33,6 +35,7 @@
     "@types/jest": "^24.0.13",
     "@types/node": "^12.0.4",
     "@types/semver": "^6.0.0",
+    "@zeit/ncc": "^0.21.0",
     "jest": "^24.8.0",
     "jest-circus": "^24.7.1",
     "prettier": "^1.17.1",
