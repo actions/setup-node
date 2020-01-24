@@ -31,6 +31,10 @@ jobs:
       - name: npm test
         run: npm test
 
+      - name: Verify no unstaged changes
+        if: runner.os != 'windows'
+        run: __test__/verify-no-unstaged-changes.sh
+
   test:
     name: Test E2E
     runs-on: ubuntu-latest
