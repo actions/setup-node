@@ -32,7 +32,7 @@ jobs:
 
       - name: Verify no unstaged changes
         if: runner.os != 'windows'
-        run: __test__/verify-no-unstaged-changes.sh
+        run: __tests__/verify-no-unstaged-changes.sh
 
   test:
     runs-on: ubuntu-latest
