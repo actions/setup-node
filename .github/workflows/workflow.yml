@@ -1,25 +1,53 @@
 name: Main workflow
 on: [push]
 jobs:
-  run:
-    name: Run
+  build:
+    name: Build
     runs-on: ${{ matrix.operating-system }}
     strategy:
       matrix:
         operating-system: [ubuntu-latest, windows-latest]
     steps:
-    - uses: actions/checkout@master
-    
-    - name: Set Node.js 10.x
-      uses: actions/setup-node@master
-      with:
-        version: 10.x
+      - uses: actions/checkout@v2
+      
+      - name: Setup node 12
+        uses: actions/setup-node@v1
+        with:
+          version: 12.x
 
-    - name: npm install
-      run: npm install
+      - name: npm install
+        run: npm install
 
-    - name: Lint
-      run: npm run format-check
+      - name: Lint
+        run: npm run format-check
 
-    - name: npm test
-      run: npm test
+      - name: npm test
+        run: npm test
+
+  test:
+    name: Test E2E
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Setup node 10
+        uses: ./
+        with:
+          version: 10.x
+
+      - name: Verify node version
+        run: __tests__/verify-node-version.sh 10
+
+  test-proxy:
+    name: Test E2E with proxy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@users/ericsciple/m165proxy
+
+      - name: Setup node 10
+        uses: ./
+        with:
+          version: 10.x
+
+      - name: Verify node version
+        run: __tests__/verify-node-version.sh 10
