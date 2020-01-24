@@ -28,4 +28,3 @@ echo "Testing npm install"
 mkdir -p test-npm-install
 cd test-npm-install
 npm install @actions/core .
-cd ..
