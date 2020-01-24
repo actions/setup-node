@@ -1,6 +1,6 @@
 // Load tempDirectory before it gets wiped by tool-cache
 let tempDirectory = process.env['RUNNER_TEMPDIRECTORY'] || '';
-import * as assert from 'assert'
+import * as assert from 'assert';
 import * as core from '@actions/core';
 import * as hc from '@actions/http-client';
 import * as io from '@actions/io';
@@ -101,11 +101,17 @@ async function queryLatestMatch(versionSpec: string): Promise<string> {
 
   let versions: string[] = [];
   let dataUrl = 'https://nodejs.org/dist/index.json';
-  let httpClient = new hc.HttpClient('setup-node', [], {allowRetries: true, maxRetries: 3});
-  let response = await httpClient.get(dataUrl)
-  assert.ok(response.message.statusCode === 200, `Unexpected HTTP status code '${response.message.statusCode}'`)
-  let body = await response.readBody()
-  let nodeVersions = JSON.parse(body) as INodeVersion[]
+  let httpClient = new hc.HttpClient('setup-node', [], {
+    allowRetries: true,
+    maxRetries: 3
+  });
+  let response = await httpClient.get(dataUrl);
+  assert.ok(
+    response.message.statusCode === 200,
+    `Unexpected HTTP status code '${response.message.statusCode}'`
+  );
+  let body = await response.readBody();
+  let nodeVersions = JSON.parse(body) as INodeVersion[];
   nodeVersions.forEach((nodeVersion: INodeVersion) => {
     // ensure this version supports your os and platform
     if (nodeVersion.files.indexOf(dataFileName) >= 0) {
