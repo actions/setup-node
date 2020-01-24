@@ -45,7 +45,7 @@ jobs:
           node-version: 10.x
 
       - name: Verify node and npm
-        run: __tests__/verify-node.sh 10 5
+        run: __tests__/verify-node.sh 10
 
   test-proxy:
     runs-on: ubuntu-latest
@@ -68,7 +68,7 @@ jobs:
           node-version: 10.x
 
       - name: Verify node and npm
-        run: __tests__/verify-node.sh 10 5
+        run: __tests__/verify-node.sh 10
 
   test-bypass-proxy:
     runs-on: ubuntu-latest
@@ -84,4 +84,4 @@ jobs:
           node-version: 10.x
 
       - name: Verify node and npm
-        run: __tests__/verify-node.sh 10 5
+        run: __tests__/verify-node.sh 10
