@@ -69,3 +69,19 @@ jobs:
 
       - name: Verify node and npm
         run: __tests__/verify-node.sh 10 5
+
+  test-bypass-proxy:
+    runs-on: ubuntu-latest
+    env:
+      https_proxy: http://no-such-proxy:3128
+      no_proxy: github.com,nodejs.org,registry.npmjs.org
+    steps:
+      - uses: actions/checkout@users/ericsciple/m165proxy
+
+      - name: Setup node 10
+        uses: ./
+        with:
+          node-version: 10.x
+
+      - name: Verify node and npm
+        run: __tests__/verify-node.sh 10 5
