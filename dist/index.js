@@ -15095,7 +15095,6 @@ function run() {
                 version = core.getInput('node-version');
             }
             if (version) {
-                // TODO: installer doesn't support proxy
                 yield installer.getNode(version);
             }
             const registryUrl = core.getInput('registry-url');
@@ -15103,7 +15102,6 @@ function run() {
             if (registryUrl) {
                 auth.configAuthentication(registryUrl, alwaysAuth);
             }
-            // TODO: setup proxy from runner proxy config
             const matchersPath = path.join(__dirname, '..', '.github');
             console.log(`##[add-matcher]${path.join(matchersPath, 'tsc.json')}`);
             console.log(`##[add-matcher]${path.join(matchersPath, 'eslint-stylish.json')}`);

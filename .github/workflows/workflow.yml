@@ -9,7 +9,6 @@ on:
 
 jobs:
   build:
-    name: Build
     runs-on: ${{ matrix.operating-system }}
     strategy:
       matrix:
@@ -36,7 +35,6 @@ jobs:
         run: __test__/verify-no-unstaged-changes.sh
 
   test:
-    name: Test E2E
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -46,11 +44,10 @@ jobs:
         with:
           node-version: 10.x
 
-      - name: Verify node version
-        run: __tests__/verify-node-version.sh 10
+      - name: Verify node and npm
+        run: __tests__/verify-node.sh 10 5
 
   test-proxy:
-    name: Test E2E with proxy
     runs-on: ubuntu-latest
     container:
       image: ubuntu:latest
@@ -70,5 +67,5 @@ jobs:
         with:
           node-version: 10.x
 
-      - name: Verify node version
-        run: __tests__/verify-node-version.sh 10
+      - name: Verify node and npm
+        run: __tests__/verify-node.sh 10 5
