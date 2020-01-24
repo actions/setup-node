@@ -49,7 +49,7 @@ jobs:
     name: Test E2E with proxy
     runs-on: ubuntu-latest
     container:
-      image: alpine/git:latest
+      image: alpine:latest
       options: --dns 127.0.0.1
     services:
       squid-proxy:
