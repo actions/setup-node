@@ -20,7 +20,7 @@ jobs:
       - name: Setup node 12
         uses: actions/setup-node@v1
         with:
-          version: 12.x
+          node-version: 12.x
 
       - name: npm install
         run: npm install
@@ -40,7 +40,7 @@ jobs:
       - name: Setup node 10
         uses: ./
         with:
-          version: 10.x
+          node-version: 10.x
 
       - name: Verify node version
         run: __tests__/verify-node-version.sh 10
@@ -48,13 +48,23 @@ jobs:
   test-proxy:
     name: Test E2E with proxy
     runs-on: ubuntu-latest
+    container:
+      image: alpine/git:latest
+      options: --dns 127.0.0.1
+    services:
+      squid-proxy:
+        image: datadog/squid:latest
+        ports:
+          - 3128:3128
+    env:
+      https_proxy: http://squid-proxy:3128
     steps:
       - uses: actions/checkout@users/ericsciple/m165proxy
 
       - name: Setup node 10
         uses: ./
         with:
-          version: 10.x
+          node-version: 10.x
 
       - name: Verify node version
         run: __tests__/verify-node-version.sh 10
