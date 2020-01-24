@@ -15,4 +15,5 @@ fi
 echo "Testing npm install"
 mkdir -p test-npm-install
 cd test-npm-install
-npm install @actions/core .
+npm init -y || exit 1
+npm install @actions/core || exit 1
