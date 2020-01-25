@@ -22,6 +22,7 @@ jobs:
       - run: npm install
       - run: npm run format-check
       - run: npm run pack
+        if: runner.os != 'windows'
       - run: npm test
       - name: Verify no unstaged changes
         if: runner.os != 'windows'
@@ -32,7 +33,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Clear tool cache
-        run: rm -rf $RUNNER_TOOL_CACHE && mkdir $RUNNER_TOOL_CACHE
+        run: rm -rf $RUNNER_TOOL_CACHE/*
       - name: Setup node 10
         uses: ./
         with:
@@ -55,7 +56,7 @@ jobs:
     steps:
       - uses: actions/checkout@users/ericsciple/m165proxy
       - name: Clear tool cache
-        run: rm -rf $RUNNER_TOOL_CACHE && mkdir $RUNNER_TOOL_CACHE
+        run: rm -rf $RUNNER_TOOL_CACHE/*
       - name: Setup node 10
         uses: ./
         with:
@@ -71,7 +72,7 @@ jobs:
     steps:
       - uses: actions/checkout@users/ericsciple/m165proxy
       - name: Clear tool cache
-        run: rm -rf $RUNNER_TOOL_CACHE && mkdir $RUNNER_TOOL_CACHE
+        run: rm -rf $RUNNER_TOOL_CACHE/*
       - name: Setup node 10
         uses: ./
         with:
