@@ -14,7 +14,6 @@ async function run() {
       version = core.getInput('node-version');
     }
     if (version) {
-      // TODO: installer doesn't support proxy
       await installer.getNode(version);
     }
 
@@ -24,7 +23,6 @@ async function run() {
       auth.configAuthentication(registryUrl, alwaysAuth);
     }
 
-    // TODO: setup proxy from runner proxy config
     const matchersPath = path.join(__dirname, '..', '.github');
     console.log(`##[add-matcher]${path.join(matchersPath, 'tsc.json')}`);
     console.log(

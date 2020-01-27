@@ -18,4 +18,4 @@ inputs:
     deprecationMessage: 'The version property will not be supported after October 1, 2019. Use node-version instead'
 runs:
   using: 'node12'
-  main: 'lib/setup-node.js'
+  main: 'dist/index.js'
