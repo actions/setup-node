@@ -105,13 +105,8 @@ async function queryLatestMatch(versionSpec: string): Promise<string> {
     allowRetries: true,
     maxRetries: 3
   });
-  let response = await httpClient.get(dataUrl);
-  assert.ok(
-    response.message.statusCode === 200,
-    `Unexpected HTTP status code '${response.message.statusCode}'`
-  );
-  let body = await response.readBody();
-  let nodeVersions = JSON.parse(body) as INodeVersion[];
+  let response = await httpClient.getJson<INodeVersion[]>(dataUrl);
+  let nodeVersions = response.result || [];
   nodeVersions.forEach((nodeVersion: INodeVersion) => {
     // ensure this version supports your os and platform
     if (nodeVersion.files.indexOf(dataFileName) >= 0) {
