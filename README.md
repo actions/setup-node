@@ -16,7 +16,7 @@ See [action.yml](action.yml)
 Basic:
 ```yaml
 steps:
-- uses: actions/checkout@v1
+- uses: actions/checkout@v2
 - uses: actions/setup-node@v1
   with:
     node-version: '10.x'
@@ -34,7 +34,7 @@ jobs:
         node: [ '10', '8' ]
     name: Node ${{ matrix.node }} sample
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v2
       - name: Setup node
         uses: actions/setup-node@v1
         with:
@@ -46,7 +46,7 @@ jobs:
 Publish to npmjs and GPR with npm:
 ```yaml
 steps:
-- uses: actions/checkout@v1
+- uses: actions/checkout@v2
 - uses: actions/setup-node@v1
   with:
     node-version: '10.x'
@@ -66,7 +66,7 @@ steps:
 Publish to npmjs and GPR with yarn:
 ```yaml
 steps:
-- uses: actions/checkout@v1
+- uses: actions/checkout@v2
 - uses: actions/setup-node@v1
   with:
     node-version: '10.x'
@@ -86,7 +86,7 @@ steps:
 Use private packages:
 ```yaml
 steps:
-- uses: actions/checkout@v1
+- uses: actions/checkout@v2
 - uses: actions/setup-node@v1
   with:
     node-version: '10.x'
