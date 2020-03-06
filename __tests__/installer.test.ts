@@ -1,39 +1,39 @@
-import io = require('@actions/io');
-import fs = require('fs');
-import os = require('os');
-import path = require('path');
-
-const toolDir = path.join(
-  __dirname,
-  'runner',
-  path.join(
-    Math.random()
-      .toString(36)
-      .substring(7)
-  ),
-  'tools'
-);
-const tempDir = path.join(
-  __dirname,
-  'runner',
-  path.join(
-    Math.random()
-      .toString(36)
-      .substring(7)
-  ),
-  'temp'
-);
-
-process.env['RUNNER_TOOL_CACHE'] = toolDir;
-process.env['RUNNER_TEMP'] = tempDir;
+import * as io from '@actions/io';
+import * as tc from '@actions/tool-cache';
+import * as fs from 'fs';
+import * as os from 'os';
+import * as path from 'path';
 import * as installer from '../src/installer';
 
-const IS_WINDOWS = process.platform === 'win32';
+const isWindows = process.platform === 'win32';
+let toolDir: string;
 
 describe('installer tests', () => {
   beforeAll(async () => {
+    toolDir = path.join(
+      __dirname,
+      'runner',
+      path.join(
+        Math.random()
+          .toString(36)
+          .substring(7)
+      ),
+      'tools'
+    );
+    const tempDir = path.join(
+      __dirname,
+      'runner',
+      path.join(
+        Math.random()
+          .toString(36)
+          .substring(7)
+      ),
+      'temp'
+    );
     await io.rmRF(toolDir);
     await io.rmRF(tempDir);
+    process.env['RUNNER_TOOL_CACHE'] = toolDir;
+    process.env['RUNNER_TEMP'] = tempDir;
   }, 100000);
 
   it('Acquires version of node if no matching version is installed', async () => {
@@ -41,14 +41,14 @@ describe('installer tests', () => {
     const nodeDir = path.join(toolDir, 'node', '10.16.0', os.arch());
 
     expect(fs.existsSync(`${nodeDir}.complete`)).toBe(true);
-    if (IS_WINDOWS) {
+    if (isWindows) {
       expect(fs.existsSync(path.join(nodeDir, 'node.exe'))).toBe(true);
     } else {
       expect(fs.existsSync(path.join(nodeDir, 'bin', 'node'))).toBe(true);
     }
   }, 100000);
 
-  if (IS_WINDOWS) {
+  if (isWindows) {
     it('Falls back to backup location if first one doesnt contain correct version', async () => {
       await installer.getNode('5.10.1');
       const nodeDir = path.join(toolDir, 'node', '5.10.1', os.arch());
@@ -81,7 +81,7 @@ describe('installer tests', () => {
     const nodeDir = path.join(toolDir, 'node', '8.8.1', os.arch());
 
     expect(fs.existsSync(`${nodeDir}.complete`)).toBe(true);
-    if (IS_WINDOWS) {
+    if (isWindows) {
       expect(fs.existsSync(path.join(nodeDir, 'node.exe'))).toBe(true);
     } else {
       expect(fs.existsSync(path.join(nodeDir, 'bin', 'node'))).toBe(true);
