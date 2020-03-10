@@ -1,5 +1,3 @@
-// Load tempDirectory before it gets wiped by tool-cache
-let tempDirectory = process.env['RUNNER_TEMPDIRECTORY'] || '';
 import * as assert from 'assert';
 import * as core from '@actions/core';
 import * as hc from '@actions/http-client';
@@ -11,21 +9,6 @@ import * as semver from 'semver';
 
 let osPlat: string = os.platform();
 let osArch: string = translateArchToDistUrl(os.arch());
-
-if (!tempDirectory) {
-  let baseLocation;
-  if (process.platform === 'win32') {
-    // On windows use the USERPROFILE env variable
-    baseLocation = process.env['USERPROFILE'] || 'C:\\';
-  } else {
-    if (process.platform === 'darwin') {
-      baseLocation = '/Users';
-    } else {
-      baseLocation = '/home';
-    }
-  }
-  tempDirectory = path.join(baseLocation, 'actions', 'temp');
-}
 
 //
 // Node versions interface
@@ -206,9 +189,11 @@ async function acquireNodeFromFallbackLocation(
   version: string
 ): Promise<string> {
   // Create temporary folder to download in to
-  let tempDownloadFolder: string =
+  const tempDownloadFolder: string =
     'temp_' + Math.floor(Math.random() * 2000000000);
-  let tempDir: string = path.join(tempDirectory, tempDownloadFolder);
+  const tempDirectory = process.env['RUNNER_TEMP'] || '';
+  assert.ok(tempDirectory, 'Expected RUNNER_TEMP to be defined');
+  const tempDir: string = path.join(tempDirectory, tempDownloadFolder);
   await io.mkdirP(tempDir);
   let exeUrl: string;
   let libUrl: string;

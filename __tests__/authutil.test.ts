@@ -1,28 +1,27 @@
-import io = require('@actions/io');
-import fs = require('fs');
-import path = require('path');
-
-const tempDir = path.join(
-  __dirname,
-  'runner',
-  path.join(
-    Math.random()
-      .toString(36)
-      .substring(7)
-  ),
-  'temp'
-);
-
-const rcFile = path.join(tempDir, '.npmrc');
-
-process.env['GITHUB_REPOSITORY'] = 'OwnerName/repo';
-process.env['RUNNER_TEMP'] = tempDir;
+import * as io from '@actions/io';
+import * as fs from 'fs';
+import * as path from 'path';
 import * as auth from '../src/authutil';
+
+let rcFile: string;
 
 describe('installer tests', () => {
   beforeAll(async () => {
+    const tempDir = path.join(
+      __dirname,
+      'runner',
+      path.join(
+        Math.random()
+          .toString(36)
+          .substring(7)
+      ),
+      'temp'
+    );
     await io.rmRF(tempDir);
     await io.mkdirP(tempDir);
+    process.env['GITHUB_REPOSITORY'] = 'OwnerName/repo';
+    process.env['RUNNER_TEMP'] = tempDir;
+    rcFile = path.join(tempDir, '.npmrc');
   }, 100000);
 
   beforeEach(() => {

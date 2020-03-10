@@ -40,6 +40,20 @@ jobs:
       - name: Verify node and npm
         run: __tests__/verify-node.sh 10
 
+  test-fallback:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Clear tool cache
+        run: mv "${{ runner.tool_cache }}" "${{ runner.tool_cache }}.old"
+      - name: Setup node 0.12.18 # For non LTS versions of Node, the zip is not always available
+        uses: ./                 # and falls back to downloading node.exe and node.lib
+        with:
+          node-version: 0.12.18
+      - name: Verify node
+        shell: bash
+        run: __tests__/verify-node.sh 0.12.18 SKIP_NPM
+
   test-proxy:
     runs-on: ubuntu-latest
     container:
