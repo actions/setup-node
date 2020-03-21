@@ -19,7 +19,7 @@ steps:
 - uses: actions/checkout@v2
 - uses: actions/setup-node@v1
   with:
-    node-version: '10.x'
+    node-version: '12.x'
 - run: npm install
 - run: npm test
 ```
@@ -31,7 +31,7 @@ jobs:
     runs-on: ubuntu-16.04
     strategy:
       matrix:
-        node: [ '10', '8' ]
+        node: [ '12', '10', '8' ]
     name: Node ${{ matrix.node }} sample
     steps:
       - uses: actions/checkout@v2
