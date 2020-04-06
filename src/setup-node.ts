@@ -13,8 +13,11 @@ async function run() {
     if (!version) {
       version = core.getInput('node-version');
     }
+
+    let mirrorUrl = core.getInput('mirror');
+
     if (version) {
-      await installer.getNode(version);
+      await installer.getNode(version, mirrorUrl);
     }
 
     const registryUrl: string = core.getInput('registry-url');

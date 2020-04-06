@@ -8,6 +8,9 @@ inputs:
   node-version:
     description: 'Version Spec of the version to use.  Examples: 10.x, 10.15.1, >=10.15.0'
     default: '10.x'
+  mirror:
+    description: 'Optional mirror to download binaries from'
+    default: 'https://nodejs.org/dist/'
   registry-url:
     description: 'Optional registry to set up for auth. Will set the registry in a project level .npmrc and .yarnrc file, and set up auth to read in from env.NODE_AUTH_TOKEN'
   scope:
