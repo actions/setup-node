@@ -10,11 +10,7 @@ describe('installer tests', () => {
     const tempDir = path.join(
       __dirname,
       'runner',
-      path.join(
-        Math.random()
-          .toString(36)
-          .substring(7)
-      ),
+      path.join(Math.random().toString(36).substring(7)),
       'temp'
     );
     await io.rmRF(tempDir);
