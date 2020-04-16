@@ -20,7 +20,6 @@ async function run() {
     }
 
     // Output version of node and npm that are being used
-    console.log(`Installed Node version '${version}.`);
     const nodePath = await io.which('node');
     const nodeVersion = cp.execSync(`${nodePath} --version`);
     console.log(`Node Version: ${nodeVersion}`);

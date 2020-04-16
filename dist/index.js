@@ -15224,7 +15224,6 @@ function run() {
                 yield installer.getNode(version);
             }
             // Output version of node and npm that are being used
-            console.log(`Installed Node version '${version}.`);
             const nodePath = yield io.which('node');
             const nodeVersion = child_process_1.default.execSync(`${nodePath} --version`);
             console.log(`Node Version: ${nodeVersion}`);
