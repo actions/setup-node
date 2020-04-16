@@ -1,7 +1,9 @@
 import * as core from '@actions/core';
+import * as io from '@actions/io';
 import * as installer from './installer';
 import * as auth from './authutil';
 import * as path from 'path';
+import cp from 'child_process';
 
 async function run() {
   try {
@@ -16,6 +18,16 @@ async function run() {
     if (version) {
       await installer.getNode(version);
     }
+
+    // Output version of node and npm that are being used
+    console.log(`Installed Node version '${version}.`);
+    const nodePath = await io.which('node');
+    const nodeVersion = cp.execSync(`${nodePath} --version`);
+    console.log(`Node Version: ${nodeVersion}`);
+
+    const npmPath = await io.which('npm');
+    const npmVersion = cp.execSync(`${npmPath} --version`);
+    console.log(`npm Version: ${npmVersion}`);
 
     const registryUrl: string = core.getInput('registry-url');
     const alwaysAuth: string = core.getInput('always-auth');
