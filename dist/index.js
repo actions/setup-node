@@ -15225,12 +15225,12 @@ function run() {
             }
             // Output version of node and npm that are being used
             const nodePath = yield io.which('node');
-            const nodeVersion = child_process_1.default.execSync(`${nodePath} --version`);
+            const nodeVersion = child_process_1.default.execSync(`"${nodePath}" --version`);
             console.log(`Node Version: ${nodeVersion}`);
             const npmPath = yield io.which('npm');
             // Older versions of Node don't include npm
             if (npmPath) {
-                const npmVersion = child_process_1.default.execSync(`${npmPath} --version`);
+                const npmVersion = child_process_1.default.execSync(`"${npmPath}" --version`);
                 console.log(`npm Version: ${npmVersion}`);
             }
             const registryUrl = core.getInput('registry-url');

@@ -21,13 +21,13 @@ async function run() {
 
     // Output version of node and npm that are being used
     const nodePath = await io.which('node');
-    const nodeVersion = cp.execSync(`${nodePath} --version`);
+    const nodeVersion = cp.execSync(`"${nodePath}" --version`);
     console.log(`Node Version: ${nodeVersion}`);
 
     const npmPath = await io.which('npm');
     // Older versions of Node don't include npm
     if (npmPath) {
-      const npmVersion = cp.execSync(`${npmPath} --version`);
+      const npmVersion = cp.execSync(`"${npmPath}" --version`);
       console.log(`npm Version: ${npmVersion}`);
     }
 
