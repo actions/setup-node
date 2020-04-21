@@ -15199,16 +15199,12 @@ var __importStar = (this && this.__importStar) || function (mod) {
     result["default"] = mod;
     return result;
 };
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 const core = __importStar(__webpack_require__(470));
-const io = __importStar(__webpack_require__(1));
+const exec = __importStar(__webpack_require__(986));
 const installer = __importStar(__webpack_require__(749));
 const auth = __importStar(__webpack_require__(202));
 const path = __importStar(__webpack_require__(622));
-const child_process_1 = __importDefault(__webpack_require__(129));
 function run() {
     return __awaiter(this, void 0, void 0, function* () {
         try {
@@ -15224,15 +15220,11 @@ function run() {
                 yield installer.getNode(version);
             }
             // Output version of node and npm that are being used
-            const nodePath = yield io.which('node');
-            const nodeVersion = child_process_1.default.execSync(`"${nodePath}" --version`);
-            console.log(`Node Version: ${nodeVersion}`);
-            const npmPath = yield io.which('npm');
-            // Older versions of Node don't include npm
-            if (npmPath) {
-                const npmVersion = child_process_1.default.execSync(`"${npmPath}" --version`);
-                console.log(`npm Version: ${npmVersion}`);
-            }
+            const nodeVersion = exec.exec(`"$ --version`);
+            // Older versions of Node don't include npm, so don't let this call fail
+            const npmVersion = exec.exec(`npm --version`, undefined, {
+                ignoreReturnCode: true
+            });
             const registryUrl = core.getInput('registry-url');
             const alwaysAuth = core.getInput('always-auth');
             if (registryUrl) {

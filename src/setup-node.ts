@@ -1,9 +1,9 @@
 import * as core from '@actions/core';
+import * as exec from '@actions/exec';
 import * as io from '@actions/io';
 import * as installer from './installer';
 import * as auth from './authutil';
 import * as path from 'path';
-import cp from 'child_process';
 
 async function run() {
   try {
@@ -20,16 +20,12 @@ async function run() {
     }
 
     // Output version of node and npm that are being used
-    const nodePath = await io.which('node');
-    const nodeVersion = cp.execSync(`"${nodePath}" --version`);
-    console.log(`Node Version: ${nodeVersion}`);
+    const nodeVersion = exec.exec(`"$ --version`);
 
-    const npmPath = await io.which('npm');
-    // Older versions of Node don't include npm
-    if (npmPath) {
-      const npmVersion = cp.execSync(`"${npmPath}" --version`);
-      console.log(`npm Version: ${npmVersion}`);
-    }
+    // Older versions of Node don't include npm, so don't let this call fail
+    const npmVersion = exec.exec(`npm --version`, undefined, {
+      ignoreReturnCode: true
+    });
 
     const registryUrl: string = core.getInput('registry-url');
     const alwaysAuth: string = core.getInput('always-auth');
