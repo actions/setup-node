@@ -1,4 +1,6 @@
 import * as core from '@actions/core';
+import * as exec from '@actions/exec';
+import * as io from '@actions/io';
 import * as installer from './installer';
 import * as auth from './authutil';
 import * as path from 'path';
@@ -16,6 +18,14 @@ async function run() {
     if (version) {
       await installer.getNode(version);
     }
+
+    // Output version of node and npm that are being used
+    await exec.exec('node', ['--version']);
+
+    // Older versions of Node don't include npm, so don't let this call fail
+    await exec.exec('npm', ['--version'], {
+      ignoreReturnCode: true
+    });
 
     const registryUrl: string = core.getInput('registry-url');
     const alwaysAuth: string = core.getInput('always-auth');

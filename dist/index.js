@@ -15201,6 +15201,7 @@ var __importStar = (this && this.__importStar) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const core = __importStar(__webpack_require__(470));
+const exec = __importStar(__webpack_require__(986));
 const installer = __importStar(__webpack_require__(749));
 const auth = __importStar(__webpack_require__(202));
 const path = __importStar(__webpack_require__(622));
@@ -15218,6 +15219,12 @@ function run() {
             if (version) {
                 yield installer.getNode(version);
             }
+            // Output version of node and npm that are being used
+            yield exec.exec('node', ['--version']);
+            // Older versions of Node don't include npm, so don't let this call fail
+            yield exec.exec('npm', ['--version'], {
+                ignoreReturnCode: true
+            });
             const registryUrl = core.getInput('registry-url');
             const alwaysAuth = core.getInput('always-auth');
             if (registryUrl) {
