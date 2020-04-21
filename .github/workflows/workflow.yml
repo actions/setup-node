@@ -28,7 +28,10 @@ jobs:
         run: __tests__/verify-no-unstaged-changes.sh
 
   test:
-    runs-on: ubuntu-latest
+    runs-on: [ubuntu-latest, windows-latest]
+    defaults:
+      run:
+        shell: bash
     steps:
       - uses: actions/checkout@v2
       - name: Clear tool cache
