@@ -20,10 +20,10 @@ async function run() {
     }
 
     // Output version of node and npm that are being used
-    exec.exec('node', ['--version']);
+    await exec.exec('node', ['--version']);
 
     // Older versions of Node don't include npm, so don't let this call fail
-    exec.exec('npm', ['--version'], {
+    await exec.exec('npm', ['--version'], {
       ignoreReturnCode: true
     });
 
