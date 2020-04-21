@@ -15220,9 +15220,9 @@ function run() {
                 yield installer.getNode(version);
             }
             // Output version of node and npm that are being used
-            const nodeVersion = exec.exec(`"$ --version`);
+            exec.exec('node', ['--version']);
             // Older versions of Node don't include npm, so don't let this call fail
-            const npmVersion = exec.exec(`npm --version`, undefined, {
+            exec.exec('npm', ['--version'], {
                 ignoreReturnCode: true
             });
             const registryUrl = core.getInput('registry-url');
