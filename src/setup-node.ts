@@ -25,8 +25,11 @@ async function run() {
     console.log(`Node Version: ${nodeVersion}`);
 
     const npmPath = await io.which('npm');
-    const npmVersion = cp.execSync(`${npmPath} --version`);
-    console.log(`npm Version: ${npmVersion}`);
+    // Older versions of Node don't include npm
+    if (npmPath) {
+      const npmVersion = cp.execSync(`${npmPath} --version`);
+      console.log(`npm Version: ${npmVersion}`);
+    }
 
     const registryUrl: string = core.getInput('registry-url');
     const alwaysAuth: string = core.getInput('always-auth');

@@ -15228,8 +15228,11 @@ function run() {
             const nodeVersion = child_process_1.default.execSync(`${nodePath} --version`);
             console.log(`Node Version: ${nodeVersion}`);
             const npmPath = yield io.which('npm');
-            const npmVersion = child_process_1.default.execSync(`${npmPath} --version`);
-            console.log(`npm Version: ${npmVersion}`);
+            // Older versions of Node don't include npm
+            if (npmPath) {
+                const npmVersion = child_process_1.default.execSync(`${npmPath} --version`);
+                console.log(`npm Version: ${npmVersion}`);
+            }
             const registryUrl = core.getInput('registry-url');
             const alwaysAuth = core.getInput('always-auth');
             if (registryUrl) {
