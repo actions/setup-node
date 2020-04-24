@@ -1,4 +1,4 @@
-# setup-node
+# setup-node servicing v1
 
 <p align="left">
   <a href="https://github.com/actions/setup-node"><img alt="GitHub Actions status" src="https://github.com/actions/setup-node/workflows/Main%20workflow/badge.svg"></a>
