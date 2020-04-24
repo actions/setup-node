@@ -9,12 +9,16 @@ async function run() {
     // Version is optional.  If supplied, install / use from the tool cache
     // If not supplied then task is still used to setup proxy, auth, etc...
     //
-    let version = core.getInput('version');
+    let version = core.getInput('node-version');
     if (!version) {
-      version = core.getInput('node-version');
+      version = core.getInput('version');  
     }
+
+    console.log(`version: ${version}`);
     if (version) {
-      await installer.getNode(version);
+      let token = core.getInput('token');
+      let stable = (core.getInput('stable') || 'true').toUpperCase() === 'TRUE';
+      await installer.getNode(version, stable, token);
     }
 
     const registryUrl: string = core.getInput('registry-url');

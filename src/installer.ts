@@ -6,6 +6,7 @@ import * as tc from '@actions/tool-cache';
 import * as os from 'os';
 import * as path from 'path';
 import * as semver from 'semver';
+import { Url } from 'url';
 
 let osPlat: string = os.platform();
 let osArch: string = translateArchToDistUrl(os.arch());
@@ -19,36 +20,64 @@ interface INodeVersion {
   files: string[];
 }
 
-export async function getNode(versionSpec: string) {
+interface INodeVersionInfo {
+  downloadUrl: string;
+  token: string | null;
+  resolvedVersion: string;
+  fileName: string;
+}
+
+export async function getNode(versionSpec: string, stable: boolean, token: string) {
   // check cache
+  let info: INodeVersionInfo | null = null;
   let toolPath: string;
   toolPath = tc.find('node', versionSpec);
 
   // If not found in cache, download
-  if (!toolPath) {
-    let version: string;
-    const c = semver.clean(versionSpec) || '';
-    // If explicit version
-    if (semver.valid(c) != null) {
-      // version to download
-      version = versionSpec;
-    } else {
-      // query nodejs.org for a matching version
-      version = await queryLatestMatch(versionSpec);
-      if (!version) {
-        throw new Error(
-          `Unable to find Node version '${versionSpec}' for platform ${osPlat} and architecture ${osArch}.`
-        );
+  if (toolPath) {
+    console.log(`Found in cache @ ${toolPath}`);
+  } else {
+    console.log(`Attempting to download ${versionSpec}...`)
+    let info = await getInfoFromManifest(versionSpec, stable, token);
+    if (!info) {
+      console.log('Not found in manifest.  Falling back to download directly from Node')
+      info = await getInfoFromDist(versionSpec);
+    }   
+  
+    if (!info) {
+      throw new Error(
+        `Unable to find Node version '${versionSpec}' for platform ${osPlat} and architecture ${osArch}.`
+      );
+    }
+
+    console.log(`Acquiring ${info.resolvedVersion} from ${info.downloadUrl}`);
+
+    let downloadPath = ""
+    try {
+      downloadPath = await tc.downloadTool(info.downloadUrl, undefined, token);
+    } catch (err) {
+      if (err instanceof tc.HTTPError && err.httpStatusCode == 404) {
+        return await acquireNodeFromFallbackLocation(info.resolvedVersion);
       }
 
-      // check cache
-      toolPath = tc.find('node', version);
+      throw err;
     }
 
-    if (!toolPath) {
-      // download, extract, cache
-      toolPath = await acquireNode(version);
+    //
+    // Extract
+    //
+    let extPath: string;
+    if (osPlat == 'win32') {
+      let _7zPath = path.join(__dirname, '..', 'externals', '7zr.exe');
+      extPath = await tc.extract7z(downloadPath, undefined, _7zPath);
+    } else {
+      extPath = await tc.extractTar(downloadPath);
     }
+
+    //
+    // Install into the local tool cache - node extracts with a root folder that matches the fileName downloaded
+    //
+    toolPath = await tc.cacheDir(extPath, 'node', info.resolvedVersion);    
   }
 
   //
@@ -65,7 +94,87 @@ export async function getNode(versionSpec: string) {
   core.addPath(toolPath);
 }
 
-async function queryLatestMatch(versionSpec: string): Promise<string> {
+async function getInfoFromManifest(versionSpec: string, stable: boolean, token: string): Promise<INodeVersionInfo | null> {
+  let info: INodeVersionInfo | null = null;
+  const releases = await tc.getManifestFromRepo("actions", "node-versions", token)
+  console.log(`matching ${versionSpec}...`)
+  const rel = await tc.findFromManifest(versionSpec, stable, releases);
+  
+  if (rel && rel.files.length > 0) {
+    info = <INodeVersionInfo>{};
+    info.resolvedVersion = rel.version;
+    info.downloadUrl = rel.files[0].download_url;
+    info.fileName = rel.files[0].filename;
+    info.token = token;
+  }
+
+  return info;
+}
+
+async function getInfoFromDist(versionSpec: string): Promise<INodeVersionInfo | null> {
+  let info: INodeVersionInfo | null = null;
+  let version: string;
+  
+  // If explicit version don't query
+  if (semver.clean(versionSpec) != null) {
+    // version to download
+    version = versionSpec;
+  } else {
+    // query nodejs.org for a matching version
+    version = await queryDistForMatch(versionSpec);
+    if (!version) {
+      return null;
+    }
+  }
+
+  //
+  // Download - a tool installer intimately knows how to get the tool (and construct urls)
+  //
+  version = semver.clean(version) || '';
+  let fileName: string =
+    osPlat == 'win32'
+      ? `node-v${version}-win-${osArch}`
+      : `node-v${version}-${osPlat}-${osArch}`;
+  let urlFileName: string =
+    osPlat == 'win32' ? `${fileName}.7z` : `${fileName}.tar.gz`;
+  let url = `https://nodejs.org/dist/v${version}/${urlFileName}`;
+
+  return <INodeVersionInfo>{
+    downloadUrl: url,
+    resolvedVersion: version,
+    fileName: fileName
+  }
+}
+
+// TODO - should we just export this from @actions/tool-cache? Lifted directly from there
+function evaluateVersions(versions: string[], versionSpec: string): string {
+  let version = '';
+  core.debug(`evaluating ${versions.length} versions`);
+  versions = versions.sort((a, b) => {
+    if (semver.gt(a, b)) {
+      return 1;
+    }
+    return -1;
+  });
+  for (let i = versions.length - 1; i >= 0; i--) {
+    const potential: string = versions[i];
+    const satisfied: boolean = semver.satisfies(potential, versionSpec);
+    if (satisfied) {
+      version = potential;
+      break;
+    }
+  }
+
+  if (version) {
+    core.debug(`matched: ${version}`);
+  } else {
+    core.debug('match not found');
+  }
+
+  return version;
+}
+
+async function queryDistForMatch(versionSpec: string): Promise<string> {
   // node offers a json list of versions
   let dataFileName: string;
   switch (osPlat) {
@@ -100,77 +209,6 @@ async function queryLatestMatch(versionSpec: string): Promise<string> {
   // get the latest version that matches the version spec
   let version: string = evaluateVersions(versions, versionSpec);
   return version;
-}
-
-// TODO - should we just export this from @actions/tool-cache? Lifted directly from there
-function evaluateVersions(versions: string[], versionSpec: string): string {
-  let version = '';
-  core.debug(`evaluating ${versions.length} versions`);
-  versions = versions.sort((a, b) => {
-    if (semver.gt(a, b)) {
-      return 1;
-    }
-    return -1;
-  });
-  for (let i = versions.length - 1; i >= 0; i--) {
-    const potential: string = versions[i];
-    const satisfied: boolean = semver.satisfies(potential, versionSpec);
-    if (satisfied) {
-      version = potential;
-      break;
-    }
-  }
-
-  if (version) {
-    core.debug(`matched: ${version}`);
-  } else {
-    core.debug('match not found');
-  }
-
-  return version;
-}
-
-async function acquireNode(version: string): Promise<string> {
-  //
-  // Download - a tool installer intimately knows how to get the tool (and construct urls)
-  //
-  version = semver.clean(version) || '';
-  let fileName: string =
-    osPlat == 'win32'
-      ? `node-v${version}-win-${osArch}`
-      : `node-v${version}-${osPlat}-${osArch}`;
-  let urlFileName: string =
-    osPlat == 'win32' ? `${fileName}.7z` : `${fileName}.tar.gz`;
-  let downloadUrl = `https://nodejs.org/dist/v${version}/${urlFileName}`;
-
-  let downloadPath: string;
-
-  try {
-    downloadPath = await tc.downloadTool(downloadUrl);
-  } catch (err) {
-    if (err instanceof tc.HTTPError && err.httpStatusCode == 404) {
-      return await acquireNodeFromFallbackLocation(version);
-    }
-
-    throw err;
-  }
-
-  //
-  // Extract
-  //
-  let extPath: string;
-  if (osPlat == 'win32') {
-    let _7zPath = path.join(__dirname, '..', 'externals', '7zr.exe');
-    extPath = await tc.extract7z(downloadPath, undefined, _7zPath);
-  } else {
-    extPath = await tc.extractTar(downloadPath);
-  }
-
-  //
-  // Install into the local tool cache - node extracts with a root folder that matches the fileName downloaded
-  //
-  let toolRoot = path.join(extPath, fileName);
-  return await tc.cacheDir(toolRoot, 'node', version);
 }
 
 // For non LTS versions of Node, the files we need (for Windows) are sometimes located
