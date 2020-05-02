@@ -1,3 +1,4 @@
+import os = require('os');
 import * as fs from 'fs';
 import * as path from 'path';
 import * as core from '@actions/core';
@@ -62,20 +63,35 @@ describe('authutil tests', () => {
     }
   }, 100000);
 
+  function readRcFile(rcFile: string) {
+    let rc = {};
+    let contents = fs.readFileSync(rcFile, {encoding: 'utf8'});
+    for (const line of contents.split(os.EOL)) {
+      let parts = line.split('=');
+      if (parts.length == 2) {
+        rc[parts[0].trim()] = parts[1].trim();
+      }
+    }
+    return rc;
+  }
+
   it('Sets up npmrc for npmjs', async () => {
     await auth.configAuthentication('https://registry.npmjs.org/', 'false');
 
     expect(fs.statSync(rcFile)).toBeDefined();
     let contents = fs.readFileSync(rcFile, {encoding: 'utf8'});
-    dbg(contents);
-    expect(contents).toMatchSnapshot();
+    let rc = readRcFile(rcFile);
+    expect(rc["registry"]).toBe("https://registry.npmjs.org/");
+    expect(rc["always-auth"]).toBe("false");
   });
 
   it('Appends trailing slash to registry', async () => {
     await auth.configAuthentication('https://registry.npmjs.org', 'false');
 
     expect(fs.statSync(rcFile)).toBeDefined();
-    expect(fs.readFileSync(rcFile, {encoding: 'utf8'})).toMatchSnapshot();
+    let rc = readRcFile(rcFile);
+    expect(rc["registry"]).toBe("https://registry.npmjs.org/");
+    expect(rc["always-auth"]).toBe("false");
   });
 
   it('Configures scoped npm registries', async () => {
@@ -83,19 +99,25 @@ describe('authutil tests', () => {
     await auth.configAuthentication('https://registry.npmjs.org', 'false');
 
     expect(fs.statSync(rcFile)).toBeDefined();
-    expect(fs.readFileSync(rcFile, {encoding: 'utf8'})).toMatchSnapshot();
+    let rc = readRcFile(rcFile);
+    expect(rc["@myscope:registry"]).toBe("https://registry.npmjs.org/");
+    expect(rc["always-auth"]).toBe("false");
   });
 
   it('Automatically configures GPR scope', async () => {
     await auth.configAuthentication('npm.pkg.github.com', 'false');
 
     expect(fs.statSync(rcFile)).toBeDefined();
-    expect(fs.readFileSync(rcFile, {encoding: 'utf8'})).toMatchSnapshot();
+    let rc = readRcFile(rcFile);
+    expect(rc["@ownername:registry"]).toBe("npm.pkg.github.com/");
+    expect(rc["always-auth"]).toBe("false");
   });
 
   it('Sets up npmrc for always-auth true', async () => {
     await auth.configAuthentication('https://registry.npmjs.org/', 'true');
     expect(fs.statSync(rcFile)).toBeDefined();
-    expect(fs.readFileSync(rcFile, {encoding: 'utf8'})).toMatchSnapshot();
+    let rc = readRcFile(rcFile);
+    expect(rc["registry"]).toBe("https://registry.npmjs.org/");
+    expect(rc["always-auth"]).toBe("true");
   });
 });
