@@ -13,7 +13,7 @@ rm -rf ./node
 export RUNNER_TOOL_CACHE=$(pwd)
 export RUNNER_TEMP="${RUNNER_TOOL_CACHE}/temp"
 export INPUT_STABLE=true
-export INPUT_VERSION="12.x"
+export INPUT_VERSION="12"   #"0.12.7"  #"12" #"11.15.0"
 # export your PAT with repo scope before running
 export INPUT_TOKEN=$GITHUB_TOKEN
 

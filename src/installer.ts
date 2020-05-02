@@ -77,7 +77,11 @@ export async function getNode(
       let _7zPath = path.join(__dirname, '..', 'externals', '7zr.exe');
       extPath = await tc.extract7z(downloadPath, undefined, _7zPath);
     } else {
-      extPath = await tc.extractTar(downloadPath);
+      extPath = await tc.extractTar(downloadPath, undefined, [
+        'xz',
+        '--strip',
+        '1'
+      ]);
     }
 
     //
