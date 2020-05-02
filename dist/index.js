@@ -4592,6 +4592,69 @@ function checkMode (stat, options) {
 
 /***/ }),
 
+/***/ 198:
+/***/ (function(__unusedmodule, exports, __webpack_require__) {
+
+"use strict";
+
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
+    result["default"] = mod;
+    return result;
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+const core = __importStar(__webpack_require__(470));
+const installer = __importStar(__webpack_require__(749));
+const auth = __importStar(__webpack_require__(202));
+const path = __importStar(__webpack_require__(622));
+function run() {
+    return __awaiter(this, void 0, void 0, function* () {
+        try {
+            //
+            // Version is optional.  If supplied, install / use from the tool cache
+            // If not supplied then task is still used to setup proxy, auth, etc...
+            //
+            let version = core.getInput('node-version');
+            if (!version) {
+                version = core.getInput('version');
+            }
+            console.log(`version: ${version}`);
+            if (version) {
+                let token = core.getInput('token');
+                let stable = (core.getInput('stable') || 'true').toUpperCase() === 'TRUE';
+                yield installer.getNode(version, stable, token);
+            }
+            const registryUrl = core.getInput('registry-url');
+            const alwaysAuth = core.getInput('always-auth');
+            if (registryUrl) {
+                auth.configAuthentication(registryUrl, alwaysAuth);
+            }
+            const matchersPath = path.join(__dirname, '..', '.github');
+            console.log(`##[add-matcher]${path.join(matchersPath, 'tsc.json')}`);
+            console.log(`##[add-matcher]${path.join(matchersPath, 'eslint-stylish.json')}`);
+            console.log(`##[add-matcher]${path.join(matchersPath, 'eslint-compact.json')}`);
+        }
+        catch (error) {
+            core.setFailed(error.message);
+        }
+    });
+}
+exports.run = run;
+//# sourceMappingURL=main.js.map
+
+/***/ }),
+
 /***/ 202:
 /***/ (function(__unusedmodule, exports, __webpack_require__) {
 
@@ -4652,7 +4715,7 @@ function writeRegistryToFile(registryUrl, fileLocation, alwaysAuth) {
     // Export empty node_auth_token so npm doesn't complain about not being able to find it
     core.exportVariable('NODE_AUTH_TOKEN', 'XXXXX-XXXXX-XXXXX-XXXXX');
 }
-
+//# sourceMappingURL=authutil.js.map
 
 /***/ }),
 
@@ -12873,15 +12936,16 @@ module.exports = require("fs");
 /***/ }),
 
 /***/ 749:
-/***/ (function(__unusedmodule, exports, __webpack_require__) {
+/***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
         function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
         function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : new P(function (resolve) { resolve(result.value); }).then(fulfilled, rejected); }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
@@ -12893,18 +12957,18 @@ var __importStar = (this && this.__importStar) || function (mod) {
     return result;
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+const os = __webpack_require__(87);
 const assert = __importStar(__webpack_require__(357));
 const core = __importStar(__webpack_require__(470));
 const hc = __importStar(__webpack_require__(539));
 const io = __importStar(__webpack_require__(1));
 const tc = __importStar(__webpack_require__(533));
-const os = __importStar(__webpack_require__(87));
 const path = __importStar(__webpack_require__(622));
 const semver = __importStar(__webpack_require__(280));
-let osPlat = os.platform();
-let osArch = translateArchToDistUrl(os.arch());
 function getNode(versionSpec, stable, token) {
     return __awaiter(this, void 0, void 0, function* () {
+        let osPlat = os.platform();
+        let osArch = translateArchToDistUrl(os.arch());
         // check cache
         let info = null;
         let toolPath;
@@ -12924,7 +12988,7 @@ function getNode(versionSpec, stable, token) {
                 throw new Error(`Unable to find Node version '${versionSpec}' for platform ${osPlat} and architecture ${osArch}.`);
             }
             console.log(`Acquiring ${info.resolvedVersion} from ${info.downloadUrl}`);
-            let downloadPath = "";
+            let downloadPath = '';
             try {
                 downloadPath = yield tc.downloadTool(info.downloadUrl, undefined, token);
             }
@@ -12967,7 +13031,7 @@ exports.getNode = getNode;
 function getInfoFromManifest(versionSpec, stable, token) {
     return __awaiter(this, void 0, void 0, function* () {
         let info = null;
-        const releases = yield tc.getManifestFromRepo("actions", "node-versions", token);
+        const releases = yield tc.getManifestFromRepo('actions', 'node-versions', token);
         console.log(`matching ${versionSpec}...`);
         const rel = yield tc.findFromManifest(versionSpec, stable, releases);
         if (rel && rel.files.length > 0) {
@@ -12982,19 +13046,13 @@ function getInfoFromManifest(versionSpec, stable, token) {
 }
 function getInfoFromDist(versionSpec) {
     return __awaiter(this, void 0, void 0, function* () {
+        let osPlat = os.platform();
+        let osArch = translateArchToDistUrl(os.arch());
         let info = null;
         let version;
-        // If explicit version don't query
-        if (semver.clean(versionSpec) != null) {
-            // version to download
-            version = versionSpec;
-        }
-        else {
-            // query nodejs.org for a matching version
-            version = yield queryDistForMatch(versionSpec);
-            if (!version) {
-                return null;
-            }
+        version = yield queryDistForMatch(versionSpec);
+        if (!version) {
+            return null;
         }
         //
         // Download - a tool installer intimately knows how to get the tool (and construct urls)
@@ -13040,6 +13098,8 @@ function evaluateVersions(versions, versionSpec) {
 }
 function queryDistForMatch(versionSpec) {
     return __awaiter(this, void 0, void 0, function* () {
+        let osPlat = os.platform();
+        let osArch = translateArchToDistUrl(os.arch());
         // node offers a json list of versions
         let dataFileName;
         switch (osPlat) {
@@ -13056,13 +13116,7 @@ function queryDistForMatch(versionSpec) {
                 throw new Error(`Unexpected OS '${osPlat}'`);
         }
         let versions = [];
-        let dataUrl = 'https://nodejs.org/dist/index.json';
-        let httpClient = new hc.HttpClient('setup-node', [], {
-            allowRetries: true,
-            maxRetries: 3
-        });
-        let response = yield httpClient.getJson(dataUrl);
-        let nodeVersions = response.result || [];
+        let nodeVersions = yield module.exports.getVersionsFromDist();
         nodeVersions.forEach((nodeVersion) => {
             // ensure this version supports your os and platform
             if (nodeVersion.files.indexOf(dataFileName) >= 0) {
@@ -13074,6 +13128,18 @@ function queryDistForMatch(versionSpec) {
         return version;
     });
 }
+function getVersionsFromDist() {
+    return __awaiter(this, void 0, void 0, function* () {
+        let dataUrl = 'https://nodejs.org/dist/index.json';
+        let httpClient = new hc.HttpClient('setup-node', [], {
+            allowRetries: true,
+            maxRetries: 3
+        });
+        let response = yield httpClient.getJson(dataUrl);
+        return response.result || [];
+    });
+}
+exports.getVersionsFromDist = getVersionsFromDist;
 // For non LTS versions of Node, the files we need (for Windows) are sometimes located
 // in a different folder than they normally are for other versions.
 // Normally the format is similar to: https://nodejs.org/dist/v5.10.1/node-v5.10.1-win-x64.7z
@@ -13088,6 +13154,8 @@ function queryDistForMatch(versionSpec) {
 // and lib file in a folder, not zipped.
 function acquireNodeFromFallbackLocation(version) {
     return __awaiter(this, void 0, void 0, function* () {
+        let osPlat = os.platform();
+        let osArch = translateArchToDistUrl(os.arch());
         // Create temporary folder to download in to
         const tempDownloadFolder = 'temp_' + Math.floor(Math.random() * 2000000000);
         const tempDirectory = process.env['RUNNER_TEMP'] || '';
@@ -13133,7 +13201,7 @@ function translateArchToDistUrl(arch) {
             return arch;
     }
 }
-
+//# sourceMappingURL=installer.js.map
 
 /***/ }),
 
@@ -15989,60 +16057,10 @@ function hasNextPage (link) {
 
 "use strict";
 
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : new P(function (resolve) { resolve(result.value); }).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
-    result["default"] = mod;
-    return result;
-};
 Object.defineProperty(exports, "__esModule", { value: true });
-const core = __importStar(__webpack_require__(470));
-const installer = __importStar(__webpack_require__(749));
-const auth = __importStar(__webpack_require__(202));
-const path = __importStar(__webpack_require__(622));
-function run() {
-    return __awaiter(this, void 0, void 0, function* () {
-        try {
-            //
-            // Version is optional.  If supplied, install / use from the tool cache
-            // If not supplied then task is still used to setup proxy, auth, etc...
-            //
-            let version = core.getInput('node-version');
-            if (!version) {
-                version = core.getInput('version');
-            }
-            console.log(`version: ${version}`);
-            if (version) {
-                let token = core.getInput('token');
-                let stable = (core.getInput('stable') || 'true').toUpperCase() === 'TRUE';
-                yield installer.getNode(version, stable, token);
-            }
-            const registryUrl = core.getInput('registry-url');
-            const alwaysAuth = core.getInput('always-auth');
-            if (registryUrl) {
-                auth.configAuthentication(registryUrl, alwaysAuth);
-            }
-            const matchersPath = path.join(__dirname, '..', '.github');
-            console.log(`##[add-matcher]${path.join(matchersPath, 'tsc.json')}`);
-            console.log(`##[add-matcher]${path.join(matchersPath, 'eslint-stylish.json')}`);
-            console.log(`##[add-matcher]${path.join(matchersPath, 'eslint-compact.json')}`);
-        }
-        catch (error) {
-            core.setFailed(error.message);
-        }
-    });
-}
-run();
-
+const main_1 = __webpack_require__(198);
+main_1.run();
+//# sourceMappingURL=setup-node.js.map
 
 /***/ }),
 

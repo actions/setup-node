@@ -1,21 +1,18 @@
+import os = require('os');
 import * as assert from 'assert';
 import * as core from '@actions/core';
 import * as hc from '@actions/http-client';
 import * as io from '@actions/io';
 import * as tc from '@actions/tool-cache';
-import * as os from 'os';
 import * as path from 'path';
 import * as semver from 'semver';
-import { Url } from 'url';
-
-let osPlat: string = os.platform();
-let osArch: string = translateArchToDistUrl(os.arch());
+import {Url} from 'url';
 
 //
 // Node versions interface
 // see https://nodejs.org/dist/index.json
 //
-interface INodeVersion {
+export interface INodeVersion {
   version: string;
   files: string[];
 }
@@ -27,7 +24,14 @@ interface INodeVersionInfo {
   fileName: string;
 }
 
-export async function getNode(versionSpec: string, stable: boolean, token: string) {
+export async function getNode(
+  versionSpec: string,
+  stable: boolean,
+  token: string
+) {
+  let osPlat: string = os.platform();
+  let osArch: string = translateArchToDistUrl(os.arch());
+
   // check cache
   let info: INodeVersionInfo | null = null;
   let toolPath: string;
@@ -37,13 +41,15 @@ export async function getNode(versionSpec: string, stable: boolean, token: strin
   if (toolPath) {
     console.log(`Found in cache @ ${toolPath}`);
   } else {
-    console.log(`Attempting to download ${versionSpec}...`)
+    console.log(`Attempting to download ${versionSpec}...`);
     let info = await getInfoFromManifest(versionSpec, stable, token);
     if (!info) {
-      console.log('Not found in manifest.  Falling back to download directly from Node')
+      console.log(
+        'Not found in manifest.  Falling back to download directly from Node'
+      );
       info = await getInfoFromDist(versionSpec);
-    }   
-  
+    }
+
     if (!info) {
       throw new Error(
         `Unable to find Node version '${versionSpec}' for platform ${osPlat} and architecture ${osArch}.`
@@ -52,7 +58,7 @@ export async function getNode(versionSpec: string, stable: boolean, token: strin
 
     console.log(`Acquiring ${info.resolvedVersion} from ${info.downloadUrl}`);
 
-    let downloadPath = ""
+    let downloadPath = '';
     try {
       downloadPath = await tc.downloadTool(info.downloadUrl, undefined, token);
     } catch (err) {
@@ -77,7 +83,7 @@ export async function getNode(versionSpec: string, stable: boolean, token: strin
     //
     // Install into the local tool cache - node extracts with a root folder that matches the fileName downloaded
     //
-    toolPath = await tc.cacheDir(extPath, 'node', info.resolvedVersion);    
+    toolPath = await tc.cacheDir(extPath, 'node', info.resolvedVersion);
   }
 
   //
@@ -94,12 +100,20 @@ export async function getNode(versionSpec: string, stable: boolean, token: strin
   core.addPath(toolPath);
 }
 
-async function getInfoFromManifest(versionSpec: string, stable: boolean, token: string): Promise<INodeVersionInfo | null> {
+async function getInfoFromManifest(
+  versionSpec: string,
+  stable: boolean,
+  token: string
+): Promise<INodeVersionInfo | null> {
   let info: INodeVersionInfo | null = null;
-  const releases = await tc.getManifestFromRepo("actions", "node-versions", token)
-  console.log(`matching ${versionSpec}...`)
+  const releases = await tc.getManifestFromRepo(
+    'actions',
+    'node-versions',
+    token
+  );
+  console.log(`matching ${versionSpec}...`);
   const rel = await tc.findFromManifest(versionSpec, stable, releases);
-  
+
   if (rel && rel.files.length > 0) {
     info = <INodeVersionInfo>{};
     info.resolvedVersion = rel.version;
@@ -111,20 +125,18 @@ async function getInfoFromManifest(versionSpec: string, stable: boolean, token: 
   return info;
 }
 
-async function getInfoFromDist(versionSpec: string): Promise<INodeVersionInfo | null> {
+async function getInfoFromDist(
+  versionSpec: string
+): Promise<INodeVersionInfo | null> {
+  let osPlat: string = os.platform();
+  let osArch: string = translateArchToDistUrl(os.arch());
+
   let info: INodeVersionInfo | null = null;
   let version: string;
-  
-  // If explicit version don't query
-  if (semver.clean(versionSpec) != null) {
-    // version to download
-    version = versionSpec;
-  } else {
-    // query nodejs.org for a matching version
-    version = await queryDistForMatch(versionSpec);
-    if (!version) {
-      return null;
-    }
+
+  version = await queryDistForMatch(versionSpec);
+  if (!version) {
+    return null;
   }
 
   //
@@ -143,7 +155,7 @@ async function getInfoFromDist(versionSpec: string): Promise<INodeVersionInfo | 
     downloadUrl: url,
     resolvedVersion: version,
     fileName: fileName
-  }
+  };
 }
 
 // TODO - should we just export this from @actions/tool-cache? Lifted directly from there
@@ -175,6 +187,9 @@ function evaluateVersions(versions: string[], versionSpec: string): string {
 }
 
 async function queryDistForMatch(versionSpec: string): Promise<string> {
+  let osPlat: string = os.platform();
+  let osArch: string = translateArchToDistUrl(os.arch());
+
   // node offers a json list of versions
   let dataFileName: string;
   switch (osPlat) {
@@ -192,13 +207,8 @@ async function queryDistForMatch(versionSpec: string): Promise<string> {
   }
 
   let versions: string[] = [];
-  let dataUrl = 'https://nodejs.org/dist/index.json';
-  let httpClient = new hc.HttpClient('setup-node', [], {
-    allowRetries: true,
-    maxRetries: 3
-  });
-  let response = await httpClient.getJson<INodeVersion[]>(dataUrl);
-  let nodeVersions = response.result || [];
+  let nodeVersions = await module.exports.getVersionsFromDist();
+
   nodeVersions.forEach((nodeVersion: INodeVersion) => {
     // ensure this version supports your os and platform
     if (nodeVersion.files.indexOf(dataFileName) >= 0) {
@@ -209,6 +219,16 @@ async function queryDistForMatch(versionSpec: string): Promise<string> {
   // get the latest version that matches the version spec
   let version: string = evaluateVersions(versions, versionSpec);
   return version;
+}
+
+export async function getVersionsFromDist(): Promise<INodeVersion[]> {
+  let dataUrl = 'https://nodejs.org/dist/index.json';
+  let httpClient = new hc.HttpClient('setup-node', [], {
+    allowRetries: true,
+    maxRetries: 3
+  });
+  let response = await httpClient.getJson<INodeVersion[]>(dataUrl);
+  return response.result || [];
 }
 
 // For non LTS versions of Node, the files we need (for Windows) are sometimes located
@@ -226,6 +246,9 @@ async function queryDistForMatch(versionSpec: string): Promise<string> {
 async function acquireNodeFromFallbackLocation(
   version: string
 ): Promise<string> {
+  let osPlat: string = os.platform();
+  let osArch: string = translateArchToDistUrl(os.arch());
+
   // Create temporary folder to download in to
   const tempDownloadFolder: string =
     'temp_' + Math.floor(Math.random() * 2000000000);
