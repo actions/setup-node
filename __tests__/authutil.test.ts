@@ -52,7 +52,6 @@ describe('authutil tests', () => {
     });
   }, 100000);
 
-
   function dbg(message: string) {
     process.stderr.write('dbg::' + message + '::\n');
   }
