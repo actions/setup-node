@@ -52,6 +52,11 @@ describe('authutil tests', () => {
     });
   }, 100000);
 
+
+  function dbg(message: string) {
+    process.stderr.write('dbg::' + message + '::\n');
+  }
+
   afterAll(async () => {
     if (_runnerDir) {
       await io.rmRF(_runnerDir);
@@ -62,7 +67,9 @@ describe('authutil tests', () => {
     await auth.configAuthentication('https://registry.npmjs.org/', 'false');
 
     expect(fs.statSync(rcFile)).toBeDefined();
-    expect(fs.readFileSync(rcFile, {encoding: 'utf8'})).toMatchSnapshot();
+    let contents = fs.readFileSync(rcFile, {encoding: 'utf8'});
+    dbg(contents);
+    expect(contents).toMatchSnapshot();
   });
 
   it('Appends trailing slash to registry', async () => {
