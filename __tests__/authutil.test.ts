@@ -81,8 +81,8 @@ describe('authutil tests', () => {
     expect(fs.statSync(rcFile)).toBeDefined();
     let contents = fs.readFileSync(rcFile, {encoding: 'utf8'});
     let rc = readRcFile(rcFile);
-    expect(rc["registry"]).toBe("https://registry.npmjs.org/");
-    expect(rc["always-auth"]).toBe("false");
+    expect(rc['registry']).toBe('https://registry.npmjs.org/');
+    expect(rc['always-auth']).toBe('false');
   });
 
   it('Appends trailing slash to registry', async () => {
@@ -90,8 +90,8 @@ describe('authutil tests', () => {
 
     expect(fs.statSync(rcFile)).toBeDefined();
     let rc = readRcFile(rcFile);
-    expect(rc["registry"]).toBe("https://registry.npmjs.org/");
-    expect(rc["always-auth"]).toBe("false");
+    expect(rc['registry']).toBe('https://registry.npmjs.org/');
+    expect(rc['always-auth']).toBe('false');
   });
 
   it('Configures scoped npm registries', async () => {
@@ -100,8 +100,8 @@ describe('authutil tests', () => {
 
     expect(fs.statSync(rcFile)).toBeDefined();
     let rc = readRcFile(rcFile);
-    expect(rc["@myscope:registry"]).toBe("https://registry.npmjs.org/");
-    expect(rc["always-auth"]).toBe("false");
+    expect(rc['@myscope:registry']).toBe('https://registry.npmjs.org/');
+    expect(rc['always-auth']).toBe('false');
   });
 
   it('Automatically configures GPR scope', async () => {
@@ -109,15 +109,15 @@ describe('authutil tests', () => {
 
     expect(fs.statSync(rcFile)).toBeDefined();
     let rc = readRcFile(rcFile);
-    expect(rc["@ownername:registry"]).toBe("npm.pkg.github.com/");
-    expect(rc["always-auth"]).toBe("false");
+    expect(rc['@ownername:registry']).toBe('npm.pkg.github.com/');
+    expect(rc['always-auth']).toBe('false');
   });
 
   it('Sets up npmrc for always-auth true', async () => {
     await auth.configAuthentication('https://registry.npmjs.org/', 'true');
     expect(fs.statSync(rcFile)).toBeDefined();
     let rc = readRcFile(rcFile);
-    expect(rc["registry"]).toBe("https://registry.npmjs.org/");
-    expect(rc["always-auth"]).toBe("true");
+    expect(rc['registry']).toBe('https://registry.npmjs.org/');
+    expect(rc['always-auth']).toBe('true');
   });
 });
