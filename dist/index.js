@@ -13013,15 +13013,22 @@ function getNode(versionSpec, stable, token) {
             //
             // Extract
             //
+            console.log(`Extracting ${downloadPath}`);
+            if (!fs.existsSync(downloadPath)) {
+                console.log('File not downloaded correctly');
+            }
             let extPath;
             if (osPlat == 'win32') {
                 let _7zPath = path.join(__dirname, '..', 'externals', '7zr.exe');
                 extPath = yield tc.extract7z(downloadPath, undefined, _7zPath);
+                console.log(`contents of ${extPath}`);
+                console.log(extPath);
                 // 7z extracts to folder matching file name
                 let nestedPath = path.join(extPath, path.basename(info.fileName, '.7z'));
-                if (fs.statSync(nestedPath) && fs.statSync(nestedPath).isDirectory()) {
+                if (fs.existsSync(nestedPath)) {
                     extPath = nestedPath;
                 }
+                console.log(`using ${extPath}`);
             }
             else {
                 extPath = yield tc.extractTar(downloadPath, undefined, [
