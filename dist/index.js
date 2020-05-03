@@ -13013,6 +13013,7 @@ function getNode(versionSpec, stable, token) {
             //
             // Extract
             //
+            console.log('Extracting ...');
             let extPath;
             if (osPlat == 'win32') {
                 let _7zPath = path.join(__dirname, '..', 'externals', '7zr.exe');
@@ -13033,6 +13034,7 @@ function getNode(versionSpec, stable, token) {
             //
             // Install into the local tool cache - node extracts with a root folder that matches the fileName downloaded
             //
+            console.log('Adding to the cache ...');
             toolPath = yield tc.cacheDir(extPath, 'node', info.resolvedVersion);
         }
         //

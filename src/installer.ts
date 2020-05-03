@@ -74,6 +74,7 @@ export async function getNode(
     //
     // Extract
     //
+    console.log('Extracting ...');
     let extPath: string;
     if (osPlat == 'win32') {
       let _7zPath = path.join(__dirname, '..', 'externals', '7zr.exe');
@@ -94,6 +95,7 @@ export async function getNode(
     //
     // Install into the local tool cache - node extracts with a root folder that matches the fileName downloaded
     //
+    console.log('Adding to the cache ...');
     toolPath = await tc.cacheDir(extPath, 'node', info.resolvedVersion);
   }
 
