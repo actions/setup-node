@@ -29,18 +29,19 @@ jobs:
         with:
           node-version: 11          
       - name: Verify node and npm
-        run: __tests__/verify-node.sh 11      
-      # test version from node manifest
-      - name: Setup node 12 from manifest
-        uses: ./
-        with:
-          node-version: 12
-      - name: Verify node and npm
-        run: __tests__/verify-node.sh 12
+        run: __tests__/verify-node.sh 11
+      # test old versions which didn't have npm and layout different      
       - name: Setup node 0.12.18 from dist
         uses: ./                 
         with:
           node-version: 0.12.18
       - name: Verify node
         shell: bash
-        run: __tests__/verify-node.sh 0.12.18 SKIP_NPM      
+        run: __tests__/verify-node.sh 0.12.18 SKIP_NPM 
+      # test version from node manifest
+      - name: Setup node 12 from manifest
+        uses: ./
+        with:
+          node-version: 12
+      - name: Verify node and npm
+        run: __tests__/verify-node.sh 12        

@@ -76,20 +76,9 @@ export async function getNode(
     let extPath: string;
     if (osPlat == 'win32') {
       let _7zPath = path.join(__dirname, '..', 'externals', '7zr.exe');
-
-      console.log(
-        `downloadPath: ${downloadPath}`,
-        `isFile: ${fs.statSync(downloadPath).isFile()}`
-      );
-      console.log(JSON.stringify(fs.statSync(downloadPath)));
-
       extPath = await tc.extract7z(downloadPath, undefined, _7zPath);
       // 7z extracts to folder matching file name
       extPath = path.join(extPath, path.basename(info.fileName, '.7z'));
-      console.log(
-        `extPath: ${extPath}`,
-        `isDirectory: ${fs.statSync(extPath).isDirectory()}`
-      );
     } else {
       extPath = await tc.extractTar(downloadPath, undefined, [
         'xz',
