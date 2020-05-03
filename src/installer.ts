@@ -79,7 +79,10 @@ export async function getNode(
       let _7zPath = path.join(__dirname, '..', 'externals', '7zr.exe');
       extPath = await tc.extract7z(downloadPath, undefined, _7zPath);
       // 7z extracts to folder matching file name
-      extPath = path.join(extPath, path.basename(info.fileName, '.7z'));
+      let nestedPath = path.join(extPath, path.basename(info.fileName, '.7z'));
+      if (fs.statSync(nestedPath) && fs.statSync(nestedPath).isDirectory()) {
+        extPath = nestedPath;
+      }
     } else {
       extPath = await tc.extractTar(downloadPath, undefined, [
         'xz',
@@ -117,7 +120,8 @@ async function getInfoFromManifest(
   const releases = await tc.getManifestFromRepo(
     'actions',
     'node-versions',
-    token
+    token,
+    'update-versions-manifest-file' // TODO: remove after testing
   );
   console.log(`matching ${versionSpec}...`);
   const rel = await tc.findFromManifest(versionSpec, stable, releases);
