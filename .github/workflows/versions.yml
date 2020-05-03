@@ -39,9 +39,9 @@ jobs:
         shell: bash
         run: __tests__/verify-node.sh 0.12.18 SKIP_NPM 
       # test version from node manifest
-      - name: Setup node 12 from manifest
+      - name: Setup node 12.16.2 from manifest
         uses: ./
         with:
-          node-version: 12
+          node-version: 12.16.2
       - name: Verify node and npm
         run: __tests__/verify-node.sh 12        
