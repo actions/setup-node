@@ -12975,6 +12975,7 @@ const io = __importStar(__webpack_require__(1));
 const tc = __importStar(__webpack_require__(533));
 const path = __importStar(__webpack_require__(622));
 const semver = __importStar(__webpack_require__(280));
+const fs = __webpack_require__(747);
 function getNode(versionSpec, stable, token) {
     return __awaiter(this, void 0, void 0, function* () {
         let osPlat = os.platform();
@@ -13014,6 +13015,8 @@ function getNode(versionSpec, stable, token) {
             let extPath;
             if (osPlat == 'win32') {
                 let _7zPath = path.join(__dirname, '..', 'externals', '7zr.exe');
+                console.log(`downloadPath: ${downloadPath}`);
+                console.log(JSON.stringify(fs.statSync(downloadPath)));
                 extPath = yield tc.extract7z(downloadPath, undefined, _7zPath);
                 // 7z extracts to folder matching file name
                 extPath = path.join(extPath, path.basename(downloadPath));

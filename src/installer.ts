@@ -7,6 +7,7 @@ import * as tc from '@actions/tool-cache';
 import * as path from 'path';
 import * as semver from 'semver';
 import {Url} from 'url';
+import fs = require('fs');
 
 //
 // Node versions interface
@@ -75,6 +76,9 @@ export async function getNode(
     let extPath: string;
     if (osPlat == 'win32') {
       let _7zPath = path.join(__dirname, '..', 'externals', '7zr.exe');
+
+      console.log(`downloadPath: ${downloadPath}`);
+      console.log(JSON.stringify(fs.statSync(downloadPath)));
 
       extPath = await tc.extract7z(downloadPath, undefined, _7zPath);
       // 7z extracts to folder matching file name
