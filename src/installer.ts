@@ -75,7 +75,12 @@ export async function getNode(
     let extPath: string;
     if (osPlat == 'win32') {
       let _7zPath = path.join(__dirname, '..', 'externals', '7zr.exe');
-      extPath = await tc.extract7z(downloadPath, undefined, _7zPath);
+      // 7z extracts to filename folder
+      const srcPath = path.join(
+        downloadPath,
+        `node-v${info.resolvedVersion}-win-${osArch}`
+      );
+      extPath = await tc.extract7z(srcPath, undefined, _7zPath);
     } else {
       extPath = await tc.extractTar(downloadPath, undefined, [
         'xz',

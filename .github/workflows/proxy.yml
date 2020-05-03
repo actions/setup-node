@@ -43,12 +43,12 @@ jobs:
       fail-fast: false
     env:
       https_proxy: http://no-such-proxy:3128
-      no_proxy: github.com,nodejs.org,registry.npmjs.org,*.s3.amazonaws.com
+      no_proxy: api.github.com,github.com,nodejs.org,registry.npmjs.org,*.s3.amazonaws.com
     steps:
       - uses: actions/checkout@v2
       - name: Clear tool cache
         run: rm -rf $RUNNER_TOOL_CACHE/*
-      - name: Setup node 10
+      - name: Setup node 12
         uses: ./
         with:
           node-version: 10.x

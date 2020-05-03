@@ -13014,7 +13014,9 @@ function getNode(versionSpec, stable, token) {
             let extPath;
             if (osPlat == 'win32') {
                 let _7zPath = path.join(__dirname, '..', 'externals', '7zr.exe');
-                extPath = yield tc.extract7z(downloadPath, undefined, _7zPath);
+                // 7z extracts to filename folder
+                const srcPath = path.join(downloadPath, `node-v${info.resolvedVersion}-win-${osArch}`);
+                extPath = yield tc.extract7z(srcPath, undefined, _7zPath);
             }
             else {
                 extPath = yield tc.extractTar(downloadPath, undefined, [
