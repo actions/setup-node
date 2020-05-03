@@ -74,6 +74,11 @@ export async function getNode(
     //
     // Extract
     //
+    console.log(`Extracting ${downloadPath}`)
+    if (!fs.existsSync(downloadPath)) {
+      throw new Error('File not downloaded correctly');
+    }
+    
     let extPath: string;
     if (osPlat == 'win32') {
       let _7zPath = path.join(__dirname, '..', 'externals', '7zr.exe');
