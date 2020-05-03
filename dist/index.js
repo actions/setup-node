@@ -13036,6 +13036,7 @@ function getNode(versionSpec, stable, token) {
             //
             console.log('Adding to the cache ...');
             toolPath = yield tc.cacheDir(extPath, 'node', info.resolvedVersion);
+            console.log('Done');
         }
         //
         // a tool installer initimately knows details about the layout of that tool
