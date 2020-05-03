@@ -97,6 +97,7 @@ export async function getNode(
     //
     console.log('Adding to the cache ...');
     toolPath = await tc.cacheDir(extPath, 'node', info.resolvedVersion);
+    console.log('Done')
   }
 
   //
