@@ -64,7 +64,8 @@ export async function getNode(
       downloadPath = await tc.downloadTool(info.downloadUrl, undefined, token);
     } catch (err) {
       if (err instanceof tc.HTTPError && err.httpStatusCode == 404) {
-        return await acquireNodeFromFallbackLocation(info.resolvedVersion);
+        await acquireNodeFromFallbackLocation(info.resolvedVersion);
+        return;
       }
 
       throw err;
@@ -269,6 +270,8 @@ async function acquireNodeFromFallbackLocation(
     exeUrl = `https://nodejs.org/dist/v${version}/win-${osArch}/node.exe`;
     libUrl = `https://nodejs.org/dist/v${version}/win-${osArch}/node.lib`;
 
+    console.log(`Downloading only node binary from ${exeUrl}`);
+
     const exePath = await tc.downloadTool(exeUrl);
     await io.cp(exePath, path.join(tempDir, 'node.exe'));
     const libPath = await tc.downloadTool(libUrl);
@@ -286,7 +289,9 @@ async function acquireNodeFromFallbackLocation(
       throw err;
     }
   }
-  return await tc.cacheDir(tempDir, 'node', version);
+  let toolPath = await tc.cacheDir(tempDir, 'node', version);
+  core.addPath(toolPath);
+  return toolPath;
 }
 
 // os.arch does not always match the relative download url, e.g.

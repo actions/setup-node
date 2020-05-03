@@ -12975,7 +12975,6 @@ const io = __importStar(__webpack_require__(1));
 const tc = __importStar(__webpack_require__(533));
 const path = __importStar(__webpack_require__(622));
 const semver = __importStar(__webpack_require__(280));
-const fs = __webpack_require__(747);
 function getNode(versionSpec, stable, token) {
     return __awaiter(this, void 0, void 0, function* () {
         let osPlat = os.platform();
@@ -13005,7 +13004,8 @@ function getNode(versionSpec, stable, token) {
             }
             catch (err) {
                 if (err instanceof tc.HTTPError && err.httpStatusCode == 404) {
-                    return yield acquireNodeFromFallbackLocation(info.resolvedVersion);
+                    yield acquireNodeFromFallbackLocation(info.resolvedVersion);
+                    return;
                 }
                 throw err;
             }
@@ -13015,12 +13015,9 @@ function getNode(versionSpec, stable, token) {
             let extPath;
             if (osPlat == 'win32') {
                 let _7zPath = path.join(__dirname, '..', 'externals', '7zr.exe');
-                console.log(`downloadPath: ${downloadPath}`, `isFile: ${fs.statSync(downloadPath).isFile()}`);
-                console.log(JSON.stringify(fs.statSync(downloadPath)));
                 extPath = yield tc.extract7z(downloadPath, undefined, _7zPath);
                 // 7z extracts to folder matching file name
                 extPath = path.join(extPath, path.basename(info.fileName, '.7z'));
-                console.log(`extPath: ${extPath}`, `isDirectory: ${fs.statSync(extPath).isDirectory()}`);
             }
             else {
                 extPath = yield tc.extractTar(downloadPath, undefined, [
@@ -13187,6 +13184,7 @@ function acquireNodeFromFallbackLocation(version) {
         try {
             exeUrl = `https://nodejs.org/dist/v${version}/win-${osArch}/node.exe`;
             libUrl = `https://nodejs.org/dist/v${version}/win-${osArch}/node.lib`;
+            console.log(`Downloading only node binary from ${exeUrl}`);
             const exePath = yield tc.downloadTool(exeUrl);
             yield io.cp(exePath, path.join(tempDir, 'node.exe'));
             const libPath = yield tc.downloadTool(libUrl);
@@ -13205,7 +13203,9 @@ function acquireNodeFromFallbackLocation(version) {
                 throw err;
             }
         }
-        return yield tc.cacheDir(tempDir, 'node', version);
+        let toolPath = yield tc.cacheDir(tempDir, 'node', version);
+        core.addPath(toolPath);
+        return toolPath;
     });
 }
 // os.arch does not always match the relative download url, e.g.
