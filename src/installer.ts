@@ -74,24 +74,15 @@ export async function getNode(
     //
     // Extract
     //
-    console.log(`Extracting ${downloadPath}`);
-    if (!fs.existsSync(downloadPath)) {
-      console.log('File not downloaded correctly');
-    }
-
     let extPath: string;
     if (osPlat == 'win32') {
       let _7zPath = path.join(__dirname, '..', 'externals', '7zr.exe');
       extPath = await tc.extract7z(downloadPath, undefined, _7zPath);
-      console.log(`contents of ${extPath}`);
-      console.log(extPath);
       // 7z extracts to folder matching file name
       let nestedPath = path.join(extPath, path.basename(info.fileName, '.7z'));
       if (fs.existsSync(nestedPath)) {
         extPath = nestedPath;
       }
-
-      console.log(`using ${extPath}`);
     } else {
       extPath = await tc.extractTar(downloadPath, undefined, [
         'xz',

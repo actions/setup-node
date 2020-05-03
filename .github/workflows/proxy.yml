@@ -53,4 +53,4 @@ jobs:
         with:
           node-version: 11
       - name: Verify node and npm
-        run: __tests__/verify-node.sh 10
+        run: __tests__/verify-node.sh 11
