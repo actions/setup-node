@@ -123,8 +123,7 @@ async function getInfoFromManifest(
   const releases = await tc.getManifestFromRepo(
     'actions',
     'node-versions',
-    token,
-    'update-versions-manifest-file' // TODO: remove after testing
+    token
   );
   console.log(`matching ${versionSpec}...`);
   const rel = await tc.findFromManifest(versionSpec, stable, releases);

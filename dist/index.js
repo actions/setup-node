@@ -13055,8 +13055,7 @@ exports.getNode = getNode;
 function getInfoFromManifest(versionSpec, stable, token) {
     return __awaiter(this, void 0, void 0, function* () {
         let info = null;
-        const releases = yield tc.getManifestFromRepo('actions', 'node-versions', token, 'update-versions-manifest-file' // TODO: remove after testing
-        );
+        const releases = yield tc.getManifestFromRepo('actions', 'node-versions', token);
         console.log(`matching ${versionSpec}...`);
         const rel = yield tc.findFromManifest(versionSpec, stable, releases);
         if (rel && rel.files.length > 0) {
