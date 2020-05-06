@@ -7,7 +7,8 @@
 This action sets by node environment for use in actions by:
 
 - optionally downloading and caching a version of node - npm by version spec and add to PATH
-- registering problem matchers for error output 
+- registering problem matchers for error output
+- configuring authentication for GPR or npm
 
 # Usage
 
@@ -19,7 +20,7 @@ steps:
 - uses: actions/checkout@v2
 - uses: actions/setup-node@v1
   with:
-    node-version: '10.x'
+    node-version: '12'
 - run: npm install
 - run: npm test
 ```
