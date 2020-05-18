@@ -2,6 +2,7 @@ import * as core from '@actions/core';
 import * as installer from './installer';
 import * as auth from './authutil';
 import * as path from 'path';
+import {URL} from 'url';
 
 export async function run() {
   try {
@@ -17,8 +18,9 @@ export async function run() {
     console.log(`version: ${version}`);
     if (version) {
       let token = core.getInput('token');
+      let auth = !token || isGhes() ? undefined : `token ${token}`;
       let stable = (core.getInput('stable') || 'true').toUpperCase() === 'TRUE';
-      await installer.getNode(version, stable, token);
+      await installer.getNode(version, stable, auth);
     }
 
     const registryUrl: string = core.getInput('registry-url');
@@ -38,4 +40,11 @@ export async function run() {
   } catch (error) {
     core.setFailed(error.message);
   }
+}
+
+function isGhes(): boolean {
+  const ghUrl = new URL(
+    process.env['GITHUB_SERVER_URL'] || 'https://github.com'
+  );
+  return ghUrl.hostname.toUpperCase() !== 'GITHUB.COM';
 }
