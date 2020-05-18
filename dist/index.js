@@ -10965,6 +10965,7 @@ function downloadToolAttempt(url, dest, auth) {
             };
         }
         const response = yield http.get(url, headers);
+        throw new HTTPError(403);
         if (response.message.statusCode !== 200) {
             const err = new HTTPError(response.message.statusCode);
             core.debug(`Failed to download from "${url}". Code(${response.message.statusCode}) Message(${response.message.statusMessage})`);
