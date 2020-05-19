@@ -1,7 +1,7 @@
 # setup-node
 
 <p align="left">
-  <a href="https://github.com/actions/setup-node"><img alt="GitHub Actions status" src="https://github.com/actions/setup-node/workflows/Main%20workflow/badge.svg"></a>
+  <a href="https://github.com/actions/setup-node/actions?query=workflow%3Abuild-test"><img alt="build-test status" src="https://github.com/actions/setup-node/workflows/build-test/badge.svg"></a> <a href="https://github.com/actions/setup-node/actions?query=workflow%3Aversions"><img alt="versions status" src="https://github.com/actions/setup-node/workflows/versions/badge.svg"></a> <a href="https://github.com/actions/setup-node/actions?query=workflow%3Aproxy"><img alt="proxy status" src="https://github.com/actions/setup-node/workflows/proxy/badge.svg"></a> 
 </p>
 
 This action sets by node environment for use in actions by:
@@ -9,6 +9,22 @@ This action sets by node environment for use in actions by:
 - optionally downloading and caching a version of node - npm by version spec and add to PATH
 - registering problem matchers for error output
 - configuring authentication for GPR or npm
+
+# v2-beta
+
+A beta release which adds reliability for pulling node distributions from a cache of node releases is available by referencing the `v2-beta` tag.
+
+```yaml
+steps:
+- uses: actions/checkout@v2
+- uses: actions/setup-node@v2-beta
+  with:
+    node-version: '12'
+```
+
+It will first check the local cache for a semver match.  The hosted images have been updated with the latest of each LTS from v8, v10, v12, and v14. `self-hosted` machines will benefit from the cache as well only downloading once.  It will pull LTS versions from [node-versions releases](https://github.com/actions/node-versions/releases) and on miss or failure, it will fall back to the previous behavior of download directly from [node dist](https://nodejs.org/dist/).
+
+The `node-version` input is optional.  If not supplied, node which is in your PATH will be used.  However, this action will still register problem matchers and support auth features.  So setting up the node environment is still a valid scenario without downloading and caching versions.
 
 # Usage
 
