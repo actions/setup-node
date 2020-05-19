@@ -1,17 +1,21 @@
 name: 'Setup Node.js environment'
-description: 'Setup a Node.js environment and add it to the PATH, additionally providing proxy support'
+description: 'Setup a Node.js environment by adding problem matchers and optionally downloading and adding it to the PATH'
 author: 'GitHub'
 inputs:
   always-auth:
     description: 'Set always-auth in npmrc'
     default: 'false'
   node-version:
-    description: 'Version Spec of the version to use.  Examples: 10.x, 10.15.1, >=10.15.0'
-    default: '12.x'
+    description: 'Version Spec of the version to use.  Examples: 12.x, 10.15.1, >=10.15.0'
   registry-url:
     description: 'Optional registry to set up for auth. Will set the registry in a project level .npmrc and .yarnrc file, and set up auth to read in from env.NODE_AUTH_TOKEN'
   scope:
     description: 'Optional scope for authenticating against scoped registries'
+  token:
+    description: Used to pull node distributions from node-versions.  Since there's a default, this is typically not supplied by the user.
+    default: ${{ github.token }}
+# TODO: add input to control forcing to pull from cloud or dist. 
+#       escape valve for someone having issues or needing the absolute latest which isn't cached yet
 # Deprecated option, do not use. Will not be supported after October 1, 2019
   version:
     description: 'Deprecated. Use node-version instead. Will not be supported after October 1, 2019'

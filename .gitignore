@@ -2,6 +2,9 @@ node_modules/
 lib/
 __tests__/runner/*
 
+validate/temp
+validate/node
+
 # Rest of the file pulled from https://github.com/github/gitignore/blob/master/Node.gitignore
 # Logs
 logs
