@@ -26,7 +26,7 @@ export async function run() {
     const registryUrl: string = core.getInput('registry-url');
     const alwaysAuth: string = core.getInput('always-auth');
     if (registryUrl) {
-      auth.configAuthentication(registryUrl, alwaysAuth);
+      await auth.configAuthentication(registryUrl, alwaysAuth);
     }
 
     const matchersPath = path.join(__dirname, '..', '.github');

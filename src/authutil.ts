@@ -3,8 +3,13 @@ import * as os from 'os';
 import * as path from 'path';
 import * as core from '@actions/core';
 import * as github from '@actions/github';
+import * as hc from '@actions/http-client';
+import * as am from '@actions/http-client/auth';
 
-export function configAuthentication(registryUrl: string, alwaysAuth: string) {
+export async function configAuthentication(
+  registryUrl: string,
+  alwaysAuth: string
+) {
   const npmrc: string = path.resolve(
     process.env['RUNNER_TEMP'] || process.cwd(),
     '.npmrc'
@@ -13,10 +18,30 @@ export function configAuthentication(registryUrl: string, alwaysAuth: string) {
     registryUrl += '/';
   }
 
-  writeRegistryToFile(registryUrl, npmrc, alwaysAuth);
+  await writeRegistryToFile(registryUrl, npmrc, alwaysAuth);
 }
 
-function writeRegistryToFile(
+async function getAuthToken(
+  authUrl: string,
+  authUser: string,
+  authPass: string
+) {
+  let bh: am.BasicCredentialHandler = new am.BasicCredentialHandler(
+    authUser,
+    authPass
+  );
+  let httpClient = new hc.HttpClient('registry-auth', [bh], {
+    allowRetries: true,
+    maxRetries: 3
+  });
+  let response: hc.HttpClientResponse = await httpClient.get(authUrl);
+  let body: string = await response.readBody();
+  let data: any = JSON.parse(body);
+  console.log(JSON.stringify(data));
+  return '';
+}
+
+async function writeRegistryToFile(
   registryUrl: string,
   fileLocation: string,
   alwaysAuth: string
@@ -43,9 +68,24 @@ function writeRegistryToFile(
       }
     });
   }
+
+  let nodeAuthToken = '${NODE_AUTH_TOKEN}';
+  // Check if auth url provided
+  const authUrl: string = core.getInput('auth-url');
+  if (authUrl) {
+    // Check if username and password/token provided
+    const authUser: string = core.getInput('auth-user');
+    const authPassword: string = core.getInput('auth-password');
+    const authAccessToken: string = core.getInput('auth-access-token');
+    const authPass: string = authPassword || authAccessToken;
+    nodeAuthToken = await getAuthToken(authUrl, authUser, authPass);
+  }
+
   // Remove http: or https: from front of registry.
-  const authString: string =
-    registryUrl.replace(/(^\w+:|^)/, '') + ':_authToken=${NODE_AUTH_TOKEN}';
+  const authString: string = `${registryUrl.replace(
+    /(^\w+:|^)/,
+    ''
+  )}:_authToken=${nodeAuthToken}`;
   const registryString: string = scope
     ? `${scope}:registry=${registryUrl}`
     : `registry=${registryUrl}`;
