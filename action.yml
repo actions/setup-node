@@ -14,6 +14,14 @@ inputs:
   token:
     description: Used to pull node distributions from node-versions.  Since there's a default, this is typically not supplied by the user.
     default: ${{ github.token }}
+  auth-url:
+    description: Provides url for which to get auth from 
+  auth-user:
+    description: The user to use for auth
+  auth-password: 
+    description: The password to auth with 
+  auth-access-token: 
+    description: The access token to auth with if not using password
 # TODO: add input to control forcing to pull from cloud or dist. 
 #       escape valve for someone having issues or needing the absolute latest which isn't cached yet
 # Deprecated option, do not use. Will not be supported after October 1, 2019
