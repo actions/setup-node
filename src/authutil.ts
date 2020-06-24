@@ -76,7 +76,8 @@ async function writeRegistryToFile(
     });
   }
 
-  let nodeAuthToken = '${NODE_AUTH_TOKEN}';
+  let defaultNodeAuthToken = '${NODE_AUTH_TOKEN}';
+  let nodeAuthToken = defaultNodeAuthToken;
   // Check if auth url provided
   const authUrl: string = core.getInput('auth-url');
   if (authUrl) {
@@ -108,6 +109,10 @@ async function writeRegistryToFile(
   
   fs.writeFileSync(fileLocation, newContents);
   core.exportVariable('NPM_CONFIG_USERCONFIG', fileLocation);
-  // Export empty node_auth_token so npm doesn't complain about not being able to find it
-  core.exportVariable('NODE_AUTH_TOKEN', 'XXXXX-XXXXX-XXXXX-XXXXX');
+  if (defaultNodeAuthToken !== nodeAuthToken) {
+    core.exportVariable('NODE_AUTH_TOKEN', nodeAuthToken)
+  } else {
+    // Export empty node_auth_token so npm doesn't complain about not being able to find it
+    core.exportVariable('NODE_AUTH_TOKEN', 'XXXXX-XXXXX-XXXXX-XXXXX');
+  }
 }

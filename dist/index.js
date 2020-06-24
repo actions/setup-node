@@ -4758,7 +4758,8 @@ function writeRegistryToFile(registryUrl, fileLocation, alwaysAuth) {
                 }
             });
         }
-        let nodeAuthToken = '${NODE_AUTH_TOKEN}';
+        let defaultNodeAuthToken = '${NODE_AUTH_TOKEN}';
+        let nodeAuthToken = defaultNodeAuthToken;
         // Check if auth url provided
         const authUrl = core.getInput('auth-url');
         if (authUrl) {
@@ -4784,8 +4785,13 @@ function writeRegistryToFile(registryUrl, fileLocation, alwaysAuth) {
         }
         fs.writeFileSync(fileLocation, newContents);
         core.exportVariable('NPM_CONFIG_USERCONFIG', fileLocation);
-        // Export empty node_auth_token so npm doesn't complain about not being able to find it
-        core.exportVariable('NODE_AUTH_TOKEN', 'XXXXX-XXXXX-XXXXX-XXXXX');
+        if (defaultNodeAuthToken !== nodeAuthToken) {
+            core.exportVariable('NODE_AUTH_TOKEN', nodeAuthToken);
+        }
+        else {
+            // Export empty node_auth_token so npm doesn't complain about not being able to find it
+            core.exportVariable('NODE_AUTH_TOKEN', 'XXXXX-XXXXX-XXXXX-XXXXX');
+        }
     });
 }
 //# sourceMappingURL=authutil.js.map
