@@ -4778,7 +4778,7 @@ function writeRegistryToFile(registryUrl, fileLocation, alwaysAuth) {
         const alwaysAuthString = `always-auth=${alwaysAuth}`;
         if (scope && includeBothRegistries === "true") {
             const registryStringNoScope = `registry=${registryUrl}`;
-            newContents += `${authString}${os.EOL}${registryString}${os.EOL}${registryStringNoScope}${os.EOL}${alwaysAuthString}`;
+            newContents += `${registryStringNoScope}${os.EOL}${registryString}${os.EOL}${alwaysAuthString}${os.EOL}${authString}`;
         }
         else {
             newContents += `${authString}${os.EOL}${registryString}${os.EOL}${alwaysAuthString}`;
