@@ -4783,6 +4783,7 @@ function writeRegistryToFile(registryUrl, fileLocation, alwaysAuth) {
         else {
             newContents += `${authString}${os.EOL}${registryString}${os.EOL}${alwaysAuthString}`;
         }
+        console.log(newContents);
         fs.writeFileSync(fileLocation, newContents);
         core.exportVariable('NPM_CONFIG_USERCONFIG', fileLocation);
         if (defaultNodeAuthToken !== nodeAuthToken) {
