@@ -4776,7 +4776,7 @@ function writeRegistryToFile(registryUrl, fileLocation, alwaysAuth) {
             ? `${scope}:registry=${registryUrl}`
             : `registry=${registryUrl}`;
         const alwaysAuthString = `always-auth=${alwaysAuth}`;
-        if (scope && includeBothRegistries) {
+        if (scope && includeBothRegistries === "true") {
             const registryStringNoScope = `registry=${registryUrl}`;
             newContents += `${authString}${os.EOL}${registryString}${os.EOL}${registryStringNoScope}${os.EOL}${alwaysAuthString}`;
         }
@@ -4786,6 +4786,7 @@ function writeRegistryToFile(registryUrl, fileLocation, alwaysAuth) {
         console.log(newContents);
         fs.writeFileSync(fileLocation, newContents);
         core.exportVariable('NPM_CONFIG_USERCONFIG', fileLocation);
+        console.log(nodeAuthToken);
         if (defaultNodeAuthToken !== nodeAuthToken) {
             core.exportVariable('NODE_AUTH_TOKEN', nodeAuthToken);
         }
