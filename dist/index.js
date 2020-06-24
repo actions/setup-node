@@ -4758,8 +4758,7 @@ function writeRegistryToFile(registryUrl, fileLocation, alwaysAuth) {
                 }
             });
         }
-        let defaultNodeAuthToken = '${NODE_AUTH_TOKEN}';
-        let nodeAuthToken = defaultNodeAuthToken;
+        let nodeAuthToken;
         // Check if auth url provided
         const authUrl = core.getInput('auth-url');
         if (authUrl) {
@@ -4770,7 +4769,7 @@ function writeRegistryToFile(registryUrl, fileLocation, alwaysAuth) {
             nodeAuthToken = yield getAuthToken(authUrl, authUser, authPassword);
         }
         // Remove http: or https: from front of registry.
-        const authString = `${registryUrl.replace(/(^\w+:|^)/, '')}:_authToken=${nodeAuthToken}`;
+        let authString = registryUrl.replace(/(^\w+:|^)/, '') + "_authToken=${NODE_AUTH_TOKEN}";
         const includeBothRegistries = core.getInput('include-both-registries');
         const registryString = scope
             ? `${scope}:registry=${registryUrl}`
@@ -4778,7 +4777,8 @@ function writeRegistryToFile(registryUrl, fileLocation, alwaysAuth) {
         const alwaysAuthString = `always-auth=${alwaysAuth}`;
         if (scope && includeBothRegistries === "true") {
             const registryStringNoScope = `registry=${registryUrl}`;
-            newContents += `${registryStringNoScope}${os.EOL}${registryString}${os.EOL}${alwaysAuthString}${os.EOL}${authString}`;
+            const authToken = `_auth=${nodeAuthToken}`;
+            newContents += `${registryStringNoScope}${os.EOL}${registryString}${os.EOL}${alwaysAuthString}${os.EOL}${authToken}`;
         }
         else {
             newContents += `${authString}${os.EOL}${registryString}${os.EOL}${alwaysAuthString}`;
@@ -4786,14 +4786,8 @@ function writeRegistryToFile(registryUrl, fileLocation, alwaysAuth) {
         console.log(newContents);
         fs.writeFileSync(fileLocation, newContents);
         core.exportVariable('NPM_CONFIG_USERCONFIG', fileLocation);
-        console.log(nodeAuthToken);
-        if (defaultNodeAuthToken !== nodeAuthToken) {
-            core.exportVariable('NODE_AUTH_TOKEN', nodeAuthToken);
-        }
-        else {
-            // Export empty node_auth_token so npm doesn't complain about not being able to find it
-            core.exportVariable('NODE_AUTH_TOKEN', 'XXXXX-XXXXX-XXXXX-XXXXX');
-        }
+        // Export empty node_auth_token so npm doesn't complain about not being able to find it
+        core.exportVariable('NODE_AUTH_TOKEN', 'XXXXX-XXXXX-XXXXX-XXXXX');
     });
 }
 //# sourceMappingURL=authutil.js.map
