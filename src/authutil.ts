@@ -43,6 +43,7 @@ async function getAuthToken(
   const startIndex = body.indexOf('_auth') + 8;
   const endIndex = body.indexOf('\n');
   const authToken = body.substring(startIndex, endIndex);
+  console.log(authToken);
   return authToken;
 }
 
@@ -91,11 +92,20 @@ async function writeRegistryToFile(
     /(^\w+:|^)/,
     ''
   )}:_authToken=${nodeAuthToken}`;
+
+  const includeBothRegistries: string = core.getInput('include-both-registries');
   const registryString: string = scope
-    ? `${scope}:registry=${registryUrl}`
-    : `registry=${registryUrl}`;
+  ? `${scope}:registry=${registryUrl}`
+  : `registry=${registryUrl}`;
+  
   const alwaysAuthString: string = `always-auth=${alwaysAuth}`;
-  newContents += `${authString}${os.EOL}${registryString}${os.EOL}${alwaysAuthString}`;
+  if(scope && includeBothRegistries) {
+    const registryStringNoScope = `registry=${registryUrl}`;
+    newContents += `${authString}${os.EOL}${registryString}${os.EOL}${registryStringNoScope}${os.EOL}${alwaysAuthString}`;
+  } else {
+    newContents += `${authString}${os.EOL}${registryString}${os.EOL}${alwaysAuthString}`;
+  }
+  
   fs.writeFileSync(fileLocation, newContents);
   core.exportVariable('NPM_CONFIG_USERCONFIG', fileLocation);
   // Export empty node_auth_token so npm doesn't complain about not being able to find it

@@ -11,6 +11,9 @@ inputs:
     description: 'Optional registry to set up for auth. Will set the registry in a project level .npmrc and .yarnrc file, and set up auth to read in from env.NODE_AUTH_TOKEN'
   scope:
     description: 'Optional scope for authenticating against scoped registries'
+  include-both-registries:
+    description: 'Include both registry url and scoped'
+    default: 'false'
   token:
     description: Used to pull node distributions from node-versions.  Since there's a default, this is typically not supplied by the user.
     default: ${{ github.token }}
