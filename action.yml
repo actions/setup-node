@@ -19,9 +19,7 @@ inputs:
   auth-user:
     description: The user to use for auth
   auth-password: 
-    description: The password to auth with 
-  auth-access-token: 
-    description: The access token to auth with if not using password
+    description: The password or access token to use for auth
 # TODO: add input to control forcing to pull from cloud or dist. 
 #       escape valve for someone having issues or needing the absolute latest which isn't cached yet
 # Deprecated option, do not use. Will not be supported after October 1, 2019

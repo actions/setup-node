@@ -76,9 +76,7 @@ async function writeRegistryToFile(
     // Check if username and password/token provided
     const authUser: string = core.getInput('auth-user');
     const authPassword: string = core.getInput('auth-password');
-    const authAccessToken: string = core.getInput('auth-access-token');
-    const authPass: string = authPassword || authAccessToken;
-    nodeAuthToken = await getAuthToken(authUrl, authUser, authPass);
+    nodeAuthToken = await getAuthToken(authUrl, authUser, authPassword);
   }
 
   // Remove http: or https: from front of registry.
