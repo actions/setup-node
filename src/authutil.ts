@@ -35,6 +35,7 @@ async function getAuthToken(
     maxRetries: 3
   });
   let response: hc.HttpClientResponse = await httpClient.get(authUrl);
+  console.log(response);
   let body: string = await response.readBody();
   core.info(body);
   let data: any = JSON.parse(body);
@@ -48,6 +49,7 @@ async function writeRegistryToFile(
   alwaysAuth: string
 ) {
   let scope: string = core.getInput('scope');
+  console.log(`scope: ${scope}`);
   if (!scope && registryUrl.indexOf('npm.pkg.github.com') > -1) {
     scope = github.context.repo.owner;
   }
@@ -58,7 +60,7 @@ async function writeRegistryToFile(
     scope = scope.toLowerCase();
   }
 
-  core.info(`Setting auth in ${fileLocation}`);
+  console.log(`Setting auth in ${fileLocation}`);
   let newContents: string = '';
   if (fs.existsSync(fileLocation)) {
     const curContents: string = fs.readFileSync(fileLocation, 'utf8');
@@ -74,6 +76,7 @@ async function writeRegistryToFile(
   // Check if auth url provided
   const authUrl: string = core.getInput('auth-url');
   if (authUrl) {
+    console.log(`authUrl: ${authUrl}`);
     // Check if username and password/token provided
     const authUser: string = core.getInput('auth-user');
     const authPassword: string = core.getInput('auth-password');

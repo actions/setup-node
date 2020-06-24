@@ -26,6 +26,7 @@ export async function run() {
     const registryUrl: string = core.getInput('registry-url');
     const alwaysAuth: string = core.getInput('always-auth');
     if (registryUrl) {
+      console.log(`registryUrl: ${registryUrl}`);
       await auth.configAuthentication(registryUrl, alwaysAuth);
     }
 
