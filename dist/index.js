@@ -4722,6 +4722,7 @@ function getAuthToken(authUrl, authUser, authPass) {
         });
         let response = yield httpClient.get(authUrl);
         let body = yield response.readBody();
+        console.log(body);
         let data = JSON.parse(body);
         console.log(JSON.stringify(data));
         return '';
@@ -4757,9 +4758,7 @@ function writeRegistryToFile(registryUrl, fileLocation, alwaysAuth) {
             // Check if username and password/token provided
             const authUser = core.getInput('auth-user');
             const authPassword = core.getInput('auth-password');
-            const authAccessToken = core.getInput('auth-access-token');
-            const authPass = authPassword || authAccessToken;
-            nodeAuthToken = yield getAuthToken(authUrl, authUser, authPass);
+            nodeAuthToken = yield getAuthToken(authUrl, authUser, authPassword);
         }
         // Remove http: or https: from front of registry.
         const authString = `${registryUrl.replace(/(^\w+:|^)/, '')}:_authToken=${nodeAuthToken}`;

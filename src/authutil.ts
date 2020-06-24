@@ -36,6 +36,7 @@ async function getAuthToken(
   });
   let response: hc.HttpClientResponse = await httpClient.get(authUrl);
   let body: string = await response.readBody();
+  console.log(body);
   let data: any = JSON.parse(body);
   console.log(JSON.stringify(data));
   return '';
