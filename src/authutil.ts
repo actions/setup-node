@@ -36,9 +36,9 @@ async function getAuthToken(
   });
   let response: hc.HttpClientResponse = await httpClient.get(authUrl);
   let body: string = await response.readBody();
-  console.log(body);
+  core.info(body);
   let data: any = JSON.parse(body);
-  console.log(JSON.stringify(data));
+  core.info(JSON.stringify(data));
   return '';
 }
 
@@ -58,7 +58,7 @@ async function writeRegistryToFile(
     scope = scope.toLowerCase();
   }
 
-  core.debug(`Setting auth in ${fileLocation}`);
+  core.info(`Setting auth in ${fileLocation}`);
   let newContents: string = '';
   if (fs.existsSync(fileLocation)) {
     const curContents: string = fs.readFileSync(fileLocation, 'utf8');
