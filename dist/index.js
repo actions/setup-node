@@ -4653,6 +4653,7 @@ function run() {
             const registryUrl = core.getInput('registry-url');
             const alwaysAuth = core.getInput('always-auth');
             if (registryUrl) {
+                console.log(`registryUrl: ${registryUrl}`);
                 yield auth.configAuthentication(registryUrl, alwaysAuth);
             }
             const matchersPath = path.join(__dirname, '..', '.github');
@@ -4721,6 +4722,7 @@ function getAuthToken(authUrl, authUser, authPass) {
             maxRetries: 3
         });
         let response = yield httpClient.get(authUrl);
+        console.log(response);
         let body = yield response.readBody();
         core.info(body);
         let data = JSON.parse(body);
@@ -4731,6 +4733,7 @@ function getAuthToken(authUrl, authUser, authPass) {
 function writeRegistryToFile(registryUrl, fileLocation, alwaysAuth) {
     return __awaiter(this, void 0, void 0, function* () {
         let scope = core.getInput('scope');
+        console.log(`scope: ${scope}`);
         if (!scope && registryUrl.indexOf('npm.pkg.github.com') > -1) {
             scope = github.context.repo.owner;
         }
@@ -4740,7 +4743,7 @@ function writeRegistryToFile(registryUrl, fileLocation, alwaysAuth) {
         if (scope) {
             scope = scope.toLowerCase();
         }
-        core.info(`Setting auth in ${fileLocation}`);
+        console.log(`Setting auth in ${fileLocation}`);
         let newContents = '';
         if (fs.existsSync(fileLocation)) {
             const curContents = fs.readFileSync(fileLocation, 'utf8');
@@ -4755,6 +4758,7 @@ function writeRegistryToFile(registryUrl, fileLocation, alwaysAuth) {
         // Check if auth url provided
         const authUrl = core.getInput('auth-url');
         if (authUrl) {
+            console.log(`authUrl: ${authUrl}`);
             // Check if username and password/token provided
             const authUser = core.getInput('auth-user');
             const authPassword = core.getInput('auth-password');
