@@ -4722,12 +4722,15 @@ function getAuthToken(authUrl, authUser, authPass) {
             maxRetries: 3
         });
         let response = yield httpClient.get(authUrl);
-        console.log(response);
+        /**
+         * constains string _auth = ***OmV5***\nalways-auth = true
+         * we will parse it by using indexes
+         */
         let body = yield response.readBody();
-        core.info(body);
-        let data = JSON.parse(body);
-        core.info(JSON.stringify(data));
-        return '';
+        const startIndex = body.indexOf('_auth') + 8;
+        const endIndex = body.indexOf('\n');
+        const authToken = body.substring(startIndex, endIndex);
+        return authToken;
     });
 }
 function writeRegistryToFile(registryUrl, fileLocation, alwaysAuth) {

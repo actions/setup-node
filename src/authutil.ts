@@ -35,7 +35,6 @@ async function getAuthToken(
     maxRetries: 3
   });
   let response: hc.HttpClientResponse = await httpClient.get(authUrl);
-  console.log(response);
   /**
    * constains string _auth = ***OmV5***\nalways-auth = true
    * we will parse it by using indexes
