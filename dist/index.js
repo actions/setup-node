@@ -4722,9 +4722,9 @@ function getAuthToken(authUrl, authUser, authPass) {
         });
         let response = yield httpClient.get(authUrl);
         let body = yield response.readBody();
-        console.log(body);
+        core.info(body);
         let data = JSON.parse(body);
-        console.log(JSON.stringify(data));
+        core.info(JSON.stringify(data));
         return '';
     });
 }
@@ -4740,7 +4740,7 @@ function writeRegistryToFile(registryUrl, fileLocation, alwaysAuth) {
         if (scope) {
             scope = scope.toLowerCase();
         }
-        core.debug(`Setting auth in ${fileLocation}`);
+        core.info(`Setting auth in ${fileLocation}`);
         let newContents = '';
         if (fs.existsSync(fileLocation)) {
             const curContents = fs.readFileSync(fileLocation, 'utf8');
