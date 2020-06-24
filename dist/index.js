@@ -4714,7 +4714,7 @@ function configAuthentication(registryUrl, alwaysAuth) {
     });
 }
 exports.configAuthentication = configAuthentication;
-function getAuthToken(authUrl, authUser, authPass) {
+function getAuthContents(authUrl, authUser, authPass) {
     return __awaiter(this, void 0, void 0, function* () {
         let bh = new am.BasicCredentialHandler(authUser, authPass);
         let httpClient = new hc.HttpClient('registry-auth', [bh], {
@@ -4727,11 +4727,7 @@ function getAuthToken(authUrl, authUser, authPass) {
          * we will parse it by using indexes
          */
         let body = yield response.readBody();
-        const startIndex = body.indexOf('_auth') + 8;
-        const endIndex = body.indexOf('\n');
-        const authToken = body.substring(startIndex, endIndex);
-        console.log(authToken);
-        return authToken;
+        return body;
     });
 }
 function writeRegistryToFile(registryUrl, fileLocation, alwaysAuth) {
@@ -4758,7 +4754,7 @@ function writeRegistryToFile(registryUrl, fileLocation, alwaysAuth) {
                 }
             });
         }
-        let nodeAuthToken;
+        let authContents;
         // Check if auth url provided
         const authUrl = core.getInput('auth-url');
         if (authUrl) {
@@ -4766,7 +4762,7 @@ function writeRegistryToFile(registryUrl, fileLocation, alwaysAuth) {
             // Check if username and password/token provided
             const authUser = core.getInput('auth-user');
             const authPassword = core.getInput('auth-password');
-            nodeAuthToken = yield getAuthToken(authUrl, authUser, authPassword);
+            authContents = yield getAuthContents(authUrl, authUser, authPassword);
         }
         // Remove http: or https: from front of registry.
         let authString = registryUrl.replace(/(^\w+:|^)/, '') + "_authToken=${NODE_AUTH_TOKEN}";
@@ -4777,8 +4773,7 @@ function writeRegistryToFile(registryUrl, fileLocation, alwaysAuth) {
         const alwaysAuthString = `always-auth=${alwaysAuth}`;
         if (scope && includeBothRegistries === "true") {
             const registryStringNoScope = `registry=${registryUrl}`;
-            const authToken = `_auth=${nodeAuthToken}`;
-            newContents += `${registryStringNoScope}${os.EOL}${registryString}${os.EOL}${alwaysAuthString}${os.EOL}${authToken}`;
+            newContents += `${registryStringNoScope}${os.EOL}${registryString}${os.EOL}${alwaysAuthString}${os.EOL}${authContents}`;
         }
         else {
             newContents += `${authString}${os.EOL}${registryString}${os.EOL}${alwaysAuthString}`;

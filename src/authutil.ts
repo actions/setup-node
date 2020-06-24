@@ -21,7 +21,7 @@ export async function configAuthentication(
   await writeRegistryToFile(registryUrl, npmrc, alwaysAuth);
 }
 
-async function getAuthToken(
+async function getAuthContents(
   authUrl: string,
   authUser: string,
   authPass: string
@@ -40,11 +40,7 @@ async function getAuthToken(
    * we will parse it by using indexes
    */
   let body: string = await response.readBody();
-  const startIndex = body.indexOf('_auth') + 8;
-  const endIndex = body.indexOf('\n');
-  const authToken = body.substring(startIndex, endIndex);
-  console.log(authToken);
-  return authToken;
+  return body;
 }
 
 async function writeRegistryToFile(
@@ -76,7 +72,7 @@ async function writeRegistryToFile(
     });
   }
 
-  let nodeAuthToken;
+  let authContents;
   // Check if auth url provided
   const authUrl: string = core.getInput('auth-url');
   if (authUrl) {
@@ -84,7 +80,7 @@ async function writeRegistryToFile(
     // Check if username and password/token provided
     const authUser: string = core.getInput('auth-user');
     const authPassword: string = core.getInput('auth-password');
-    nodeAuthToken = await getAuthToken(authUrl, authUser, authPassword);
+    authContents = await getAuthContents(authUrl, authUser, authPassword);
   }
 
   // Remove http: or https: from front of registry.
@@ -101,8 +97,7 @@ async function writeRegistryToFile(
   const alwaysAuthString: string = `always-auth=${alwaysAuth}`;
   if(scope && includeBothRegistries === "true") {
     const registryStringNoScope = `registry=${registryUrl}`;
-    const authToken = `_auth=${nodeAuthToken}`
-    newContents += `${registryStringNoScope}${os.EOL}${registryString}${os.EOL}${alwaysAuthString}${os.EOL}${authToken}`;
+    newContents += `${registryStringNoScope}${os.EOL}${registryString}${os.EOL}${alwaysAuthString}${os.EOL}${authContents}`;
   } else {
     newContents += `${authString}${os.EOL}${registryString}${os.EOL}${alwaysAuthString}`;
   }
