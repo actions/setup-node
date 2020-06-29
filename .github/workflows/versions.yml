@@ -12,36 +12,88 @@ on:
       - '**.md'
       
 jobs:
-  versions:
+  local-cache:
     runs-on: ${{ matrix.operating-system }}
     strategy:
       fail-fast: false
       matrix:
-        operating-system: [ubuntu-latest, windows-latest]
-    defaults:
-      run:
-        shell: bash
+        operating-system: [ubuntu-latest, windows-latest, macos-latest]
+        node-version: [10, 12, 14]
     steps:
       - uses: actions/checkout@v2
-      # test version that falls through to node dist
-      - name: Setup node 11 from dist
+      - name: Setup Node
         uses: ./
         with:
-          node-version: 11          
+          node-version: ${{ matrix.node-version }}
       - name: Verify node and npm
-        run: __tests__/verify-node.sh 11
-      # test old versions which didn't have npm and layout different      
+        run: __tests__/verify-node.sh "${{ matrix.node-version }}"
+        shell: bash
+
+  manifest:
+    runs-on: ${{ matrix.operating-system }}
+    strategy:
+      fail-fast: false
+      matrix:
+        operating-system: [ubuntu-latest, windows-latest, macos-latest]
+        node-version: [10.15, 12.16.0, 14.2.0]
+    steps:
+      - uses: actions/checkout@v2
+      - name: Setup Node
+        uses: ./
+        with:
+          node-version: ${{ matrix.node-version }}
+      - name: Verify node and npm
+        run: __tests__/verify-node.sh "${{ matrix.node-version }}"
+        shell: bash
+
+  check-latest:
+    runs-on: ${{ matrix.operating-system }}
+    strategy:
+      fail-fast: false
+      matrix:
+        operating-system: [ubuntu-latest, windows-latest, macos-latest]
+        node-version: [10, 11, 12, 14]
+    steps:
+      - uses: actions/checkout@v2
+      - name: Setup Node and check latest
+        uses: ./
+        with:
+          node-version: ${{ matrix.node-version }}
+          check-latest: true
+      - name: Verify node and npm
+        run: __tests__/verify-node.sh "${{ matrix.node-version }}"
+        shell: bash
+
+  node-dist:
+    runs-on: ${{ matrix.operating-system }}
+    strategy:
+      fail-fast: false
+      matrix:
+        operating-system: [ubuntu-latest, windows-latest, macos-latest]
+        node-version: [11, 13]
+    steps:
+      - uses: actions/checkout@v2
+      - name: Setup Node from dist
+        uses: ./
+        with:
+          node-version: ${{ matrix.node-version }}
+      - name: Verify node and npm
+        run: __tests__/verify-node.sh "${{ matrix.node-version }}"
+        shell: bash
+
+  old-versions:
+    runs-on: ${{ matrix.operating-system }}
+    strategy:
+      fail-fast: false
+      matrix:
+        operating-system: [ubuntu-latest, windows-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@v2
+      # test old versions which didn't have npm and layout different
       - name: Setup node 0.12.18 from dist
-        uses: ./                 
+        uses: ./
         with:
           node-version: 0.12.18
       - name: Verify node
+        run: __tests__/verify-node.sh 0.12.18 SKIP_NPM
         shell: bash
-        run: __tests__/verify-node.sh 0.12.18 SKIP_NPM 
-      # test version from node manifest
-      - name: Setup node 12.16.2 from manifest
-        uses: ./
-        with:
-          node-version: 12.16.2
-      - name: Verify node and npm
-        run: __tests__/verify-node.sh 12        

@@ -26,10 +26,26 @@ interface INodeVersionInfo {
 export async function getNode(
   versionSpec: string,
   stable: boolean,
+  checkLatest: boolean,
   auth: string | undefined
 ) {
   let osPlat: string = os.platform();
   let osArch: string = translateArchToDistUrl(os.arch());
+
+  if (checkLatest) {
+    core.info('Attempt to resolve the latest version from manifest...');
+    const resolvedVersion = await resolveVersionFromManifest(
+      versionSpec,
+      stable,
+      auth
+    );
+    if (resolvedVersion) {
+      versionSpec = resolvedVersion;
+      core.info(`Resolved as '${versionSpec}'`);
+    } else {
+      core.info(`Failed to resolve version ${versionSpec} from manifest`);
+    }
+  }
 
   // check cache
   let toolPath: string;
@@ -37,9 +53,9 @@ export async function getNode(
 
   // If not found in cache, download
   if (toolPath) {
-    console.log(`Found in cache @ ${toolPath}`);
+    core.info(`Found in cache @ ${toolPath}`);
   } else {
-    console.log(`Attempting to download ${versionSpec}...`);
+    core.info(`Attempting to download ${versionSpec}...`);
     let downloadPath = '';
     let info: INodeVersionInfo | null = null;
 
@@ -49,12 +65,10 @@ export async function getNode(
     try {
       info = await getInfoFromManifest(versionSpec, stable, auth);
       if (info) {
-        console.log(
-          `Acquiring ${info.resolvedVersion} from ${info.downloadUrl}`
-        );
+        core.info(`Acquiring ${info.resolvedVersion} from ${info.downloadUrl}`);
         downloadPath = await tc.downloadTool(info.downloadUrl, undefined, auth);
       } else {
-        console.log(
+        core.info(
           'Not found in manifest.  Falling back to download directly from Node'
         );
       }
@@ -64,14 +78,14 @@ export async function getNode(
         err instanceof tc.HTTPError &&
         (err.httpStatusCode === 403 || err.httpStatusCode === 429)
       ) {
-        console.log(
+        core.info(
           `Received HTTP status code ${err.httpStatusCode}.  This usually indicates the rate limit has been exceeded`
         );
       } else {
-        console.log(err.message);
+        core.info(err.message);
       }
       core.debug(err.stack);
-      console.log('Falling back to download directly from Node');
+      core.info('Falling back to download directly from Node');
     }
 
     //
@@ -85,7 +99,7 @@ export async function getNode(
         );
       }
 
-      console.log(`Acquiring ${info.resolvedVersion} from ${info.downloadUrl}`);
+      core.info(`Acquiring ${info.resolvedVersion} from ${info.downloadUrl}`);
       try {
         downloadPath = await tc.downloadTool(info.downloadUrl);
       } catch (err) {
@@ -100,7 +114,7 @@ export async function getNode(
     //
     // Extract
     //
-    console.log('Extracting ...');
+    core.info('Extracting ...');
     let extPath: string;
     info = info || ({} as INodeVersionInfo); // satisfy compiler, never null when reaches here
     if (osPlat == 'win32') {
@@ -122,9 +136,9 @@ export async function getNode(
     //
     // Install into the local tool cache - node extracts with a root folder that matches the fileName downloaded
     //
-    console.log('Adding to the cache ...');
+    core.info('Adding to the cache ...');
     toolPath = await tc.cacheDir(extPath, 'node', info.resolvedVersion);
-    console.log('Done');
+    core.info('Done');
   }
 
   //
@@ -152,7 +166,6 @@ async function getInfoFromManifest(
     'node-versions',
     auth
   );
-  console.log(`matching ${versionSpec}...`);
   const rel = await tc.findFromManifest(versionSpec, stable, releases);
 
   if (rel && rel.files.length > 0) {
@@ -195,6 +208,20 @@ async function getInfoFromDist(
     resolvedVersion: version,
     fileName: fileName
   };
+}
+
+async function resolveVersionFromManifest(
+  versionSpec: string,
+  stable: boolean,
+  auth: string | undefined
+): Promise<string | undefined> {
+  try {
+    const info = await getInfoFromManifest(versionSpec, stable, auth);
+    return info?.resolvedVersion;
+  } catch (err) {
+    core.info('Unable to resolve version from manifest...');
+    core.debug(err.message);
+  }
 }
 
 // TODO - should we just export this from @actions/tool-cache? Lifted directly from there
@@ -301,7 +328,7 @@ async function acquireNodeFromFallbackLocation(
     exeUrl = `https://nodejs.org/dist/v${version}/win-${osArch}/node.exe`;
     libUrl = `https://nodejs.org/dist/v${version}/win-${osArch}/node.lib`;
 
-    console.log(`Downloading only node binary from ${exeUrl}`);
+    core.info(`Downloading only node binary from ${exeUrl}`);
 
     const exePath = await tc.downloadTool(exeUrl);
     await io.cp(exePath, path.join(tempDir, 'node.exe'));
