@@ -13153,7 +13153,7 @@ function resolveVersionFromManifest(versionSpec, stable, auth) {
             return info === null || info === void 0 ? void 0 : info.resolvedVersion;
         }
         catch (err) {
-            core.warning('Unable to resolve version from manifest...');
+            core.info('Unable to resolve version from manifest...');
             core.debug(err.message);
         }
     });

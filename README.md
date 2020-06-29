@@ -41,8 +41,9 @@ steps:
 - run: npm test
 ```
 
-Checking latest version of Node.js:  
-(By default, action searches version locally before downloading it. The flag forces action to check if cached version is not outdated)
+Check latest version:  
+> In basic example, without `check-latest` flag, the action tries to resolve version from local cache firstly and download only if it is not found. Local cache on image is updated with a couple of weeks latency.  
+`check-latest` flag forces the action to check if the cached version is the latest one. It reduces latency significantly but it is much more likely to incur version downloading.
 ```yaml
 steps:
 - uses: actions/checkout@v2
