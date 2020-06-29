@@ -166,7 +166,6 @@ async function getInfoFromManifest(
     'node-versions',
     auth
   );
-  core.info(`matching ${versionSpec}...`);
   const rel = await tc.findFromManifest(versionSpec, stable, releases);
 
   if (rel && rel.files.length > 0) {

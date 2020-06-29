@@ -35,7 +35,7 @@ jobs:
       fail-fast: false
       matrix:
         operating-system: [ubuntu-latest, windows-latest, macos-latest]
-        node-version: [10.15, 10.16.2, 12.14, 12.16.0, 14.1, 14.2.0]
+        node-version: [10.15, 12.16.0, 14.2.0]
     steps:
       - uses: actions/checkout@v2
       - name: Setup Node
