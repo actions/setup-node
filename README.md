@@ -41,6 +41,19 @@ steps:
 - run: npm test
 ```
 
+Checking latest version of Node.js:  
+(By default, action searches version locally before downloading it. This flag forces action to check if local version is the latest one)
+```yaml
+steps:
+- uses: actions/checkout@v2
+- uses: actions/setup-node@v2
+  with:
+    node-version: '12'
+    check-latest: true
+- run: npm install
+- run: npm test
+```
+
 Matrix Testing:
 ```yaml
 jobs:

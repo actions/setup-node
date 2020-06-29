@@ -8,6 +8,7 @@ import path from 'path';
 import * as main from '../src/main';
 import * as im from '../src/installer';
 import * as auth from '../src/authutil';
+import {context} from '@actions/github';
 
 let nodeTestManifest = require('./data/versions-manifest.json');
 let nodeTestDist = require('./data/node-dist-index.json');
@@ -24,6 +25,7 @@ describe('setup-node', () => {
   let findSpy: jest.SpyInstance;
   let cnSpy: jest.SpyInstance;
   let logSpy: jest.SpyInstance;
+  let warningSpy: jest.SpyInstance;
   let getManifestSpy: jest.SpyInstance;
   let getDistSpy: jest.SpyInstance;
   let platSpy: jest.SpyInstance;
@@ -77,8 +79,9 @@ describe('setup-node', () => {
 
     // writes
     cnSpy = jest.spyOn(process.stdout, 'write');
-    logSpy = jest.spyOn(console, 'log');
+    logSpy = jest.spyOn(core, 'info');
     dbgSpy = jest.spyOn(core, 'debug');
+    warningSpy = jest.spyOn(core, 'warning');
     cnSpy.mockImplementation(line => {
       // uncomment to debug
       // process.stderr.write('write:' + line + '\n');
@@ -332,5 +335,155 @@ describe('setup-node', () => {
     await main.run();
 
     expect(cnSpy).toHaveBeenCalledWith(`::error::${errMsg}${osm.EOL}`);
+  });
+
+  describe('check-latest flag', () => {
+    it('use local version and dont check manifest if check-latest is not specified', async () => {
+      os.platform = 'linux';
+      os.arch = 'x64';
+
+      inputs['node-version'] = '12';
+      inputs['check-latest'] = 'false';
+
+      const toolPath = path.normalize('/cache/node/12.16.1/x64');
+      findSpy.mockReturnValue(toolPath);
+      await main.run();
+
+      expect(logSpy).toHaveBeenCalledWith(`Found in cache @ ${toolPath}`);
+      expect(logSpy).not.toHaveBeenCalledWith(
+        'Attempt to resolve the latest version from manifest...'
+      );
+    });
+
+    it('check latest version and resolve it from local cache', async () => {
+      os.platform = 'linux';
+      os.arch = 'x64';
+
+      inputs['node-version'] = '12';
+      inputs['check-latest'] = 'true';
+
+      const toolPath = path.normalize('/cache/node/12.16.2/x64');
+      findSpy.mockReturnValue(toolPath);
+      dlSpy.mockImplementation(async () => '/some/temp/path');
+      exSpy.mockImplementation(async () => '/some/other/temp/path');
+      cacheSpy.mockImplementation(async () => toolPath);
+
+      await main.run();
+
+      expect(logSpy).toHaveBeenCalledWith(
+        'Attempt to resolve the latest version from manifest...'
+      );
+      expect(logSpy).toHaveBeenCalledWith("Resolved as '12.16.2'");
+      expect(logSpy).toHaveBeenCalledWith(`Found in cache @ ${toolPath}`);
+    });
+
+    it('check latest version and install it from manifest', async () => {
+      os.platform = 'linux';
+      os.arch = 'x64';
+
+      inputs['node-version'] = '12';
+      inputs['check-latest'] = 'true';
+
+      findSpy.mockImplementation(() => '');
+      dlSpy.mockImplementation(async () => '/some/temp/path');
+      const toolPath = path.normalize('/cache/node/12.16.2/x64');
+      exSpy.mockImplementation(async () => '/some/other/temp/path');
+      cacheSpy.mockImplementation(async () => toolPath);
+      const expectedUrl =
+        'https://github.com/actions/node-versions/releases/download/12.16.2-20200423.28/node-12.16.2-linux-x64.tar.gz';
+
+      await main.run();
+
+      expect(logSpy).toHaveBeenCalledWith(
+        'Attempt to resolve the latest version from manifest...'
+      );
+      expect(logSpy).toHaveBeenCalledWith("Resolved as '12.16.2'");
+      expect(logSpy).toHaveBeenCalledWith(
+        `Acquiring 12.16.2 from ${expectedUrl}`
+      );
+      expect(logSpy).toHaveBeenCalledWith('Extracting ...');
+    });
+
+    it('fallback to dist if version if not found in manifest', async () => {
+      os.platform = 'linux';
+      os.arch = 'x64';
+
+      // a version which is not in the manifest but is in node dist
+      let versionSpec = '11';
+
+      inputs['node-version'] = versionSpec;
+      inputs['check-latest'] = 'true';
+      inputs['always-auth'] = false;
+      inputs['token'] = 'faketoken';
+
+      // ... but not in the local cache
+      findSpy.mockImplementation(() => '');
+
+      dlSpy.mockImplementation(async () => '/some/temp/path');
+      let toolPath = path.normalize('/cache/node/11.11.0/x64');
+      exSpy.mockImplementation(async () => '/some/other/temp/path');
+      cacheSpy.mockImplementation(async () => toolPath);
+
+      await main.run();
+
+      let expPath = path.join(toolPath, 'bin');
+
+      expect(dlSpy).toHaveBeenCalled();
+      expect(exSpy).toHaveBeenCalled();
+      expect(logSpy).toHaveBeenCalledWith(
+        'Attempt to resolve the latest version from manifest...'
+      );
+      expect(logSpy).toHaveBeenCalledWith(
+        `Failed to resolve version ${versionSpec} from manifest`
+      );
+      expect(logSpy).toHaveBeenCalledWith(
+        `Attempting to download ${versionSpec}...`
+      );
+      expect(cnSpy).toHaveBeenCalledWith(`::add-path::${expPath}${osm.EOL}`);
+    });
+
+    it('fallback to dist if manifest is not available', async () => {
+      os.platform = 'linux';
+      os.arch = 'x64';
+
+      // a version which is not in the manifest but is in node dist
+      let versionSpec = '12';
+
+      inputs['node-version'] = versionSpec;
+      inputs['check-latest'] = 'true';
+      inputs['always-auth'] = false;
+      inputs['token'] = 'faketoken';
+
+      // ... but not in the local cache
+      findSpy.mockImplementation(() => '');
+      getManifestSpy.mockImplementation(() => {
+        throw new Error('Unable to download manifest');
+      });
+
+      dlSpy.mockImplementation(async () => '/some/temp/path');
+      let toolPath = path.normalize('/cache/node/12.11.0/x64');
+      exSpy.mockImplementation(async () => '/some/other/temp/path');
+      cacheSpy.mockImplementation(async () => toolPath);
+
+      await main.run();
+
+      let expPath = path.join(toolPath, 'bin');
+
+      expect(dlSpy).toHaveBeenCalled();
+      expect(exSpy).toHaveBeenCalled();
+      expect(logSpy).toHaveBeenCalledWith(
+        'Attempt to resolve the latest version from manifest...'
+      );
+      expect(warningSpy).toHaveBeenCalledWith(
+        'Unable to resolve version from manifest...'
+      );
+      expect(logSpy).toHaveBeenCalledWith(
+        `Failed to resolve version ${versionSpec} from manifest`
+      );
+      expect(logSpy).toHaveBeenCalledWith(
+        `Attempting to download ${versionSpec}...`
+      );
+      expect(cnSpy).toHaveBeenCalledWith(`::add-path::${expPath}${osm.EOL}`);
+    });
   });
 });

@@ -15,12 +15,13 @@ export async function run() {
       version = core.getInput('version');
     }
 
-    console.log(`version: ${version}`);
     if (version) {
       let token = core.getInput('token');
       let auth = !token || isGhes() ? undefined : `token ${token}`;
       let stable = (core.getInput('stable') || 'true').toUpperCase() === 'TRUE';
-      await installer.getNode(version, stable, auth);
+      const checkLatest =
+        (core.getInput('check-latest') || 'false').toUpperCase() === 'TRUE';
+      await installer.getNode(version, stable, checkLatest, auth);
     }
 
     const registryUrl: string = core.getInput('registry-url');

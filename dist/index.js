@@ -4643,12 +4643,12 @@ function run() {
             if (!version) {
                 version = core.getInput('version');
             }
-            console.log(`version: ${version}`);
             if (version) {
                 let token = core.getInput('token');
                 let auth = !token || isGhes() ? undefined : `token ${token}`;
                 let stable = (core.getInput('stable') || 'true').toUpperCase() === 'TRUE';
-                yield installer.getNode(version, stable, auth);
+                const checkLatest = (core.getInput('check-latest') || 'false').toUpperCase() === 'TRUE';
+                yield installer.getNode(version, stable, checkLatest, auth);
             }
             const registryUrl = core.getInput('registry-url');
             const alwaysAuth = core.getInput('always-auth');
@@ -12994,19 +12994,30 @@ const tc = __importStar(__webpack_require__(533));
 const path = __importStar(__webpack_require__(622));
 const semver = __importStar(__webpack_require__(280));
 const fs = __webpack_require__(747);
-function getNode(versionSpec, stable, auth) {
+function getNode(versionSpec, stable, checkLatest, auth) {
     return __awaiter(this, void 0, void 0, function* () {
         let osPlat = os.platform();
         let osArch = translateArchToDistUrl(os.arch());
+        if (checkLatest) {
+            core.info('Attempt to resolve the latest version from manifest...');
+            const resolvedVersion = yield resolveVersionFromManifest(versionSpec, stable, auth);
+            if (resolvedVersion) {
+                versionSpec = resolvedVersion;
+                core.info(`Resolved as '${versionSpec}'`);
+            }
+            else {
+                core.info(`Failed to resolve version ${versionSpec} from manifest`);
+            }
+        }
         // check cache
         let toolPath;
         toolPath = tc.find('node', versionSpec);
         // If not found in cache, download
         if (toolPath) {
-            console.log(`Found in cache @ ${toolPath}`);
+            core.info(`Found in cache @ ${toolPath}`);
         }
         else {
-            console.log(`Attempting to download ${versionSpec}...`);
+            core.info(`Attempting to download ${versionSpec}...`);
             let downloadPath = '';
             let info = null;
             //
@@ -13015,24 +13026,24 @@ function getNode(versionSpec, stable, auth) {
             try {
                 info = yield getInfoFromManifest(versionSpec, stable, auth);
                 if (info) {
-                    console.log(`Acquiring ${info.resolvedVersion} from ${info.downloadUrl}`);
+                    core.info(`Acquiring ${info.resolvedVersion} from ${info.downloadUrl}`);
                     downloadPath = yield tc.downloadTool(info.downloadUrl, undefined, auth);
                 }
                 else {
-                    console.log('Not found in manifest.  Falling back to download directly from Node');
+                    core.info('Not found in manifest.  Falling back to download directly from Node');
                 }
             }
             catch (err) {
                 // Rate limit?
                 if (err instanceof tc.HTTPError &&
                     (err.httpStatusCode === 403 || err.httpStatusCode === 429)) {
-                    console.log(`Received HTTP status code ${err.httpStatusCode}.  This usually indicates the rate limit has been exceeded`);
+                    core.info(`Received HTTP status code ${err.httpStatusCode}.  This usually indicates the rate limit has been exceeded`);
                 }
                 else {
-                    console.log(err.message);
+                    core.info(err.message);
                 }
                 core.debug(err.stack);
-                console.log('Falling back to download directly from Node');
+                core.info('Falling back to download directly from Node');
             }
             //
             // Download from nodejs.org
@@ -13042,7 +13053,7 @@ function getNode(versionSpec, stable, auth) {
                 if (!info) {
                     throw new Error(`Unable to find Node version '${versionSpec}' for platform ${osPlat} and architecture ${osArch}.`);
                 }
-                console.log(`Acquiring ${info.resolvedVersion} from ${info.downloadUrl}`);
+                core.info(`Acquiring ${info.resolvedVersion} from ${info.downloadUrl}`);
                 try {
                     downloadPath = yield tc.downloadTool(info.downloadUrl);
                 }
@@ -13056,7 +13067,7 @@ function getNode(versionSpec, stable, auth) {
             //
             // Extract
             //
-            console.log('Extracting ...');
+            core.info('Extracting ...');
             let extPath;
             info = info || {}; // satisfy compiler, never null when reaches here
             if (osPlat == 'win32') {
@@ -13078,9 +13089,9 @@ function getNode(versionSpec, stable, auth) {
             //
             // Install into the local tool cache - node extracts with a root folder that matches the fileName downloaded
             //
-            console.log('Adding to the cache ...');
+            core.info('Adding to the cache ...');
             toolPath = yield tc.cacheDir(extPath, 'node', info.resolvedVersion);
-            console.log('Done');
+            core.info('Done');
         }
         //
         // a tool installer initimately knows details about the layout of that tool
@@ -13100,7 +13111,7 @@ function getInfoFromManifest(versionSpec, stable, auth) {
     return __awaiter(this, void 0, void 0, function* () {
         let info = null;
         const releases = yield tc.getManifestFromRepo('actions', 'node-versions', auth);
-        console.log(`matching ${versionSpec}...`);
+        core.info(`matching ${versionSpec}...`);
         const rel = yield tc.findFromManifest(versionSpec, stable, releases);
         if (rel && rel.files.length > 0) {
             info = {};
@@ -13134,6 +13145,18 @@ function getInfoFromDist(versionSpec) {
             resolvedVersion: version,
             fileName: fileName
         };
+    });
+}
+function resolveVersionFromManifest(versionSpec, stable, auth) {
+    return __awaiter(this, void 0, void 0, function* () {
+        try {
+            const info = yield getInfoFromManifest(versionSpec, stable, auth);
+            return info === null || info === void 0 ? void 0 : info.resolvedVersion;
+        }
+        catch (err) {
+            core.warning('Unable to resolve version from manifest...');
+            core.debug(err.message);
+        }
     });
 }
 // TODO - should we just export this from @actions/tool-cache? Lifted directly from there
@@ -13233,7 +13256,7 @@ function acquireNodeFromFallbackLocation(version) {
         try {
             exeUrl = `https://nodejs.org/dist/v${version}/win-${osArch}/node.exe`;
             libUrl = `https://nodejs.org/dist/v${version}/win-${osArch}/node.lib`;
-            console.log(`Downloading only node binary from ${exeUrl}`);
+            core.info(`Downloading only node binary from ${exeUrl}`);
             const exePath = yield tc.downloadTool(exeUrl);
             yield io.cp(exePath, path.join(tempDir, 'node.exe'));
             const libPath = yield tc.downloadTool(libUrl);
