@@ -42,7 +42,7 @@ steps:
 ```
 
 Checking latest version of Node.js:  
-(By default, action searches version locally before downloading it. This flag forces action to check if local version is the latest one)
+(By default, action searches version locally before downloading it. The flag forces action to check if cached version is not outdated)
 ```yaml
 steps:
 - uses: actions/checkout@v2
