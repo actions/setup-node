@@ -47,6 +47,8 @@ In the basic example above, the `check-latest` flag defaults to `false`. When se
 
 If `check-latest` is set to `true`, the action first checks if the cached version is the latest one. If the locally cached version is not the most up-to-date, a version of Node will then be downloaded. Set `check-latest` to `true` it you want the most up-to-date version of Node to always be used.
 
+> Setting `check-latest` to `true` has performance implications as downloading versions of Node is slower than using cached versions
+
 ```yaml
 steps:
 - uses: actions/checkout@v2
