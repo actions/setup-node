@@ -164,7 +164,8 @@ async function getInfoFromManifest(
   const releases = await tc.getManifestFromRepo(
     'actions',
     'node-versions',
-    auth
+    auth,
+    'main'
   );
   const rel = await tc.findFromManifest(versionSpec, stable, releases);
 
