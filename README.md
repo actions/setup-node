@@ -22,7 +22,7 @@ steps:
     node-version: '12'
 ```
 
-It will first check the local cache for a semver match.  The hosted images have been updated with the latest of each LTS from v8, v10, v12, and v14. `self-hosted` machines will benefit from the cache as well only downloading once.  It will pull LTS versions from [node-versions releases](https://github.com/actions/node-versions/releases) and on miss or failure, it will fall back to the previous behavior of download directly from [node dist](https://nodejs.org/dist/).
+It will first check the local cache for a semver match.  The hosted images have been updated with the latest of each LTS from v8, v10, v12, and v14. `self-hosted` machines will benefit from the cache as well only downloading once.  It will pull LTS versions from `main` branch of [node-versions](https://github.com/actions/node-versions/blob/main/versions-manifest.json) repository and on miss or failure, it will fall back to the previous behavior of download directly from [node dist](https://nodejs.org/dist/).
 
 The `node-version` input is optional.  If not supplied, node which is in your PATH will be used.  However, this action will still register problem matchers and support auth features.  So setting up the node environment is still a valid scenario without downloading and caching versions.
 
