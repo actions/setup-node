@@ -1,4 +1,5 @@
 import * as core from '@actions/core';
+import * as exec from '@actions/exec';
 import * as installer from './installer';
 import * as auth from './authutil';
 import * as path from 'path';
@@ -23,6 +24,17 @@ export async function run() {
         (core.getInput('check-latest') || 'false').toUpperCase() === 'TRUE';
       await installer.getNode(version, stable, checkLatest, auth);
     }
+
+    // Output version of node and npm that are being used
+    let installedVersion = '';
+    await exec.exec('node', ['--version'], {
+      listeners: {
+        stdout: data => {
+          installedVersion += data.toString();
+        }
+      }
+    });
+    core.setOutput('node-version', installedVersion);
 
     const registryUrl: string = core.getInput('registry-url');
     const alwaysAuth: string = core.getInput('always-auth');

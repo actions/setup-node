@@ -4628,6 +4628,7 @@ var __importStar = (this && this.__importStar) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const core = __importStar(__webpack_require__(470));
+const exec = __importStar(__webpack_require__(986));
 const installer = __importStar(__webpack_require__(749));
 const auth = __importStar(__webpack_require__(202));
 const path = __importStar(__webpack_require__(622));
@@ -4650,6 +4651,16 @@ function run() {
                 const checkLatest = (core.getInput('check-latest') || 'false').toUpperCase() === 'TRUE';
                 yield installer.getNode(version, stable, checkLatest, auth);
             }
+            // Output version of node and npm that are being used
+            let installedVersion = '';
+            yield exec.exec('node', ['--version'], {
+                listeners: {
+                    stdout: data => {
+                        installedVersion += data.toString();
+                    }
+                }
+            });
+            core.setOutput('node-version', installedVersion);
             const registryUrl = core.getInput('registry-url');
             const alwaysAuth = core.getInput('always-auth');
             if (registryUrl) {
