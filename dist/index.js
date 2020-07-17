@@ -4651,7 +4651,7 @@ function run() {
                 const checkLatest = (core.getInput('check-latest') || 'false').toUpperCase() === 'TRUE';
                 yield installer.getNode(version, stable, checkLatest, auth);
             }
-            // Output version of node and npm that are being used
+            // Output version of node is being used
             let installedVersion = '';
             yield exec.exec('node', ['--version'], {
                 listeners: {

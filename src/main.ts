@@ -25,7 +25,7 @@ export async function run() {
       await installer.getNode(version, stable, checkLatest, auth);
     }
 
-    // Output version of node and npm that are being used
+    // Output version of node is being used
     let installedVersion = '';
     await exec.exec('node', ['--version'], {
       listeners: {
