@@ -4632,6 +4632,7 @@ const installer = __importStar(__webpack_require__(749));
 const auth = __importStar(__webpack_require__(202));
 const path = __importStar(__webpack_require__(622));
 const url_1 = __webpack_require__(835);
+const fs = __importStar(__webpack_require__(747));
 function run() {
     return __awaiter(this, void 0, void 0, function* () {
         try {
@@ -4655,10 +4656,12 @@ function run() {
             if (registryUrl) {
                 auth.configAuthentication(registryUrl, alwaysAuth);
             }
-            const matchersPath = path.join(__dirname, '..', '.github');
-            console.log(`##[add-matcher]${path.join(matchersPath, 'tsc.json')}`);
-            console.log(`##[add-matcher]${path.join(matchersPath, 'eslint-stylish.json')}`);
-            console.log(`##[add-matcher]${path.join(matchersPath, 'eslint-compact.json')}`);
+            // Iterate and register all problem matchers
+            const matchersPath = path.join(__dirname, '..', 'matchers');
+            const matchers = fs.readdirSync(matchersPath);
+            matchers.forEach(matcher => {
+                console.log(`##[add-matcher]${path.join(matchersPath, matcher)}`);
+            });
         }
         catch (error) {
             core.setFailed(error.message);

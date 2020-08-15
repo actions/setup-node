@@ -3,6 +3,7 @@ import * as installer from './installer';
 import * as auth from './authutil';
 import * as path from 'path';
 import {URL} from 'url';
+import * as fs from 'fs';
 
 export async function run() {
   try {
@@ -30,14 +31,12 @@ export async function run() {
       auth.configAuthentication(registryUrl, alwaysAuth);
     }
 
-    const matchersPath = path.join(__dirname, '..', '.github');
-    console.log(`##[add-matcher]${path.join(matchersPath, 'tsc.json')}`);
-    console.log(
-      `##[add-matcher]${path.join(matchersPath, 'eslint-stylish.json')}`
-    );
-    console.log(
-      `##[add-matcher]${path.join(matchersPath, 'eslint-compact.json')}`
-    );
+    // Iterate and register all problem matchers
+    const matchersPath = path.join(__dirname, '..', 'matchers');
+    const matchers = fs.readdirSync(matchersPath);
+    matchers.forEach(matcher => {
+      console.log(`##[add-matcher]${path.join(matchersPath, matcher)}`);
+    });
   } catch (error) {
     core.setFailed(error.message);
   }
