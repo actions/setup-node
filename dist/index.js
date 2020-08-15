@@ -4656,9 +4656,9 @@ function run() {
                 auth.configAuthentication(registryUrl, alwaysAuth);
             }
             const matchersPath = path.join(__dirname, '..', '.github');
-            console.log(`##[add-matcher]${path.join(matchersPath, 'tsc.json')}`);
-            console.log(`##[add-matcher]${path.join(matchersPath, 'eslint-stylish.json')}`);
-            console.log(`##[add-matcher]${path.join(matchersPath, 'eslint-compact.json')}`);
+            core.info(`##[add-matcher]${path.join(matchersPath, 'tsc.json')}`);
+            core.info(`##[add-matcher]${path.join(matchersPath, 'eslint-stylish.json')}`);
+            core.info(`##[add-matcher]${path.join(matchersPath, 'eslint-compact.json')}`);
         }
         catch (error) {
             core.setFailed(error.message);
