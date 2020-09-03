@@ -74,6 +74,28 @@ jobs:
       - run: npm test
 ```
 
+Architecture:
+The architecture can be selected using `node-arch`. Values are `x86`, `x64`, `arm64`, `armv6l`, `armv7l`, `ppc64le`, `s390x` (not all of the architectures are available on all platforms).
+```yaml
+jobs:
+  build:
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        node: [ '10', '12' ]
+        arch: ['x86', 'x64']
+    name: Node ${{ matrix.node }} on ${{ matrix.arch }}
+    steps:
+      - uses: actions/checkout@v2
+      - name: Setup node
+        uses: actions/setup-node@v1
+        with:
+          node-version: ${{ matrix.node }}
+          node-arch: ${{ matrix.arch }}
+      - run: npm install
+      - run: npm test
+```
+
 Publish to npmjs and GPR with npm:
 ```yaml
 steps:
