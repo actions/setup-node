@@ -38,7 +38,8 @@ export async function getNode(
     const resolvedVersion = await resolveVersionFromManifest(
       versionSpec,
       stable,
-      auth
+      auth,
+      osArch
     );
     if (resolvedVersion) {
       versionSpec = resolvedVersion;
@@ -215,7 +216,8 @@ async function getInfoFromDist(
 async function resolveVersionFromManifest(
   versionSpec: string,
   stable: boolean,
-  auth: string | undefined
+  auth: string | undefined,
+  osArch: string = translateArchToDistUrl(os.arch())
 ): Promise<string | undefined> {
   try {
     const info = await getInfoFromManifest(versionSpec, stable, auth);
