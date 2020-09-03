@@ -97,7 +97,7 @@ export async function getNode(
     // Download from nodejs.org
     //
     if (!downloadPath) {
-      info = await getInfoFromDist(versionSpec);
+      info = await getInfoFromDist(versionSpec, arch);
       if (!info) {
         throw new Error(
           `Unable to find Node version '${versionSpec}' for platform ${osPlat} and architecture ${osArch}.`
@@ -192,10 +192,11 @@ async function getInfoFromManifest(
 }
 
 async function getInfoFromDist(
-  versionSpec: string
+  versionSpec: string,
+  arch: string = os.arch()
 ): Promise<INodeVersionInfo | null> {
   let osPlat: string = os.platform();
-  let osArch: string = translateArchToDistUrl(os.arch());
+  let osArch: string = translateArchToDistUrl(arch);
 
   let version: string;
 
@@ -219,6 +220,7 @@ async function getInfoFromDist(
   return <INodeVersionInfo>{
     downloadUrl: url,
     resolvedVersion: version,
+    arch: osArch,
     fileName: fileName
   };
 }
