@@ -20,6 +20,7 @@ export interface INodeVersion {
 interface INodeVersionInfo {
   downloadUrl: string;
   resolvedVersion: string;
+  arch: string;
   fileName: string;
 }
 
