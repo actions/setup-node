@@ -9,6 +9,7 @@ import * as main from '../src/main';
 import * as im from '../src/installer';
 import * as auth from '../src/authutil';
 import {context} from '@actions/github';
+import nock = require('nock');
 
 let nodeTestManifest = require('./data/versions-manifest.json');
 let nodeTestDist = require('./data/node-dist-index.json');
@@ -336,6 +337,52 @@ describe('setup-node', () => {
 
     expect(cnSpy).toHaveBeenCalledWith(`::error::${errMsg}${osm.EOL}`);
   });
+
+  it('Acquires specified x64 or x86 version of node if no matching version is installed', async () => {
+    const toolDir = path.join(
+      __dirname,
+      'runner',
+      path.join(
+        Math.random()
+          .toString(36)
+          .substring(7)
+      ),
+      'tools'
+    );
+
+    os.platform = process.platform;
+    const IS_WINDOWS = os.platform === 'win32';
+    for (const {arch, version} of [
+      {arch: 'x64', version: '12.18.3'},
+      {arch: 'x86', version: '12.18.3'}
+    ]) {
+      nock.cleanAll();
+      const fileExtension = IS_WINDOWS ? '7z' : 'tar.gz';
+      const platform = {
+        linux: 'linux',
+        darwin: 'darwin',
+        win32: 'win'
+      }[process.platform];
+      const fileName = `node-v${version}-${platform}-${arch}.${fileExtension}`;
+      const pathOnNodeJs = `/dist/v${version}/${fileName}`;
+      const scope = nock('nodejs.org')
+        .get(pathOnNodeJs)
+        .replyWithFile(
+          200,
+          path.join(__dirname, '__fixtures__', `mock-${fileName}`)
+        );
+      await im.getNode(version, true, true, undefined, arch);
+      const nodeDir = path.join(toolDir, 'node', version, arch);
+
+      expect(scope.isDone()).toBe(true);
+      expect(fs.existsSync(`${nodeDir}.complete`)).toBe(true);
+      if (IS_WINDOWS) {
+        expect(fs.existsSync(path.join(nodeDir, 'node.exe'))).toBe(true);
+      } else {
+        expect(fs.existsSync(path.join(nodeDir, 'bin', 'node'))).toBe(true);
+      }
+    }
+  }, 100000);
 
   describe('check-latest flag', () => {
     it('use local version and dont check manifest if check-latest is not specified', async () => {
