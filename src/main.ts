@@ -3,6 +3,7 @@ import * as installer from './installer';
 import * as auth from './authutil';
 import * as path from 'path';
 import {URL} from 'url';
+import os = require('os');
 
 export async function run() {
   try {
@@ -15,13 +16,18 @@ export async function run() {
       version = core.getInput('version');
     }
 
+    let arch = core.getInput('node-arch');
+    if (!arch) {
+      arch = os.arch();
+    }
+
     if (version) {
       let token = core.getInput('token');
       let auth = !token || isGhes() ? undefined : `token ${token}`;
       let stable = (core.getInput('stable') || 'true').toUpperCase() === 'TRUE';
       const checkLatest =
         (core.getInput('check-latest') || 'false').toUpperCase() === 'TRUE';
-      await installer.getNode(version, stable, checkLatest, auth);
+      await installer.getNode(version, stable, checkLatest, auth, arch);
     }
 
     const registryUrl: string = core.getInput('registry-url');
