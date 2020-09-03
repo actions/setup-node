@@ -107,7 +107,10 @@ export async function getNode(
         downloadPath = await tc.downloadTool(info.downloadUrl);
       } catch (err) {
         if (err instanceof tc.HTTPError && err.httpStatusCode == 404) {
-          return await acquireNodeFromFallbackLocation(info.resolvedVersion);
+          return await acquireNodeFromFallbackLocation(
+            info.resolvedVersion,
+            info.arch
+          );
         }
 
         throw err;
@@ -317,10 +320,11 @@ export async function getVersionsFromDist(): Promise<INodeVersion[]> {
 // Note also that the files are normally zipped but in this case they are just an exe
 // and lib file in a folder, not zipped.
 async function acquireNodeFromFallbackLocation(
-  version: string
+  version: string,
+  arch: string = os.arch()
 ): Promise<string> {
   let osPlat: string = os.platform();
-  let osArch: string = translateArchToDistUrl(os.arch());
+  let osArch: string = translateArchToDistUrl(arch);
 
   // Create temporary folder to download in to
   const tempDownloadFolder: string =
