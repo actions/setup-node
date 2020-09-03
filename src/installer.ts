@@ -27,10 +27,11 @@ export async function getNode(
   versionSpec: string,
   stable: boolean,
   checkLatest: boolean,
-  auth: string | undefined
+  auth: string | undefined,
+  arch: string = os.arch()
 ) {
   let osPlat: string = os.platform();
-  let osArch: string = translateArchToDistUrl(os.arch());
+  let osArch: string = translateArchToDistUrl(arch);
 
   if (checkLatest) {
     core.info('Attempt to resolve the latest version from manifest...');
