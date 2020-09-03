@@ -9,7 +9,6 @@ import * as main from '../src/main';
 import * as im from '../src/installer';
 import * as auth from '../src/authutil';
 import {context} from '@actions/github';
-import nock = require('nock');
 
 let nodeTestManifest = require('./data/versions-manifest.json');
 let nodeTestDist = require('./data/node-dist-index.json');
