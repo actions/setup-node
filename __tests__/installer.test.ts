@@ -248,7 +248,7 @@ describe('setup-node', () => {
     expect(dlSpy).toHaveBeenCalled();
     expect(exSpy).toHaveBeenCalled();
     expect(logSpy).toHaveBeenCalledWith(
-      `Acquiring ${resolvedVersion} from ${expectedUrl}`
+      `Acquiring ${resolvedVersion} - ${os.arch} from ${expectedUrl}`
     );
     expect(logSpy).toHaveBeenCalledWith(
       `Attempting to download ${versionSpec}...`
@@ -399,7 +399,7 @@ describe('setup-node', () => {
       );
       expect(logSpy).toHaveBeenCalledWith("Resolved as '12.16.2'");
       expect(logSpy).toHaveBeenCalledWith(
-        `Acquiring 12.16.2 from ${expectedUrl}`
+        `Acquiring 12.16.2 - ${os.arch} from ${expectedUrl}`
       );
       expect(logSpy).toHaveBeenCalledWith('Extracting ...');
     });

@@ -68,7 +68,9 @@ export async function getNode(
     try {
       info = await getInfoFromManifest(versionSpec, stable, auth, osArch);
       if (info) {
-        core.info(`Acquiring ${info.resolvedVersion} from ${info.downloadUrl}`);
+        core.info(
+          `Acquiring ${info.resolvedVersion} - ${info.arch} from ${info.downloadUrl}`
+        );
         downloadPath = await tc.downloadTool(info.downloadUrl, undefined, auth);
       } else {
         core.info(
@@ -102,7 +104,9 @@ export async function getNode(
         );
       }
 
-      core.info(`Acquiring ${info.resolvedVersion} from ${info.downloadUrl}`);
+      core.info(
+        `Acquiring ${info.resolvedVersion} - ${info.arch} from ${info.downloadUrl}`
+      );
       try {
         downloadPath = await tc.downloadTool(info.downloadUrl);
       } catch (err) {
