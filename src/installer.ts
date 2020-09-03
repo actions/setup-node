@@ -66,7 +66,7 @@ export async function getNode(
     // Try download from internal distribution (popular versions only)
     //
     try {
-      info = await getInfoFromManifest(versionSpec, stable, auth);
+      info = await getInfoFromManifest(versionSpec, stable, auth, osArch);
       if (info) {
         core.info(`Acquiring ${info.resolvedVersion} from ${info.downloadUrl}`);
         downloadPath = await tc.downloadTool(info.downloadUrl, undefined, auth);
@@ -161,7 +161,8 @@ export async function getNode(
 async function getInfoFromManifest(
   versionSpec: string,
   stable: boolean,
-  auth: string | undefined
+  auth: string | undefined,
+  osArch: string = translateArchToDistUrl(os.arch())
 ): Promise<INodeVersionInfo | null> {
   let info: INodeVersionInfo | null = null;
   const releases = await tc.getManifestFromRepo(
@@ -170,11 +171,12 @@ async function getInfoFromManifest(
     auth,
     'main'
   );
-  const rel = await tc.findFromManifest(versionSpec, stable, releases);
+  const rel = await tc.findFromManifest(versionSpec, stable, releases, osArch);
 
   if (rel && rel.files.length > 0) {
     info = <INodeVersionInfo>{};
     info.resolvedVersion = rel.version;
+    info.arch = rel.files[0].arch;
     info.downloadUrl = rel.files[0].download_url;
     info.fileName = rel.files[0].filename;
   }
@@ -221,7 +223,7 @@ async function resolveVersionFromManifest(
   osArch: string = translateArchToDistUrl(os.arch())
 ): Promise<string | undefined> {
   try {
-    const info = await getInfoFromManifest(versionSpec, stable, auth);
+    const info = await getInfoFromManifest(versionSpec, stable, auth, osArch);
     return info?.resolvedVersion;
   } catch (err) {
     core.info('Unable to resolve version from manifest...');
