@@ -205,7 +205,7 @@ async function getInfoFromDist(
 
   let version: string;
 
-  version = await queryDistForMatch(versionSpec);
+  version = await queryDistForMatch(versionSpec, arch);
   if (!version) {
     return null;
   }
@@ -273,9 +273,12 @@ function evaluateVersions(versions: string[], versionSpec: string): string {
   return version;
 }
 
-async function queryDistForMatch(versionSpec: string): Promise<string> {
+async function queryDistForMatch(
+  versionSpec: string,
+  arch: string = os.arch()
+): Promise<string> {
   let osPlat: string = os.platform();
-  let osArch: string = translateArchToDistUrl(os.arch());
+  let osArch: string = translateArchToDistUrl(arch);
 
   // node offers a json list of versions
   let dataFileName: string;
