@@ -147,7 +147,12 @@ export async function getNode(
     // Install into the local tool cache - node extracts with a root folder that matches the fileName downloaded
     //
     core.info('Adding to the cache ...');
-    toolPath = await tc.cacheDir(extPath, 'node', info.resolvedVersion);
+    toolPath = await tc.cacheDir(
+      extPath,
+      'node',
+      info.resolvedVersion,
+      info.arch
+    );
     core.info('Done');
   }
 
@@ -364,7 +369,7 @@ async function acquireNodeFromFallbackLocation(
       throw err;
     }
   }
-  let toolPath = await tc.cacheDir(tempDir, 'node', version);
+  let toolPath = await tc.cacheDir(tempDir, 'node', version, arch);
   core.addPath(toolPath);
   return toolPath;
 }
