@@ -52,7 +52,7 @@ export async function getNode(
 
   // check cache
   let toolPath: string;
-  toolPath = tc.find('node', versionSpec);
+  toolPath = tc.find('node', versionSpec, osArch);
 
   // If not found in cache, download
   if (toolPath) {
