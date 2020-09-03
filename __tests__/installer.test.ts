@@ -337,49 +337,43 @@ describe('setup-node', () => {
     expect(cnSpy).toHaveBeenCalledWith(`::error::${errMsg}${osm.EOL}`);
   });
 
-  it('Acquires specified x64 or x86 version of node if no matching version is installed', async () => {
-    const toolDir = path.join(
-      __dirname,
-      'runner',
-      path.join(
-        Math.random()
-          .toString(36)
-          .substring(7)
-      ),
-      'tools'
-    );
-
-    os.platform = process.platform;
-    const IS_WINDOWS = os.platform === 'win32';
-    for (const {arch, version} of [
-      {arch: 'x64', version: '12.18.3'},
-      {arch: 'x86', version: '12.18.3'}
+  it('Acquires specified architecture of node', async () => {
+    for (const {arch, version, osSpec} of [
+      {arch: 'x86', version: '12.16.2', osSpec: 'win32'},
+      {arch: 'x86', version: '14.0.0', osSpec: 'win32'}
     ]) {
-      nock.cleanAll();
-      const fileExtension = IS_WINDOWS ? '7z' : 'tar.gz';
+      os.platform = osSpec;
+      os.arch = arch;
+      const fileExtension = os.platform === 'win32' ? '7z' : 'tar.gz';
       const platform = {
         linux: 'linux',
         darwin: 'darwin',
         win32: 'win'
-      }[process.platform];
-      const fileName = `node-v${version}-${platform}-${arch}.${fileExtension}`;
-      const pathOnNodeJs = `/dist/v${version}/${fileName}`;
-      const scope = nock('nodejs.org')
-        .get(pathOnNodeJs)
-        .replyWithFile(
-          200,
-          path.join(__dirname, '__fixtures__', `mock-${fileName}`)
-        );
-      await im.getNode(version, true, true, undefined, arch);
-      const nodeDir = path.join(toolDir, 'node', version, arch);
+      }[os.platform];
 
-      expect(scope.isDone()).toBe(true);
-      expect(fs.existsSync(`${nodeDir}.complete`)).toBe(true);
-      if (IS_WINDOWS) {
-        expect(fs.existsSync(path.join(nodeDir, 'node.exe'))).toBe(true);
-      } else {
-        expect(fs.existsSync(path.join(nodeDir, 'bin', 'node'))).toBe(true);
-      }
+      inputs['node-version'] = version;
+      inputs['node-arch'] = arch;
+      inputs['always-auth'] = false;
+      inputs['token'] = 'faketoken';
+
+      let expectedUrl =
+        arch === 'x64'
+          ? `https://github.com/actions/node-versions/releases/download/${version}/node-${version}-${platform}-${arch}.zip`
+          : `https://nodejs.org/dist/v${version}/node-v${version}-${platform}-${arch}.${fileExtension}`;
+
+      // ... but not in the local cache
+      findSpy.mockImplementation(() => '');
+
+      dlSpy.mockImplementation(async () => '/some/temp/path');
+      let toolPath = path.normalize(`/cache/node/${version}/${arch}`);
+      exSpy.mockImplementation(async () => '/some/other/temp/path');
+      cacheSpy.mockImplementation(async () => toolPath);
+
+      await main.run();
+      expect(dlSpy).toHaveBeenCalled();
+      expect(logSpy).toHaveBeenCalledWith(
+        `Acquiring ${version} - ${arch} from ${expectedUrl}`
+      );
     }
   }, 100000);
 
