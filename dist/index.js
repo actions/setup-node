@@ -4632,6 +4632,7 @@ const installer = __importStar(__webpack_require__(749));
 const auth = __importStar(__webpack_require__(202));
 const path = __importStar(__webpack_require__(622));
 const url_1 = __webpack_require__(835);
+const os = __webpack_require__(87);
 function run() {
     return __awaiter(this, void 0, void 0, function* () {
         try {
@@ -4643,12 +4644,16 @@ function run() {
             if (!version) {
                 version = core.getInput('version');
             }
+            let arch = core.getInput('node-arch');
+            if (!arch) {
+                arch = os.arch();
+            }
             if (version) {
                 let token = core.getInput('token');
                 let auth = !token || isGhes() ? undefined : `token ${token}`;
                 let stable = (core.getInput('stable') || 'true').toUpperCase() === 'TRUE';
                 const checkLatest = (core.getInput('check-latest') || 'false').toUpperCase() === 'TRUE';
-                yield installer.getNode(version, stable, checkLatest, auth);
+                yield installer.getNode(version, stable, checkLatest, auth, arch);
             }
             const registryUrl = core.getInput('registry-url');
             const alwaysAuth = core.getInput('always-auth');
@@ -12994,13 +12999,13 @@ const tc = __importStar(__webpack_require__(533));
 const path = __importStar(__webpack_require__(622));
 const semver = __importStar(__webpack_require__(280));
 const fs = __webpack_require__(747);
-function getNode(versionSpec, stable, checkLatest, auth) {
+function getNode(versionSpec, stable, checkLatest, auth, arch = os.arch()) {
     return __awaiter(this, void 0, void 0, function* () {
         let osPlat = os.platform();
-        let osArch = translateArchToDistUrl(os.arch());
+        let osArch = translateArchToDistUrl(arch);
         if (checkLatest) {
             core.info('Attempt to resolve the latest version from manifest...');
-            const resolvedVersion = yield resolveVersionFromManifest(versionSpec, stable, auth);
+            const resolvedVersion = yield resolveVersionFromManifest(versionSpec, stable, auth, osArch);
             if (resolvedVersion) {
                 versionSpec = resolvedVersion;
                 core.info(`Resolved as '${versionSpec}'`);
@@ -13011,7 +13016,7 @@ function getNode(versionSpec, stable, checkLatest, auth) {
         }
         // check cache
         let toolPath;
-        toolPath = tc.find('node', versionSpec);
+        toolPath = tc.find('node', versionSpec, osArch);
         // If not found in cache, download
         if (toolPath) {
             core.info(`Found in cache @ ${toolPath}`);
@@ -13024,9 +13029,9 @@ function getNode(versionSpec, stable, checkLatest, auth) {
             // Try download from internal distribution (popular versions only)
             //
             try {
-                info = yield getInfoFromManifest(versionSpec, stable, auth);
+                info = yield getInfoFromManifest(versionSpec, stable, auth, osArch);
                 if (info) {
-                    core.info(`Acquiring ${info.resolvedVersion} from ${info.downloadUrl}`);
+                    core.info(`Acquiring ${info.resolvedVersion} - ${info.arch} from ${info.downloadUrl}`);
                     downloadPath = yield tc.downloadTool(info.downloadUrl, undefined, auth);
                 }
                 else {
@@ -13049,17 +13054,17 @@ function getNode(versionSpec, stable, checkLatest, auth) {
             // Download from nodejs.org
             //
             if (!downloadPath) {
-                info = yield getInfoFromDist(versionSpec);
+                info = yield getInfoFromDist(versionSpec, arch);
                 if (!info) {
                     throw new Error(`Unable to find Node version '${versionSpec}' for platform ${osPlat} and architecture ${osArch}.`);
                 }
-                core.info(`Acquiring ${info.resolvedVersion} from ${info.downloadUrl}`);
+                core.info(`Acquiring ${info.resolvedVersion} - ${info.arch} from ${info.downloadUrl}`);
                 try {
                     downloadPath = yield tc.downloadTool(info.downloadUrl);
                 }
                 catch (err) {
                     if (err instanceof tc.HTTPError && err.httpStatusCode == 404) {
-                        return yield acquireNodeFromFallbackLocation(info.resolvedVersion);
+                        return yield acquireNodeFromFallbackLocation(info.resolvedVersion, info.arch);
                     }
                     throw err;
                 }
@@ -13090,7 +13095,7 @@ function getNode(versionSpec, stable, checkLatest, auth) {
             // Install into the local tool cache - node extracts with a root folder that matches the fileName downloaded
             //
             core.info('Adding to the cache ...');
-            toolPath = yield tc.cacheDir(extPath, 'node', info.resolvedVersion);
+            toolPath = yield tc.cacheDir(extPath, 'node', info.resolvedVersion, info.arch);
             core.info('Done');
         }
         //
@@ -13107,26 +13112,27 @@ function getNode(versionSpec, stable, checkLatest, auth) {
     });
 }
 exports.getNode = getNode;
-function getInfoFromManifest(versionSpec, stable, auth) {
+function getInfoFromManifest(versionSpec, stable, auth, osArch = translateArchToDistUrl(os.arch())) {
     return __awaiter(this, void 0, void 0, function* () {
         let info = null;
         const releases = yield tc.getManifestFromRepo('actions', 'node-versions', auth, 'main');
-        const rel = yield tc.findFromManifest(versionSpec, stable, releases);
+        const rel = yield tc.findFromManifest(versionSpec, stable, releases, osArch);
         if (rel && rel.files.length > 0) {
             info = {};
             info.resolvedVersion = rel.version;
+            info.arch = rel.files[0].arch;
             info.downloadUrl = rel.files[0].download_url;
             info.fileName = rel.files[0].filename;
         }
         return info;
     });
 }
-function getInfoFromDist(versionSpec) {
+function getInfoFromDist(versionSpec, arch = os.arch()) {
     return __awaiter(this, void 0, void 0, function* () {
         let osPlat = os.platform();
-        let osArch = translateArchToDistUrl(os.arch());
+        let osArch = translateArchToDistUrl(arch);
         let version;
-        version = yield queryDistForMatch(versionSpec);
+        version = yield queryDistForMatch(versionSpec, arch);
         if (!version) {
             return null;
         }
@@ -13142,14 +13148,15 @@ function getInfoFromDist(versionSpec) {
         return {
             downloadUrl: url,
             resolvedVersion: version,
+            arch: arch,
             fileName: fileName
         };
     });
 }
-function resolveVersionFromManifest(versionSpec, stable, auth) {
+function resolveVersionFromManifest(versionSpec, stable, auth, osArch = translateArchToDistUrl(os.arch())) {
     return __awaiter(this, void 0, void 0, function* () {
         try {
-            const info = yield getInfoFromManifest(versionSpec, stable, auth);
+            const info = yield getInfoFromManifest(versionSpec, stable, auth, osArch);
             return info === null || info === void 0 ? void 0 : info.resolvedVersion;
         }
         catch (err) {
@@ -13184,10 +13191,10 @@ function evaluateVersions(versions, versionSpec) {
     }
     return version;
 }
-function queryDistForMatch(versionSpec) {
+function queryDistForMatch(versionSpec, arch = os.arch()) {
     return __awaiter(this, void 0, void 0, function* () {
         let osPlat = os.platform();
-        let osArch = translateArchToDistUrl(os.arch());
+        let osArch = translateArchToDistUrl(arch);
         // node offers a json list of versions
         let dataFileName;
         switch (osPlat) {
@@ -13240,10 +13247,10 @@ exports.getVersionsFromDist = getVersionsFromDist;
 // This method attempts to download and cache the resources from these alternative locations.
 // Note also that the files are normally zipped but in this case they are just an exe
 // and lib file in a folder, not zipped.
-function acquireNodeFromFallbackLocation(version) {
+function acquireNodeFromFallbackLocation(version, arch = os.arch()) {
     return __awaiter(this, void 0, void 0, function* () {
         let osPlat = os.platform();
-        let osArch = translateArchToDistUrl(os.arch());
+        let osArch = translateArchToDistUrl(arch);
         // Create temporary folder to download in to
         const tempDownloadFolder = 'temp_' + Math.floor(Math.random() * 2000000000);
         const tempDirectory = process.env['RUNNER_TEMP'] || '';
@@ -13274,7 +13281,7 @@ function acquireNodeFromFallbackLocation(version) {
                 throw err;
             }
         }
-        let toolPath = yield tc.cacheDir(tempDir, 'node', version);
+        let toolPath = yield tc.cacheDir(tempDir, 'node', version, arch);
         core.addPath(toolPath);
         return toolPath;
     });
