@@ -225,7 +225,7 @@ async function getInfoFromDist(
   return <INodeVersionInfo>{
     downloadUrl: url,
     resolvedVersion: version,
-    arch: osArch,
+    arch: arch,
     fileName: fileName
   };
 }
