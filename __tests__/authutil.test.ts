@@ -20,6 +20,7 @@ describe('authutil tests', () => {
         .toString(36)
         .substring(7)
     );
+    process.env['GITHUB_ENV'] = ''; // Stub out ENV file functionality so we can verify it writes to standard out
     const tempDir = path.join(_runnerDir, randPath, 'temp');
     await io.rmRF(tempDir);
     await io.mkdirP(tempDir);
