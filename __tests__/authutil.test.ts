@@ -20,6 +20,8 @@ describe('authutil tests', () => {
         .toString(36)
         .substring(7)
     );
+    console.log('::stop-commands::stoptoken'); // Disable executing of runner commands when running tests in actions
+    process.env['GITHUB_ENV'] = ''; // Stub out Environment file functionality so we can verify it writes to standard out (toolkit is backwards compatible)
     const tempDir = path.join(_runnerDir, randPath, 'temp');
     await io.rmRF(tempDir);
     await io.mkdirP(tempDir);
@@ -61,6 +63,7 @@ describe('authutil tests', () => {
     if (_runnerDir) {
       await io.rmRF(_runnerDir);
     }
+    console.log('::stoptoken::'); // Re-enable executing of runner commands when running tests in actions
   }, 100000);
 
   function readRcFile(rcFile: string) {

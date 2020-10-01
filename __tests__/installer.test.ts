@@ -42,6 +42,8 @@ describe('setup-node', () => {
 
   beforeEach(() => {
     // @actions/core
+    console.log('::stop-commands::stoptoken'); // Disable executing of runner commands when running tests in actions
+    process.env['GITHUB_PATH'] = ''; // Stub out ENV file functionality so we can verify it writes to standard out
     inputs = {};
     inSpy = jest.spyOn(core, 'getInput');
     inSpy.mockImplementation(name => inputs[name]);
@@ -102,7 +104,9 @@ describe('setup-node', () => {
     //jest.restoreAllMocks();
   });
 
-  afterAll(async () => {}, 100000);
+  afterAll(async () => {
+    console.log('::stoptoken::'); // Re-enable executing of runner commands when running tests in actions
+  }, 100000);
 
   //--------------------------------------------------
   // Manifest find tests
