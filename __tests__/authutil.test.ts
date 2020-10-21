@@ -131,6 +131,5 @@ describe('authutil tests', () => {
     expect(rc['@ownername:registry']).toBe('npm.pkg.github.com/');
     expect(rc['always-auth']).toBe('false');
     expect(process.env.NODE_AUTH_TOKEN).toEqual('foobar');
-
   })
 });
