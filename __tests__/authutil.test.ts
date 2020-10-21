@@ -122,5 +122,16 @@ describe('authutil tests', () => {
     let rc = readRcFile(rcFile);
     expect(rc['registry']).toBe('https://registry.npmjs.org/');
     expect(rc['always-auth']).toBe('true');
-  });
+  })
+  it('It is already set the NODE_AUTH_TOKEN export it ', async ()=> {
+    process.env.NODE_AUTH_TOKEN='foobar';
+    await auth.configAuthentication('npm.pkg.github.com', 'false');
+    expect(fs.statSync(rcFile)).toBeDefined();
+    let rc = readRcFile(rcFile);
+    expect(rc['@ownername:registry']).toBe('npm.pkg.github.com/');
+    expect(rc['always-auth']).toBe('false');
+    dbg(`${JSON.stringify(rc)}`);
+    expect(process.env.NODE_AUTH_TOKEN).toEqual('foobar');
+
+  })
 });
