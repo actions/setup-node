@@ -130,7 +130,6 @@ describe('authutil tests', () => {
     let rc = readRcFile(rcFile);
     expect(rc['@ownername:registry']).toBe('npm.pkg.github.com/');
     expect(rc['always-auth']).toBe('false');
-    dbg(`${JSON.stringify(rc)}`);
     expect(process.env.NODE_AUTH_TOKEN).toEqual('foobar');
 
   })
