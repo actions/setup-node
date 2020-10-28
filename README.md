@@ -47,7 +47,7 @@ Check latest version:
 ```yaml
 steps:
 - uses: actions/checkout@v2
-- uses: actions/setup-node@v2
+- uses: actions/setup-node@v2-beta
   with:
     node-version: '12'
     check-latest: true
