@@ -4793,7 +4793,7 @@ function writeRegistryToFile(registryUrl, fileLocation, alwaysAuth) {
     newContents += `${authString}${os.EOL}${registryString}${os.EOL}${alwaysAuthString}`;
     fs.writeFileSync(fileLocation, newContents);
     core.exportVariable('NPM_CONFIG_USERCONFIG', fileLocation);
-    // Export empty node_auth_token so npm doesn't complain about not being able to find it
+    // Export empty node_auth_token if didn't exist so npm doesn't complain about not being able to find it
     core.exportVariable('NODE_AUTH_TOKEN', process.env.NODE_AUTH_TOKEN || 'XXXXX-XXXXX-XXXXX-XXXXX');
 }
 //# sourceMappingURL=authutil.js.map
