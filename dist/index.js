@@ -4692,6 +4692,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const core = __importStar(__webpack_require__(470));
 const installer = __importStar(__webpack_require__(749));
 const auth = __importStar(__webpack_require__(202));
+const fs = __webpack_require__(747);
 const path = __importStar(__webpack_require__(622));
 const url_1 = __webpack_require__(835);
 function run() {
@@ -4704,6 +4705,14 @@ function run() {
             let version = core.getInput('node-version');
             if (!version) {
                 version = core.getInput('version');
+            }
+            if (!version) {
+                const versionFile = core.getInput('node-version-file');
+                if (!!versionFile) {
+                    const versionFilePath = path.join(__dirname, '..', versionFile);
+                    version = fs.readFileSync(versionFilePath, 'utf8');
+                    core.info(`Resolved ${versionFile} as ${version}`);
+                }
             }
             if (version) {
                 let token = core.getInput('token');

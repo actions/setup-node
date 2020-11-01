@@ -36,6 +36,7 @@ describe('setup-node', () => {
   let dbgSpy: jest.SpyInstance;
   let whichSpy: jest.SpyInstance;
   let existsSpy: jest.SpyInstance;
+  let readFileSyncSpy: jest.SpyInstance;
   let mkdirpSpy: jest.SpyInstance;
   let execSpy: jest.SpyInstance;
   let authSpy: jest.SpyInstance;
@@ -67,6 +68,7 @@ describe('setup-node', () => {
     // io
     whichSpy = jest.spyOn(io, 'which');
     existsSpy = jest.spyOn(fs, 'existsSync');
+    readFileSyncSpy = jest.spyOn(fs, 'readFileSync');
     mkdirpSpy = jest.spyOn(io, 'mkdirP');
 
     // disable authentication portion for installer tests
@@ -488,6 +490,50 @@ describe('setup-node', () => {
         `Attempting to download ${versionSpec}...`
       );
       expect(cnSpy).toHaveBeenCalledWith(`::add-path::${expPath}${osm.EOL}`);
+    });
+  });
+
+  describe('node-version-file flag', () => {
+    it('Not used if node-version is provided', async () => {
+      // Arrange
+      inputs['node-version'] = '12';
+
+      // Act
+      await main.run();
+
+      // Assert
+      expect(readFileSyncSpy).toHaveBeenCalledTimes(0);
+    });
+
+    it('Not used if node-version-file not provided', async () => {
+      // Act
+      await main.run();
+
+      // Assert
+      expect(readFileSyncSpy).toHaveBeenCalledTimes(0);
+    });
+
+    it('Reads node-version-file if provided', async () => {
+      // Arrange
+      const versionSpec = 'v12';
+      const versionFile = '.nvmrc';
+
+      inputs['node-version-file'] = versionFile;
+
+      readFileSyncSpy.mockImplementation(() => versionSpec);
+
+      // Act
+      await main.run();
+
+      // Assert
+      expect(readFileSyncSpy).toHaveBeenCalledTimes(1);
+      expect(readFileSyncSpy).toHaveBeenCalledWith(
+        path.join(__dirname, '..', versionFile),
+        'utf8'
+      );
+      expect(logSpy).toHaveBeenCalledWith(
+        `Resolved ${versionFile} as ${versionSpec}`
+      );
     });
   });
 });
