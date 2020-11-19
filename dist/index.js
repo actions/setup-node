@@ -3030,6 +3030,82 @@ module.exports = windowsRelease;
 
 /***/ }),
 
+/***/ 74:
+/***/ (function(__unusedmodule, exports, __webpack_require__) {
+
+"use strict";
+
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
+    result["default"] = mod;
+    return result;
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+const semvar = __importStar(__webpack_require__(280));
+const node_version_1 = __webpack_require__(708);
+function parseNodeVersionFile(contents) {
+    return __awaiter(this, void 0, void 0, function* () {
+        contents = contents.trim();
+        if (/^v\d/.test(contents)) {
+            contents = contents.substring(1);
+        }
+        const nodeVersions = yield node_version_1.getVersionsFromDist();
+        let nodeVersion;
+        if (contents.startsWith('lts/')) {
+            nodeVersion = findLatestLts(nodeVersions, contents).version;
+        }
+        else if (semvar.valid(contents) || isPartialMatch(contents)) {
+            nodeVersion = contents;
+        }
+        else {
+            throw new Error(`Couldn't resolve node version: '${contents}'`);
+        }
+        return stripVPrefix(nodeVersion);
+    });
+}
+exports.parseNodeVersionFile = parseNodeVersionFile;
+function findLatestLts(nodeVersions, codename) {
+    let nodeVersion;
+    if (codename === 'lts/*') {
+        nodeVersion = nodeVersions.reduce((latest, nodeVersion) => {
+            if (!nodeVersion.lts) {
+                return latest;
+            }
+            return semvar.gt(nodeVersion.version, latest.version)
+                ? nodeVersion
+                : latest;
+        });
+    }
+    else {
+        codename = codename.replace('lts/', '').toLowerCase();
+        nodeVersion = nodeVersions.find(nodeVersion => `${nodeVersion.lts}`.toLowerCase() === codename);
+    }
+    if (!nodeVersion) {
+        throw new Error(`Couldn't find matching release for codename: '${codename}'`);
+    }
+    return nodeVersion;
+}
+function isPartialMatch(version) {
+    return /^\d+(\.\d+(\.\d+)?)?$/.test(version);
+}
+function stripVPrefix(version) {
+    return /^v\d/.test(version) ? version.substring(1) : version;
+}
+//# sourceMappingURL=node-version-file.js.map
+
+/***/ }),
+
 /***/ 82:
 /***/ (function(__unusedmodule, exports) {
 
@@ -4695,6 +4771,7 @@ const auth = __importStar(__webpack_require__(202));
 const fs = __webpack_require__(747);
 const path = __importStar(__webpack_require__(622));
 const url_1 = __webpack_require__(835);
+const node_version_file_1 = __webpack_require__(74);
 function run() {
     return __awaiter(this, void 0, void 0, function* () {
         try {
@@ -4710,7 +4787,7 @@ function run() {
                 const versionFile = core.getInput('node-version-file');
                 if (!!versionFile) {
                     const versionFilePath = path.join(__dirname, '..', versionFile);
-                    version = fs.readFileSync(versionFilePath, 'utf8');
+                    version = yield node_version_file_1.parseNodeVersionFile(fs.readFileSync(versionFilePath, 'utf8'));
                     core.info(`Resolved ${versionFile} as ${version}`);
                 }
             }
@@ -12969,6 +13046,45 @@ module.exports = {"activity":{"checkStarringRepo":{"method":"GET","params":{"own
 
 /***/ }),
 
+/***/ 708:
+/***/ (function(__unusedmodule, exports, __webpack_require__) {
+
+"use strict";
+
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
+    result["default"] = mod;
+    return result;
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+const hc = __importStar(__webpack_require__(539));
+function getVersionsFromDist() {
+    return __awaiter(this, void 0, void 0, function* () {
+        let dataUrl = 'https://nodejs.org/dist/index.json';
+        let httpClient = new hc.HttpClient('setup-node', [], {
+            allowRetries: true,
+            maxRetries: 3
+        });
+        let response = yield httpClient.getJson(dataUrl);
+        return response.result || [];
+    });
+}
+exports.getVersionsFromDist = getVersionsFromDist;
+//# sourceMappingURL=node-version.js.map
+
+/***/ }),
+
 /***/ 722:
 /***/ (function(module) {
 
@@ -13072,7 +13188,7 @@ module.exports = require("fs");
 /***/ }),
 
 /***/ 749:
-/***/ (function(module, exports, __webpack_require__) {
+/***/ (function(__unusedmodule, exports, __webpack_require__) {
 
 "use strict";
 
@@ -13096,12 +13212,12 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const os = __webpack_require__(87);
 const assert = __importStar(__webpack_require__(357));
 const core = __importStar(__webpack_require__(470));
-const hc = __importStar(__webpack_require__(539));
 const io = __importStar(__webpack_require__(1));
 const tc = __importStar(__webpack_require__(533));
 const path = __importStar(__webpack_require__(622));
 const semver = __importStar(__webpack_require__(280));
 const fs = __webpack_require__(747);
+const node_version_1 = __webpack_require__(708);
 function getNode(versionSpec, stable, checkLatest, auth) {
     return __awaiter(this, void 0, void 0, function* () {
         let osPlat = os.platform();
@@ -13312,7 +13428,7 @@ function queryDistForMatch(versionSpec) {
                 throw new Error(`Unexpected OS '${osPlat}'`);
         }
         let versions = [];
-        let nodeVersions = yield module.exports.getVersionsFromDist();
+        let nodeVersions = yield node_version_1.getVersionsFromDist();
         nodeVersions.forEach((nodeVersion) => {
             // ensure this version supports your os and platform
             if (nodeVersion.files.indexOf(dataFileName) >= 0) {
@@ -13324,18 +13440,6 @@ function queryDistForMatch(versionSpec) {
         return version;
     });
 }
-function getVersionsFromDist() {
-    return __awaiter(this, void 0, void 0, function* () {
-        let dataUrl = 'https://nodejs.org/dist/index.json';
-        let httpClient = new hc.HttpClient('setup-node', [], {
-            allowRetries: true,
-            maxRetries: 3
-        });
-        let response = yield httpClient.getJson(dataUrl);
-        return response.result || [];
-    });
-}
-exports.getVersionsFromDist = getVersionsFromDist;
 // For non LTS versions of Node, the files we need (for Windows) are sometimes located
 // in a different folder than they normally are for other versions.
 // Normally the format is similar to: https://nodejs.org/dist/v5.10.1/node-v5.10.1-win-x64.7z

@@ -4,6 +4,7 @@ import * as auth from './authutil';
 import fs = require('fs');
 import * as path from 'path';
 import {URL} from 'url';
+import {parseNodeVersionFile} from './node-version-file';
 
 export async function run() {
   try {
@@ -21,7 +22,9 @@ export async function run() {
 
       if (!!versionFile) {
         const versionFilePath = path.join(__dirname, '..', versionFile);
-        version = fs.readFileSync(versionFilePath, 'utf8');
+        version = await parseNodeVersionFile(
+          fs.readFileSync(versionFilePath, 'utf8')
+        );
         core.info(`Resolved ${versionFile} as ${version}`);
       }
     }

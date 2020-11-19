@@ -6,7 +6,8 @@ import cp from 'child_process';
 import osm = require('os');
 import path from 'path';
 import * as main from '../src/main';
-import * as im from '../src/installer';
+import * as nv from '../src/node-version';
+import * as nvf from '../src/node-version-file';
 import * as auth from '../src/authutil';
 import {context} from '@actions/github';
 
@@ -40,6 +41,7 @@ describe('setup-node', () => {
   let mkdirpSpy: jest.SpyInstance;
   let execSpy: jest.SpyInstance;
   let authSpy: jest.SpyInstance;
+  let parseNodeVersionSpy: jest.SpyInstance;
 
   beforeEach(() => {
     // @actions/core
@@ -63,7 +65,8 @@ describe('setup-node', () => {
     exSpy = jest.spyOn(tc, 'extractTar');
     cacheSpy = jest.spyOn(tc, 'cacheDir');
     getManifestSpy = jest.spyOn(tc, 'getManifestFromRepo');
-    getDistSpy = jest.spyOn(im, 'getVersionsFromDist');
+    getDistSpy = jest.spyOn(nv, 'getVersionsFromDist');
+    parseNodeVersionSpy = jest.spyOn(nvf, 'parseNodeVersionFile');
 
     // io
     whichSpy = jest.spyOn(io, 'which');
@@ -79,7 +82,7 @@ describe('setup-node', () => {
     getManifestSpy.mockImplementation(
       () => <tc.IToolRelease[]>nodeTestManifest
     );
-    getDistSpy.mockImplementation(() => <im.INodeVersion>nodeTestDist);
+    getDistSpy.mockImplementation(() => <nv.INodeVersion>nodeTestDist);
 
     // writes
     cnSpy = jest.spyOn(process.stdout, 'write');
@@ -124,7 +127,7 @@ describe('setup-node', () => {
   });
 
   it('can mock dist versions', async () => {
-    let versions: im.INodeVersion[] = await im.getVersionsFromDist();
+    let versions: nv.INodeVersion[] = await nv.getVersionsFromDist();
     expect(versions).toBeDefined();
     expect(versions?.length).toBe(23);
   });
@@ -517,10 +520,12 @@ describe('setup-node', () => {
       // Arrange
       const versionSpec = 'v12';
       const versionFile = '.nvmrc';
+      const expectedVersionSpec = '12';
 
       inputs['node-version-file'] = versionFile;
 
       readFileSyncSpy.mockImplementation(() => versionSpec);
+      parseNodeVersionSpy.mockImplementation(() => expectedVersionSpec);
 
       // Act
       await main.run();
@@ -531,8 +536,9 @@ describe('setup-node', () => {
         path.join(__dirname, '..', versionFile),
         'utf8'
       );
+      expect(parseNodeVersionSpy).toHaveBeenCalledWith(versionSpec);
       expect(logSpy).toHaveBeenCalledWith(
-        `Resolved ${versionFile} as ${versionSpec}`
+        `Resolved ${versionFile} as ${expectedVersionSpec}`
       );
     });
   });
