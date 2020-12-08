@@ -356,7 +356,7 @@ describe('setup-node', () => {
       }[os.platform];
 
       inputs['node-version'] = version;
-      inputs['node-arch'] = arch;
+      inputs['architecture'] = arch;
       inputs['always-auth'] = false;
       inputs['token'] = 'faketoken';
 

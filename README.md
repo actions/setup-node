@@ -91,21 +91,21 @@ jobs:
           - 10
           - 12
           - 14
-        node_arch:
+        architecture:
           - x64
         # an extra windows-x86 run:
         include:
           - os: windows-2016
             node_version: 12
-            node_arch: x86
-    name: Node ${{ matrix.node_version }} - ${{ matrix.node_arch }} on ${{ matrix.os }}
+            architecture: x86
+    name: Node ${{ matrix.node_version }} - ${{ matrix.architecture }} on ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v2
       - name: Setup node
         uses: actions/setup-node@v1
         with:
           node-version: ${{ matrix.node_version }}
-          node-arch: ${{ matrix.node_arch }}
+          architecture: ${{ matrix.architecture }}
       - run: npm install
       - run: npm test
 ```

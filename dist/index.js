@@ -4706,11 +4706,11 @@ function run() {
             if (!version) {
                 version = core.getInput('version');
             }
-            let arch = core.getInput('node-arch');
-            // if node-arch supplied but node-version is not
+            let arch = core.getInput('architecture');
+            // if architecture supplied but node-version is not
             // if we don't throw a warning, the already installed x64 node will be used which is not probably what user meant.
             if (arch && !version) {
-                core.warning('`node-arch` is provided but `node-version` is missing. This results in using an already installed x64 node which is not probably what you meant. To fix this, provide `node-arch` in combination with `node-version`');
+                core.warning('`architecture` is provided but `node-version` is missing. This results in using an already installed x64 node which is not probably what you meant. To fix this, provide `architecture` in combination with `node-version`');
             }
             if (!arch) {
                 arch = os.arch();
