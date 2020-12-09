@@ -22,7 +22,7 @@ export async function run() {
     // if we don't throw a warning, the already installed x64 node will be used which is not probably what user meant.
     if (arch && !version) {
       core.warning(
-        '`architecture` is provided but `node-version` is missing. This results in using an already installed x64 node which is not probably what you meant. To fix this, provide `architecture` in combination with `node-version`'
+        '`architecture` is provided but `node-version` is missing. In this configuration, the version/architecture of Node will not be changed. To fix this, provide `architecture` in combination with `node-version`'
       );
     }
 
