@@ -97,3 +97,16 @@ jobs:
       - name: Verify node
         run: __tests__/verify-node.sh 0.12.18 SKIP_NPM
         shell: bash
+
+  arch:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Setup node 12 x86 from dist
+        uses: ./
+        with:
+          node-version: '12'
+          architecture: 'x86'
+      - name: Verify node
+        run: __tests__/verify-arch.sh "ia32"
+        shell: bash
