@@ -1,21 +1,12 @@
 import os = require('os');
 import * as assert from 'assert';
 import * as core from '@actions/core';
-import * as hc from '@actions/http-client';
 import * as io from '@actions/io';
 import * as tc from '@actions/tool-cache';
 import * as path from 'path';
 import * as semver from 'semver';
 import fs = require('fs');
-
-//
-// Node versions interface
-// see https://nodejs.org/dist/index.json
-//
-export interface INodeVersion {
-  version: string;
-  files: string[];
-}
+import {INodeVersion, getVersionsFromDist} from './node-version';
 
 interface INodeVersionInfo {
   downloadUrl: string;
@@ -274,7 +265,7 @@ async function queryDistForMatch(versionSpec: string): Promise<string> {
   }
 
   let versions: string[] = [];
-  let nodeVersions = await module.exports.getVersionsFromDist();
+  let nodeVersions = await getVersionsFromDist();
 
   nodeVersions.forEach((nodeVersion: INodeVersion) => {
     // ensure this version supports your os and platform
@@ -286,16 +277,6 @@ async function queryDistForMatch(versionSpec: string): Promise<string> {
   // get the latest version that matches the version spec
   let version: string = evaluateVersions(versions, versionSpec);
   return version;
-}
-
-export async function getVersionsFromDist(): Promise<INodeVersion[]> {
-  let dataUrl = 'https://nodejs.org/dist/index.json';
-  let httpClient = new hc.HttpClient('setup-node', [], {
-    allowRetries: true,
-    maxRetries: 3
-  });
-  let response = await httpClient.getJson<INodeVersion[]>(dataUrl);
-  return response.result || [];
 }
 
 // For non LTS versions of Node, the files we need (for Windows) are sometimes located

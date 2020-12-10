@@ -6,7 +6,8 @@ import cp from 'child_process';
 import osm = require('os');
 import path from 'path';
 import * as main from '../src/main';
-import * as im from '../src/installer';
+import * as nv from '../src/node-version';
+import * as nvf from '../src/node-version-file';
 import * as auth from '../src/authutil';
 import {context} from '@actions/github';
 
@@ -36,9 +37,11 @@ describe('setup-node', () => {
   let dbgSpy: jest.SpyInstance;
   let whichSpy: jest.SpyInstance;
   let existsSpy: jest.SpyInstance;
+  let readFileSyncSpy: jest.SpyInstance;
   let mkdirpSpy: jest.SpyInstance;
   let execSpy: jest.SpyInstance;
   let authSpy: jest.SpyInstance;
+  let parseNodeVersionSpy: jest.SpyInstance;
 
   beforeEach(() => {
     // @actions/core
@@ -62,11 +65,13 @@ describe('setup-node', () => {
     exSpy = jest.spyOn(tc, 'extractTar');
     cacheSpy = jest.spyOn(tc, 'cacheDir');
     getManifestSpy = jest.spyOn(tc, 'getManifestFromRepo');
-    getDistSpy = jest.spyOn(im, 'getVersionsFromDist');
+    getDistSpy = jest.spyOn(nv, 'getVersionsFromDist');
+    parseNodeVersionSpy = jest.spyOn(nvf, 'parseNodeVersionFile');
 
     // io
     whichSpy = jest.spyOn(io, 'which');
     existsSpy = jest.spyOn(fs, 'existsSync');
+    readFileSyncSpy = jest.spyOn(fs, 'readFileSync');
     mkdirpSpy = jest.spyOn(io, 'mkdirP');
 
     // disable authentication portion for installer tests
@@ -77,7 +82,7 @@ describe('setup-node', () => {
     getManifestSpy.mockImplementation(
       () => <tc.IToolRelease[]>nodeTestManifest
     );
-    getDistSpy.mockImplementation(() => <im.INodeVersion>nodeTestDist);
+    getDistSpy.mockImplementation(() => <nv.INodeVersion>nodeTestDist);
 
     // writes
     cnSpy = jest.spyOn(process.stdout, 'write');
@@ -122,7 +127,7 @@ describe('setup-node', () => {
   });
 
   it('can mock dist versions', async () => {
-    let versions: im.INodeVersion[] = await im.getVersionsFromDist();
+    let versions: nv.INodeVersion[] = await nv.getVersionsFromDist();
     expect(versions).toBeDefined();
     expect(versions?.length).toBe(23);
   });
@@ -488,6 +493,53 @@ describe('setup-node', () => {
         `Attempting to download ${versionSpec}...`
       );
       expect(cnSpy).toHaveBeenCalledWith(`::add-path::${expPath}${osm.EOL}`);
+    });
+  });
+
+  describe('node-version-file flag', () => {
+    it('Not used if node-version is provided', async () => {
+      // Arrange
+      inputs['node-version'] = '12';
+
+      // Act
+      await main.run();
+
+      // Assert
+      expect(readFileSyncSpy).toHaveBeenCalledTimes(0);
+    });
+
+    it('Not used if node-version-file not provided', async () => {
+      // Act
+      await main.run();
+
+      // Assert
+      expect(readFileSyncSpy).toHaveBeenCalledTimes(0);
+    });
+
+    it('Reads node-version-file if provided', async () => {
+      // Arrange
+      const versionSpec = 'v12';
+      const versionFile = '.nvmrc';
+      const expectedVersionSpec = '12';
+
+      inputs['node-version-file'] = versionFile;
+
+      readFileSyncSpy.mockImplementation(() => versionSpec);
+      parseNodeVersionSpy.mockImplementation(() => expectedVersionSpec);
+
+      // Act
+      await main.run();
+
+      // Assert
+      expect(readFileSyncSpy).toHaveBeenCalledTimes(1);
+      expect(readFileSyncSpy).toHaveBeenCalledWith(
+        path.join(__dirname, '..', versionFile),
+        'utf8'
+      );
+      expect(parseNodeVersionSpy).toHaveBeenCalledWith(versionSpec);
+      expect(logSpy).toHaveBeenCalledWith(
+        `Resolved ${versionFile} as ${expectedVersionSpec}`
+      );
     });
   });
 });
