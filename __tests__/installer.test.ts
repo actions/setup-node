@@ -252,7 +252,7 @@ describe('setup-node', () => {
     expect(dlSpy).toHaveBeenCalled();
     expect(exSpy).toHaveBeenCalled();
     expect(logSpy).toHaveBeenCalledWith(
-      `Acquiring ${resolvedVersion} from ${expectedUrl}`
+      `Acquiring ${resolvedVersion} - ${os.arch} from ${expectedUrl}`
     );
     expect(logSpy).toHaveBeenCalledWith(
       `Attempting to download ${versionSpec}...`
@@ -341,6 +341,46 @@ describe('setup-node', () => {
     expect(cnSpy).toHaveBeenCalledWith(`::error::${errMsg}${osm.EOL}`);
   });
 
+  it('Acquires specified architecture of node', async () => {
+    for (const {arch, version, osSpec} of [
+      {arch: 'x86', version: '12.16.2', osSpec: 'win32'},
+      {arch: 'x86', version: '14.0.0', osSpec: 'win32'}
+    ]) {
+      os.platform = osSpec;
+      os.arch = arch;
+      const fileExtension = os.platform === 'win32' ? '7z' : 'tar.gz';
+      const platform = {
+        linux: 'linux',
+        darwin: 'darwin',
+        win32: 'win'
+      }[os.platform];
+
+      inputs['node-version'] = version;
+      inputs['architecture'] = arch;
+      inputs['always-auth'] = false;
+      inputs['token'] = 'faketoken';
+
+      let expectedUrl =
+        arch === 'x64'
+          ? `https://github.com/actions/node-versions/releases/download/${version}/node-${version}-${platform}-${arch}.zip`
+          : `https://nodejs.org/dist/v${version}/node-v${version}-${platform}-${arch}.${fileExtension}`;
+
+      // ... but not in the local cache
+      findSpy.mockImplementation(() => '');
+
+      dlSpy.mockImplementation(async () => '/some/temp/path');
+      let toolPath = path.normalize(`/cache/node/${version}/${arch}`);
+      exSpy.mockImplementation(async () => '/some/other/temp/path');
+      cacheSpy.mockImplementation(async () => toolPath);
+
+      await main.run();
+      expect(dlSpy).toHaveBeenCalled();
+      expect(logSpy).toHaveBeenCalledWith(
+        `Acquiring ${version} - ${arch} from ${expectedUrl}`
+      );
+    }
+  }, 100000);
+
   describe('check-latest flag', () => {
     it('use local version and dont check manifest if check-latest is not specified', async () => {
       os.platform = 'linux';
@@ -403,7 +443,7 @@ describe('setup-node', () => {
       );
       expect(logSpy).toHaveBeenCalledWith("Resolved as '12.16.2'");
       expect(logSpy).toHaveBeenCalledWith(
-        `Acquiring 12.16.2 from ${expectedUrl}`
+        `Acquiring 12.16.2 - ${os.arch} from ${expectedUrl}`
       );
       expect(logSpy).toHaveBeenCalledWith('Extracting ...');
     });
