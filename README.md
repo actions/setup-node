@@ -47,7 +47,7 @@ Check latest version:
 ```yaml
 steps:
 - uses: actions/checkout@v2
-- uses: actions/setup-node@v2
+- uses: actions/setup-node@v2-beta
   with:
     node-version: '12'
     check-latest: true
@@ -70,6 +70,61 @@ jobs:
         uses: actions/setup-node@v1
         with:
           node-version: ${{ matrix.node }}
+      - run: npm install
+      - run: npm test
+```
+
+Architecture:
+
+You can use any of the [supported operating systems](https://docs.github.com/en/actions/reference/virtual-environments-for-github-hosted-runners), and the compatible `architecture` can be selected using `architecture`. Values are `x86`, `x64`, `arm64`, `armv6l`, `armv7l`, `ppc64le`, `s390x` (not all of the architectures are available on all platforms).
+
+When using `architecture`, `node-version` must be provided as well.
+```yaml
+jobs:
+  build:
+    runs-on: windows-latest
+    name: Node sample
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v1
+        with:
+          node-version: '12'
+          architecture: 'x64' # optional, x64 or x86. If not specified, x64 will be used by default
+      - run: npm install
+      - run: npm test
+```
+
+Multiple Operating Systems and Architectures:
+
+```yaml
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os:
+          - ubuntu-latest
+          - macos-latest
+          - windows-latest
+        node_version:
+          - 10
+          - 12
+          - 14
+        architecture:
+          - x64
+        # an extra windows-x86 run:
+        include:
+          - os: windows-2016
+            node_version: 12
+            architecture: x86
+    name: Node ${{ matrix.node_version }} - ${{ matrix.architecture }} on ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v2
+      - name: Setup node
+        uses: actions/setup-node@v1
+        with:
+          node-version: ${{ matrix.node_version }}
+          architecture: ${{ matrix.architecture }}
       - run: npm install
       - run: npm test
 ```
