@@ -10,14 +10,14 @@ This action sets by node environment for use in actions by:
 - registering problem matchers for error output
 - configuring authentication for GPR or npm
 
-# v2-beta
+# v2
 
-A beta release which adds reliability for pulling node distributions from a cache of node releases is available by referencing the `v2-beta` tag.
+This release adds reliability for pulling node distributions from a cache of node releases.
 
 ```yaml
 steps:
 - uses: actions/checkout@v2
-- uses: actions/setup-node@v2-beta
+- uses: actions/setup-node@v2
   with:
     node-version: '12'
 ```
@@ -34,7 +34,7 @@ Basic:
 ```yaml
 steps:
 - uses: actions/checkout@v2
-- uses: actions/setup-node@v1
+- uses: actions/setup-node@v2
   with:
     node-version: '12'
 - run: npm install
@@ -47,7 +47,7 @@ Check latest version:
 ```yaml
 steps:
 - uses: actions/checkout@v2
-- uses: actions/setup-node@v2-beta
+- uses: actions/setup-node@v2
   with:
     node-version: '12'
     check-latest: true
@@ -67,7 +67,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Setup node
-        uses: actions/setup-node@v1
+        uses: actions/setup-node@v2
         with:
           node-version: ${{ matrix.node }}
       - run: npm install
@@ -86,7 +86,7 @@ jobs:
     name: Node sample
     steps:
       - uses: actions/checkout@v2
-      - uses: actions/setup-node@v1
+      - uses: actions/setup-node@v2
         with:
           node-version: '12'
           architecture: 'x64' # optional, x64 or x86. If not specified, x64 will be used by default
@@ -121,7 +121,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Setup node
-        uses: actions/setup-node@v1
+        uses: actions/setup-node@v2
         with:
           node-version: ${{ matrix.node_version }}
           architecture: ${{ matrix.architecture }}
@@ -133,7 +133,7 @@ Publish to npmjs and GPR with npm:
 ```yaml
 steps:
 - uses: actions/checkout@v2
-- uses: actions/setup-node@v1
+- uses: actions/setup-node@v2
   with:
     node-version: '10.x'
     registry-url: 'https://registry.npmjs.org'
@@ -141,7 +141,7 @@ steps:
 - run: npm publish
   env:
     NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-- uses: actions/setup-node@v1
+- uses: actions/setup-node@v2
   with:
     registry-url: 'https://npm.pkg.github.com'
 - run: npm publish
@@ -153,7 +153,7 @@ Publish to npmjs and GPR with yarn:
 ```yaml
 steps:
 - uses: actions/checkout@v2
-- uses: actions/setup-node@v1
+- uses: actions/setup-node@v2
   with:
     node-version: '10.x'
     registry-url: <registry url>
@@ -161,7 +161,7 @@ steps:
 - run: yarn publish
   env:
     NODE_AUTH_TOKEN: ${{ secrets.YARN_TOKEN }}
-- uses: actions/setup-node@v1
+- uses: actions/setup-node@v2
   with:
     registry-url: 'https://npm.pkg.github.com'
 - run: yarn publish
@@ -173,7 +173,7 @@ Use private packages:
 ```yaml
 steps:
 - uses: actions/checkout@v2
-- uses: actions/setup-node@v1
+- uses: actions/setup-node@v2
   with:
     node-version: '10.x'
     registry-url: 'https://registry.npmjs.org'
