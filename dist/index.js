@@ -4695,6 +4695,7 @@ const auth = __importStar(__webpack_require__(202));
 const path = __importStar(__webpack_require__(622));
 const url_1 = __webpack_require__(835);
 const os = __webpack_require__(87);
+const fs = __webpack_require__(747);
 function run() {
     return __awaiter(this, void 0, void 0, function* () {
         try {
@@ -4702,10 +4703,7 @@ function run() {
             // Version is optional.  If supplied, install / use from the tool cache
             // If not supplied then task is still used to setup proxy, auth, etc...
             //
-            let version = core.getInput('node-version');
-            if (!version) {
-                version = core.getInput('version');
-            }
+            let version = parseNodeVersion();
             let arch = core.getInput('architecture');
             // if architecture supplied but node-version is not
             // if we don't throw a warning, the already installed x64 node will be used which is not probably what user meant.
@@ -4741,6 +4739,29 @@ exports.run = run;
 function isGhes() {
     const ghUrl = new url_1.URL(process.env['GITHUB_SERVER_URL'] || 'https://github.com');
     return ghUrl.hostname.toUpperCase() !== 'GITHUB.COM';
+}
+function parseNodeVersion() {
+    let nodeVersion = core.getInput('node-version') || core.getInput('version');
+    if (!nodeVersion) {
+        if (fs.existsSync('.nvmrc')) {
+            // Read from .nvmrc
+            nodeVersion = fs.readFileSync('.nvmrc', 'utf8').trim();
+            console.log(`Using ${nodeVersion} as input from file .nvmrc`);
+        }
+        else if (fs.existsSync('.tool-versions')) {
+            // Read from .tool-versions
+            const toolVersions = fs.readFileSync('.tool-versions', 'utf8').trim();
+            const nodeLine = toolVersions
+                .split(/\r?\n/)
+                .filter(e => e.match(/^nodejs\s/))[0];
+            nodeVersion = nodeLine.match(/^nodejs\s+(.+)$/)[1];
+            console.log(`Using ${nodeVersion} as input from file .tool-versions`);
+        }
+        else {
+            console.log(`Version not specified and not found in .nvmrc or .tool-versions`);
+        }
+    }
+    return nodeVersion;
 }
 //# sourceMappingURL=main.js.map
 

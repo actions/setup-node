@@ -4,6 +4,7 @@ import * as auth from './authutil';
 import * as path from 'path';
 import {URL} from 'url';
 import os = require('os');
+import fs = require('fs');
 
 export async function run() {
   try {
@@ -11,11 +12,7 @@ export async function run() {
     // Version is optional.  If supplied, install / use from the tool cache
     // If not supplied then task is still used to setup proxy, auth, etc...
     //
-    let version = core.getInput('node-version');
-    if (!version) {
-      version = core.getInput('version');
-    }
-
+    let version = parseNodeVersion();
     let arch = core.getInput('architecture');
 
     // if architecture supplied but node-version is not
@@ -63,4 +60,30 @@ function isGhes(): boolean {
     process.env['GITHUB_SERVER_URL'] || 'https://github.com'
   );
   return ghUrl.hostname.toUpperCase() !== 'GITHUB.COM';
+}
+
+function parseNodeVersion(): string {
+  let nodeVersion = core.getInput('node-version') || core.getInput('version');
+
+  if (!nodeVersion) {
+    if (fs.existsSync('.nvmrc')) {
+      // Read from .nvmrc
+      nodeVersion = fs.readFileSync('.nvmrc', 'utf8').trim();
+      console.log(`Using ${nodeVersion} as input from file .nvmrc`);
+    } else if (fs.existsSync('.tool-versions')) {
+      // Read from .tool-versions
+      const toolVersions = fs.readFileSync('.tool-versions', 'utf8').trim();
+      const nodeLine = toolVersions
+        .split(/\r?\n/)
+        .filter(e => e.match(/^nodejs\s/))[0];
+      nodeVersion = nodeLine.match(/^nodejs\s+(.+)$/)![1];
+      console.log(`Using ${nodeVersion} as input from file .tool-versions`);
+    } else {
+      console.log(
+        `Version not specified and not found in .nvmrc or .tool-versions`
+      );
+    }
+  }
+
+  return nodeVersion;
 }
