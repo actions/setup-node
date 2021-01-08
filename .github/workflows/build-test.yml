@@ -1,5 +1,5 @@
 name: build-test
-
+versions-manifest.json
 on:
   pull_request:
     paths-ignore:
