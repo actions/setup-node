@@ -3,14 +3,14 @@ name: proxy
 on:
   pull_request:
     paths-ignore:
-      - '**.md'    
-  push:    
+      - '**.md'
+  push:
     branches:
-      - master
+      - main
       - releases/*
     paths-ignore:
       - '**.md'
-      
+
 jobs:
   test-proxy:
     runs-on: ubuntu-latest
