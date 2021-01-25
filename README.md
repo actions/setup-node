@@ -29,6 +29,8 @@ The `node-version` input is optional.  If not supplied, node which is in your PA
 # Usage
 
 See [action.yml](action.yml)
+- name: Setup Node.js environment
+  uses: actions/setup-node@v2.1.4
 
 Basic:
 ```yaml
