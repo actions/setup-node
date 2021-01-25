@@ -9,7 +9,7 @@ inputs:
     description: 'Version Spec of the version to use.  Examples: 12.x, 10.15.1, >=10.15.0'
   check-latest:
     description: 'Set this option if you want the action to check for the latest available version that satisfies the version spec'
-    default: false
+    default: true
   registry-url:
     description: 'Optional registry to set up for auth. Will set the registry in a project level .npmrc and .yarnrc file, and set up auth to read in from env.NODE_AUTH_TOKEN'
   scope:
