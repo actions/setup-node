@@ -134,7 +134,7 @@ jobs:
       - run: npm test
 ```
 
-Publish to npmjs and GPR with npm:
+Publish to npmjs and GPR with npm, env `NODE_AUTH_TOKEN` used to auth `npm.pkg.github.com` :
 ```yaml
 steps:
 - uses: actions/checkout@v2
@@ -154,7 +154,7 @@ steps:
     NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 ```
 
-Publish to npmjs and GPR with yarn:
+Publish to npmjs and GPR with yarn, env `NODE_AUTH_TOKEN` used to auth `npm.pkg.github.com`:
 ```yaml
 steps:
 - uses: actions/checkout@v2
@@ -174,7 +174,7 @@ steps:
     NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 ```
 
-Use private packages:
+Use private packages, env `NODE_AUTH_TOKEN` used to auth `npm.pkg.github.com`:
 ```yaml
 steps:
 - uses: actions/checkout@v2
