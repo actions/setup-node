@@ -8,14 +8,9 @@ import path from 'path';
 import * as main from '../src/main';
 import * as im from '../src/installer';
 import * as auth from '../src/authutil';
-import {context} from '@actions/github';
 
 let nodeTestManifest = require('./data/versions-manifest.json');
 let nodeTestDist = require('./data/node-dist-index.json');
-
-// let matchers = require('../matchers.json');
-// let matcherPattern = matchers.problemMatcher[0].pattern[0];
-// let matcherRegExp = new RegExp(matcherPattern.regexp);
 
 describe('setup-node', () => {
   let inputs = {} as any;
