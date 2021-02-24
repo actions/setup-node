@@ -19,7 +19,7 @@ steps:
 - uses: actions/checkout@v2
 - uses: actions/setup-node@v2
   with:
-    node-version: '12'
+    node-version: '14'
 ```
 
 The action will first check the local cache for a semver match. The hosted images have been updated with the latest of each LTS from v8, v10, v12, and v14. `self-hosted` machines will benefit from the cache as well only downloading once. The action will pull LTS versions from [node-versions releases](https://github.com/actions/node-versions/releases) and on miss or failure will fall back to the previous behavior of downloading directly from [node dist](https://nodejs.org/dist/).
@@ -36,7 +36,7 @@ steps:
 - uses: actions/checkout@v2
 - uses: actions/setup-node@v2
   with:
-    node-version: '12'
+    node-version: '14'
 - run: npm install
 - run: npm test
 ```
@@ -54,7 +54,7 @@ steps:
 - uses: actions/checkout@v2
 - uses: actions/setup-node@v2
   with:
-    node-version: '12'
+    node-version: '14'
     check-latest: true
 - run: npm install
 - run: npm test
@@ -67,7 +67,7 @@ jobs:
     runs-on: ubuntu-16.04
     strategy:
       matrix:
-        node: [ '10', '12' ]
+        node: [ '12', '14' ]
     name: Node ${{ matrix.node }} sample
     steps:
       - uses: actions/checkout@v2
@@ -93,7 +93,7 @@ jobs:
       - uses: actions/checkout@v2
       - uses: actions/setup-node@v2
         with:
-          node-version: '12'
+          node-version: '14'
           architecture: 'x64' # optional, x64 or x86. If not specified, x64 will be used by default
       - run: npm install
       - run: npm test
