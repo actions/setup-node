@@ -1,8 +1,40 @@
 # setup-node
 
 <p align="left">
-  <a href="https://github.com/actions/setup-node/actions?query=workflow%3Abuild-test"><img alt="build-test status" src="https://github.com/actions/setup-node/workflows/build-test/badge.svg"></a> <a href="https://github.com/actions/setup-node/actions?query=workflow%3Aversions"><img alt="versions status" src="https://github.com/actions/setup-node/workflows/versions/badge.svg"></a> <a href="https://github.com/actions/setup-node/actions?query=workflow%3Aproxy"><img alt="proxy status" src="https://github.com/actions/setup-node/workflows/proxy/badge.svg"></a> 
+  <a href="https://github.com/actions/setup-node/actions?query=workflow%3Abuild-test"><img alt="build-test status" src="https://github.com/actions/setup-node/workflows/build-test/badge.svg"></a> <a href="https://github.com/actions/setup-node/actions?query=workflow%3Aversions"><img alt="versions status" src="https://github.com/actions/setup-node/workflows/versions/badge.svg"></a> <a href="https://github.com/actions/setup-node/actions?query=workflow%3Aproxy"><img alt="proxy status" src="https://github.com/actions/setup-node/workflows/proxy/badge.svg"></a>
 </p>
+
+## About this fork
+This is a fork of the official GitHub [actions/setup-node](https://github.com/marketplace/actions/setup-node-js-environment) that checks common Node config files when picking the version of Node to use.
+
+### Example
+
+```yaml
+- name: Setup node
+  uses: guardian/actions-setup-node@main
+```
+
+It checks the following places:
+
+1. `.nvmrc`
+2. `engines.node` in `package.json`
+3. `.node-version`
+4. `.n-node-version`
+5. `.naverc`
+6. `.nodeenvrc`
+
+and finally the following environment variables:
+
+7. `NODE_VERSION`
+8. `NODIST_NODE_VERSION`
+
+> Behind the scenes, it uses [@ehmicky](https://github.com/ehmicky)'s [`preferred-node-version`](https://www.npmjs.com/package/) 😍.
+
+If it _still_ can't find anything, it falls back to the the original action's default behaviour (using the PATH version).
+
+_Below is the rest of the original readme…_
+
+---
 
 This action sets by node environment for use in actions by:
 

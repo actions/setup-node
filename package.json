@@ -29,6 +29,7 @@
     "@actions/http-client": "^1.0.6",
     "@actions/io": "^1.0.2",
     "@actions/tool-cache": "^1.5.4",
+    "preferred-node-version": "^1.1.0",
     "semver": "^6.1.1"
   },
   "devDependencies": {

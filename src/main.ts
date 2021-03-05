@@ -4,6 +4,7 @@ import * as auth from './authutil';
 import * as path from 'path';
 import {URL} from 'url';
 import os = require('os');
+import preferredNodeVersion from 'preferred-node-version';
 
 export async function run() {
   try {
@@ -12,6 +13,9 @@ export async function run() {
     // If not supplied then task is still used to setup proxy, auth, etc...
     //
     let version = core.getInput('node-version');
+    if (!version) {
+      version = (await preferredNodeVersion()).version;
+    }
     if (!version) {
       version = core.getInput('version');
     }
