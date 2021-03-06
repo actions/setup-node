@@ -14,10 +14,10 @@ export async function run() {
     //
     let version = core.getInput('node-version');
     if (!version) {
-      version = (await preferredNodeVersion()).version;
+      version = core.getInput('version');
     }
     if (!version) {
-      version = core.getInput('version');
+      version = (await preferredNodeVersion()).version;
     }
 
     let arch = core.getInput('architecture');
