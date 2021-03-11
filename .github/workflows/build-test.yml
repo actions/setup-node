@@ -16,17 +16,12 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
+        os: [ubuntu-latest]
     steps:
       - uses: actions/checkout@v2
-      - name: Setup node 12
+      - name: Setup node 14
         uses: actions/setup-node@v2
         with:
-          node-version: 12.x
-      - run: npm ci
+          node-version: 14.x
       - run: npm run build
-      - run: npm run format-check
-      - run: npm test
-      - name: Verify no unstaged changes
-        if: runner.os != 'windows'
-        run: __tests__/verify-no-unstaged-changes.sh
+      - run: npm run:test
