@@ -16,17 +16,18 @@ This is a fork of the official GitHub [actions/setup-node](https://github.com/ma
 
 It checks the following places:
 
-1. `.nvmrc`
-2. `engines.node` in `package.json`
+1. `.n-node-version`
+2. `.naverc`
 3. `.node-version`
-4. `.n-node-version`
-5. `.naverc`
-6. `.nodeenvrc`
+4. `.nodeenvrc`
+5. `.nvmrc` (accurately [parsing nvm versions](https://github.com/ehmicky/node-version-alias))
+6. `package.json#engines.node`
 
 and finally the following environment variables:
 
-7. `NODE_VERSION`
-8. `NODIST_NODE_VERSION`
+7. `NODIST_NODE_VERSION`
+8. `NODE_VERSION`
+9. `DEFAULT_NODE_VERSION`
 
 > Behind the scenes, it uses [@ehmicky](https://github.com/ehmicky)'s [`preferred-node-version`](https://www.npmjs.com/package/) 😍.
 
