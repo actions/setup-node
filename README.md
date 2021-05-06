@@ -22,7 +22,7 @@ steps:
     node-version: '14'
 ```
 
-The action will first check the local cache for a semver match. The hosted images have been updated with the latest of each LTS from v8, v10, v12, and v14. `self-hosted` machines will benefit from the cache as well only downloading once. The action will pull LTS versions from [node-versions releases](https://github.com/actions/node-versions/releases) and on miss or failure will fall back to the previous behavior of downloading directly from [node dist](https://nodejs.org/dist/).
+The action will first check the local cache for a semver match. The hosted images have been updated with the latest of each LTS from v8, v10, v12, v14 and v16. `self-hosted` machines will benefit from the cache as well only downloading once. The action will pull LTS versions from [node-versions releases](https://github.com/actions/node-versions/releases) and on miss or failure will fall back to the previous behavior of downloading directly from [node dist](https://nodejs.org/dist/).
 
 The `node-version` input is optional. If not supplied, the node version that is PATH will be used. However, this action will still register problem matchers and support auth features. So setting up the node environment is still a valid scenario without downloading and caching versions.
 
@@ -67,7 +67,7 @@ jobs:
     runs-on: ubuntu-16.04
     strategy:
       matrix:
-        node: [ '12', '14' ]
+        node: [ '12', '14', '16' ]
     name: Node ${{ matrix.node }} sample
     steps:
       - uses: actions/checkout@v2
@@ -112,9 +112,9 @@ jobs:
           - macos-latest
           - windows-latest
         node_version:
-          - 10
           - 12
           - 14
+          - 16
         architecture:
           - x64
         # an extra windows-x86 run:
@@ -140,7 +140,7 @@ steps:
 - uses: actions/checkout@v2
 - uses: actions/setup-node@v2
   with:
-    node-version: '10.x'
+    node-version: '14.x'
     registry-url: 'https://registry.npmjs.org'
 - run: npm install
 - run: npm publish
@@ -160,7 +160,7 @@ steps:
 - uses: actions/checkout@v2
 - uses: actions/setup-node@v2
   with:
-    node-version: '10.x'
+    node-version: '14.x'
     registry-url: <registry url>
 - run: yarn install
 - run: yarn publish
@@ -180,7 +180,7 @@ steps:
 - uses: actions/checkout@v2
 - uses: actions/setup-node@v2
   with:
-    node-version: '10.x'
+    node-version: '14.x'
     registry-url: 'https://registry.npmjs.org'
 # Skip post-install scripts here, as a malicious
 # script could steal NODE_AUTH_TOKEN.

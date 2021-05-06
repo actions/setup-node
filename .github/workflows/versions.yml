@@ -18,7 +18,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
-        node-version: [10, 12, 14]
+        node-version: [12, 14, 16]
     steps:
       - uses: actions/checkout@v2
       - name: Setup Node
@@ -35,7 +35,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
-        node-version: [10.15, 12.16.0, 14.2.0]
+        node-version: [12.16.0, 14.2.0, 16.1.0]
     steps:
       - uses: actions/checkout@v2
       - name: Setup Node
@@ -52,7 +52,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
-        node-version: [10, 11, 12, 14]
+        node-version: [12, 14, 16]
     steps:
       - uses: actions/checkout@v2
       - name: Setup Node and check latest

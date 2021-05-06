@@ -6,7 +6,7 @@ inputs:
     description: 'Set always-auth in npmrc'
     default: 'false'
   node-version:
-    description: 'Version Spec of the version to use.  Examples: 12.x, 10.15.1, >=10.15.0'
+    description: 'Version Spec of the version to use.  Examples: 14, 14.16.1, >=14.16.1'
   architecture:
     description: 'Target architecture for Node to use. Examples: x86, x64. Will use system architecture by default.'
   check-latest:
