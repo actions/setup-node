@@ -30,6 +30,7 @@ We don't persue the goal to provide wide customization of caching in scope of `a
   - if input contains wildcards (like `**/package-lock.json`), hash of multiple files will be used
 - The hash of file provided in `package-lock-path` input will be used as cache key (the same approach like [actions/cache](https://github.com/actions/cache/blob/main/examples.md#node---npm) recommends)
 - The following key cache will be used `${{ runner.os }}-npm-${{ hashFiles('<package-lock-path>') }}`
+- Action will cache global npm cache directory (retrieved via `npm config get cache`)
 
 # Example of real use-cases
 Default use case when `package-lock.json` or `yarn.lock` are located in repository root:
