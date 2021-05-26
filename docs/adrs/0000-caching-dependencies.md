@@ -26,7 +26,6 @@ We don't persue the goal to provide wide customization of caching in scope of `a
 - Add optional input `package-lock-path` that will allow to specify path to `package-lock.json` file path:
   - If input is not defined, action will try to search `package-lock.json` or `yarn.lock` (npm 7.x supports `yarn.lock` files) files in the repository root and throw error if no one is found
   - If input contains file path, action will use the specified file
-  - If input contains folder path, action will try to search `package-lock.json` file in the specified folder
   - if input contains wildcards (like `**/package-lock.json`), hash of multiple files will be used
 - The hash of file provided in `package-lock-path` input will be used as cache key (the same approach like [actions/cache](https://github.com/actions/cache/blob/main/examples.md#node---npm) recommends)
 - The following key cache will be used `${{ runner.os }}-npm-${{ hashFiles('<package-lock-path>') }}`
