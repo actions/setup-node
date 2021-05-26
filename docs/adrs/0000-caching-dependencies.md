@@ -15,7 +15,7 @@ Integration of caching functionality into `actions/setup-node` action will bring
 
 As the first stage, we will add support for NPM dependencies caching. We can consider adding the same functionality for Yarn later.
 
-We don't persue the goal to provide wide customization of caching in scope of `actions/setup-node` action. The purpose of this integration is covering ~90% of basic use-cases. If user needs flexible customization, we should advice them to use `actions/cache` directly.
+We don't pursue the goal to provide wide customization of caching in scope of `actions/setup-node` action. The purpose of this integration is covering ~90% of basic use-cases. If user needs flexible customization, we should advice them to use `actions/cache` directly.
 
 # Decision
 - Add `cache` input parameter to `actions/setup-node`. For now, input will accept the following values: 
