@@ -549,8 +549,8 @@ describe('setup-node', () => {
       await main.run();
 
       // assert
-      expect(logSpy).toHaveBeenCalledWith('Attempt to resolve the latest version from manifest...');
       expect(warningSpy).toHaveBeenCalledWith('LTS version is provided. For LTS versions `check-latest` will be automatically set to true')
+      expect(logSpy).toHaveBeenCalledWith('Attempt to resolve the latest version from manifest...');
       expect(dbgSpy).toHaveBeenCalledWith(`LTS alias 'erbium' for Node version 'lts/erbium'`)
       expect(dbgSpy).toHaveBeenCalledWith(`Found LTS release '12.16.2' for Node version 'lts/erbium'`)
       expect(logSpy).toHaveBeenCalledWith("Resolved as '12.16.2'");
@@ -577,8 +577,8 @@ describe('setup-node', () => {
       await main.run();
 
       // assert
-      expect(logSpy).toHaveBeenCalledWith('Attempt to resolve the latest version from manifest...');
       expect(warningSpy).toHaveBeenCalledWith('LTS version is provided. For LTS versions `check-latest` will be automatically set to true')
+      expect(logSpy).toHaveBeenCalledWith('Attempt to resolve the latest version from manifest...');
       expect(dbgSpy).toHaveBeenCalledWith(`LTS alias 'erbium' for Node version 'lts/erbium'`)
       expect(dbgSpy).toHaveBeenCalledWith(`Found LTS release '12.16.2' for Node version 'lts/erbium'`)
       expect(logSpy).toHaveBeenCalledWith("Resolved as '12.16.2'");
@@ -604,8 +604,8 @@ describe('setup-node', () => {
       await main.run();
 
       // assert
-      expect(logSpy).toHaveBeenCalledWith('Attempt to resolve the latest version from manifest...');
       expect(warningSpy).toHaveBeenCalledWith('LTS version is provided. For LTS versions `check-latest` will be automatically set to true')
+      expect(logSpy).toHaveBeenCalledWith('Attempt to resolve the latest version from manifest...');
       expect(dbgSpy).toHaveBeenCalledWith(`LTS alias '*' for Node version 'lts/*'`)
       expect(dbgSpy).toHaveBeenCalledWith(`Found LTS release '14.0.0' for Node version 'lts/*'`)
       expect(logSpy).toHaveBeenCalledWith("Resolved as '14.0.0'");
@@ -632,8 +632,8 @@ describe('setup-node', () => {
       await main.run();
 
       // assert
-      expect(logSpy).toHaveBeenCalledWith('Attempt to resolve the latest version from manifest...');
       expect(warningSpy).toHaveBeenCalledWith('LTS version is provided. For LTS versions `check-latest` will be automatically set to true')
+      expect(logSpy).toHaveBeenCalledWith('Attempt to resolve the latest version from manifest...');
       expect(dbgSpy).toHaveBeenCalledWith(`LTS alias '*' for Node version 'lts/*'`)
       expect(dbgSpy).toHaveBeenCalledWith(`Found LTS release '14.0.0' for Node version 'lts/*'`)
       expect(logSpy).toHaveBeenCalledWith("Resolved as '14.0.0'");
@@ -643,5 +643,50 @@ describe('setup-node', () => {
       expect(logSpy).toHaveBeenCalledWith('Adding to the cache ...');
       expect(cnSpy).toHaveBeenCalledWith(`::add-path::${toolPath}/bin${osm.EOL}`);
     })
+
+    it('fail with unexpected LTS alias (lts/)', async () => {
+      // arrange
+      os.platform = 'linux';
+      os.arch = 'x64';
+
+      inputs['node-version'] = 'lts/';
+      inputs.stable = 'true';
+
+      findSpy.mockImplementation(() => '');
+
+      // act
+      await main.run();
+
+      // assert
+      expect(warningSpy).toHaveBeenCalledWith('LTS version is provided. For LTS versions `check-latest` will be automatically set to true')
+      expect(logSpy).toHaveBeenCalledWith('Attempt to resolve the latest version from manifest...');
+      expect(logSpy).toHaveBeenCalledWith('Unable to resolve version from manifest...');
+      expect(dbgSpy).toHaveBeenCalledWith(`Unexpected LTS alias '' for Node version 'lts/'`)
+      expect(logSpy).toHaveBeenCalledWith('Failed to resolve version lts/ from manifest');
+      expect(cnSpy).toHaveBeenCalledWith(`::error::Unable to find Node version 'lts/' for platform linux and architecture x64.${osm.EOL}`);
+    });
+
+    it('fail to find LTS version (lts/unknown)', async () => {
+      // arrange
+      os.platform = 'linux';
+      os.arch = 'x64';
+
+      inputs['node-version'] = 'lts/unknown';
+      inputs.stable = 'true';
+
+      findSpy.mockImplementation(() => '');
+
+      // act
+      await main.run();
+
+      // assert
+      expect(warningSpy).toHaveBeenCalledWith('LTS version is provided. For LTS versions `check-latest` will be automatically set to true')
+      expect(logSpy).toHaveBeenCalledWith('Attempt to resolve the latest version from manifest...');
+      expect(dbgSpy).toHaveBeenCalledWith(`LTS alias 'unknown' for Node version 'lts/unknown'`)
+      expect(logSpy).toHaveBeenCalledWith('Unable to resolve version from manifest...');
+      expect(dbgSpy).toHaveBeenCalledWith(`Unable to find LTS release 'unknown' for Node version 'lts/unknown'.`)
+      expect(logSpy).toHaveBeenCalledWith('Failed to resolve version lts/unknown from manifest');
+      expect(cnSpy).toHaveBeenCalledWith(`::error::Unable to find Node version 'lts/unknown' for platform linux and architecture x64.${osm.EOL}`);
+    });
   })
 });
