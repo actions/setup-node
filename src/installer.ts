@@ -192,13 +192,15 @@ function findLtsVersionFromManifest(
 
   core.debug(`LTS alias '${alias}' for Node version '${versionSpec}'`);
 
-  const release = candidates.find(x => x.lts?.toLowerCase() === alias && x.stable === stable);
+  const release = alias === '*'
+   ? candidates.find(x => !!x.lts && x.stable === stable)
+   : candidates.find(x => x.lts?.toLowerCase() === alias && x.stable === stable);
 
   if (!release) {
     throw new Error(`Unable to find LTS release '${alias}' for Node version '${versionSpec}'.`);
   }
 
-  core.debug(`Found LTS release '${alias}' for Node version '${versionSpec}'`);
+  core.debug(`Found LTS release '${release.version}' for Node version '${versionSpec}'`);
 
   return release.version.split('.')[0];
 }
