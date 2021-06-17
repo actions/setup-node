@@ -134,6 +134,7 @@ describe('setup-node', () => {
     let match = await tc.findFromManifest('12.16.2', true, versions);
     expect(match).toBeDefined();
     expect(match?.version).toBe('12.16.2');
+    expect((match as any).lts).toBe('Erbium')
   });
 
   it('can find 12 from manifest on linux', async () => {
@@ -148,6 +149,7 @@ describe('setup-node', () => {
     let match = await tc.findFromManifest('12.16.2', true, versions);
     expect(match).toBeDefined();
     expect(match?.version).toBe('12.16.2');
+    expect((match as any).lts).toBe('Erbium')
   });
 
   it('can find 10 from manifest on windows', async () => {
@@ -162,6 +164,7 @@ describe('setup-node', () => {
     let match = await tc.findFromManifest('10', true, versions);
     expect(match).toBeDefined();
     expect(match?.version).toBe('10.20.1');
+    expect((match as any).lts).toBe('Dubnium')
   });
 
   //--------------------------------------------------
@@ -216,6 +219,10 @@ describe('setup-node', () => {
 
     expect(cnSpy).toHaveBeenCalledWith('::error::' + errMsg + osm.EOL);
   });
+
+  //--------------------------------------------------
+  // Manifest tests
+  //--------------------------------------------------
 
   it('downloads a version from a manifest match', async () => {
     os.platform = 'linux';
@@ -525,4 +532,61 @@ describe('setup-node', () => {
       expect(cnSpy).toHaveBeenCalledWith(`::add-path::${expPath}${osm.EOL}`);
     });
   });
+
+  describe('LTS version', () => {
+    it('find latest LTS version and resolve it from local cache (lts/erbium)', async () => {
+      // arrange
+      os.platform = 'linux';
+      os.arch = 'x64';
+
+      inputs['node-version'] = 'lts/erbium';
+      inputs.stable = 'true';
+
+      const toolPath = path.normalize('/cache/node/12.16.2/x64');
+      findSpy.mockReturnValue(toolPath);
+
+      // act
+      await main.run();
+
+      // assert
+      expect(logSpy).toHaveBeenCalledWith('Attempt to resolve the latest version from manifest...');
+      expect(warningSpy).toHaveBeenCalledWith('LTS version is provided. For LTS versions `check-latest` will be automatically set to true')
+      expect(dbgSpy).toHaveBeenCalledWith(`LTS alias 'erbium' for Node version 'lts/erbium'`)
+      expect(dbgSpy).toHaveBeenCalledWith(`Found LTS release 'erbium' for Node version 'lts/erbium'`)
+      expect(logSpy).toHaveBeenCalledWith("Resolved as '12.16.2'");
+      expect(logSpy).toHaveBeenCalledWith(`Found in cache @ ${toolPath}`);
+      expect(cnSpy).toHaveBeenCalledWith(`::add-path::${toolPath}/bin${osm.EOL}`);
+    });
+
+    it('find latest LTS version and install it from manifest (lts/erbium)', async () => {
+      // arrange
+      os.platform = 'linux';
+      os.arch = 'x64';
+
+      inputs['node-version'] = 'lts/erbium';
+      inputs.stable = 'true';
+
+      const toolPath = path.normalize('/cache/node/12.16.2/x64');
+      findSpy.mockImplementation(() => '');
+      dlSpy.mockImplementation(async () => '/some/temp/path');
+      exSpy.mockImplementation(async () => '/some/other/temp/path');
+      cacheSpy.mockImplementation(async () => toolPath);
+      const expectedUrl = 'https://github.com/actions/node-versions/releases/download/12.16.2-20200423.28/node-12.16.2-linux-x64.tar.gz';
+
+      // act
+      await main.run();
+
+      // assert
+      expect(logSpy).toHaveBeenCalledWith('Attempt to resolve the latest version from manifest...');
+      expect(warningSpy).toHaveBeenCalledWith('LTS version is provided. For LTS versions `check-latest` will be automatically set to true')
+      expect(dbgSpy).toHaveBeenCalledWith(`LTS alias 'erbium' for Node version 'lts/erbium'`)
+      expect(dbgSpy).toHaveBeenCalledWith(`Found LTS release 'erbium' for Node version 'lts/erbium'`)
+      expect(logSpy).toHaveBeenCalledWith("Resolved as '12.16.2'");
+      expect(logSpy).toHaveBeenCalledWith("Attempting to download 12.16.2...");
+      expect(logSpy).toHaveBeenCalledWith(`Acquiring 12.16.2 - ${os.arch} from ${expectedUrl}`);
+      expect(logSpy).toHaveBeenCalledWith('Extracting ...');
+      expect(logSpy).toHaveBeenCalledWith('Adding to the cache ...');
+      expect(cnSpy).toHaveBeenCalledWith(`::add-path::${toolPath}/bin${osm.EOL}`);
+    })
+  })
 });
