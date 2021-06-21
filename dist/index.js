@@ -13108,7 +13108,7 @@ function getNode(versionSpec, stable, checkLatest, auth, arch = os.arch()) {
         let osPlat = os.platform();
         let osArch = translateArchToDistUrl(arch);
         if (isLtsVersion(versionSpec)) {
-            core.warning('LTS version is provided. For LTS versions `check-latest` will be automatically set to true');
+            core.info('LTS version is provided. For LTS versions `check-latest` will be automatically set to true');
             checkLatest = true;
         }
         if (checkLatest) {

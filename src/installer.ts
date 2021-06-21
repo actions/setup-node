@@ -39,7 +39,7 @@ export async function getNode(
   let osArch: string = translateArchToDistUrl(arch);
 
   if (isLtsVersion(versionSpec)) {
-    core.warning('LTS version is provided. For LTS versions `check-latest` will be automatically set to true');
+    core.info('LTS version is provided. For LTS versions `check-latest` will be automatically set to true');
     checkLatest = true;
   }
 
