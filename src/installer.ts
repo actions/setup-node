@@ -38,7 +38,7 @@ export async function getNode(
   let osPlat: string = os.platform();
   let osArch: string = translateArchToDistUrl(arch);
 
-  if (isLts(versionSpec)) {
+  if (isLtsVersion(versionSpec)) {
     core.warning('LTS version is provided. For LTS versions `check-latest` will be automatically set to true');
     checkLatest = true;
   }
@@ -179,7 +179,7 @@ export async function getNode(
   core.addPath(toolPath);
 }
 
-function isLts(versionSpec: string): boolean {
+function isLtsVersion(versionSpec: string): boolean {
   return versionSpec.startsWith('lts')
 }
 
@@ -224,7 +224,7 @@ async function getInfoFromManifest(
     'main'
   );
 
-  if (isLts(versionSpec)) {
+  if (isLtsVersion(versionSpec)) {
     versionSpec = findLtsVersionFromManifest(versionSpec, stable, releases);
   }
 
