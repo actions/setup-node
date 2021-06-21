@@ -192,6 +192,7 @@ function findLtsVersionFromManifest(
 
   core.debug(`LTS alias '${alias}' for Node version '${versionSpec}'`);
 
+  // Supported formats are `lts/<alias>` and `lts/*`. Where asterisk means highest possible LTS.
   const release = alias === '*'
    ? candidates.find(x => !!x.lts && x.stable === stable)
    : candidates.find(x => x.lts?.toLowerCase() === alias && x.stable === stable);
