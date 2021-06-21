@@ -13107,6 +13107,10 @@ function getNode(versionSpec, stable, checkLatest, auth, arch = os.arch()) {
     return __awaiter(this, void 0, void 0, function* () {
         let osPlat = os.platform();
         let osArch = translateArchToDistUrl(arch);
+        if (isLtsVersion(versionSpec)) {
+            core.warning('LTS version is provided. For LTS versions `check-latest` will be automatically set to true');
+            checkLatest = true;
+        }
         if (checkLatest) {
             core.info('Attempt to resolve the latest version from manifest...');
             const resolvedVersion = yield resolveVersionFromManifest(versionSpec, stable, auth, osArch);
@@ -13216,10 +13220,33 @@ function getNode(versionSpec, stable, checkLatest, auth, arch = os.arch()) {
     });
 }
 exports.getNode = getNode;
+function isLtsVersion(versionSpec) {
+    return versionSpec.startsWith('lts');
+}
+function findLtsVersionFromManifest(versionSpec, stable, candidates) {
+    var _a;
+    const alias = (_a = versionSpec.split('lts/')[1]) === null || _a === void 0 ? void 0 : _a.toLowerCase();
+    if (!alias) {
+        throw new Error(`Unexpected LTS alias '${alias}' for Node version '${versionSpec}'`);
+    }
+    core.debug(`LTS alias '${alias}' for Node version '${versionSpec}'`);
+    // Supported formats are `lts/<alias>` and `lts/*`. Where asterisk means highest possible LTS.
+    const release = alias === '*'
+        ? candidates.find(x => !!x.lts && x.stable === stable)
+        : candidates.find(x => { var _a; return ((_a = x.lts) === null || _a === void 0 ? void 0 : _a.toLowerCase()) === alias && x.stable === stable; });
+    if (!release) {
+        throw new Error(`Unable to find LTS release '${alias}' for Node version '${versionSpec}'.`);
+    }
+    core.debug(`Found LTS release '${release.version}' for Node version '${versionSpec}'`);
+    return release.version.split('.')[0];
+}
 function getInfoFromManifest(versionSpec, stable, auth, osArch = translateArchToDistUrl(os.arch())) {
     return __awaiter(this, void 0, void 0, function* () {
         let info = null;
         const releases = yield tc.getManifestFromRepo('actions', 'node-versions', auth, 'main');
+        if (isLtsVersion(versionSpec)) {
+            versionSpec = findLtsVersionFromManifest(versionSpec, stable, releases);
+        }
         const rel = yield tc.findFromManifest(versionSpec, stable, releases, osArch);
         if (rel && rel.files.length > 0) {
             info = {};
