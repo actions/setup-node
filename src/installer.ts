@@ -24,6 +24,10 @@ interface INodeVersionInfo {
   fileName: string;
 }
 
+interface INodeRelease extends tc.IToolRelease {
+  lts?: string;
+}
+
 export async function getNode(
   versionSpec: string,
   stable: boolean,
@@ -182,7 +186,7 @@ function isLts(versionSpec: string): boolean {
 function findLtsVersionFromManifest(
   versionSpec: string,
   stable: boolean,
-  candidates: Array<tc.IToolRelease & { lts?: string }>
+  candidates: INodeRelease[]
 ): string {
   const alias = versionSpec.split('lts/')[1]?.toLowerCase();
 
