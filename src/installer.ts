@@ -42,9 +42,14 @@ export async function getNode(
 
   if (isLtsAlias(versionSpec)) {
     core.info('Attempt to resolve LTS alias from manifest...');
-    core.debug('Getting manifest from actions/node-versions@main')
+    core.debug('Getting manifest from actions/node-versions@main');
     // No try-catch since it's not possible to resolve LTS alias without manifest
-    manifest = await tc.getManifestFromRepo('actions', 'node-versions', auth, 'main');
+    manifest = await tc.getManifestFromRepo(
+      'actions',
+      'node-versions',
+      auth,
+      'main'
+    );
     versionSpec = resolveLtsAliasFromManifest(versionSpec, stable, manifest);
   }
 
@@ -81,7 +86,13 @@ export async function getNode(
     // Try download from internal distribution (popular versions only)
     //
     try {
-      info = await getInfoFromManifest(versionSpec, stable, auth, osArch, manifest);
+      info = await getInfoFromManifest(
+        versionSpec,
+        stable,
+        auth,
+        osArch,
+        manifest
+      );
       if (info) {
         core.info(
           `Acquiring ${info.resolvedVersion} - ${info.arch} from ${info.downloadUrl}`
@@ -186,7 +197,7 @@ export async function getNode(
 }
 
 function isLtsAlias(versionSpec: string): boolean {
-  return versionSpec.startsWith('lts')
+  return versionSpec.startsWith('lts');
 }
 
 function resolveLtsAliasFromManifest(
@@ -197,21 +208,30 @@ function resolveLtsAliasFromManifest(
   const alias = versionSpec.split('lts/')[1]?.toLowerCase();
 
   if (!alias) {
-    throw new Error(`Unexpected LTS alias '${alias}' for Node version '${versionSpec}'`);
+    throw new Error(
+      `Unexpected LTS alias '${alias}' for Node version '${versionSpec}'`
+    );
   }
 
   core.debug(`LTS alias '${alias}' for Node version '${versionSpec}'`);
 
   // Supported formats are `lts/<alias>` and `lts/*`. Where asterisk means highest possible LTS.
-  const release = alias === '*'
-   ? manifest.find(x => !!x.lts && x.stable === stable)
-   : manifest.find(x => x.lts?.toLowerCase() === alias && x.stable === stable);
+  const release =
+    alias === '*'
+      ? manifest.find(x => !!x.lts && x.stable === stable)
+      : manifest.find(
+          x => x.lts?.toLowerCase() === alias && x.stable === stable
+        );
 
   if (!release) {
-    throw new Error(`Unable to find LTS release '${alias}' for Node version '${versionSpec}'.`);
+    throw new Error(
+      `Unable to find LTS release '${alias}' for Node version '${versionSpec}'.`
+    );
   }
 
-  core.debug(`Found LTS release '${release.version}' for Node version '${versionSpec}'`);
+  core.debug(
+    `Found LTS release '${release.version}' for Node version '${versionSpec}'`
+  );
 
   return release.version.split('.')[0];
 }
@@ -225,7 +245,9 @@ async function getInfoFromManifest(
 ): Promise<INodeVersionInfo | null> {
   let info: INodeVersionInfo | null = null;
   if (!manifest) {
-    core.debug('No manifest cached, getting manifest from actions/node-versions@main')
+    core.debug(
+      'No manifest cached, getting manifest from actions/node-versions@main'
+    );
 
     manifest = await tc.getManifestFromRepo(
       'actions',
@@ -290,7 +312,13 @@ async function resolveVersionFromManifest(
   manifest: tc.IToolRelease[] | undefined
 ): Promise<string | undefined> {
   try {
-    const info = await getInfoFromManifest(versionSpec, stable, auth, osArch, manifest);
+    const info = await getInfoFromManifest(
+      versionSpec,
+      stable,
+      auth,
+      osArch,
+      manifest
+    );
     return info?.resolvedVersion;
   } catch (err) {
     core.info('Unable to resolve version from manifest...');
