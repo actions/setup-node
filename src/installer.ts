@@ -38,7 +38,7 @@ export async function getNode(
   let osPlat: string = os.platform();
   let osArch: string = translateArchToDistUrl(arch);
 
-  if (isLtsVersion(versionSpec)) {
+  if (isLtsAlias(versionSpec)) {
     core.info('LTS version is provided. For LTS versions `check-latest` will be automatically set to true');
     checkLatest = true;
   }
@@ -179,14 +179,14 @@ export async function getNode(
   core.addPath(toolPath);
 }
 
-function isLtsVersion(versionSpec: string): boolean {
+function isLtsAlias(versionSpec: string): boolean {
   return versionSpec.startsWith('lts')
 }
 
-function findLtsVersionFromManifest(
+function resolveLtsAliasFromManifest(
   versionSpec: string,
   stable: boolean,
-  candidates: INodeRelease[]
+  manifest: INodeRelease[]
 ): string {
   const alias = versionSpec.split('lts/')[1]?.toLowerCase();
 
@@ -198,8 +198,8 @@ function findLtsVersionFromManifest(
 
   // Supported formats are `lts/<alias>` and `lts/*`. Where asterisk means highest possible LTS.
   const release = alias === '*'
-   ? candidates.find(x => !!x.lts && x.stable === stable)
-   : candidates.find(x => x.lts?.toLowerCase() === alias && x.stable === stable);
+   ? manifest.find(x => !!x.lts && x.stable === stable)
+   : manifest.find(x => x.lts?.toLowerCase() === alias && x.stable === stable);
 
   if (!release) {
     throw new Error(`Unable to find LTS release '${alias}' for Node version '${versionSpec}'.`);
@@ -224,8 +224,8 @@ async function getInfoFromManifest(
     'main'
   );
 
-  if (isLtsVersion(versionSpec)) {
-    versionSpec = findLtsVersionFromManifest(versionSpec, stable, releases);
+  if (isLtsAlias(versionSpec)) {
+    versionSpec = resolveLtsAliasFromManifest(versionSpec, stable, releases);
   }
 
   const rel = await tc.findFromManifest(versionSpec, stable, releases, osArch);
