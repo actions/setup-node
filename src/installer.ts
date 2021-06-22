@@ -42,14 +42,10 @@ export async function getNode(
 
   if (isLtsAlias(versionSpec)) {
     core.info('Attempt to resolve LTS alias from manifest...');
-    core.debug('Getting manifest from actions/node-versions@main');
+
     // No try-catch since it's not possible to resolve LTS alias without manifest
-    manifest = await tc.getManifestFromRepo(
-      'actions',
-      'node-versions',
-      auth,
-      'main'
-    );
+    manifest = await getManifest(auth);
+
     versionSpec = resolveLtsAliasFromManifest(versionSpec, stable, manifest);
   }
 
@@ -200,6 +196,11 @@ function isLtsAlias(versionSpec: string): boolean {
   return versionSpec.startsWith('lts');
 }
 
+function getManifest(auth: string | undefined): Promise<tc.IToolRelease[]> {
+  core.debug('Getting manifest from actions/node-versions@main');
+  return tc.getManifestFromRepo('actions', 'node-versions', auth, 'main');
+}
+
 function resolveLtsAliasFromManifest(
   versionSpec: string,
   stable: boolean,
@@ -245,16 +246,8 @@ async function getInfoFromManifest(
 ): Promise<INodeVersionInfo | null> {
   let info: INodeVersionInfo | null = null;
   if (!manifest) {
-    core.debug(
-      'No manifest cached, getting manifest from actions/node-versions@main'
-    );
-
-    manifest = await tc.getManifestFromRepo(
-      'actions',
-      'node-versions',
-      auth,
-      'main'
-    );
+    core.debug('No manifest cached');
+    manifest = await getManifest(auth);
   }
 
   const rel = await tc.findFromManifest(versionSpec, stable, manifest, osArch);

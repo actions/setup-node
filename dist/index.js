@@ -13111,9 +13111,8 @@ function getNode(versionSpec, stable, checkLatest, auth, arch = os.arch()) {
         let osArch = translateArchToDistUrl(arch);
         if (isLtsAlias(versionSpec)) {
             core.info('Attempt to resolve LTS alias from manifest...');
-            core.debug('Getting manifest from actions/node-versions@main');
             // No try-catch since it's not possible to resolve LTS alias without manifest
-            manifest = yield tc.getManifestFromRepo('actions', 'node-versions', auth, 'main');
+            manifest = yield getManifest(auth);
             versionSpec = resolveLtsAliasFromManifest(versionSpec, stable, manifest);
         }
         if (checkLatest) {
@@ -13228,6 +13227,10 @@ exports.getNode = getNode;
 function isLtsAlias(versionSpec) {
     return versionSpec.startsWith('lts');
 }
+function getManifest(auth) {
+    core.debug('Getting manifest from actions/node-versions@main');
+    return tc.getManifestFromRepo('actions', 'node-versions', auth, 'main');
+}
 function resolveLtsAliasFromManifest(versionSpec, stable, manifest) {
     var _a;
     const alias = (_a = versionSpec.split('lts/')[1]) === null || _a === void 0 ? void 0 : _a.toLowerCase();
@@ -13249,8 +13252,8 @@ function getInfoFromManifest(versionSpec, stable, auth, osArch = translateArchTo
     return __awaiter(this, void 0, void 0, function* () {
         let info = null;
         if (!manifest) {
-            core.debug('No manifest cached, getting manifest from actions/node-versions@main');
-            manifest = yield tc.getManifestFromRepo('actions', 'node-versions', auth, 'main');
+            core.debug('No manifest cached');
+            manifest = yield getManifest(auth);
         }
         const rel = yield tc.findFromManifest(versionSpec, stable, manifest, osArch);
         if (rel && rel.files.length > 0) {

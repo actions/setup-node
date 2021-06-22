@@ -399,8 +399,9 @@ describe('setup-node', () => {
       expect(logSpy).not.toHaveBeenCalledWith(
         'Attempt to resolve the latest version from manifest...'
       );
+      expect(dbgSpy).not.toHaveBeenCalledWith('No manifest cached');
       expect(dbgSpy).not.toHaveBeenCalledWith(
-        'No manifest cached, getting manifest from actions/node-versions@main'
+        'Getting manifest from actions/node-versions@main'
       );
     });
 
@@ -422,8 +423,9 @@ describe('setup-node', () => {
       expect(logSpy).toHaveBeenCalledWith(
         'Attempt to resolve the latest version from manifest...'
       );
+      expect(dbgSpy).toHaveBeenCalledWith('No manifest cached');
       expect(dbgSpy).toHaveBeenCalledWith(
-        'No manifest cached, getting manifest from actions/node-versions@main'
+        'Getting manifest from actions/node-versions@main'
       );
       expect(logSpy).toHaveBeenCalledWith("Resolved as '12.16.2'");
       expect(logSpy).toHaveBeenCalledWith(`Found in cache @ ${toolPath}`);
@@ -449,8 +451,9 @@ describe('setup-node', () => {
       expect(logSpy).toHaveBeenCalledWith(
         'Attempt to resolve the latest version from manifest...'
       );
+      expect(dbgSpy).toHaveBeenCalledWith('No manifest cached');
       expect(dbgSpy).toHaveBeenCalledWith(
-        'No manifest cached, getting manifest from actions/node-versions@main'
+        'Getting manifest from actions/node-versions@main'
       );
       expect(logSpy).toHaveBeenCalledWith("Resolved as '12.16.2'");
       expect(logSpy).toHaveBeenCalledWith(
@@ -488,8 +491,9 @@ describe('setup-node', () => {
       expect(logSpy).toHaveBeenCalledWith(
         'Attempt to resolve the latest version from manifest...'
       );
+      expect(dbgSpy).toHaveBeenCalledWith('No manifest cached');
       expect(dbgSpy).toHaveBeenCalledWith(
-        'No manifest cached, getting manifest from actions/node-versions@main'
+        'Getting manifest from actions/node-versions@main'
       );
       expect(logSpy).toHaveBeenCalledWith(
         `Failed to resolve version ${versionSpec} from manifest`
@@ -567,9 +571,7 @@ describe('setup-node', () => {
       expect(dbgSpy).toHaveBeenCalledWith(
         'Getting manifest from actions/node-versions@main'
       );
-      expect(dbgSpy).not.toHaveBeenCalledWith(
-        'No manifest cached, getting manifest from actions/node-versions@main'
-      );
+      expect(dbgSpy).not.toHaveBeenCalledWith('No manifest cached');
       expect(dbgSpy).toHaveBeenCalledWith(
         `LTS alias 'erbium' for Node version 'lts/erbium'`
       );
@@ -608,9 +610,7 @@ describe('setup-node', () => {
       expect(dbgSpy).toHaveBeenCalledWith(
         'Getting manifest from actions/node-versions@main'
       );
-      expect(dbgSpy).not.toHaveBeenCalledWith(
-        'No manifest cached, getting manifest from actions/node-versions@main'
-      );
+      expect(dbgSpy).not.toHaveBeenCalledWith('No manifest cached');
       expect(dbgSpy).toHaveBeenCalledWith(
         `LTS alias 'erbium' for Node version 'lts/erbium'`
       );
@@ -649,9 +649,7 @@ describe('setup-node', () => {
       expect(dbgSpy).toHaveBeenCalledWith(
         'Getting manifest from actions/node-versions@main'
       );
-      expect(dbgSpy).not.toHaveBeenCalledWith(
-        'No manifest cached, getting manifest from actions/node-versions@main'
-      );
+      expect(dbgSpy).not.toHaveBeenCalledWith('No manifest cached');
       expect(dbgSpy).toHaveBeenCalledWith(
         `LTS alias '*' for Node version 'lts/*'`
       );
@@ -690,9 +688,7 @@ describe('setup-node', () => {
       expect(dbgSpy).toHaveBeenCalledWith(
         'Getting manifest from actions/node-versions@main'
       );
-      expect(dbgSpy).not.toHaveBeenCalledWith(
-        'No manifest cached, getting manifest from actions/node-versions@main'
-      );
+      expect(dbgSpy).not.toHaveBeenCalledWith('No manifest cached');
       expect(dbgSpy).toHaveBeenCalledWith(
         `LTS alias '*' for Node version 'lts/*'`
       );
