@@ -35,12 +35,17 @@ export async function getNode(
   auth: string | undefined,
   arch: string = os.arch()
 ) {
+  // Store manifest data to avoid multiple calls
+  let manifest: INodeRelease[] | undefined;
   let osPlat: string = os.platform();
   let osArch: string = translateArchToDistUrl(arch);
 
   if (isLtsAlias(versionSpec)) {
-    core.info('LTS version is provided. For LTS versions `check-latest` will be automatically set to true');
-    checkLatest = true;
+    core.info('Attempt to resolve LTS alias from manifest...');
+    core.debug('Getting manifest from actions/node-versions@main')
+    // No try-catch since it's not possible to resolve LTS alias without manifest
+    manifest = await tc.getManifestFromRepo('actions', 'node-versions', auth, 'main');
+    versionSpec = resolveLtsAliasFromManifest(versionSpec, stable, manifest);
   }
 
   if (checkLatest) {
@@ -49,7 +54,8 @@ export async function getNode(
       versionSpec,
       stable,
       auth,
-      osArch
+      osArch,
+      manifest
     );
     if (resolvedVersion) {
       versionSpec = resolvedVersion;
@@ -75,7 +81,7 @@ export async function getNode(
     // Try download from internal distribution (popular versions only)
     //
     try {
-      info = await getInfoFromManifest(versionSpec, stable, auth, osArch);
+      info = await getInfoFromManifest(versionSpec, stable, auth, osArch, manifest);
       if (info) {
         core.info(
           `Acquiring ${info.resolvedVersion} - ${info.arch} from ${info.downloadUrl}`
@@ -214,21 +220,22 @@ async function getInfoFromManifest(
   versionSpec: string,
   stable: boolean,
   auth: string | undefined,
-  osArch: string = translateArchToDistUrl(os.arch())
+  osArch: string = translateArchToDistUrl(os.arch()),
+  manifest: tc.IToolRelease[] | undefined
 ): Promise<INodeVersionInfo | null> {
   let info: INodeVersionInfo | null = null;
-  const releases = await tc.getManifestFromRepo(
-    'actions',
-    'node-versions',
-    auth,
-    'main'
-  );
+  if (!manifest) {
+    core.debug('No manifest cached, getting manifest from actions/node-versions@main')
 
-  if (isLtsAlias(versionSpec)) {
-    versionSpec = resolveLtsAliasFromManifest(versionSpec, stable, releases);
+    manifest = await tc.getManifestFromRepo(
+      'actions',
+      'node-versions',
+      auth,
+      'main'
+    );
   }
 
-  const rel = await tc.findFromManifest(versionSpec, stable, releases, osArch);
+  const rel = await tc.findFromManifest(versionSpec, stable, manifest, osArch);
 
   if (rel && rel.files.length > 0) {
     info = <INodeVersionInfo>{};
@@ -279,10 +286,11 @@ async function resolveVersionFromManifest(
   versionSpec: string,
   stable: boolean,
   auth: string | undefined,
-  osArch: string = translateArchToDistUrl(os.arch())
+  osArch: string = translateArchToDistUrl(os.arch()),
+  manifest: tc.IToolRelease[] | undefined
 ): Promise<string | undefined> {
   try {
-    const info = await getInfoFromManifest(versionSpec, stable, auth, osArch);
+    const info = await getInfoFromManifest(versionSpec, stable, auth, osArch, manifest);
     return info?.resolvedVersion;
   } catch (err) {
     core.info('Unable to resolve version from manifest...');
