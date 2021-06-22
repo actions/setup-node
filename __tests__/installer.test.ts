@@ -526,7 +526,6 @@ describe('setup-node', () => {
       );
       expect(logSpy).toHaveBeenCalledWith(
         'Unable to resolve version from manifest...'
-        // 'Unable to get manifest...'
       );
       expect(logSpy).toHaveBeenCalledWith(
         `Failed to resolve version ${versionSpec} from manifest`
