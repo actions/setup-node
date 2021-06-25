@@ -4,8 +4,8 @@ import {State} from './constants';
 import {getCacheDirectoryPath, getPackageManagerInfo} from './cache-utils';
 
 export async function run() {
-  const cacheLock = core.getInput('cache');
   try {
+    const cacheLock = core.getInput('cache');
     await cachePackages(cacheLock);
   } catch (error) {
     core.setFailed(error.message);

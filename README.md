@@ -4,7 +4,7 @@
   <a href="https://github.com/actions/setup-node/actions?query=workflow%3Abuild-test"><img alt="build-test status" src="https://github.com/actions/setup-node/workflows/build-test/badge.svg"></a> <a href="https://github.com/actions/setup-node/actions?query=workflow%3Aversions"><img alt="versions status" src="https://github.com/actions/setup-node/workflows/versions/badge.svg"></a> <a href="https://github.com/actions/setup-node/actions?query=workflow%3Aproxy"><img alt="proxy status" src="https://github.com/actions/setup-node/workflows/proxy/badge.svg"></a> 
 </p>
 
-This action provides the following functionality for GitHub Actions runners:
+This action provides the following functionality for GitHub Actions users:
 
 - Optionally downloading and caching distribution of the requested Node.js version, and adding it to the PATH
 - Optionally caching npm/yarn dependencies

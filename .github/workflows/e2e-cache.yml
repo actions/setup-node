@@ -3,8 +3,8 @@ name: e2e-cache
 on:
   pull_request:
     paths-ignore:
-      - '**.md'    
-  push:    
+      - '**.md'
+  push:
     branches:
       - main
       - releases/*

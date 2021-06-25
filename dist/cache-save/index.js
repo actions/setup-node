@@ -50583,8 +50583,8 @@ const constants_1 = __webpack_require__(196);
 const cache_utils_1 = __webpack_require__(452);
 function run() {
     return __awaiter(this, void 0, void 0, function* () {
-        const cacheLock = core.getInput('cache');
         try {
+            const cacheLock = core.getInput('cache');
             yield cachePackages(cacheLock);
         }
         catch (error) {

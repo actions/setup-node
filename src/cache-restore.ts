@@ -25,7 +25,7 @@ export const restoreCache = async (packageManager: string) => {
   const lockFilePath = findLockFile(packageManagerInfo);
   const fileHash = await glob.hashFiles(lockFilePath);
 
-  const primaryKey = `${platform}-${packageManager}-${fileHash}`;
+  const primaryKey = `node-cache-${platform}-${packageManager}-${fileHash}`;
   core.debug(`primary key is ${primaryKey}`);
 
   core.saveState(State.CachePrimaryKey, primaryKey);
