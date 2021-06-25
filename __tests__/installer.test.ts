@@ -580,7 +580,7 @@ describe('setup-node', () => {
       );
       expect(logSpy).toHaveBeenCalledWith(`Found in cache @ ${toolPath}`);
       expect(cnSpy).toHaveBeenCalledWith(
-        `::add-path::${toolPath}/bin${osm.EOL}`
+        `::add-path::${path.join(toolPath, 'bin')}${osm.EOL}`
       );
     });
 
@@ -624,7 +624,7 @@ describe('setup-node', () => {
       expect(logSpy).toHaveBeenCalledWith('Extracting ...');
       expect(logSpy).toHaveBeenCalledWith('Adding to the cache ...');
       expect(cnSpy).toHaveBeenCalledWith(
-        `::add-path::${toolPath}/bin${osm.EOL}`
+        `::add-path::${path.join(toolPath, 'bin')}${osm.EOL}`
       );
     });
 
@@ -658,7 +658,7 @@ describe('setup-node', () => {
       );
       expect(logSpy).toHaveBeenCalledWith(`Found in cache @ ${toolPath}`);
       expect(cnSpy).toHaveBeenCalledWith(
-        `::add-path::${toolPath}/bin${osm.EOL}`
+        `::add-path::${path.join(toolPath, 'bin')}${osm.EOL}`
       );
     });
 
@@ -702,7 +702,7 @@ describe('setup-node', () => {
       expect(logSpy).toHaveBeenCalledWith('Extracting ...');
       expect(logSpy).toHaveBeenCalledWith('Adding to the cache ...');
       expect(cnSpy).toHaveBeenCalledWith(
-        `::add-path::${toolPath}/bin${osm.EOL}`
+        `::add-path::${path.join(toolPath, 'bin')}${osm.EOL}`
       );
     });
 
