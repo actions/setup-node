@@ -42,9 +42,6 @@ jobs:
         uses: ./
         with:
           node-version: ${{ matrix.node-version }}
-      - name: Verify node and npm
-        run: __tests__/verify-node.sh "${{ matrix.node-version }}"
-        shell: bash
 
   manifest:
     runs-on: ${{ matrix.os }}
