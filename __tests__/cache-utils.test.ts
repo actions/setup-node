@@ -1,6 +1,7 @@
 import * as core from '@actions/core';
 import path from 'path';
 import * as utils from '../src/cache-utils';
+import {PackageManagerInfo} from '../src/cache-utils';
 
 describe('cache-utils', () => {
   const commonPath = '/some/random/path';
@@ -31,7 +32,7 @@ describe('cache-utils', () => {
   });
 
   describe('getPackageManagerInfo', () => {
-    it.each([
+    it.each<[string, PackageManagerInfo | null]>([
       ['npm', utils.supportedPackageManagers.npm],
       ['yarn', utils.supportedPackageManagers.yarn1],
       ['yarn1', null],
