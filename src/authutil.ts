@@ -25,6 +25,12 @@ function writeRegistryToFile(
   if (!scope && registryUrl.indexOf('npm.pkg.github.com') > -1) {
     scope = github.context.repo.owner;
   }
+  if (!scope) {
+    let namePrefix = require('./package').name.match('@[^/]+');
+    if (namePrefix) {
+      scope = namePrefix[0];
+    }
+  }
   if (scope && scope[0] != '@') {
     scope = '@' + scope;
   }
