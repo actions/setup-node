@@ -1,9 +1,10 @@
 import * as core from '@actions/core';
+import * as exec from '@actions/exec';
 import * as installer from './installer';
 import * as auth from './authutil';
 import * as path from 'path';
 import {URL} from 'url';
-import os = require('os');
+import os from 'os';
 
 export async function run() {
   try {
@@ -12,6 +13,7 @@ export async function run() {
     // If not supplied then task is still used to setup proxy, auth, etc...
     //
     let version = core.getInput('node-version');
+    const npmVersion = core.getInput('npm-version');
     if (!version) {
       version = core.getInput('version');
     }
@@ -37,6 +39,10 @@ export async function run() {
       const checkLatest =
         (core.getInput('check-latest') || 'false').toUpperCase() === 'TRUE';
       await installer.getNode(version, stable, checkLatest, auth, arch);
+      if (npmVersion) {
+        core.info(`Installing NPM@${npmVersion}`);
+        await exec.exec('npm', ['install', '-g', `npm@${npmVersion}`]);
+      }
     }
 
     const registryUrl: string = core.getInput('registry-url');
