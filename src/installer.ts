@@ -150,7 +150,7 @@ export async function getNode(
     let extPath: string;
     info = info || ({} as INodeVersionInfo); // satisfy compiler, never null when reaches here
     if (osPlat == 'win32') {
-      let _7zPath = path.join(__dirname, '..', 'externals', '7zr.exe');
+      let _7zPath = path.join(__dirname, '../..', 'externals', '7zr.exe');
       extPath = await tc.extract7z(downloadPath, undefined, _7zPath);
       // 7z extracts to folder matching file name
       let nestedPath = path.join(extPath, path.basename(info.fileName, '.7z'));

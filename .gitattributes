@@ -1,5 +1,1 @@
-# Set default behavior to automatically normalize line endings, and force everything to be LF, except for Windows batch files that require CRLF, so that if a repo is accessed in Unix via a file share from Windows, the scripts will work.
-* text=auto eol=lf
-*.{cmd,[cC][mM][dD]} text eol=crlf
-*.{bat,[bB][aA][tT]} text eol=crlf
 .licenses/** -diff linguist-generated=true
