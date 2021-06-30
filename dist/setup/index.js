@@ -65046,11 +65046,19 @@ const semver = __importStar(__webpack_require__(280));
 const fs = __webpack_require__(747);
 function getNode(versionSpec, stable, checkLatest, auth, arch = os.arch()) {
     return __awaiter(this, void 0, void 0, function* () {
+        // Store manifest data to avoid multiple calls
+        let manifest;
         let osPlat = os.platform();
         let osArch = translateArchToDistUrl(arch);
+        if (isLtsAlias(versionSpec)) {
+            core.info('Attempt to resolve LTS alias from manifest...');
+            // No try-catch since it's not possible to resolve LTS alias without manifest
+            manifest = yield getManifest(auth);
+            versionSpec = resolveLtsAliasFromManifest(versionSpec, stable, manifest);
+        }
         if (checkLatest) {
             core.info('Attempt to resolve the latest version from manifest...');
-            const resolvedVersion = yield resolveVersionFromManifest(versionSpec, stable, auth, osArch);
+            const resolvedVersion = yield resolveVersionFromManifest(versionSpec, stable, auth, osArch, manifest);
             if (resolvedVersion) {
                 versionSpec = resolvedVersion;
                 core.info(`Resolved as '${versionSpec}'`);
@@ -65074,7 +65082,7 @@ function getNode(versionSpec, stable, checkLatest, auth, arch = os.arch()) {
             // Try download from internal distribution (popular versions only)
             //
             try {
-                info = yield getInfoFromManifest(versionSpec, stable, auth, osArch);
+                info = yield getInfoFromManifest(versionSpec, stable, auth, osArch, manifest);
                 if (info) {
                     core.info(`Acquiring ${info.resolvedVersion} - ${info.arch} from ${info.downloadUrl}`);
                     downloadPath = yield tc.downloadTool(info.downloadUrl, undefined, auth);
@@ -65157,11 +65165,38 @@ function getNode(versionSpec, stable, checkLatest, auth, arch = os.arch()) {
     });
 }
 exports.getNode = getNode;
-function getInfoFromManifest(versionSpec, stable, auth, osArch = translateArchToDistUrl(os.arch())) {
+function isLtsAlias(versionSpec) {
+    return versionSpec.startsWith('lts/');
+}
+function getManifest(auth) {
+    core.debug('Getting manifest from actions/node-versions@main');
+    return tc.getManifestFromRepo('actions', 'node-versions', auth, 'main');
+}
+function resolveLtsAliasFromManifest(versionSpec, stable, manifest) {
+    var _a;
+    const alias = (_a = versionSpec.split('lts/')[1]) === null || _a === void 0 ? void 0 : _a.toLowerCase();
+    if (!alias) {
+        throw new Error(`Unable to parse LTS alias for Node version '${versionSpec}'`);
+    }
+    core.debug(`LTS alias '${alias}' for Node version '${versionSpec}'`);
+    // Supported formats are `lts/<alias>` and `lts/*`. Where asterisk means highest possible LTS.
+    const release = alias === '*'
+        ? manifest.find(x => !!x.lts && x.stable === stable)
+        : manifest.find(x => { var _a; return ((_a = x.lts) === null || _a === void 0 ? void 0 : _a.toLowerCase()) === alias && x.stable === stable; });
+    if (!release) {
+        throw new Error(`Unable to find LTS release '${alias}' for Node version '${versionSpec}'.`);
+    }
+    core.debug(`Found LTS release '${release.version}' for Node version '${versionSpec}'`);
+    return release.version.split('.')[0];
+}
+function getInfoFromManifest(versionSpec, stable, auth, osArch = translateArchToDistUrl(os.arch()), manifest) {
     return __awaiter(this, void 0, void 0, function* () {
         let info = null;
-        const releases = yield tc.getManifestFromRepo('actions', 'node-versions', auth, 'main');
-        const rel = yield tc.findFromManifest(versionSpec, stable, releases, osArch);
+        if (!manifest) {
+            core.debug('No manifest cached');
+            manifest = yield getManifest(auth);
+        }
+        const rel = yield tc.findFromManifest(versionSpec, stable, manifest, osArch);
         if (rel && rel.files.length > 0) {
             info = {};
             info.resolvedVersion = rel.version;
@@ -65198,10 +65233,10 @@ function getInfoFromDist(versionSpec, arch = os.arch()) {
         };
     });
 }
-function resolveVersionFromManifest(versionSpec, stable, auth, osArch = translateArchToDistUrl(os.arch())) {
+function resolveVersionFromManifest(versionSpec, stable, auth, osArch = translateArchToDistUrl(os.arch()), manifest) {
     return __awaiter(this, void 0, void 0, function* () {
         try {
-            const info = yield getInfoFromManifest(versionSpec, stable, auth, osArch);
+            const info = yield getInfoFromManifest(versionSpec, stable, auth, osArch, manifest);
             return info === null || info === void 0 ? void 0 : info.resolvedVersion;
         }
         catch (err) {
