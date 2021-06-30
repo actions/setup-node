@@ -55,8 +55,8 @@ steps:
   with:
     node-version: '14'
     cache: 'yarn'
-- run: npm install
-- run: npm test
+- run: yarn install
+- run: yarn test
 ```
 Yarn caching handles both yarn versions: 1 or 2. 
 
