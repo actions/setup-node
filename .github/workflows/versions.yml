@@ -29,6 +29,20 @@ jobs:
         run: __tests__/verify-node.sh "${{ matrix.node-version }}"
         shell: bash
 
+  lts-syntax:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        node-version: [lts/dubnium, lts/erbium, lts/fermium, lts/*]
+    steps:
+      - uses: actions/checkout@v2
+      - name: Setup Node
+        uses: ./
+        with:
+          node-version: ${{ matrix.node-version }}
+
   manifest:
     runs-on: ${{ matrix.os }}
     strategy:
