@@ -3,19 +3,17 @@ name: proxy
 on:
   pull_request:
     paths-ignore:
-      - '**.md'    
-  push:    
+      - '**.md'
+  push:
     branches:
-      - master
+      - main
       - releases/*
     paths-ignore:
       - '**.md'
-      
+
 jobs:
   test-proxy:
     runs-on: ubuntu-latest
-    strategy:    
-      fail-fast: false    
     container:
       image: ubuntu:latest
       options: --dns 127.0.0.1
@@ -39,8 +37,6 @@ jobs:
 
   test-bypass-proxy:
     runs-on: ubuntu-latest
-    strategy:    
-      fail-fast: false
     env:
       https_proxy: http://no-such-proxy:3128
       no_proxy: api.github.com,github.com,nodejs.org,registry.npmjs.org,*.s3.amazonaws.com,s3.amazonaws.com
