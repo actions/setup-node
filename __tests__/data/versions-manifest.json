@@ -2,6 +2,7 @@
     {
       "version": "14.0.0",
       "stable": true,
+      "lts": "Fermium",
       "release_url": "https://github.com/actions/node-versions/releases/tag/14.0.0-20200423.30",
       "files": [
         {
@@ -52,6 +53,7 @@
     {
       "version": "12.16.2",
       "stable": true,
+      "lts": "Erbium",
       "release_url": "https://github.com/actions/node-versions/releases/tag/12.16.2-20200423.28",
       "files": [
         {
@@ -77,6 +79,7 @@
     {
       "version": "10.20.1",
       "stable": true,
+      "lts": "Dubnium",
       "release_url": "https://github.com/actions/node-versions/releases/tag/10.20.1-20200423.27",
       "files": [
         {
@@ -102,6 +105,7 @@
     {
       "version": "8.17.0",
       "stable": true,
+      "lts": "Carbon",
       "release_url": "https://github.com/actions/node-versions/releases/tag/8.17.0-20200423.26",
       "files": [
         {
@@ -127,6 +131,7 @@
     {
       "version": "6.17.1",
       "stable": true,
+      "lts": "Boron",
       "release_url": "https://github.com/actions/node-versions/releases/tag/6.17.1-20200423.25",
       "files": [
         {
