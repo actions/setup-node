@@ -193,7 +193,7 @@ export async function getNode(
 }
 
 function isLtsAlias(versionSpec: string): boolean {
-  return versionSpec.startsWith('lts');
+  return versionSpec.startsWith('lts/');
 }
 
 function getManifest(auth: string | undefined): Promise<tc.IToolRelease[]> {
@@ -210,7 +210,7 @@ function resolveLtsAliasFromManifest(
 
   if (!alias) {
     throw new Error(
-      `Unexpected LTS alias '${alias}' for Node version '${versionSpec}'`
+      `Unable to parse LTS alias for Node version '${versionSpec}'`
     );
   }
 

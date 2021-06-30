@@ -13225,7 +13225,7 @@ function getNode(versionSpec, stable, checkLatest, auth, arch = os.arch()) {
 }
 exports.getNode = getNode;
 function isLtsAlias(versionSpec) {
-    return versionSpec.startsWith('lts');
+    return versionSpec.startsWith('lts/');
 }
 function getManifest(auth) {
     core.debug('Getting manifest from actions/node-versions@main');
@@ -13235,7 +13235,7 @@ function resolveLtsAliasFromManifest(versionSpec, stable, manifest) {
     var _a;
     const alias = (_a = versionSpec.split('lts/')[1]) === null || _a === void 0 ? void 0 : _a.toLowerCase();
     if (!alias) {
-        throw new Error(`Unexpected LTS alias '${alias}' for Node version '${versionSpec}'`);
+        throw new Error(`Unable to parse LTS alias for Node version '${versionSpec}'`);
     }
     core.debug(`LTS alias '${alias}' for Node version '${versionSpec}'`);
     // Supported formats are `lts/<alias>` and `lts/*`. Where asterisk means highest possible LTS.

@@ -696,7 +696,7 @@ describe('setup-node', () => {
       );
     });
 
-    it('fail with unexpected LTS alias (lts/)', async () => {
+    it('fail with unable to parse LTS alias (lts/)', async () => {
       // arrange
       inputs['node-version'] = 'lts/';
 
@@ -713,7 +713,7 @@ describe('setup-node', () => {
         'Getting manifest from actions/node-versions@main'
       );
       expect(cnSpy).toHaveBeenCalledWith(
-        `::error::Unexpected LTS alias '' for Node version 'lts/'${osm.EOL}`
+        `::error::Unable to parse LTS alias for Node version 'lts/'${osm.EOL}`
       );
     });
 
