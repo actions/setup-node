@@ -550,13 +550,15 @@ describe('setup-node', () => {
   });
 
   describe('LTS version', () => {
-    it('find latest LTS version and resolve it from local cache (lts/erbium)', async () => {
-      // arrange
+    beforeEach(() => {
       os.platform = 'linux';
       os.arch = 'x64';
-
-      inputs['node-version'] = 'lts/erbium';
       inputs.stable = 'true';
+    });
+
+    it('find latest LTS version and resolve it from local cache (lts/erbium)', async () => {
+      // arrange
+      inputs['node-version'] = 'lts/erbium';
 
       const toolPath = path.normalize('/cache/node/12.16.2/x64');
       findSpy.mockReturnValue(toolPath);
@@ -586,11 +588,7 @@ describe('setup-node', () => {
 
     it('find latest LTS version and install it from manifest (lts/erbium)', async () => {
       // arrange
-      os.platform = 'linux';
-      os.arch = 'x64';
-
       inputs['node-version'] = 'lts/erbium';
-      inputs.stable = 'true';
 
       const toolPath = path.normalize('/cache/node/12.16.2/x64');
       findSpy.mockImplementation(() => '');
@@ -630,11 +628,7 @@ describe('setup-node', () => {
 
     it('find latest LTS version and resolve it from local cache (lts/*)', async () => {
       // arrange
-      os.platform = 'linux';
-      os.arch = 'x64';
-
       inputs['node-version'] = 'lts/*';
-      inputs.stable = 'true';
 
       const toolPath = path.normalize('/cache/node/14.0.0/x64');
       findSpy.mockReturnValue(toolPath);
@@ -664,11 +658,7 @@ describe('setup-node', () => {
 
     it('find latest LTS version and install it from manifest (lts/*)', async () => {
       // arrange
-      os.platform = 'linux';
-      os.arch = 'x64';
-
       inputs['node-version'] = 'lts/*';
-      inputs.stable = 'true';
 
       const toolPath = path.normalize('/cache/node/14.0.0/x64');
       findSpy.mockImplementation(() => '');
@@ -708,11 +698,7 @@ describe('setup-node', () => {
 
     it('fail with unexpected LTS alias (lts/)', async () => {
       // arrange
-      os.platform = 'linux';
-      os.arch = 'x64';
-
       inputs['node-version'] = 'lts/';
-      inputs.stable = 'true';
 
       findSpy.mockImplementation(() => '');
 
@@ -733,11 +719,7 @@ describe('setup-node', () => {
 
     it('fail to find LTS version (lts/unknown)', async () => {
       // arrange
-      os.platform = 'linux';
-      os.arch = 'x64';
-
       inputs['node-version'] = 'lts/unknown';
-      inputs.stable = 'true';
 
       findSpy.mockImplementation(() => '');
 
@@ -761,11 +743,7 @@ describe('setup-node', () => {
 
     it('fail if manifest is not available', async () => {
       // arrange
-      os.platform = 'linux';
-      os.arch = 'x64';
-
       inputs['node-version'] = 'lts/erbium';
-      inputs.stable = 'true';
 
       // ... but not in the local cache
       findSpy.mockImplementation(() => '');
