@@ -26,16 +26,24 @@ steps:
 - run: npm test
 ```
 
-The `node-version` input is optional. If not supplied, the node version from PATH will be used. However, this action will still register problem matchers and support auth features. So setting up the node environment is still a valid scenario without downloading and caching versions.
+The `node-version` input is optional. If not supplied, the node version from PATH will be used. However, It is recommended to always specify Node.js version and don't rely on system one.  
 
 The action will first check the local cache for a semver match. If unable to find a specific version in the cache, the action will attempt to download a version of Node.js. It will pull LTS versions from [node-versions releases](https://github.com/actions/node-versions/releases) and on miss or failure will fall back to the previous behavior of downloading directly from [node dist](https://nodejs.org/dist/).
 
 For information regarding locally cached versions of Node.js on GitHub hosted runners, check out [GitHub Actions Virtual Environments](https://github.com/actions/virtual-environments).
 
+#### Supported version syntax
+The `node-version` input supports the following syntax:
+
+major versions: `12`, `14`, `16`  
+more specific versions: `10.15`, `14.2.0`, `16.3.0`  
+nvm lts syntax: `lts/erbium`, `lts/fermium`, `lts/*`  
+
 ### Caching packages dependencies
 
 The action has a built-in functionality for caching and restoring npm/yarn dependencies. Supported package managers are `npm`, `yarn`. The `cache` input is optional, and caching is turned off by default.
 
+**Caching npm dependencies:**
 ```yaml
 steps:
 - uses: actions/checkout@v2
@@ -69,7 +77,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        node: [ '12', '14' ]
+        node: [ '12', '14', '16' ]
     name: Node ${{ matrix.node }} sample
     steps:
       - uses: actions/checkout@v2

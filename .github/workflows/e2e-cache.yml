@@ -19,7 +19,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
-        node-version: [10, 12, 14]
+        node-version: [12, 14, 16]
     steps:
       - uses: actions/checkout@v2
       - name: Clean global cache
@@ -42,7 +42,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
-        node-version: [10, 12, 14]
+        node-version: [12, 14, 16]
     steps:
       - uses: actions/checkout@v2
       - name: Yarn version
@@ -72,7 +72,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
-        node-version: [10, 12, 14]
+        node-version: [12, 14, 16]
     steps:
       - uses: actions/checkout@v2
       - name: Update yarn
