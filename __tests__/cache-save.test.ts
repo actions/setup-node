@@ -12,6 +12,8 @@ describe('run', () => {
     'b8a0bae5243251f7c07dd52d1f78ff78281dfefaded700a176261b6b54fa245b';
   const npmFileHash =
     'abf7c9b306a3149dcfba4673e2362755503bcceaab46f0e4e6fee0ade493e20c';
+  const pnpmFileHash =
+    '26309058093e84713f38869c50cf1cee9b08155ede874ec1b44ce3fca8c68c70';
   const commonPath = '/some/random/path';
   process.env['GITHUB_WORKSPACE'] = path.join(__dirname, 'data');
 
@@ -150,6 +152,23 @@ describe('run', () => {
       );
       expect(setFailedSpy).not.toHaveBeenCalled();
     });
+
+    it('should not save cache for npm', async () => {
+      inputs['cache'] = 'pnpm';
+      getStateSpy.mockImplementation(() => pnpmFileHash);
+      getCommandOutputSpy.mockImplementationOnce(() => `${commonPath}/pnpm`);
+
+      await run();
+
+      expect(getInputSpy).toHaveBeenCalled();
+      expect(getStateSpy).toHaveBeenCalledTimes(2);
+      expect(getCommandOutputSpy).toHaveBeenCalledTimes(1);
+      expect(debugSpy).toHaveBeenCalledWith(`pnpm path is ${commonPath}/pnpm`);
+      expect(infoSpy).toHaveBeenCalledWith(
+        `Cache hit occurred on the primary key ${pnpmFileHash}, not saving cache.`
+      );
+      expect(setFailedSpy).not.toHaveBeenCalled();
+    });
   });
 
   describe('action saves the cache', () => {
@@ -236,6 +255,33 @@ describe('run', () => {
       expect(saveCacheSpy).toHaveBeenCalled();
       expect(infoSpy).toHaveBeenLastCalledWith(
         `Cache saved with the key: ${yarnFileHash}`
+      );
+      expect(setFailedSpy).not.toHaveBeenCalled();
+    });
+
+    it('saves cache from pnpm', async () => {
+      inputs['cache'] = 'pnpm';
+      getStateSpy.mockImplementation((name: string) => {
+        if (name === State.CacheMatchedKey) {
+          return pnpmFileHash;
+        } else {
+          return npmFileHash;
+        }
+      });
+      getCommandOutputSpy.mockImplementationOnce(() => `${commonPath}/pnpm`);
+
+      await run();
+
+      expect(getInputSpy).toHaveBeenCalled();
+      expect(getStateSpy).toHaveBeenCalledTimes(2);
+      expect(getCommandOutputSpy).toHaveBeenCalledTimes(1);
+      expect(debugSpy).toHaveBeenCalledWith(`pnpm path is ${commonPath}/pnpm`);
+      expect(infoSpy).not.toHaveBeenCalledWith(
+        `Cache hit occurred on the primary key ${pnpmFileHash}, not saving cache.`
+      );
+      expect(saveCacheSpy).toHaveBeenCalled();
+      expect(infoSpy).toHaveBeenLastCalledWith(
+        `Cache saved with the key: ${npmFileHash}`
       );
       expect(setFailedSpy).not.toHaveBeenCalled();
     });

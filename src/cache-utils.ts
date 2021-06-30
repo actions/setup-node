@@ -8,12 +8,18 @@ type SupportedPackageManagers = {
 export interface PackageManagerInfo {
   lockFilePatterns: Array<string>;
   getCacheFolderCommand: string;
+  defaultCacheFolder?: string;
 }
 
 export const supportedPackageManagers: SupportedPackageManagers = {
   npm: {
     lockFilePatterns: ['package-lock.json', 'yarn.lock'],
     getCacheFolderCommand: 'npm config get cache'
+  },
+  pnpm: {
+    lockFilePatterns: ['pnpm-lock.yaml'],
+    getCacheFolderCommand: 'pnpm get store',
+    defaultCacheFolder: '~/.pnpm-store'
   },
   yarn1: {
     lockFilePatterns: ['yarn.lock'],
@@ -32,7 +38,7 @@ export const getCommandOutput = async (toolCommand: string) => {
     throw new Error(stderr);
   }
 
-  return stdout;
+  return stdout.trim();
 };
 
 const getPackageManagerVersion = async (
@@ -51,6 +57,8 @@ const getPackageManagerVersion = async (
 export const getPackageManagerInfo = async (packageManager: string) => {
   if (packageManager === 'npm') {
     return supportedPackageManagers.npm;
+  } else if (packageManager === 'pnpm') {
+    return supportedPackageManagers.pnpm;
   } else if (packageManager === 'yarn') {
     const yarnVersion = await getPackageManagerVersion('yarn', '--version');
 
@@ -70,9 +78,16 @@ export const getCacheDirectoryPath = async (
   packageManagerInfo: PackageManagerInfo,
   packageManager: string
 ) => {
-  const stdOut = await getCommandOutput(
-    packageManagerInfo.getCacheFolderCommand
-  );
+  let stdOut = await getCommandOutput(packageManagerInfo.getCacheFolderCommand);
+
+  // pnpm returns 'undefined' if no custom store path is set
+  if (stdOut === 'undefined') {
+    stdOut = '';
+  }
+
+  if (!stdOut && packageManagerInfo.defaultCacheFolder) {
+    stdOut = packageManagerInfo.defaultCacheFolder;
+  }
 
   if (!stdOut) {
     throw new Error(`Could not get cache folder path for ${packageManager}`);

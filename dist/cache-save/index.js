@@ -4290,6 +4290,11 @@ exports.supportedPackageManagers = {
         lockFilePatterns: ['package-lock.json', 'yarn.lock'],
         getCacheFolderCommand: 'npm config get cache'
     },
+    pnpm: {
+        lockFilePatterns: ['pnpm-lock.yaml'],
+        getCacheFolderCommand: 'pnpm get store',
+        defaultCacheFolder: '~/.pnpm-store'
+    },
     yarn1: {
         lockFilePatterns: ['yarn.lock'],
         getCacheFolderCommand: 'yarn cache dir'
@@ -4304,7 +4309,7 @@ exports.getCommandOutput = (toolCommand) => __awaiter(void 0, void 0, void 0, fu
     if (stderr) {
         throw new Error(stderr);
     }
-    return stdout;
+    return stdout.trim();
 });
 const getPackageManagerVersion = (packageManager, command) => __awaiter(void 0, void 0, void 0, function* () {
     const stdOut = yield exports.getCommandOutput(`${packageManager} ${command}`);
@@ -4316,6 +4321,9 @@ const getPackageManagerVersion = (packageManager, command) => __awaiter(void 0, 
 exports.getPackageManagerInfo = (packageManager) => __awaiter(void 0, void 0, void 0, function* () {
     if (packageManager === 'npm') {
         return exports.supportedPackageManagers.npm;
+    }
+    else if (packageManager === 'pnpm') {
+        return exports.supportedPackageManagers.pnpm;
     }
     else if (packageManager === 'yarn') {
         const yarnVersion = yield getPackageManagerVersion('yarn', '--version');
@@ -4332,7 +4340,14 @@ exports.getPackageManagerInfo = (packageManager) => __awaiter(void 0, void 0, vo
     }
 });
 exports.getCacheDirectoryPath = (packageManagerInfo, packageManager) => __awaiter(void 0, void 0, void 0, function* () {
-    const stdOut = yield exports.getCommandOutput(packageManagerInfo.getCacheFolderCommand);
+    let stdOut = yield exports.getCommandOutput(packageManagerInfo.getCacheFolderCommand);
+    // pnpm returns 'undefined' if no custom store path is set
+    if (stdOut === 'undefined') {
+        stdOut = '';
+    }
+    if (!stdOut && packageManagerInfo.defaultCacheFolder) {
+        stdOut = packageManagerInfo.defaultCacheFolder;
+    }
     if (!stdOut) {
         throw new Error(`Could not get cache folder path for ${packageManager}`);
     }
@@ -5270,6 +5285,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 var LockType;
 (function (LockType) {
     LockType["Npm"] = "npm";
+    LockType["Pnpm"] = "pnpm";
     LockType["Yarn"] = "yarn";
 })(LockType = exports.LockType || (exports.LockType = {}));
 var State;
