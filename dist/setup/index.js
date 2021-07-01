@@ -65299,7 +65299,7 @@ function queryDistForMatch(versionSpec, arch = os.arch()) {
         }
         let versions = [];
         let nodeVersions = yield module.exports.getVersionsFromDist();
-        if (versionSpec === 'current') {
+        if (versionSpec === 'current' || versionSpec === 'latest') {
             return nodeVersions[0].version;
         }
         nodeVersions.forEach((nodeVersion) => {

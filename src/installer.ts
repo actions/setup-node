@@ -373,7 +373,7 @@ async function queryDistForMatch(
   let versions: string[] = [];
   let nodeVersions = await module.exports.getVersionsFromDist();
 
-  if (versionSpec === 'current') {
+  if (versionSpec === 'current' || versionSpec === 'latest') {
     return nodeVersions[0].version
   }
 
