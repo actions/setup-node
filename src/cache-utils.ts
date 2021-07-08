@@ -12,7 +12,7 @@ export interface PackageManagerInfo {
 
 export const supportedPackageManagers: SupportedPackageManagers = {
   npm: {
-    lockFilePatterns: ['package-lock.json', 'yarn.lock'],
+    lockFilePatterns: ['package-lock.json', 'npm-shrinkwrap.json'],
     getCacheFolderCommand: 'npm config get cache'
   },
   yarn1: {
