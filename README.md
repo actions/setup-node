@@ -1,110 +1,115 @@
-# setup-node
+# bookish-spork
+I
+Step 1. Create a Repository
+A repository is usually used to organize a single project. Repositories can contain folders and files, images, videos, spreadsheets, and data sets – anything your project needs. We recommend including a README, or a file with information about your project. GitHub makes it easy to add one at the same time you create your new repository. It also offers other common options such as a license file.
 
-<p align="left">
-  <a href="https://github.com/actions/setup-node/actions?query=workflow%3Abuild-test"><img alt="build-test status" src="https://github.com/actions/setup-node/workflows/build-test/badge.svg"></a> <a href="https://github.com/actions/setup-node/actions?query=workflow%3Aversions"><img alt="versions status" src="https://github.com/actions/setup-node/workflows/versions/badge.svg"></a> <a href="https://github.com/actions/setup-node/actions?query=workflow%3Aproxy"><img alt="proxy status" src="https://github.com/actions/setup-node/workflows/proxy/badge.svg"></a> 
-</p>
+Your hello-world repository can be a place where you store ideas, resources, or even share and discuss things with others.
 
-This action provides the following functionality for GitHub Actions users:
+To create a new repository
+In the upper right corner, next to your avatar or identicon, click  and then select New repository.
+Name your repository hello-world.
+Write a short description.
+Select Initialize this repository with a README.
+new-repo-form
 
-- Optionally downloading and caching distribution of the requested Node.js version, and adding it to the PATH
-- Optionally caching npm/yarn dependencies
-- Registering problem matchers for error output
-- Configuring authentication for GPR or npm
+Click Create repository.
 
-# Usage
 
-See [action.yml](action.yml)
+Step 2. Create a Branch
+Branching is the way to work on different versions of a repository at one time.
 
-**Basic:**
-```yaml
-steps:
-- uses: actions/checkout@v2
-- uses: actions/setup-node@v2
-  with:
-    node-version: '14'
-- run: npm install
-- run: npm test
-```
+By default your repository has one branch named main which is considered to be the definitive branch. We use branches to experiment and make edits before committing them to main.
 
-The `node-version` input is optional. If not supplied, the node version from PATH will be used. However, it is recommended to always specify Node.js version and don't rely on the system one.  
+When you create a branch off the main branch, you’re making a copy, or snapshot, of main as it was at that point in time. If someone else made changes to the main branch while you were working on your branch, you could pull in those updates.
 
-The action will first check the local cache for a semver match. If unable to find a specific version in the cache, the action will attempt to download a version of Node.js. It will pull LTS versions from [node-versions releases](https://github.com/actions/node-versions/releases) and on miss or failure will fall back to the previous behavior of downloading directly from [node dist](https://nodejs.org/dist/).
+This diagram shows:
 
-For information regarding locally cached versions of Node.js on GitHub hosted runners, check out [GitHub Actions Virtual Environments](https://github.com/actions/virtual-environments).
+The main branch
+A new branch called feature (because we’re doing ‘feature work’ on this branch)
+The journey that feature takes before it’s merged into main
+a branch
 
-#### Supported version syntax
-The `node-version` input supports the following syntax:
+Have you ever saved different versions of a file? Something like:
 
-major versions: `12`, `14`, `16`  
-more specific versions: `10.15`, `14.2.0`, `16.3.0`  
-nvm lts syntax: `lts/erbium`, `lts/fermium`, `lts/*`  
+story.txt
+story-joe-edit.txt
+story-joe-edit-reviewed.txt
+Branches accomplish similar goals in GitHub repositories.
 
-### Caching packages dependencies
+Here at GitHub, our developers, writers, and designers use branches for keeping bug fixes and feature work separate from our main (production) branch. When a change is ready, they merge their branch into main.
 
-The action has a built-in functionality for caching and restoring npm/yarn dependencies. Supported package managers are `npm`, `yarn`. The `cache` input is optional, and caching is turned off by default.
+To create a new branch
+Go to your new repository hello-world.
+Click the drop down at the top of the file list that says branch: main.
+Type a branch name, readme-edits, into the new branch text box.
+Select the blue Create branch box or hit “Enter” on your keyboard.
+branch gif
 
-**Caching npm dependencies:**
-```yaml
-steps:
-- uses: actions/checkout@v2
-- uses: actions/setup-node@v2
-  with:
-    node-version: '14'
-    cache: 'npm'
-- run: npm install
-- run: npm test
-```
+Now you have two branches, main and readme-edits. They look exactly the same, but not for long! Next we’ll add our changes to the new branch.
 
-**Caching yarn dependencies:**
-```yaml
-steps:
-- uses: actions/checkout@v2
-- uses: actions/setup-node@v2
-  with:
-    node-version: '14'
-    cache: 'yarn'
-- run: yarn install
-- run: yarn test
-```
-Yarn caching handles both yarn versions: 1 or 2. 
 
-> At the moment, only `lock` files in the project root are supported.
+Step 3. Make and commit changes
+Bravo! Now, you’re on the code view for your readme-edits branch, which is a copy of main. Let’s make some edits.
 
-### Matrix Testing:
-```yaml
-jobs:
-  build:
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        node: [ '12', '14', '16' ]
-    name: Node ${{ matrix.node }} sample
-    steps:
-      - uses: actions/checkout@v2
-      - name: Setup node
-        uses: actions/setup-node@v2
-        with:
-          node-version: ${{ matrix.node }}
-      - run: npm install
-      - run: npm test
-```
-## Advanced usage
+On GitHub, saved changes are called commits. Each commit has an associated commit message, which is a description explaining why a particular change was made. Commit messages capture the history of your changes, so other contributors can understand what you’ve done and why.
 
-1. [Check latest version](docs/advanced-usage.md#check-latest-version)
-2. [Using different architectures](docs/advanced-usage.md#architecture)
-3. [Using multiple operating systems and architectures](docs/advanced-usage.md#multiple-operating-systems-and-architectures)
-4. [Publishing to npmjs and GPR with npm](docs/advanced-usage.md#publish-to-npmjs-and-gpr-with-npm)
-5. [Publishing to npmjs and GPR with yarn](docs/advanced-usage.md#publish-to-npmjs-and-gpr-with-yarn)
-6. [Using private packages](docs/advanced-usage.md#use-private-packages)
+Make and commit changes
+Click the README.md file.
+Click the  pencil icon in the upper right corner of the file view to edit.
+In the editor, write a bit about yourself.
+Write a commit message that describes your changes.
+Click Commit changes button.
+commit
 
-# License
+These changes will be made to just the README file on your readme-edits branch, so now this branch contains content that’s different from main.
 
-The scripts and documentation in this project are released under the [MIT License](LICENSE)
 
-# Contributions
+Step 4. Open a Pull Request
+Nice edits! Now that you have changes in a branch off of main, you can open a pull request.
 
-Contributions are welcome!  See [Contributor's Guide](docs/contributors.md)
+Pull Requests are the heart of collaboration on GitHub. When you open a pull request, you’re proposing your changes and requesting that someone review and pull in your contribution and merge them into their branch. Pull requests show diffs, or differences, of the content from both branches. The changes, additions, and subtractions are shown in green and red.
 
-## Code of Conduct
+As soon as you make a commit, you can open a pull request and start a discussion, even before the code is finished.
 
-:wave: Be nice.  See [our code of conduct](CONDUCT)
+By using GitHub’s @mention system in your pull request message, you can ask for feedback from specific people or teams, whether they’re down the hall or 10 time zones away.
+
+You can even open pull requests in your own repository and merge them yourself. It’s a great way to learn the GitHub flow before working on larger projects.
+
+Open a Pull Request for changes to the README
+Click on the image for a larger version
+
+Step	Screenshot
+Click the  Pull Request tab, then from the Pull Request page, click the green New pull request button.	pr-tab
+In the Example Comparisons box, select the branch you made, readme-edits, to compare with main (the original).	branch
+Look over your changes in the diffs on the Compare page, make sure they’re what you want to submit.	diff
+When you’re satisfied that these are the changes you want to submit, click the big green Create Pull Request button.	create-pull
+Give your pull request a title and write a brief description of your changes.	pr-form
+When you’re done with your message, click Create pull request!
+
+Tip: You can use emoji and drag and drop images and gifs onto comments and Pull Requests.
+
+
+Step 5. Merge your Pull Request
+In this final step, it’s time to bring your changes together – merging your readme-edits branch into the main branch.
+
+Click the green Merge pull request button to merge the changes into main.
+Click Confirm merge.
+Go ahead and delete the branch, since its changes have been incorporated, with the Delete branch button in the purple box.
+merge delete
+
+Celebrate!
+By completing this tutorial, you’ve learned to create a project and make a pull request on GitHub!
+
+Here’s what you accomplished in this tutorial:
+
+Created an open source repository
+Started and managed a new branch
+Changed a file and committed those changes to GitHub
+Opened and merged a Pull Request
+Take a look at your GitHub profile and you’ll see your new contribution squares!
+
+To learn more about the power of Pull Requests, we recommend reading the GitHub flow Guide. You might also visit GitHub Explore and get involved in an Open Source project.
+
+Tip: Check out our other Guides, YouTube Channel and On-Demand Training for more on how to get started with GitHub.
+
+Last updated July 24, 2020
