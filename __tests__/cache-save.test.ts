@@ -1,6 +1,7 @@
 import * as core from '@actions/core';
 import * as cache from '@actions/cache';
 import * as glob from '@actions/glob';
+import fs from 'fs';
 import path from 'path';
 
 import * as utils from '../src/cache-utils';
@@ -28,6 +29,7 @@ describe('run', () => {
   let saveCacheSpy: jest.SpyInstance;
   let getCommandOutputSpy: jest.SpyInstance;
   let hashFilesSpy: jest.SpyInstance;
+  let existsSpy: jest.SpyInstance;
 
   beforeEach(() => {
     getInputSpy = jest.spyOn(core, 'getInput');
@@ -62,6 +64,9 @@ describe('run', () => {
         return '';
       }
     });
+
+    existsSpy = jest.spyOn(fs, 'existsSync');
+    existsSpy.mockImplementation(() => true);
 
     // utils
     getCommandOutputSpy = jest.spyOn(utils, 'getCommandOutput');
