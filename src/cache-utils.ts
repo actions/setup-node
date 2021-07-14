@@ -1,5 +1,8 @@
 import * as core from '@actions/core';
 import * as exec from '@actions/exec';
+import fs from 'fs';
+import os from 'os';
+import path from 'path';
 
 type SupportedPackageManagers = {
   [prop: string]: PackageManagerInfo;
@@ -19,7 +22,7 @@ export const supportedPackageManagers: SupportedPackageManagers = {
   pnpm: {
     lockFilePatterns: ['pnpm-lock.yaml'],
     getCacheFolderCommand: 'pnpm get store',
-    defaultCacheFolder: '~/.pnpm-store'
+    defaultCacheFolder: path.join(os.homedir(), '.pnpm-store')
   },
   yarn1: {
     lockFilePatterns: ['yarn.lock'],
@@ -94,6 +97,12 @@ export const getCacheDirectoryPath = async (
   }
 
   core.debug(`${packageManager} path is ${stdOut}`);
+
+  if (!fs.existsSync(stdOut)) {
+    throw new Error(
+      `Cache folder path is retrieved for ${packageManager} but doesn't exist on disk: ${stdOut}`
+    );
+  }
 
   return stdOut;
 };
