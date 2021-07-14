@@ -57,9 +57,14 @@ steps:
 
 **Caching pnpm dependencies:**
 ```yaml
+# This workflow uses actions that are not certified by GitHub.
+# They are provided by a third-party and are governed by
+# separate terms of service, privacy policy, and support
+# documentation.
+
 steps:
 - uses: actions/checkout@v2
-- uses: pnpm/action-setup@v2
+- uses: pnpm/action-setup@646cdf48217256a3d0b80361c5a50727664284f2
   with:
     version: 6.9.0
 - uses: actions/setup-node@v2
