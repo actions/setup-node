@@ -1,6 +1,5 @@
 import * as core from '@actions/core';
 import * as exec from '@actions/exec';
-import fs from 'fs';
 import os from 'os';
 import path from 'path';
 
@@ -97,12 +96,6 @@ export const getCacheDirectoryPath = async (
   }
 
   core.debug(`${packageManager} path is ${stdOut}`);
-
-  if (!fs.existsSync(stdOut)) {
-    throw new Error(
-      `Cache folder path is retrieved for ${packageManager} but doesn't exist on disk: ${stdOut}`
-    );
-  }
 
   return stdOut;
 };
