@@ -153,7 +153,7 @@ describe('run', () => {
       expect(setFailedSpy).not.toHaveBeenCalled();
     });
 
-    it('should not save cache for npm', async () => {
+    it('should not save cache for pnpm', async () => {
       inputs['cache'] = 'pnpm';
       getStateSpy.mockImplementation(() => pnpmFileHash);
       getCommandOutputSpy.mockImplementationOnce(() => `${commonPath}/pnpm`);
