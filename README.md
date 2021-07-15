@@ -7,7 +7,7 @@
 This action provides the following functionality for GitHub Actions users:
 
 - Optionally downloading and caching distribution of the requested Node.js version, and adding it to the PATH
-- Optionally caching npm/pnpm/yarn dependencies
+- Optionally caching npm/yarn/pnpm dependencies
 - Registering problem matchers for error output
 - Configuring authentication for GPR or npm
 
@@ -41,7 +41,7 @@ nvm lts syntax: `lts/erbium`, `lts/fermium`, `lts/*`
 
 ### Caching packages dependencies
 
-The action has a built-in functionality for caching and restoring npm/yarn dependencies. Supported package managers are `npm`, `pnpm`, `yarn`. The `cache` input is optional, and caching is turned off by default.
+The action has a built-in functionality for caching and restoring npm/yarn dependencies. Supported package managers are `npm`, `yarn`, `pnpm`. The `cache` input is optional, and caching is turned off by default.
 
 **Caching npm dependencies:**
 ```yaml
@@ -54,6 +54,19 @@ steps:
 - run: npm install
 - run: npm test
 ```
+
+**Caching yarn dependencies:**
+```yaml
+steps:
+- uses: actions/checkout@v2
+- uses: actions/setup-node@v2
+  with:
+    node-version: '14'
+    cache: 'yarn'
+- run: yarn install
+- run: yarn test
+```
+Yarn caching handles both yarn versions: 1 or 2.
 
 **Caching pnpm (v6.10+) dependencies:**
 ```yaml
@@ -76,19 +89,6 @@ steps:
 - run: pnpm install
 - run: pnpm test
 ```
-
-**Caching yarn dependencies:**
-```yaml
-steps:
-- uses: actions/checkout@v2
-- uses: actions/setup-node@v2
-  with:
-    node-version: '14'
-    cache: 'yarn'
-- run: yarn install
-- run: yarn test
-```
-Yarn caching handles both yarn versions: 1 or 2. 
 
 > At the moment, only `lock` files in the project root are supported.
 
