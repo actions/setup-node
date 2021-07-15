@@ -1,7 +1,5 @@
 import * as core from '@actions/core';
 import * as exec from '@actions/exec';
-import os from 'os';
-import path from 'path';
 
 type SupportedPackageManagers = {
   [prop: string]: PackageManagerInfo;
