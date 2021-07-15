@@ -1,5 +1,6 @@
 export enum LockType {
   Npm = 'npm',
+  Pnpm = 'pnpm',
   Yarn = 'yarn'
 }
 

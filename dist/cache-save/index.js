@@ -4290,6 +4290,10 @@ exports.supportedPackageManagers = {
         lockFilePatterns: ['package-lock.json', 'yarn.lock'],
         getCacheFolderCommand: 'npm config get cache'
     },
+    pnpm: {
+        lockFilePatterns: ['pnpm-lock.yaml'],
+        getCacheFolderCommand: 'pnpm store path'
+    },
     yarn1: {
         lockFilePatterns: ['yarn.lock'],
         getCacheFolderCommand: 'yarn cache dir'
@@ -4304,7 +4308,7 @@ exports.getCommandOutput = (toolCommand) => __awaiter(void 0, void 0, void 0, fu
     if (stderr) {
         throw new Error(stderr);
     }
-    return stdout;
+    return stdout.trim();
 });
 const getPackageManagerVersion = (packageManager, command) => __awaiter(void 0, void 0, void 0, function* () {
     const stdOut = yield exports.getCommandOutput(`${packageManager} ${command}`);
@@ -4316,6 +4320,9 @@ const getPackageManagerVersion = (packageManager, command) => __awaiter(void 0, 
 exports.getPackageManagerInfo = (packageManager) => __awaiter(void 0, void 0, void 0, function* () {
     if (packageManager === 'npm') {
         return exports.supportedPackageManagers.npm;
+    }
+    else if (packageManager === 'pnpm') {
+        return exports.supportedPackageManagers.pnpm;
     }
     else if (packageManager === 'yarn') {
         const yarnVersion = yield getPackageManagerVersion('yarn', '--version');
@@ -5270,6 +5277,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 var LockType;
 (function (LockType) {
     LockType["Npm"] = "npm";
+    LockType["Pnpm"] = "pnpm";
     LockType["Yarn"] = "yarn";
 })(LockType = exports.LockType || (exports.LockType = {}));
 var State;
@@ -50597,9 +50605,13 @@ var __importStar = (this && this.__importStar) || function (mod) {
     result["default"] = mod;
     return result;
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 const core = __importStar(__webpack_require__(470));
 const cache = __importStar(__webpack_require__(692));
+const fs_1 = __importDefault(__webpack_require__(747));
 const constants_1 = __webpack_require__(196);
 const cache_utils_1 = __webpack_require__(143);
 function run() {
@@ -50623,6 +50635,9 @@ const cachePackages = (packageManager) => __awaiter(void 0, void 0, void 0, func
         return;
     }
     const cachePath = yield cache_utils_1.getCacheDirectoryPath(packageManagerInfo, packageManager);
+    if (!fs_1.default.existsSync(cachePath)) {
+        throw new Error(`Cache folder path is retrieved for ${packageManager} but doesn't exist on disk: ${cachePath}`);
+    }
     if (primaryKey === state) {
         core.info(`Cache hit occurred on the primary key ${primaryKey}, not saving cache.`);
         return;

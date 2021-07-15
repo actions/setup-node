@@ -1,5 +1,6 @@
 import * as core from '@actions/core';
 import * as cache from '@actions/cache';
+import fs from 'fs';
 import {State} from './constants';
 import {getCacheDirectoryPath, getPackageManagerInfo} from './cache-utils';
 
@@ -26,6 +27,13 @@ const cachePackages = async (packageManager: string) => {
     packageManagerInfo,
     packageManager
   );
+
+  if (!fs.existsSync(cachePath)) {
+    throw new Error(
+      `Cache folder path is retrieved for ${packageManager} but doesn't exist on disk: ${cachePath}`
+    );
+  }
+
   if (primaryKey === state) {
     core.info(
       `Cache hit occurred on the primary key ${primaryKey}, not saving cache.`
