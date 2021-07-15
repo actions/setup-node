@@ -72,6 +72,10 @@ describe('run', () => {
     getCommandOutputSpy = jest.spyOn(utils, 'getCommandOutput');
   });
 
+  afterEach(() => {
+    existsSpy.mockRestore();
+  });
+
   describe('Package manager validation', () => {
     it('Package manager is not provided, skip caching', async () => {
       inputs['cache'] = '';
