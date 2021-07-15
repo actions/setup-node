@@ -48,7 +48,7 @@ jobs:
       - name: Install pnpm
         uses: pnpm/action-setup@v2
         with:
-          version: 6.9.0
+          version: 6.10.0
       - name: Generate pnpm file
         run: pnpm install
       - name: Remove dependencies
