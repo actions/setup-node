@@ -51580,14 +51580,9 @@ var __importStar = (this && this.__importStar) || function (mod) {
     result["default"] = mod;
     return result;
 };
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 const core = __importStar(__webpack_require__(470));
 const exec = __importStar(__webpack_require__(986));
-const os_1 = __importDefault(__webpack_require__(87));
-const path_1 = __importDefault(__webpack_require__(622));
 exports.supportedPackageManagers = {
     npm: {
         lockFilePatterns: ['package-lock.json', 'yarn.lock'],
@@ -51595,8 +51590,7 @@ exports.supportedPackageManagers = {
     },
     pnpm: {
         lockFilePatterns: ['pnpm-lock.yaml'],
-        getCacheFolderCommand: 'pnpm get store',
-        defaultCacheFolder: path_1.default.join(os_1.default.homedir(), '.pnpm-store')
+        getCacheFolderCommand: 'pnpm store path'
     },
     yarn1: {
         lockFilePatterns: ['yarn.lock'],
@@ -51643,14 +51637,7 @@ exports.getPackageManagerInfo = (packageManager) => __awaiter(void 0, void 0, vo
     }
 });
 exports.getCacheDirectoryPath = (packageManagerInfo, packageManager) => __awaiter(void 0, void 0, void 0, function* () {
-    let stdOut = yield exports.getCommandOutput(packageManagerInfo.getCacheFolderCommand);
-    // pnpm returns 'undefined' if no custom store path is set
-    if (stdOut === 'undefined') {
-        stdOut = '';
-    }
-    if (!stdOut && packageManagerInfo.defaultCacheFolder) {
-        stdOut = packageManagerInfo.defaultCacheFolder;
-    }
+    const stdOut = yield exports.getCommandOutput(packageManagerInfo.getCacheFolderCommand);
     if (!stdOut) {
         throw new Error(`Could not get cache folder path for ${packageManager}`);
     }

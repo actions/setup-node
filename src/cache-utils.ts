@@ -10,7 +10,6 @@ type SupportedPackageManagers = {
 export interface PackageManagerInfo {
   lockFilePatterns: Array<string>;
   getCacheFolderCommand: string;
-  defaultCacheFolder?: string;
 }
 
 export const supportedPackageManagers: SupportedPackageManagers = {
@@ -20,8 +19,7 @@ export const supportedPackageManagers: SupportedPackageManagers = {
   },
   pnpm: {
     lockFilePatterns: ['pnpm-lock.yaml'],
-    getCacheFolderCommand: 'pnpm get store',
-    defaultCacheFolder: path.join(os.homedir(), '.pnpm-store')
+    getCacheFolderCommand: 'pnpm store path'
   },
   yarn1: {
     lockFilePatterns: ['yarn.lock'],
@@ -80,16 +78,9 @@ export const getCacheDirectoryPath = async (
   packageManagerInfo: PackageManagerInfo,
   packageManager: string
 ) => {
-  let stdOut = await getCommandOutput(packageManagerInfo.getCacheFolderCommand);
-
-  // pnpm returns 'undefined' if no custom store path is set
-  if (stdOut === 'undefined') {
-    stdOut = '';
-  }
-
-  if (!stdOut && packageManagerInfo.defaultCacheFolder) {
-    stdOut = packageManagerInfo.defaultCacheFolder;
-  }
+  const stdOut = await getCommandOutput(
+    packageManagerInfo.getCacheFolderCommand
+  );
 
   if (!stdOut) {
     throw new Error(`Could not get cache folder path for ${packageManager}`);

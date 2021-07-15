@@ -55,18 +55,20 @@ steps:
 - run: npm test
 ```
 
-**Caching pnpm dependencies:**
+**Caching pnpm (v6.10+) dependencies:**
 ```yaml
 # This workflow uses actions that are not certified by GitHub.
 # They are provided by a third-party and are governed by
 # separate terms of service, privacy policy, and support
 # documentation.
 
+# NOTE: pnpm caching support requires pnpm version >= 6.10.0
+
 steps:
 - uses: actions/checkout@v2
 - uses: pnpm/action-setup@646cdf48217256a3d0b80361c5a50727664284f2
   with:
-    version: 6.9.0
+    version: 6.10.0
 - uses: actions/setup-node@v2
   with:
     node-version: '14'
