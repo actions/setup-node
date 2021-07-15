@@ -23,7 +23,7 @@ The second option looks more generic because it allows to:
 
 ## Decision
 
-Add `package-lock-file` input that will accept path (relative to repository root) to dependencies lock file.  
+Add `cache-dependency-path` input that will accept path (relative to repository root) to dependencies lock file.  
 If provided path contains wildcards, the action will search all maching files and calculate common hash like `${{ hashFiles('**/package-lock.json') }}` YAML construction does.  
 The hash of provided matched files will be used as a part of cache key.
 
@@ -35,7 +35,7 @@ steps:
   with:
     node-version: 14
     cache: npm
-    package-lock-file: 'sub-project/package-lock.json'
+    cache-dependency-path: 'sub-project/package-lock.json'
 ```
 ```yml
 steps:
@@ -44,5 +44,5 @@ steps:
   with:
     node-version: 14
     cache: yarn
-    package-lock-file: 'sub-project/**/yarn.lock'
+    cache-dependency-path: 'sub-project/**/yarn.lock'
 ```
