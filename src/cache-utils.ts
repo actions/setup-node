@@ -15,6 +15,10 @@ export const supportedPackageManagers: SupportedPackageManagers = {
     lockFilePatterns: ['package-lock.json', 'yarn.lock'],
     getCacheFolderCommand: 'npm config get cache'
   },
+  pnpm: {
+    lockFilePatterns: ['pnpm-lock.yaml'],
+    getCacheFolderCommand: 'pnpm store path'
+  },
   yarn1: {
     lockFilePatterns: ['yarn.lock'],
     getCacheFolderCommand: 'yarn cache dir'
@@ -32,7 +36,7 @@ export const getCommandOutput = async (toolCommand: string) => {
     throw new Error(stderr);
   }
 
-  return stdout;
+  return stdout.trim();
 };
 
 const getPackageManagerVersion = async (
@@ -51,6 +55,8 @@ const getPackageManagerVersion = async (
 export const getPackageManagerInfo = async (packageManager: string) => {
   if (packageManager === 'npm') {
     return supportedPackageManagers.npm;
+  } else if (packageManager === 'pnpm') {
+    return supportedPackageManagers.pnpm;
   } else if (packageManager === 'yarn') {
     const yarnVersion = await getPackageManagerVersion('yarn', '--version');
 
