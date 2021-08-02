@@ -41,7 +41,7 @@ nvm lts syntax: `lts/erbium`, `lts/fermium`, `lts/*`
 
 ### Caching packages dependencies
 
-The action has a built-in functionality for caching and restoring npm/yarn dependencies. Supported package managers are `npm`, `yarn`, `pnpm`. The `cache` input is optional, and caching is turned off by default.
+The action has a built-in functionality for caching and restoring npm/yarn dependencies. Supported package managers are `npm`, `yarn`, `pnpm`. The `cache` input is optional, and caching is turned off by default. By default, the action searches for the dependency file in the project root and uses its hash as a part of cache key. Use `cache-dependency-path` to specify custom dependency file path. The field accepts wildcards or an array of files to be cached. 
 
 **Caching npm dependencies:**
 ```yaml
@@ -90,7 +90,7 @@ steps:
 - run: pnpm test
 ```
 
-> At the moment, only `lock` files in the project root are supported.
+For more examlpes of caching, please see the [Advanced usage](docs/advanced-usage.md#caching-packages-dependencies) guide.
 
 ### Matrix Testing:
 ```yaml
@@ -114,10 +114,11 @@ jobs:
 
 1. [Check latest version](docs/advanced-usage.md#check-latest-version)
 2. [Using different architectures](docs/advanced-usage.md#architecture)
-3. [Using multiple operating systems and architectures](docs/advanced-usage.md#multiple-operating-systems-and-architectures)
-4. [Publishing to npmjs and GPR with npm](docs/advanced-usage.md#publish-to-npmjs-and-gpr-with-npm)
-5. [Publishing to npmjs and GPR with yarn](docs/advanced-usage.md#publish-to-npmjs-and-gpr-with-yarn)
-6. [Using private packages](docs/advanced-usage.md#use-private-packages)
+3. [Caching packages dependencies](docs/advanced-usage.md#caching-packages-dependencies)
+4. [Using multiple operating systems and architectures](docs/advanced-usage.md#multiple-operating-systems-and-architectures)
+5. [Publishing to npmjs and GPR with npm](docs/advanced-usage.md#publish-to-npmjs-and-gpr-with-npm)
+6. [Publishing to npmjs and GPR with yarn](docs/advanced-usage.md#publish-to-npmjs-and-gpr-with-yarn)
+7. [Using private packages](docs/advanced-usage.md#use-private-packages)
 
 # License
 

@@ -1,6 +1,6 @@
 # Advanced usage
 
-### Check latest version:
+### Check latest version
 
 The `check-latest` flag defaults to `false`. When set to `false`, the action will first check the local cache for a semver match. If unable to find a specific version in the cache, the action will attempt to download a version of Node.js. It will pull LTS versions from [node-versions releases](https://github.com/actions/node-versions/releases) and on miss or failure will fall back to the previous behavior of downloading directly from [node dist](https://nodejs.org/dist/). Use the default or set `check-latest` to `false` if you prefer stability and if you want to ensure a specific version of Node.js is always used.
 
@@ -19,7 +19,7 @@ steps:
 - run: npm test
 ```
 
-### Architecture:
+### Architecture
 
 You can use any of the [supported operating systems](https://docs.github.com/en/actions/reference/virtual-environments-for-github-hosted-runners), and the compatible `architecture` can be selected using `architecture`. Values are `x86`, `x64`, `arm64`, `armv6l`, `armv7l`, `ppc64le`, `s390x` (not all of the architectures are available on all platforms).
 
@@ -39,7 +39,37 @@ jobs:
       - run: npm test
 ```
 
-### Multiple Operating Systems and Architectures:
+### Caching packages dependencies
+
+**Using wildcard patterns to cache dependencies**
+```yaml
+steps:
+- uses: actions/checkout@v2
+- uses: actions/setup-node@v2
+  with:
+    node-version: '14'
+    cache: 'npm'
+    cache-dependency-path: '**/package-lock.json'
+- run: npm install
+- run: npm test
+```
+
+**Using a list of file paths to cache dependencies**
+```yaml
+steps:
+- uses: actions/checkout@v2
+- uses: actions/setup-node@v2
+  with:
+    node-version: '14'
+    cache: 'npm'
+    cache-dependency-path: |
+      server/app/package-lock.json
+      frontend/app/package-lock.json
+- run: npm install
+- run: npm test
+```
+
+### Multiple Operating Systems and Architectures
 
 ```yaml
 jobs:
@@ -74,7 +104,7 @@ jobs:
       - run: npm test
 ```
 
-### Publish to npmjs and GPR with npm:
+### Publish to npmjs and GPR with npm
 ```yaml
 steps:
 - uses: actions/checkout@v2
@@ -94,7 +124,7 @@ steps:
     NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 ```
 
-### Publish to npmjs and GPR with yarn:
+### Publish to npmjs and GPR with yarn
 ```yaml
 steps:
 - uses: actions/checkout@v2
@@ -114,7 +144,7 @@ steps:
     NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 ```
 
-### Use private packages:
+### Use private packages
 ```yaml
 steps:
 - uses: actions/checkout@v2

@@ -21,6 +21,8 @@ inputs:
     default: ${{ github.token }}
   cache:
     description: 'Used to specify a package manager for caching in the default directory. Supported values: npm, yarn, pnpm'
+  cache-dependency-path:
+    description: 'Used to specify path to a dependencies file: package-lock.json, yarn.lock, etc. Supports wildcards or an array of file names.'
 # TODO: add input to control forcing to pull from cloud or dist. 
 #       escape valve for someone having issues or needing the absolute latest which isn't cached yet
 # Deprecated option, do not use. Will not be supported after October 1, 2019
