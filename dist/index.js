@@ -12231,7 +12231,8 @@ function getNode(versionSpec) {
         let toolPath;
         toolPath = tc.find('node', versionSpec);
         // If not found in cache, download
-        if (!toolPath) {
+        // Usage of pre-cached Node.js is temporarily disabled.
+        if (true) {
             let version;
             const c = semver.clean(versionSpec) || '';
             // If explicit version
@@ -12248,7 +12249,8 @@ function getNode(versionSpec) {
                 // check cache
                 toolPath = tc.find('node', version);
             }
-            if (!toolPath) {
+            // Usage of pre-cached Node.js is temporarily disabled.
+            if (true) {
                 // download, extract, cache
                 toolPath = yield acquireNode(version);
             }
@@ -12342,6 +12344,7 @@ function acquireNode(version) {
         let downloadUrl = `https://nodejs.org/dist/v${version}/${urlFileName}`;
         let downloadPath;
         try {
+            core.info(`Downloading ${downloadUrl}`);
             downloadPath = yield tc.downloadTool(downloadUrl);
         }
         catch (err) {
