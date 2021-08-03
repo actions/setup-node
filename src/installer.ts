@@ -25,7 +25,8 @@ export async function getNode(versionSpec: string) {
   toolPath = tc.find('node', versionSpec);
 
   // If not found in cache, download
-  if (!toolPath) {
+  // Usage of pre-cached Node.js is temporarily disabled.
+  if (true) {
     let version: string;
     const c = semver.clean(versionSpec) || '';
     // If explicit version
