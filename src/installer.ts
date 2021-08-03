@@ -46,7 +46,8 @@ export async function getNode(versionSpec: string) {
       toolPath = tc.find('node', version);
     }
 
-    if (!toolPath) {
+    // Usage of pre-cached Node.js is temporarily disabled.
+    if (true) {
       // download, extract, cache
       toolPath = await acquireNode(version);
     }

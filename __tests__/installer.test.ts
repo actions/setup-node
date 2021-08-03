@@ -88,7 +88,8 @@ describe('installer tests', () => {
     }
   }, 100000);
 
-  it('Uses version of node installed in cache', async () => {
+  // Usage of pre-cached Node.js is temporarily disabled.
+  xit('Uses version of node installed in cache', async () => {
     const nodeDir: string = path.join(toolDir, 'node', '250.0.0', os.arch());
     await io.mkdirP(nodeDir);
     fs.writeFileSync(`${nodeDir}.complete`, 'hello');

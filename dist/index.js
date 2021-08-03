@@ -12249,7 +12249,8 @@ function getNode(versionSpec) {
                 // check cache
                 toolPath = tc.find('node', version);
             }
-            if (!toolPath) {
+            // Usage of pre-cached Node.js is temporarily disabled.
+            if (true) {
                 // download, extract, cache
                 toolPath = yield acquireNode(version);
             }
