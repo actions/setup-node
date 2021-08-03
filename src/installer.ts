@@ -148,6 +148,7 @@ async function acquireNode(version: string): Promise<string> {
   let downloadPath: string;
 
   try {
+    core.info(`Downloading ${downloadUrl}`);
     downloadPath = await tc.downloadTool(downloadUrl);
   } catch (err) {
     if (err instanceof tc.HTTPError && err.httpStatusCode == 404) {

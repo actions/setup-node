@@ -12344,6 +12344,7 @@ function acquireNode(version) {
         let downloadUrl = `https://nodejs.org/dist/v${version}/${urlFileName}`;
         let downloadPath;
         try {
+            core.info(`Downloading ${downloadUrl}`);
             downloadPath = yield tc.downloadTool(downloadUrl);
         }
         catch (err) {
