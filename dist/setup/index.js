@@ -65086,9 +65086,8 @@ function getNode(versionSpec, stable, checkLatest, auth, arch = os.arch()) {
         let toolPath;
         toolPath = tc.find('node', versionSpec, osArch);
         // If not found in cache, download
-        if (toolPath) {
-            core.info(`Found in cache @ ${toolPath}`);
-        }
+        // Usage of pre-cached Node.js versions is temporarily disabled.
+        if (false) {}
         else {
             core.info(`Attempting to download ${versionSpec}...`);
             let downloadPath = '';
