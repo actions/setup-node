@@ -71,7 +71,8 @@ export async function getNode(
   toolPath = tc.find('node', versionSpec, osArch);
 
   // If not found in cache, download
-  if (toolPath) {
+  // Usage of pre-cached Node.js versions is temporarily disabled.
+  if (false) {
     core.info(`Found in cache @ ${toolPath}`);
   } else {
     core.info(`Attempting to download ${versionSpec}...`);
