@@ -88,8 +88,7 @@ describe('installer tests', () => {
     }
   }, 100000);
 
-  // Usage of pre-cached Node.js is temporarily disabled.
-  xit('Uses version of node installed in cache', async () => {
+  it('Uses version of node installed in cache', async () => {
     const nodeDir: string = path.join(toolDir, 'node', '250.0.0', os.arch());
     await io.mkdirP(nodeDir);
     fs.writeFileSync(`${nodeDir}.complete`, 'hello');
@@ -112,8 +111,7 @@ describe('installer tests', () => {
     return;
   });
 
-  // Usage of pre-cached Node.js is temporarily disabled.
-  xit('Resolves semantic versions of node installed in cache', async () => {
+  it('Resolves semantic versions of node installed in cache', async () => {
     const nodeDir: string = path.join(toolDir, 'node', '252.0.0', os.arch());
     await io.mkdirP(nodeDir);
     fs.writeFileSync(`${nodeDir}.complete`, 'hello');
