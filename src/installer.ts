@@ -25,8 +25,7 @@ export async function getNode(versionSpec: string) {
   toolPath = tc.find('node', versionSpec);
 
   // If not found in cache, download
-  // Usage of pre-cached Node.js is temporarily disabled.
-  if (true) {
+  if (!toolPath) {
     let version: string;
     const c = semver.clean(versionSpec) || '';
     // If explicit version
@@ -46,8 +45,7 @@ export async function getNode(versionSpec: string) {
       toolPath = tc.find('node', version);
     }
 
-    // Usage of pre-cached Node.js is temporarily disabled.
-    if (true) {
+    if (!toolPath) {
       // download, extract, cache
       toolPath = await acquireNode(version);
     }
@@ -148,7 +146,6 @@ async function acquireNode(version: string): Promise<string> {
   let downloadPath: string;
 
   try {
-    core.info(`Downloading ${downloadUrl}`);
     downloadPath = await tc.downloadTool(downloadUrl);
   } catch (err) {
     if (err instanceof tc.HTTPError && err.httpStatusCode == 404) {
