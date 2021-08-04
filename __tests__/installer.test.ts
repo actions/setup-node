@@ -171,8 +171,7 @@ describe('setup-node', () => {
   // Found in cache tests
   //--------------------------------------------------
 
-  // Usage of pre-cached Node.js versions is temporarily disabled.
-  xit('finds version in cache with stable true', async () => {
+  it('finds version in cache with stable true', async () => {
     inputs['node-version'] = '12';
     inputs.stable = 'true';
 
@@ -183,8 +182,7 @@ describe('setup-node', () => {
     expect(logSpy).toHaveBeenCalledWith(`Found in cache @ ${toolPath}`);
   });
 
-  // Usage of pre-cached Node.js versions is temporarily disabled.
-  xit('finds version in cache with stable not supplied', async () => {
+  it('finds version in cache with stable not supplied', async () => {
     inputs['node-version'] = '12';
 
     inSpy.mockImplementation(name => inputs[name]);
@@ -196,8 +194,7 @@ describe('setup-node', () => {
     expect(logSpy).toHaveBeenCalledWith(`Found in cache @ ${toolPath}`);
   });
 
-  // Usage of pre-cached Node.js versions is temporarily disabled.
-  xit('finds version in cache and adds it to the path', async () => {
+  it('finds version in cache and adds it to the path', async () => {
     inputs['node-version'] = '12';
 
     inSpy.mockImplementation(name => inputs[name]);
@@ -387,8 +384,7 @@ describe('setup-node', () => {
   }, 100000);
 
   describe('check-latest flag', () => {
-    // Usage of pre-cached Node.js versions is temporarily disabled.
-    xit('use local version and dont check manifest if check-latest is not specified', async () => {
+    it('use local version and dont check manifest if check-latest is not specified', async () => {
       os.platform = 'linux';
       os.arch = 'x64';
 
@@ -409,8 +405,7 @@ describe('setup-node', () => {
       );
     });
 
-    // Usage of pre-cached Node.js versions is temporarily disabled.
-    xit('check latest version and resolve it from local cache', async () => {
+    it('check latest version and resolve it from local cache', async () => {
       os.platform = 'linux';
       os.arch = 'x64';
 
@@ -561,8 +556,7 @@ describe('setup-node', () => {
       inputs.stable = 'true';
     });
 
-    // Usage of pre-cached Node.js versions is temporarily disabled.
-    xit('find latest LTS version and resolve it from local cache (lts/erbium)', async () => {
+    it('find latest LTS version and resolve it from local cache (lts/erbium)', async () => {
       // arrange
       inputs['node-version'] = 'lts/erbium';
 
@@ -632,8 +626,7 @@ describe('setup-node', () => {
       );
     });
 
-    // Usage of pre-cached Node.js versions is temporarily disabled.
-    xit('find latest LTS version and resolve it from local cache (lts/*)', async () => {
+    it('find latest LTS version and resolve it from local cache (lts/*)', async () => {
       // arrange
       inputs['node-version'] = 'lts/*';
 

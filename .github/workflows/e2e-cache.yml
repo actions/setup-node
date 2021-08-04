@@ -101,8 +101,6 @@ jobs:
   node-yarn2-depencies-caching:
     name: Test yarn 2 (Node ${{ matrix.node-version}}, ${{ matrix.os }})
     runs-on: ${{ matrix.os }}
-    env:
-      YARN_ENABLE_IMMUTABLE_INSTALLS: false
     strategy:
       fail-fast: false
       matrix:
