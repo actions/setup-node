@@ -6894,7 +6894,8 @@ function run() {
                 if (isGhes()) {
                     throw new Error('Caching is not supported on GHES');
                 }
-                yield cache_restore_1.restoreCache(cache);
+                const cacheDependencyPath = core.getInput('cache-dependency-path');
+                yield cache_restore_1.restoreCache(cache, cacheDependencyPath);
             }
             const matchersPath = path.join(__dirname, '../..', '.github');
             core.info(`##[add-matcher]${path.join(matchersPath, 'tsc.json')}`);
@@ -44655,15 +44656,20 @@ const path_1 = __importDefault(__webpack_require__(622));
 const fs_1 = __importDefault(__webpack_require__(747));
 const constants_1 = __webpack_require__(196);
 const cache_utils_1 = __webpack_require__(570);
-exports.restoreCache = (packageManager) => __awaiter(void 0, void 0, void 0, function* () {
+exports.restoreCache = (packageManager, cacheDependencyPath) => __awaiter(void 0, void 0, void 0, function* () {
     const packageManagerInfo = yield cache_utils_1.getPackageManagerInfo(packageManager);
     if (!packageManagerInfo) {
         throw new Error(`Caching for '${packageManager}' is not supported`);
     }
     const platform = process.env.RUNNER_OS;
     const cachePath = yield cache_utils_1.getCacheDirectoryPath(packageManagerInfo, packageManager);
-    const lockFilePath = findLockFile(packageManagerInfo);
+    const lockFilePath = cacheDependencyPath
+        ? cacheDependencyPath
+        : findLockFile(packageManagerInfo);
     const fileHash = yield glob.hashFiles(lockFilePath);
+    if (!fileHash) {
+        throw new Error('Some specified paths were not resolved, unable to cache dependencies.');
+    }
     const primaryKey = `node-cache-${platform}-${packageManager}-${fileHash}`;
     core.debug(`primary key is ${primaryKey}`);
     core.saveState(constants_1.State.CachePrimaryKey, primaryKey);
