@@ -39,15 +39,13 @@ major versions: `12`, `14`, `16`
 more specific versions: `10.15`, `14.2.0`, `16.3.0`  
 nvm lts syntax: `lts/erbium`, `lts/fermium`, `lts/*`  
 
-### Caching packages dependencies
+## Caching packages dependencies
 
-The action has a built-in functionality for caching and restoring dependencies. It uses [actions/cache](https://github.com/actions/cache) under hood for caching dependencies but requires less configuration settings.
+The action has a built-in functionality for caching and restoring dependencies. It uses [actions/cache](https://github.com/actions/cache) under hood for caching dependencies but requires less configuration settings. Supported package managers are `npm`, `yarn`, `pnpm` (v6.10+). The `cache` input is optional, and caching is turned off by default.
 
-Supported package managers are `npm`, `yarn`, `pnpm`. The `cache` input is optional, and caching is turned off by default.
+The action defaults to search for the dependency file (`package-lock.json` or `yarn.lock`) in the repository root, and uses its hash as a part of the cache key. Use `cache-dependency-path` for cases when multiple dependency files are used, or they are located in different subdirectories.
 
-The action defaults to search for the dependency file (`package-lock.json` or `yarn.lock`) in the repository root, and uses its hash as a part of the cache key. Use `cache-dependency-path` for cases when multiple dependency files are used, or they are located in different subdirectories. See the examples of `cache-dependency-path` usage in the [Advanced usage](docs/advanced-usage.md#caching-packages-dependencies) guide.
-
-The action follows [actions/cache](https://github.com/actions/cache/blob/main/examples.md#node---npm) guidelines, and caches global cache on the machine instead of `node_modules`, so cache can be reused between different Node.js versions.
+See the examples of using cache for `yarn` / `pnpm` and  `cache-dependency-path` input in the [Advanced usage](docs/advanced-usage.md#caching-packages-dependencies) guide.
 
 **Caching npm dependencies:**
 ```yaml
@@ -61,42 +59,20 @@ steps:
 - run: npm test
 ```
 
-**Caching yarn dependencies:**
+**Caching npm dependencies in monorepos:**
 ```yaml
 steps:
 - uses: actions/checkout@v2
 - uses: actions/setup-node@v2
   with:
     node-version: '14'
-    cache: 'yarn'
-- run: yarn install
-- run: yarn test
-```
-Yarn caching handles both yarn versions: 1 or 2.
-
-**Caching pnpm (v6.10+) dependencies:**
-```yaml
-# This workflow uses actions that are not certified by GitHub.
-# They are provided by a third-party and are governed by
-# separate terms of service, privacy policy, and support
-# documentation.
-
-# NOTE: pnpm caching support requires pnpm version >= 6.10.0
-
-steps:
-- uses: actions/checkout@v2
-- uses: pnpm/action-setup@646cdf48217256a3d0b80361c5a50727664284f2
-  with:
-    version: 6.10.0
-- uses: actions/setup-node@v2
-  with:
-    node-version: '14'
-    cache: 'pnpm'
-- run: pnpm install
-- run: pnpm test
+    cache: 'npm'
+    cache-dependency-path: subdir/package-lock.json
+- run: npm install
+- run: npm test
 ```
 
-### Matrix Testing:
+## Matrix Testing:
 ```yaml
 jobs:
   build:
