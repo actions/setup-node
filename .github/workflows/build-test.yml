@@ -3,13 +3,13 @@ name: build-test
 on:
   pull_request:
     paths-ignore:
-      - "**.md"
+      - '**.md'
   push:
     branches:
       - main
       - releases/*
     paths-ignore:
-      - "**.md"
+      - '**.md'
 
 jobs:
   build:
