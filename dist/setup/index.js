@@ -44663,6 +44663,7 @@ exports.restoreCache = (packageManager, cacheDependencyPath) => __awaiter(void 0
     }
     const platform = process.env.RUNNER_OS;
     const cachePath = yield cache_utils_1.getCacheDirectoryPath(packageManagerInfo, packageManager);
+    const paths = [cachePath];
     const lockFilePath = cacheDependencyPath
         ? cacheDependencyPath
         : findLockFile(packageManagerInfo);
@@ -44670,12 +44671,14 @@ exports.restoreCache = (packageManager, cacheDependencyPath) => __awaiter(void 0
     if (!fileHash) {
         throw new Error('Some specified paths were not resolved, unable to cache dependencies.');
     }
-    const primaryKey = `node-cache-${platform}-${packageManager}-${fileHash}`;
+    const keyPrefix = `${platform}-setup-node-`;
+    const primaryKey = `${keyPrefix}${packageManager}-${fileHash}`;
+    const restoreKeys = [`${keyPrefix}${packageManager}-`, keyPrefix];
     core.debug(`primary key is ${primaryKey}`);
     core.saveState(constants_1.State.CachePrimaryKey, primaryKey);
-    const cacheKey = yield cache.restoreCache([cachePath], primaryKey);
+    const cacheKey = yield cache.restoreCache(paths, primaryKey, restoreKeys);
     if (!cacheKey) {
-        core.info(`${packageManager} cache is not found`);
+        core.info(`Cache not found for input keys: ${[primaryKey, ...restoreKeys].join(', ')}`);
         return;
     }
     core.saveState(constants_1.State.CacheMatchedKey, cacheKey);
