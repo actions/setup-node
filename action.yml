@@ -29,6 +29,9 @@ inputs:
   version:
     description: 'Deprecated. Use node-version instead. Will not be supported after October 1, 2019'
     deprecationMessage: 'The version property will not be supported after October 1, 2019. Use node-version instead'
+outputs:
+  cache-hit: 
+    description: 'A boolean value to indicate if a cache was hit'
 runs:
   using: 'node12'
   main: 'dist/setup/index.js'
