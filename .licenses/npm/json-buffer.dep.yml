@@ -1,0 +1,26 @@
+---
+name: json-buffer
+version: 3.0.1
+type: npm
+summary: JSON parse & stringify that supports binary via bops & base64
+homepage: https://github.com/dominictarr/json-buffer
+license: mit
+licenses:
+- sources: LICENSE
+  text: "Copyright (c) 2013 Dominic Tarr\n\nPermission is hereby granted, free of
+    charge, \nto any person obtaining a copy of this software and \nassociated documentation
+    files (the \"Software\"), to \ndeal in the Software without restriction, including
+    \nwithout limitation the rights to use, copy, modify, \nmerge, publish, distribute,
+    sublicense, and/or sell \ncopies of the Software, and to permit persons to whom
+    \nthe Software is furnished to do so, \nsubject to the following conditions:\n\nThe
+    above copyright notice and this permission notice \nshall be included in all copies
+    or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\",
+    WITHOUT WARRANTY OF ANY KIND, \nEXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED
+    TO THE WARRANTIES \nOF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+    \nIN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR \nANY CLAIM,
+    DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, \nTORT OR OTHERWISE,
+    ARISING FROM, OUT OF OR IN CONNECTION WITH THE \nSOFTWARE OR THE USE OR OTHER
+    DEALINGS IN THE SOFTWARE.\n"
+- sources: README.md
+  text: MIT
+notices: []
