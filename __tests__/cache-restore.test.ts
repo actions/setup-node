@@ -135,10 +135,10 @@ describe('cache-restore', () => {
         await restoreCache(packageManager);
         expect(hashFilesSpy).toHaveBeenCalled();
         expect(infoSpy).toHaveBeenCalledWith(
-          `Cache restored from key: node-cache-${platform}-${packageManager}-${fileHash}`
+          `Cache restored from key: ${platform}-setup-node-${packageManager}-${fileHash}`
         );
         expect(infoSpy).not.toHaveBeenCalledWith(
-          `${packageManager} cache is not found`
+          `Cache not found for input keys: ${platform}-setup-node-${packageManager}-${fileHash}, ${platform}-setup-node-${packageManager}-, ${platform}-setup-node-`
         );
       }
     );
@@ -165,7 +165,7 @@ describe('cache-restore', () => {
         await restoreCache(packageManager);
         expect(hashFilesSpy).toHaveBeenCalled();
         expect(infoSpy).toHaveBeenCalledWith(
-          `${packageManager} cache is not found`
+          `Cache not found for input keys: ${platform}-setup-node-${packageManager}-${fileHash}, ${platform}-setup-node-${packageManager}-, ${platform}-setup-node-`
         );
       }
     );
