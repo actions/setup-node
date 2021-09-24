@@ -19,6 +19,10 @@ inputs:
   token:
     description: Used to pull node distributions from node-versions.  Since there's a default, this is typically not supplied by the user.
     default: ${{ github.token }}
+  cache:
+    description: 'Used to specify a package manager for caching in the default directory. Supported values: npm, yarn, pnpm'
+  cache-dependency-path:
+    description: 'Used to specify the path to a dependency file: package-lock.json, yarn.lock, etc. Supports wildcards or a list of file names for caching multiple dependencies.'
 # TODO: add input to control forcing to pull from cloud or dist. 
 #       escape valve for someone having issues or needing the absolute latest which isn't cached yet
 # Deprecated option, do not use. Will not be supported after October 1, 2019
@@ -27,4 +31,6 @@ inputs:
     deprecationMessage: 'The version property will not be supported after October 1, 2019. Use node-version instead'
 runs:
   using: 'node12'
-  main: 'dist/index.js'
+  main: 'dist/setup/index.js'
+  post: 'dist/cache-save/index.js'
+  post-if: success()

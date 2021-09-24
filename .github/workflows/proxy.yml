@@ -30,12 +30,12 @@ jobs:
       - uses: actions/checkout@v2
       - name: Clear tool cache
         run: rm -rf $RUNNER_TOOL_CACHE/*
-      - name: Setup node 10
+      - name: Setup node 14
         uses: ./
         with:
-          node-version: 10.x
+          node-version: 14.x
       - name: Verify node and npm
-        run: __tests__/verify-node.sh 10
+        run: __tests__/verify-node.sh 14
 
   test-bypass-proxy:
     runs-on: ubuntu-latest

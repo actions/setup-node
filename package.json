@@ -5,7 +5,7 @@
   "description": "setup node action",
   "main": "lib/setup-node.js",
   "scripts": {
-    "build": "tsc && ncc build",
+    "build": "ncc build -o dist/setup src/setup-node.ts && ncc build -o dist/cache-save src/cache-save.ts",
     "format": "prettier --write **/*.ts",
     "format-check": "prettier --check **/*.ts",
     "test": "jest",
@@ -23,9 +23,11 @@
   "author": "GitHub",
   "license": "MIT",
   "dependencies": {
+    "@actions/cache": "^1.0.7",
     "@actions/core": "^1.2.6",
-    "@actions/exec": "^1.0.3",
+    "@actions/exec": "^1.1.0",
     "@actions/github": "^1.1.0",
+    "@actions/glob": "^0.2.0",
     "@actions/http-client": "^1.0.6",
     "@actions/io": "^1.0.2",
     "@actions/tool-cache": "^1.5.4",

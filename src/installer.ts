@@ -24,6 +24,10 @@ interface INodeVersionInfo {
   fileName: string;
 }
 
+interface INodeRelease extends tc.IToolRelease {
+  lts?: string;
+}
+
 export async function getNode(
   versionSpec: string,
   stable: boolean,
@@ -31,8 +35,19 @@ export async function getNode(
   auth: string | undefined,
   arch: string = os.arch()
 ) {
+  // Store manifest data to avoid multiple calls
+  let manifest: INodeRelease[] | undefined;
   let osPlat: string = os.platform();
   let osArch: string = translateArchToDistUrl(arch);
+
+  if (isLtsAlias(versionSpec)) {
+    core.info('Attempt to resolve LTS alias from manifest...');
+
+    // No try-catch since it's not possible to resolve LTS alias without manifest
+    manifest = await getManifest(auth);
+
+    versionSpec = resolveLtsAliasFromManifest(versionSpec, stable, manifest);
+  }
 
   if (checkLatest) {
     core.info('Attempt to resolve the latest version from manifest...');
@@ -40,7 +55,8 @@ export async function getNode(
       versionSpec,
       stable,
       auth,
-      osArch
+      osArch,
+      manifest
     );
     if (resolvedVersion) {
       versionSpec = resolvedVersion;
@@ -66,7 +82,13 @@ export async function getNode(
     // Try download from internal distribution (popular versions only)
     //
     try {
-      info = await getInfoFromManifest(versionSpec, stable, auth, osArch);
+      info = await getInfoFromManifest(
+        versionSpec,
+        stable,
+        auth,
+        osArch,
+        manifest
+      );
       if (info) {
         core.info(
           `Acquiring ${info.resolvedVersion} - ${info.arch} from ${info.downloadUrl}`
@@ -128,7 +150,7 @@ export async function getNode(
     let extPath: string;
     info = info || ({} as INodeVersionInfo); // satisfy compiler, never null when reaches here
     if (osPlat == 'win32') {
-      let _7zPath = path.join(__dirname, '..', 'externals', '7zr.exe');
+      let _7zPath = path.join(__dirname, '../..', 'externals', '7zr.exe');
       extPath = await tc.extract7z(downloadPath, undefined, _7zPath);
       // 7z extracts to folder matching file name
       let nestedPath = path.join(extPath, path.basename(info.fileName, '.7z'));
@@ -170,20 +192,65 @@ export async function getNode(
   core.addPath(toolPath);
 }
 
+function isLtsAlias(versionSpec: string): boolean {
+  return versionSpec.startsWith('lts/');
+}
+
+function getManifest(auth: string | undefined): Promise<tc.IToolRelease[]> {
+  core.debug('Getting manifest from actions/node-versions@main');
+  return tc.getManifestFromRepo('actions', 'node-versions', auth, 'main');
+}
+
+function resolveLtsAliasFromManifest(
+  versionSpec: string,
+  stable: boolean,
+  manifest: INodeRelease[]
+): string {
+  const alias = versionSpec.split('lts/')[1]?.toLowerCase();
+
+  if (!alias) {
+    throw new Error(
+      `Unable to parse LTS alias for Node version '${versionSpec}'`
+    );
+  }
+
+  core.debug(`LTS alias '${alias}' for Node version '${versionSpec}'`);
+
+  // Supported formats are `lts/<alias>` and `lts/*`. Where asterisk means highest possible LTS.
+  const release =
+    alias === '*'
+      ? manifest.find(x => !!x.lts && x.stable === stable)
+      : manifest.find(
+          x => x.lts?.toLowerCase() === alias && x.stable === stable
+        );
+
+  if (!release) {
+    throw new Error(
+      `Unable to find LTS release '${alias}' for Node version '${versionSpec}'.`
+    );
+  }
+
+  core.debug(
+    `Found LTS release '${release.version}' for Node version '${versionSpec}'`
+  );
+
+  return release.version.split('.')[0];
+}
+
 async function getInfoFromManifest(
   versionSpec: string,
   stable: boolean,
   auth: string | undefined,
-  osArch: string = translateArchToDistUrl(os.arch())
+  osArch: string = translateArchToDistUrl(os.arch()),
+  manifest: tc.IToolRelease[] | undefined
 ): Promise<INodeVersionInfo | null> {
   let info: INodeVersionInfo | null = null;
-  const releases = await tc.getManifestFromRepo(
-    'actions',
-    'node-versions',
-    auth,
-    'main'
-  );
-  const rel = await tc.findFromManifest(versionSpec, stable, releases, osArch);
+  if (!manifest) {
+    core.debug('No manifest cached');
+    manifest = await getManifest(auth);
+  }
+
+  const rel = await tc.findFromManifest(versionSpec, stable, manifest, osArch);
 
   if (rel && rel.files.length > 0) {
     info = <INodeVersionInfo>{};
@@ -234,10 +301,17 @@ async function resolveVersionFromManifest(
   versionSpec: string,
   stable: boolean,
   auth: string | undefined,
-  osArch: string = translateArchToDistUrl(os.arch())
+  osArch: string = translateArchToDistUrl(os.arch()),
+  manifest: tc.IToolRelease[] | undefined
 ): Promise<string | undefined> {
   try {
-    const info = await getInfoFromManifest(versionSpec, stable, auth, osArch);
+    const info = await getInfoFromManifest(
+      versionSpec,
+      stable,
+      auth,
+      osArch,
+      manifest
+    );
     return info?.resolvedVersion;
   } catch (err) {
     core.info('Unable to resolve version from manifest...');

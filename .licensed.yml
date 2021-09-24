@@ -3,6 +3,7 @@ sources:
 
 allowed:
   - apache-2.0
+  - 0bsd
   - bsd-2-clause
   - bsd-3-clause
   - isc
@@ -12,3 +13,9 @@ allowed:
 
 reviewed:
   npm:
+    # This is under an MIT license
+    - color-convert
+    # This is under an MIT license
+    - colors
+    # This is under a BSD-3-Clause license
+    - duplexer3
