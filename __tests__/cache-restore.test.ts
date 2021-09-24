@@ -140,6 +140,7 @@ describe('cache-restore', () => {
         expect(infoSpy).not.toHaveBeenCalledWith(
           `${packageManager} cache is not found`
         );
+        expect(setOutputSpy).toHaveBeenCalledWith('cache-hit', true);
       }
     );
   });
@@ -167,6 +168,7 @@ describe('cache-restore', () => {
         expect(infoSpy).toHaveBeenCalledWith(
           `${packageManager} cache is not found`
         );
+        expect(setOutputSpy).toHaveBeenCalledWith('cache-hit', false);
       }
     );
   });
