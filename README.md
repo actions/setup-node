@@ -26,7 +26,24 @@ steps:
 - run: npm test
 ```
 
-The `node-version` input is optional. If not supplied, the node version from PATH will be used. However, it is recommended to always specify Node.js version and don't rely on the system one.  
+The `node-version` input is optional. If not supplied, the following files are checked:
+
+1. `.n-node-version`
+2. `.naverc`
+3. `.node-version`
+4. `.nodeenvrc`
+5. `.nvmrc` (accurately [parsing nvm versions](https://github.com/ehmicky/node-version-alias))
+6. `package.json#engines.node`
+
+and finally the following environment variables:
+
+7. `NODIST_NODE_VERSION`
+8. `NODE_VERSION`
+9. `DEFAULT_NODE_VERSION`
+
+If none of these are present, finally the node version from PATH will be used. However, it is recommended to always specify Node.js version and don't rely on the system one.
+
+> Behind the scenes, it uses [@ehmicky](https://github.com/ehmicky)'s [`preferred-node-version`](https://www.npmjs.com/package/) 😍.
 
 The action will first check the local cache for a semver match. If unable to find a specific version in the cache, the action will attempt to download a version of Node.js. It will pull LTS versions from [node-versions releases](https://github.com/actions/node-versions/releases) and on miss or failure will fall back to the previous behavior of downloading directly from [node dist](https://nodejs.org/dist/).
 
