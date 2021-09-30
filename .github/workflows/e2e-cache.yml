@@ -1,0 +1,136 @@
+name: e2e-cache
+
+on:
+  pull_request:
+    paths-ignore:
+      - '**.md'
+  push:
+    branches:
+      - main
+      - releases/*
+    paths-ignore:
+      - '**.md'
+      
+jobs:
+  node-npm-depencies-caching:
+    name: Test npm (Node ${{ matrix.node-version}}, ${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        node-version: [12, 14, 16]
+    steps:
+      - uses: actions/checkout@v2
+      - name: Clean global cache
+        run: npm cache clean --force
+      - name: Setup Node
+        uses: ./
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+      - name: Install dependencies
+        run: npm install
+      - name: Verify node and npm
+        run: __tests__/verify-node.sh "${{ matrix.node-version }}"
+        shell: bash
+
+  node-pnpm-depencies-caching:
+    name: Test pnpm (Node ${{ matrix.node-version}}, ${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        node-version: [12, 14, 16]
+    steps:
+      - uses: actions/checkout@v2
+      - name: Install pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 6.10.0
+      - name: Generate pnpm file
+        run: pnpm install
+      - name: Remove dependencies
+        shell: pwsh
+        run: Remove-Item node_modules -Force -Recurse
+      - name: Clean global cache
+        run: rm -rf ~/.pnpm-store
+        shell: bash
+      - name: Setup Node
+        uses: ./
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'pnpm'
+      - name: Install dependencies
+        run: pnpm install
+      - name: Verify node and pnpm
+        run: __tests__/verify-node.sh "${{ matrix.node-version }}"
+        shell: bash
+
+  node-yarn1-depencies-caching:
+    name: Test yarn 1 (Node ${{ matrix.node-version}}, ${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        node-version: [12, 14, 16]
+    steps:
+      - uses: actions/checkout@v2
+      - name: Yarn version
+        run: yarn --version
+      - name: Generate yarn file
+        run: yarn install
+      - name: Remove dependencies
+        shell: pwsh
+        run: Remove-Item node_modules -Force -Recurse
+      - name: Clean global cache
+        run: yarn cache clean
+      - name: Setup Node
+        uses: ./
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'yarn'
+      - name: Install dependencies
+        run: yarn install
+      - name: Verify node and yarn
+        run: __tests__/verify-node.sh "${{ matrix.node-version }}"
+        shell: bash
+
+  node-yarn2-depencies-caching:
+    name: Test yarn 2 (Node ${{ matrix.node-version}}, ${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    env:
+      YARN_ENABLE_IMMUTABLE_INSTALLS: false
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        node-version: [12, 14, 16]
+    steps:
+      - uses: actions/checkout@v2
+      - name: Update yarn
+        run: yarn set version berry
+      - name: Yarn version
+        run: yarn --version
+      - name: Generate simple .yarnrc.yml
+        run: |
+          echo "nodeLinker: node-modules" >> .yarnrc.yml
+      - name: Generate yarn file
+        run: yarn install
+      - name: Remove dependencies
+        shell: pwsh
+        run: Remove-Item node_modules -Force -Recurse
+      - name: Clean global cache
+        run: yarn cache clean --all
+      - name: Setup Node
+        uses: ./
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'yarn'
+      - name: Install dependencies
+        run: yarn install
+      - name: Verify node and yarn
+        run: __tests__/verify-node.sh "${{ matrix.node-version }}"
+        shell: bash

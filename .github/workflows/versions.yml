@@ -13,11 +13,11 @@ on:
       
 jobs:
   local-cache:
-    runs-on: ${{ matrix.operating-system }}
+    runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
-        operating-system: [ubuntu-latest, windows-latest, macos-latest]
+        os: [ubuntu-latest, windows-latest, macos-latest]
         node-version: [10, 12, 14]
     steps:
       - uses: actions/checkout@v2
@@ -29,13 +29,27 @@ jobs:
         run: __tests__/verify-node.sh "${{ matrix.node-version }}"
         shell: bash
 
-  manifest:
-    runs-on: ${{ matrix.operating-system }}
+  lts-syntax:
+    runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
-        operating-system: [ubuntu-latest, windows-latest, macos-latest]
-        node-version: [10.15, 12.16.0, 14.2.0]
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        node-version: [lts/dubnium, lts/erbium, lts/fermium, lts/*]
+    steps:
+      - uses: actions/checkout@v2
+      - name: Setup Node
+        uses: ./
+        with:
+          node-version: ${{ matrix.node-version }}
+
+  manifest:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        node-version: [10.15, 12.16.0, 14.2.0, 16.3.0]
     steps:
       - uses: actions/checkout@v2
       - name: Setup Node
@@ -47,12 +61,12 @@ jobs:
         shell: bash
 
   check-latest:
-    runs-on: ${{ matrix.operating-system }}
+    runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
-        operating-system: [ubuntu-latest, windows-latest, macos-latest]
-        node-version: [10, 11, 12, 14]
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        node-version: [10, 12, 14]
     steps:
       - uses: actions/checkout@v2
       - name: Setup Node and check latest
@@ -65,11 +79,11 @@ jobs:
         shell: bash
 
   node-dist:
-    runs-on: ${{ matrix.operating-system }}
+    runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
-        operating-system: [ubuntu-latest, windows-latest, macos-latest]
+        os: [ubuntu-latest, windows-latest, macos-latest]
         node-version: [11, 13]
     steps:
       - uses: actions/checkout@v2
@@ -82,11 +96,11 @@ jobs:
         shell: bash
 
   old-versions:
-    runs-on: ${{ matrix.operating-system }}
+    runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
-        operating-system: [ubuntu-latest, windows-latest, macos-latest]
+        os: [ubuntu-latest, windows-latest, macos-latest]
     steps:
       - uses: actions/checkout@v2
       # test old versions which didn't have npm and layout different
@@ -96,4 +110,17 @@ jobs:
           node-version: 0.12.18
       - name: Verify node
         run: __tests__/verify-node.sh 0.12.18 SKIP_NPM
+        shell: bash
+
+  arch:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Setup node 14 x86 from dist
+        uses: ./
+        with:
+          node-version: '14'
+          architecture: 'x86'
+      - name: Verify node
+        run: __tests__/verify-arch.sh "ia32"
         shell: bash

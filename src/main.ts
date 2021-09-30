@@ -3,8 +3,10 @@ import * as installer from './installer';
 import * as auth from './authutil';
 import fs = require('fs');
 import * as path from 'path';
+import {restoreCache} from './cache-restore';
 import {URL} from 'url';
 import {parseNodeVersionFile} from './node-version-file';
+import os = require('os');
 
 export async function run() {
   try {
@@ -27,6 +29,19 @@ export async function run() {
         );
         core.info(`Resolved ${versionFile} as ${version}`);
       }
+    let arch = core.getInput('architecture');
+    const cache = core.getInput('cache');
+
+    // if architecture supplied but node-version is not
+    // if we don't throw a warning, the already installed x64 node will be used which is not probably what user meant.
+    if (arch && !version) {
+      core.warning(
+        '`architecture` is provided but `node-version` is missing. In this configuration, the version/architecture of Node will not be changed. To fix this, provide `architecture` in combination with `node-version`'
+      );
+    }
+
+    if (!arch) {
+      arch = os.arch();
     }
 
     if (version) {
@@ -35,7 +50,7 @@ export async function run() {
       let stable = (core.getInput('stable') || 'true').toUpperCase() === 'TRUE';
       const checkLatest =
         (core.getInput('check-latest') || 'false').toUpperCase() === 'TRUE';
-      await installer.getNode(version, stable, checkLatest, auth);
+      await installer.getNode(version, stable, checkLatest, auth, arch);
     }
 
     const registryUrl: string = core.getInput('registry-url');
@@ -44,18 +59,28 @@ export async function run() {
       auth.configAuthentication(registryUrl, alwaysAuth);
     }
 
-    const matchersPath = path.join(__dirname, '..', '.github');
-    console.log(`##[add-matcher]${path.join(matchersPath, 'tsc.json')}`);
-    console.log(
+    if (cache) {
+      if (isGhes()) {
+        throw new Error('Caching is not supported on GHES');
+      }
+      const cacheDependencyPath = core.getInput('cache-dependency-path');
+      await restoreCache(cache, cacheDependencyPath);
+    }
+
+    const matchersPath = path.join(__dirname, '../..', '.github');
+    core.info(`##[add-matcher]${path.join(matchersPath, 'tsc.json')}`);
+    core.info(
       `##[add-matcher]${path.join(matchersPath, 'eslint-stylish.json')}`
     );
-    console.log(
+    core.info(
       `##[add-matcher]${path.join(matchersPath, 'eslint-compact.json')}`
     );
-  } catch (error) {
+  }
+ } catch (error) {
     core.setFailed(error.message);
   }
 }
+
 
 function isGhes(): boolean {
   const ghUrl = new URL(
