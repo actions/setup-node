@@ -7,8 +7,11 @@ on:
 
   push:
     branches: [ add-node-version-file-support ]
+     paths-ignore:
+      - '**.md'  
   pull_request:
-    branches: [ add-node-version-file-support ]
+     paths-ignore:
+      - '**.md'  
 
 
   workflow_dispatch:
@@ -20,10 +23,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
-
-  
     steps:
-      
       - uses: actions/checkout@v2
       - name: Setup node test
         uses: actions/setup-node@v2
