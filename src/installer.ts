@@ -107,7 +107,7 @@ export async function getNode(
           `Received HTTP status code ${err.httpStatusCode}.  This usually indicates the rate limit has been exceeded`
         );
       } else {
-        core.info((err).message);
+        core.info(err.message);
       }
       core.debug(err.stack);
       core.info('Falling back to download directly from Node');
