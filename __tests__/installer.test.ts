@@ -6,10 +6,7 @@ import cp from 'child_process';
 import osm = require('os');
 import path from 'path';
 import * as main from '../src/main';
-import * as nv from '../src/node-version';
-import * as nvf from '../src/node-version-file';
 import * as auth from '../src/authutil';
-
 let nodeTestManifest = require('./data/versions-manifest.json');
 let nodeTestDist = require('./data/node-dist-index.json');
 
@@ -597,9 +594,7 @@ describe('setup-node', () => {
       expect(parseNodeVersionSpy).toHaveBeenCalledWith(versionSpec);
       expect(logSpy).toHaveBeenCalledWith(
         `Resolved ${versionFile} as ${expectedVersionSpec}`);
-      });
-    });
-      
+     });
   describe('LTS version', () => {
     beforeEach(() => {
       os.platform = 'linux';
@@ -818,4 +813,5 @@ describe('setup-node', () => {
       );
     });
   });
+});
 });

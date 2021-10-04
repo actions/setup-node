@@ -5,7 +5,6 @@ import fs = require('fs');
 import * as path from 'path';
 import {restoreCache} from './cache-restore';
 import {URL} from 'url';
-import {parseNodeVersionFile} from './node-version-file';
 import os = require('os');
 
 export async function run() {
@@ -24,7 +23,7 @@ export async function run() {
 
       if (!!versionFile) {
         const versionFilePath = path.join(__dirname, '..', versionFile);
-        version = await parseNodeVersionFile(
+        version = await installer.parseNodeVersionFile(
           fs.readFileSync(versionFilePath, 'utf8')
         );
         core.info(`Resolved ${versionFile} as ${version}`);
@@ -88,3 +87,4 @@ function isGhes(): boolean {
   );
   return ghUrl.hostname.toUpperCase() !== 'GITHUB.COM';
 }
+

@@ -1,0 +1,33 @@
+
+
+name: version-file-test
+
+
+on:
+
+  push:
+    branches: [ add-node-version-file-support ]
+    paths-ignore:
+      - '**.md'  
+  pull_request:
+     paths-ignore:
+      - '**.md'  
+
+
+  workflow_dispatch:
+
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@v2
+      - name: Setup node test
+        uses: ./
+        with:
+          node-version-file: '.nvmrc'
+      - run: npm ci
+      - run: npm run build
