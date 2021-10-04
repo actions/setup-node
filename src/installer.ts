@@ -10,7 +10,7 @@ import fs = require('fs');
 
 
 
-interface INodeVersion {
+export interface INodeVersion {
   version: string;
   files: string[];
 }
@@ -97,7 +97,7 @@ export async function getNode(
           'Not found in manifest.  Falling back to download directly from Node'
         );
       }
-    } catch (err) {
+    } catch (err : any) {
       // Rate limit?
       if (
         err instanceof tc.HTTPError &&
@@ -107,7 +107,7 @@ export async function getNode(
           `Received HTTP status code ${err.httpStatusCode}.  This usually indicates the rate limit has been exceeded`
         );
       } else {
-        core.info(err.message);
+        core.info((err).message);
       }
       core.debug(err.stack);
       core.info('Falling back to download directly from Node');
@@ -311,7 +311,7 @@ async function resolveVersionFromManifest(
       manifest
     );
     return info?.resolvedVersion;
-  } catch (err) {
+  } catch (err : any) {
     core.info('Unable to resolve version from manifest...');
     core.debug(err.message);
   }
@@ -383,7 +383,7 @@ async function queryDistForMatch(
   return version;
 }
 
-async function getVersionsFromDist(): Promise<INodeVersion[]> {
+export async function getVersionsFromDist(): Promise<INodeVersion[]> {
   let dataUrl = 'https://nodejs.org/dist/index.json';
   let httpClient = new hc.HttpClient('setup-node', [], {
     allowRetries: true,

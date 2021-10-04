@@ -1,5 +1,5 @@
-import * as nv from '../src/node-version';
-import * as nvf from '../src/node-version-file';
+import * as nv from '../src/installer';
+
 
 let nodeTestDist = require('./data/node-dist-index.json');
 
@@ -35,7 +35,7 @@ describe('node-version-file', () => {
       const versionSpec = '12';
 
       // Act
-      const result = await nvf.parseNodeVersionFile(versionSpec);
+      const result = await nv.parseNodeVersionFile(versionSpec);
 
       // Assert
       expect(result).toBe(versionSpec);
@@ -46,7 +46,7 @@ describe('node-version-file', () => {
       const versionSpec = 'lts/*';
 
       // Act
-      const result = await nvf.parseNodeVersionFile(versionSpec);
+      const result = await nv.parseNodeVersionFile(versionSpec);
 
       // Assert
       expect(result).toMatch(/^\d+\.\d+\.\d+$/);
@@ -57,7 +57,7 @@ describe('node-version-file', () => {
       const versionSpec = 'lts/*';
 
       // Act
-      const result = await nvf.parseNodeVersionFile(versionSpec);
+      const result = await nv.parseNodeVersionFile(versionSpec);
 
       // Assert
       expect(result).toMatch(/\d\.\d\.\d/);
@@ -68,7 +68,7 @@ describe('node-version-file', () => {
       const versionSpec = '12';
 
       // Act
-      const result = await nvf.parseNodeVersionFile(versionSpec);
+      const result = await nv.parseNodeVersionFile(versionSpec);
 
       // Assert
       expect(result).toBe(versionSpec);
@@ -79,7 +79,7 @@ describe('node-version-file', () => {
       const versionSpec = '12.16';
 
       // Act
-      const result = await nvf.parseNodeVersionFile(versionSpec);
+      const result = await nv.parseNodeVersionFile(versionSpec);
 
       // Assert
       expect(result).toBe(versionSpec);

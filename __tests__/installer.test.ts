@@ -9,6 +9,9 @@ import * as main from '../src/main';
 import * as auth from '../src/authutil';
 let nodeTestManifest = require('./data/versions-manifest.json');
 let nodeTestDist = require('./data/node-dist-index.json');
+import * as nv from '../src/installer';
+
+
 
 describe('setup-node', () => {
   let inputs = {} as any;
@@ -58,7 +61,7 @@ describe('setup-node', () => {
     cacheSpy = jest.spyOn(tc, 'cacheDir');
     getManifestSpy = jest.spyOn(tc, 'getManifestFromRepo');
     getDistSpy = jest.spyOn(nv, 'getVersionsFromDist');
-    parseNodeVersionSpy = jest.spyOn(nvf, 'parseNodeVersionFile');
+    parseNodeVersionSpy = jest.spyOn(nv, 'parseNodeVersionFile');
 
     // io
     whichSpy = jest.spyOn(io, 'which');
@@ -814,4 +817,89 @@ describe('setup-node', () => {
     });
   });
 });
+
+describe('node-version-file', () => {
+  let getVersionsFromDist: jest.SpyInstance;
+
+  beforeEach(() => {
+    // @actions/core
+    console.log('::stop-commands::stoptoken'); // Disable executing of runner commands when running tests in actions
+
+    getVersionsFromDist = jest.spyOn(nv, 'getVersionsFromDist');
+
+    // gets
+    getVersionsFromDist.mockImplementation(() => <nv.INodeVersion>nodeTestDist);
+  });
+
+  afterEach(() => {
+    jest.resetAllMocks();
+    jest.clearAllMocks();
+    //jest.restoreAllMocks();
+  });
+
+  afterAll(async () => {
+    console.log('::stoptoken::'); // Re-enable executing of runner commands when running tests in actions
+  }, 100000);
+
+  //--------------------------------------------------
+  // Manifest find tests
+  //--------------------------------------------------
+  describe('parseNodeVersionFile', () => {
+    it('without `v` prefix', async () => {
+      // Arrange
+      const versionSpec = '12';
+
+      // Act
+      const result = await nv.parseNodeVersionFile(versionSpec);
+
+      // Assert
+      expect(result).toBe(versionSpec);
+    });
+
+    it('lts/*', async () => {
+      // Arrange
+      const versionSpec = 'lts/*';
+
+      // Act
+      const result = await nv.parseNodeVersionFile(versionSpec);
+
+      // Assert
+      expect(result).toMatch(/^\d+\.\d+\.\d+$/);
+    });
+
+    it('lts/erbium', async () => {
+      // Arrange
+      const versionSpec = 'lts/*';
+
+      // Act
+      const result = await nv.parseNodeVersionFile(versionSpec);
+
+      // Assert
+      expect(result).toMatch(/\d\.\d\.\d/);
+    });
+
+    it('partial syntax like 12', async () => {
+      // Arrange
+      const versionSpec = '12';
+
+      // Act
+      const result = await nv.parseNodeVersionFile(versionSpec);
+
+      // Assert
+      expect(result).toBe(versionSpec);
+    });
+
+    it('partial syntax like 12.16', async () => {
+      // Arrange
+      const versionSpec = '12.16';
+
+      // Act
+      const result = await nv.parseNodeVersionFile(versionSpec);
+
+      // Assert
+      expect(result).toBe(versionSpec);
+    });
+  });
+});
+
 });
