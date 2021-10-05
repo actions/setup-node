@@ -65412,28 +65412,14 @@ function translateArchToDistUrl(arch) {
 }
 function parseNodeVersionFile(contents) {
     return __awaiter(this, void 0, void 0, function* () {
-        contents = contents.trim();
-        if (/^v\d/.test(contents)) {
-            contents = contents.substring(1);
+        let nodeVersion = contents.trim();
+        if (/^v\d/.test(nodeVersion)) {
+            nodeVersion = nodeVersion.substring(1);
         }
-        const nodeVersions = yield getVersionsFromDist();
-        let nodeVersion;
-        if (semver.valid(contents) || isPartialMatch(contents)) {
-            nodeVersion = contents;
-        }
-        else {
-            throw new Error(`Couldn't resolve node version: '${contents}'`);
-        }
-        return stripVPrefix(nodeVersion);
+        return nodeVersion;
     });
 }
 exports.parseNodeVersionFile = parseNodeVersionFile;
-function isPartialMatch(version) {
-    return /^\d+(\.\d+(\.\d+)?)?$/.test(version);
-}
-function stripVPrefix(version) {
-    return /^v\d/.test(version) ? version.substring(1) : version;
-}
 
 
 /***/ }),

@@ -28,54 +28,55 @@ export async function run() {
         );
         core.info(`Resolved ${versionFile} as ${version}`);
       }
-    let arch = core.getInput('architecture');
-    const cache = core.getInput('cache');
+      let arch = core.getInput('architecture');
+      const cache = core.getInput('cache');
 
-    // if architecture supplied but node-version is not
-    // if we don't throw a warning, the already installed x64 node will be used which is not probably what user meant.
-    if (arch && !version) {
-      core.warning(
-        '`architecture` is provided but `node-version` is missing. In this configuration, the version/architecture of Node will not be changed. To fix this, provide `architecture` in combination with `node-version`'
+      // if architecture supplied but node-version is not
+      // if we don't throw a warning, the already installed x64 node will be used which is not probably what user meant.
+      if (arch && !version) {
+        core.warning(
+          '`architecture` is provided but `node-version` is missing. In this configuration, the version/architecture of Node will not be changed. To fix this, provide `architecture` in combination with `node-version`'
+        );
+      }
+
+      if (!arch) {
+        arch = os.arch();
+      }
+
+      if (version) {
+        let token = core.getInput('token');
+        let auth = !token || isGhes() ? undefined : `token ${token}`;
+        let stable =
+          (core.getInput('stable') || 'true').toUpperCase() === 'TRUE';
+        const checkLatest =
+          (core.getInput('check-latest') || 'false').toUpperCase() === 'TRUE';
+        await installer.getNode(version, stable, checkLatest, auth, arch);
+      }
+
+      const registryUrl: string = core.getInput('registry-url');
+      const alwaysAuth: string = core.getInput('always-auth');
+      if (registryUrl) {
+        auth.configAuthentication(registryUrl, alwaysAuth);
+      }
+
+      if (cache) {
+        if (isGhes()) {
+          throw new Error('Caching is not supported on GHES');
+        }
+        const cacheDependencyPath = core.getInput('cache-dependency-path');
+        await restoreCache(cache, cacheDependencyPath);
+      }
+
+      const matchersPath = path.join(__dirname, '../..', '.github');
+      core.info(`##[add-matcher]${path.join(matchersPath, 'tsc.json')}`);
+      core.info(
+        `##[add-matcher]${path.join(matchersPath, 'eslint-stylish.json')}`
+      );
+      core.info(
+        `##[add-matcher]${path.join(matchersPath, 'eslint-compact.json')}`
       );
     }
-
-    if (!arch) {
-      arch = os.arch();
-    }
-
-    if (version) {
-      let token = core.getInput('token');
-      let auth = !token || isGhes() ? undefined : `token ${token}`;
-      let stable = (core.getInput('stable') || 'true').toUpperCase() === 'TRUE';
-      const checkLatest =
-        (core.getInput('check-latest') || 'false').toUpperCase() === 'TRUE';
-      await installer.getNode(version, stable, checkLatest, auth, arch);
-    }
-
-    const registryUrl: string = core.getInput('registry-url');
-    const alwaysAuth: string = core.getInput('always-auth');
-    if (registryUrl) {
-      auth.configAuthentication(registryUrl, alwaysAuth);
-    }
-
-    if (cache) {
-      if (isGhes()) {
-        throw new Error('Caching is not supported on GHES');
-      }
-      const cacheDependencyPath = core.getInput('cache-dependency-path');
-      await restoreCache(cache, cacheDependencyPath);
-    }
-
-    const matchersPath = path.join(__dirname, '../..', '.github');
-    core.info(`##[add-matcher]${path.join(matchersPath, 'tsc.json')}`);
-    core.info(
-      `##[add-matcher]${path.join(matchersPath, 'eslint-stylish.json')}`
-    );
-    core.info(
-      `##[add-matcher]${path.join(matchersPath, 'eslint-compact.json')}`
-    );
-  }
- } catch (error) {
+  } catch (error) {
     core.setFailed(error.message);
   }
 }

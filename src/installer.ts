@@ -474,6 +474,3 @@ export async function parseNodeVersionFile(contents: string): Promise<string> {
   }
   return nodeVersion;
 }
-
-
-
