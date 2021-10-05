@@ -71,20 +71,6 @@ steps:
 - run: npm test
 ```
 
-**Node version file:**
-
-The `node-version-file` input allows you to use a file within your repository which contains the version of node your project uses for example `.nvmrc`. If both the `node-version` and the `node-version-file` inputs are provided the `node-version` input is used.
-> The node version file is read from the project root
-
-```yaml
-steps:
-- uses: actions/checkout@v2
-- uses: actions/setup-node@v2
-  with:
-    node-version-file: '.nvmrc'
-- run: npm install
-- run: npm test
-```
 
 ## Matrix Testing:
 ```yaml
@@ -107,12 +93,13 @@ jobs:
 ## Advanced usage
 
 1. [Check latest version](docs/advanced-usage.md#check-latest-version)
-2. [Using different architectures](docs/advanced-usage.md#architecture)
-3. [Caching packages dependencies](docs/advanced-usage.md#caching-packages-dependencies)
-4. [Using multiple operating systems and architectures](docs/advanced-usage.md#multiple-operating-systems-and-architectures)
-5. [Publishing to npmjs and GPR with npm](docs/advanced-usage.md#publish-to-npmjs-and-gpr-with-npm)
-6. [Publishing to npmjs and GPR with yarn](docs/advanced-usage.md#publish-to-npmjs-and-gpr-with-yarn)
-7. [Using private packages](docs/advanced-usage.md#use-private-packages)
+2. [Using a node version file](docs/advanced-usage.md#Node-version-file)
+3. [Using different architectures](docs/advanced-usage.md#architecture)
+4. [Caching packages dependencies](docs/advanced-usage.md#caching-packages-dependencies)
+5. [Using multiple operating systems and architectures](docs/advanced-usage.md#multiple-operating-systems-and-architectures)
+6. [Publishing to npmjs and GPR with npm](docs/advanced-usage.md#publish-to-npmjs-and-gpr-with-npm)
+7. [Publishing to npmjs and GPR with yarn](docs/advanced-usage.md#publish-to-npmjs-and-gpr-with-yarn)
+8. [Using private packages](docs/advanced-usage.md#use-private-packages)
 
 # License
 

@@ -8,7 +8,10 @@ import * as path from 'path';
 import * as semver from 'semver';
 import fs = require('fs');
 
-
+//
+// Node versions interface
+// see https://nodejs.org/dist/index.json
+//
 
 export interface INodeVersion {
   version: string;
@@ -97,7 +100,7 @@ export async function getNode(
           'Not found in manifest.  Falling back to download directly from Node'
         );
       }
-    } catch (err : any) {
+    } catch (err) {
       // Rate limit?
       if (
         err instanceof tc.HTTPError &&
@@ -311,7 +314,7 @@ async function resolveVersionFromManifest(
       manifest
     );
     return info?.resolvedVersion;
-  } catch (err : any) {
+  } catch (err) {
     core.info('Unable to resolve version from manifest...');
     core.debug(err.message);
   }
@@ -464,30 +467,13 @@ function translateArchToDistUrl(arch: string): string {
 }
 
 export async function parseNodeVersionFile(contents: string): Promise<string> {
-  contents = contents.trim();
+  let nodeVersion = contents.trim();
 
-  if (/^v\d/.test(contents)) {
-    contents = contents.substring(1);
+  if (/^v\d/.test(nodeVersion)) {
+    nodeVersion = nodeVersion.substring(1);
   }
-
-  const nodeVersions = await getVersionsFromDist();
-
-  let nodeVersion: string;
-
-  if (semver.valid(contents) || isPartialMatch(contents)) {
-    nodeVersion = contents;
-  } else {
-    throw new Error(`Couldn't resolve node version: '${contents}'`);
-  }
-
-  return stripVPrefix(nodeVersion);
+  return nodeVersion;
 }
 
-function isPartialMatch(version: string): boolean {
-  return /^\d+(\.\d+(\.\d+)?)?$/.test(version);
-}
 
-function stripVPrefix(version: string): string {
-  return /^v\d/.test(version) ? version.substring(1) : version;
-}
 
