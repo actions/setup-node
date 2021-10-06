@@ -81,6 +81,7 @@ jobs:
   version-file:
     runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
     steps:
@@ -88,7 +89,7 @@ jobs:
       - name: Setup node test
         uses: ./
         with:
-          node-version-file: '.nvmrc'
+          node-version-file: './.nvmrc'
   node-dist:
     runs-on: ${{ matrix.os }}
     strategy:

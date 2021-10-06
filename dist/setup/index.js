@@ -6852,8 +6852,8 @@ var __importStar = (this && this.__importStar) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const core = __importStar(__webpack_require__(470));
 const installer = __importStar(__webpack_require__(923));
-const auth = __importStar(__webpack_require__(749));
 const fs = __webpack_require__(747);
+const auth = __importStar(__webpack_require__(749));
 const path = __importStar(__webpack_require__(622));
 const cache_restore_1 = __webpack_require__(409);
 const url_1 = __webpack_require__(835);
@@ -6868,48 +6868,48 @@ function run() {
             let version = core.getInput('node-version');
             if (!version) {
                 version = core.getInput('version');
-            }
-            if (!version) {
-                const versionFile = core.getInput('node-version-file');
-                if (!!versionFile) {
-                    const versionFilePath = path.join(__dirname, '..', versionFile);
-                    version = yield installer.parseNodeVersionFile(fs.readFileSync(versionFilePath, 'utf8'));
-                    core.info(`Resolved ${versionFile} as ${version}`);
-                }
-                let arch = core.getInput('architecture');
-                const cache = core.getInput('cache');
-                // if architecture supplied but node-version is not
-                // if we don't throw a warning, the already installed x64 node will be used which is not probably what user meant.
-                if (arch && !version) {
-                    core.warning('`architecture` is provided but `node-version` is missing. In this configuration, the version/architecture of Node will not be changed. To fix this, provide `architecture` in combination with `node-version`');
-                }
-                if (!arch) {
-                    arch = os.arch();
-                }
-                if (version) {
-                    let token = core.getInput('token');
-                    let auth = !token || isGhes() ? undefined : `token ${token}`;
-                    let stable = (core.getInput('stable') || 'true').toUpperCase() === 'TRUE';
-                    const checkLatest = (core.getInput('check-latest') || 'false').toUpperCase() === 'TRUE';
-                    yield installer.getNode(version, stable, checkLatest, auth, arch);
-                }
-                const registryUrl = core.getInput('registry-url');
-                const alwaysAuth = core.getInput('always-auth');
-                if (registryUrl) {
-                    auth.configAuthentication(registryUrl, alwaysAuth);
-                }
-                if (cache) {
-                    if (isGhes()) {
-                        throw new Error('Caching is not supported on GHES');
+                if (!version) {
+                    const versionFile = core.getInput('node-version-file');
+                    if (!!versionFile) {
+                        const versionFilePath = path.join(__dirname, '..', versionFile);
+                        version = yield installer.parseNodeVersionFile(fs.readFileSync(versionFilePath, 'utf8'));
+                        core.info(`Resolved ${versionFile} as ${version}`);
                     }
-                    const cacheDependencyPath = core.getInput('cache-dependency-path');
-                    yield cache_restore_1.restoreCache(cache, cacheDependencyPath);
                 }
-                const matchersPath = path.join(__dirname, '../..', '.github');
-                core.info(`##[add-matcher]${path.join(matchersPath, 'tsc.json')}`);
-                core.info(`##[add-matcher]${path.join(matchersPath, 'eslint-stylish.json')}`);
-                core.info(`##[add-matcher]${path.join(matchersPath, 'eslint-compact.json')}`);
             }
+            let arch = core.getInput('architecture');
+            const cache = core.getInput('cache');
+            // if architecture supplied but node-version is not
+            // if we don't throw a warning, the already installed x64 node will be used which is not probably what user meant.
+            if (arch && !version) {
+                core.warning('`architecture` is provided but `node-version` is missing. In this configuration, the version/architecture of Node will not be changed. To fix this, provide `architecture` in combination with `node-version`');
+            }
+            if (!arch) {
+                arch = os.arch();
+            }
+            if (version) {
+                let token = core.getInput('token');
+                let auth = !token || isGhes() ? undefined : `token ${token}`;
+                let stable = (core.getInput('stable') || 'true').toUpperCase() === 'TRUE';
+                const checkLatest = (core.getInput('check-latest') || 'false').toUpperCase() === 'TRUE';
+                yield installer.getNode(version, stable, checkLatest, auth, arch);
+            }
+            const registryUrl = core.getInput('registry-url');
+            const alwaysAuth = core.getInput('always-auth');
+            if (registryUrl) {
+                auth.configAuthentication(registryUrl, alwaysAuth);
+            }
+            if (cache) {
+                if (isGhes()) {
+                    throw new Error('Caching is not supported on GHES');
+                }
+                const cacheDependencyPath = core.getInput('cache-dependency-path');
+                yield cache_restore_1.restoreCache(cache, cacheDependencyPath);
+            }
+            const matchersPath = path.join(__dirname, '../..', '.github');
+            core.info(`##[add-matcher]${path.join(matchersPath, 'tsc.json')}`);
+            core.info(`##[add-matcher]${path.join(matchersPath, 'eslint-stylish.json')}`);
+            core.info(`##[add-matcher]${path.join(matchersPath, 'eslint-compact.json')}`);
         }
         catch (error) {
             core.setFailed(error.message);

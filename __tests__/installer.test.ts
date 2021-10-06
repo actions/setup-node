@@ -575,7 +575,7 @@ describe('setup-node', () => {
     it('Reads node-version-file if provided', async () => {
       // Arrange
       const versionSpec = 'v12';
-      const versionFile = '.immrc';
+      const versionFile = '.nvmrc';
       const expectedVersionSpec = '12';
 
       inputs['node-version-file'] = versionFile;
@@ -597,6 +597,7 @@ describe('setup-node', () => {
         `Resolved ${versionFile} as ${expectedVersionSpec}`
       );
     });
+
     describe('LTS version', () => {
       beforeEach(() => {
         os.platform = 'linux';
@@ -812,48 +813,6 @@ describe('setup-node', () => {
         expect(cnSpy).toHaveBeenCalledWith(
           `::error::Unable to download manifest${osm.EOL}`
         );
-      });
-    });
-  });
-
-  describe('node-version-file', () => {
-    let getVersionsFromDist: jest.SpyInstance;
-
-    beforeEach(() => {
-      // @actions/core
-      console.log('::stop-commands::stoptoken'); // Disable executing of runner commands when running tests in actions
-
-      getVersionsFromDist = jest.spyOn(im, 'getVersionsFromDist');
-
-      // gets
-      getVersionsFromDist.mockImplementation(
-        () => <im.INodeVersion>nodeTestDist
-      );
-    });
-
-    afterEach(() => {
-      jest.resetAllMocks();
-      jest.clearAllMocks();
-      //jest.restoreAllMocks();
-    });
-
-    afterAll(async () => {
-      console.log('::stoptoken::'); // Re-enable executing of runner commands when running tests in actions
-    }, 100000);
-
-    //--------------------------------------------------
-    // Manifest find tests
-    //--------------------------------------------------
-    describe('parseNodeVersionFile', () => {
-      it('without `v` prefix', async () => {
-        // Arrange
-        const versionSpec = '12';
-
-        // Act
-        const result = await im.parseNodeVersionFile(versionSpec);
-
-        // Assert
-        expect(result).toBe(versionSpec);
       });
     });
   });
