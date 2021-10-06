@@ -89,7 +89,7 @@ jobs:
       - name: Setup node test
         uses: ./
         with:
-          node-version-file: './.nvmrc'
+          node-version-file: '../.nvmrc'
   node-dist:
     runs-on: ${{ matrix.os }}
     strategy:
