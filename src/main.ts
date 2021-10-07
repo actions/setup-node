@@ -22,7 +22,7 @@ export async function run() {
 
         if (!!versionFile) {
           const versionFilePath = path.join(__dirname, '..', versionFile);
-          version = await installer.parseNodeVersionFile(
+          version = installer.parseNodeVersionFile(
             fs.readFileSync(versionFilePath, 'utf8')
           );
           core.info(`Resolved ${versionFile} as ${version}`);
