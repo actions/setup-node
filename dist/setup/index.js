@@ -6849,15 +6849,18 @@ var __importStar = (this && this.__importStar) || function (mod) {
     result["default"] = mod;
     return result;
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 const core = __importStar(__webpack_require__(470));
 const installer = __importStar(__webpack_require__(923));
-const fs = __webpack_require__(747);
+const fs_1 = __importDefault(__webpack_require__(747));
 const auth = __importStar(__webpack_require__(749));
 const path = __importStar(__webpack_require__(622));
 const cache_restore_1 = __webpack_require__(409);
 const url_1 = __webpack_require__(835);
-const os = __webpack_require__(87);
+const os_1 = __importDefault(__webpack_require__(87));
 function run() {
     return __awaiter(this, void 0, void 0, function* () {
         try {
@@ -6871,8 +6874,8 @@ function run() {
                 if (!version) {
                     const versionFile = core.getInput('node-version-file');
                     if (!!versionFile) {
-                        const versionFilePath = path.join(__dirname, '..', versionFile);
-                        version = yield installer.parseNodeVersionFile(fs.readFileSync(versionFilePath, 'utf8'));
+                        const versionFilePath = path.join(process.env.GITHUB_WORKSPACE, versionFile);
+                        version = installer.parseNodeVersionFile(fs_1.default.readFileSync(versionFilePath, 'utf8'));
                         core.info(`Resolved ${versionFile} as ${version}`);
                     }
                 }
@@ -6885,7 +6888,7 @@ function run() {
                 core.warning('`architecture` is provided but `node-version` is missing. In this configuration, the version/architecture of Node will not be changed. To fix this, provide `architecture` in combination with `node-version`');
             }
             if (!arch) {
-                arch = os.arch();
+                arch = os_1.default.arch();
             }
             if (version) {
                 let token = core.getInput('token');
@@ -6911,8 +6914,8 @@ function run() {
             core.info(`##[add-matcher]${path.join(matchersPath, 'eslint-stylish.json')}`);
             core.info(`##[add-matcher]${path.join(matchersPath, 'eslint-compact.json')}`);
         }
-        catch (error) {
-            core.setFailed(error.message);
+        catch (err) {
+            core.setFailed(err.message);
         }
     });
 }
@@ -65069,8 +65072,8 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const os = __webpack_require__(87);
 const assert = __importStar(__webpack_require__(357));
 const core = __importStar(__webpack_require__(470));
-const io = __importStar(__webpack_require__(1));
 const hc = __importStar(__webpack_require__(539));
+const io = __importStar(__webpack_require__(1));
 const tc = __importStar(__webpack_require__(533));
 const path = __importStar(__webpack_require__(622));
 const semver = __importStar(__webpack_require__(280));
@@ -65411,13 +65414,11 @@ function translateArchToDistUrl(arch) {
     }
 }
 function parseNodeVersionFile(contents) {
-    return __awaiter(this, void 0, void 0, function* () {
-        let nodeVersion = contents.trim();
-        if (/^v\d/.test(nodeVersion)) {
-            nodeVersion = nodeVersion.substring(1);
-        }
-        return nodeVersion;
-    });
+    let nodeVersion = contents.trim();
+    if (/^v\d/.test(nodeVersion)) {
+        nodeVersion = nodeVersion.substring(1);
+    }
+    return nodeVersion;
 }
 exports.parseNodeVersionFile = parseNodeVersionFile;
 
