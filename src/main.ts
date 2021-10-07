@@ -5,7 +5,7 @@ import * as auth from './authutil';
 import * as path from 'path';
 import {restoreCache} from './cache-restore';
 import {URL} from 'url';
-import os = require('os');
+import os from 'os';
 
 export async function run() {
   try {
@@ -76,8 +76,8 @@ export async function run() {
     core.info(
       `##[add-matcher]${path.join(matchersPath, 'eslint-compact.json')}`
     );
-  } catch (error) {
-    core.setFailed(error.message);
+  } catch (err) {
+    core.setFailed(err.message);
   }
 }
 

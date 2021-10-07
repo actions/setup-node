@@ -466,7 +466,7 @@ function translateArchToDistUrl(arch: string): string {
   }
 }
 
-export async function parseNodeVersionFile(contents: string): Promise<string> {
+export function parseNodeVersionFile(contents: string): string {
   let nodeVersion = contents.trim();
 
   if (/^v\d/.test(nodeVersion)) {
