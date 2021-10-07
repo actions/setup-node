@@ -1,6 +1,6 @@
 import * as core from '@actions/core';
 import * as installer from './installer';
-import fs = require('fs');
+import fs from 'fs';
 import * as auth from './authutil';
 import * as path from 'path';
 import {restoreCache} from './cache-restore';
