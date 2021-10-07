@@ -1,8 +1,8 @@
 import os = require('os');
 import * as assert from 'assert';
 import * as core from '@actions/core';
-import * as io from '@actions/io';
 import * as hc from '@actions/http-client';
+import * as io from '@actions/io';
 import * as tc from '@actions/tool-cache';
 import * as path from 'path';
 import * as semver from 'semver';
