@@ -21,7 +21,7 @@ export async function run() {
         const versionFile = core.getInput('node-version-file');
 
         if (!!versionFile) {
-          const versionFilePath = path.join(__dirname, '..', versionFile);
+          const versionFilePath = path.join(process.env.GITHUB_WORKSPACE!, versionFile);
           version = installer.parseNodeVersionFile(
             fs.readFileSync(versionFilePath, 'utf8')
           );
