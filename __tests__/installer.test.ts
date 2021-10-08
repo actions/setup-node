@@ -578,7 +578,7 @@ describe('setup-node', () => {
       const versionSpec = 'v12';
       const versionFile = '.nvmrc';
       const expectedVersionSpec = '12';
-
+      process.env['GITHUB_WORKSPACE'] = path.join(__dirname, '..');
       inputs['node-version-file'] = versionFile;
 
       readFileSyncSpy.mockImplementation(() => versionSpec);
@@ -590,7 +590,7 @@ describe('setup-node', () => {
       // Assert
       expect(readFileSyncSpy).toHaveBeenCalledTimes(1);
       expect(readFileSyncSpy).toHaveBeenCalledWith(
-        path.join(__dirname, '..', versionFile),
+        path.join(process.env.GITHUB_WORKSPACE, versionFile),
         'utf8'
       );
       expect(parseNodeVersionSpy).toHaveBeenCalledWith(versionSpec);
