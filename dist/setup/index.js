@@ -1212,7 +1212,89 @@ function wrappy (fn, cb) {
 
 /***/ }),
 /* 12 */,
-/* 13 */,
+/* 13 */
+/***/ (function(__unusedmodule, exports, __webpack_require__) {
+
+"use strict";
+
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.OidcClient = void 0;
+const http_client_1 = __webpack_require__(393);
+const auth_1 = __webpack_require__(838);
+const core_1 = __webpack_require__(902);
+class OidcClient {
+    static createHttpClient(allowRetry = true, maxRetry = 10) {
+        const requestOptions = {
+            allowRetries: allowRetry,
+            maxRetries: maxRetry
+        };
+        return new http_client_1.HttpClient('actions/oidc-client', [new auth_1.BearerCredentialHandler(OidcClient.getRequestToken())], requestOptions);
+    }
+    static getRequestToken() {
+        const token = process.env['ACTIONS_ID_TOKEN_REQUEST_TOKEN'];
+        if (!token) {
+            throw new Error('Unable to get ACTIONS_ID_TOKEN_REQUEST_TOKEN env variable');
+        }
+        return token;
+    }
+    static getIDTokenUrl() {
+        const runtimeUrl = process.env['ACTIONS_ID_TOKEN_REQUEST_URL'];
+        if (!runtimeUrl) {
+            throw new Error('Unable to get ACTIONS_ID_TOKEN_REQUEST_URL env variable');
+        }
+        return runtimeUrl;
+    }
+    static getCall(id_token_url) {
+        var _a;
+        return __awaiter(this, void 0, void 0, function* () {
+            const httpclient = OidcClient.createHttpClient();
+            const res = yield httpclient
+                .getJson(id_token_url)
+                .catch(error => {
+                throw new Error(`Failed to get ID Token. \n 
+        Error Code : ${error.statusCode}\n 
+        Error Message: ${error.result.message}`);
+            });
+            const id_token = (_a = res.result) === null || _a === void 0 ? void 0 : _a.value;
+            if (!id_token) {
+                throw new Error('Response json body do not have ID Token field');
+            }
+            return id_token;
+        });
+    }
+    static getIDToken(audience) {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                // New ID Token is requested from action service
+                let id_token_url = OidcClient.getIDTokenUrl();
+                if (audience) {
+                    const encodedAudience = encodeURIComponent(audience);
+                    id_token_url = `${id_token_url}&audience=${encodedAudience}`;
+                }
+                core_1.debug(`ID token url is ${id_token_url}`);
+                const id_token = yield OidcClient.getCall(id_token_url);
+                core_1.setSecret(id_token);
+                return id_token;
+            }
+            catch (error) {
+                throw new Error(`Error message: ${error.message}`);
+            }
+        });
+    }
+}
+exports.OidcClient = OidcClient;
+//# sourceMappingURL=oidc-utils.js.map
+
+/***/ }),
 /* 14 */,
 /* 15 */
 /***/ (function(__unusedmodule, exports, __webpack_require__) {
@@ -4039,7 +4121,62 @@ module.exports = ["ac","com.ac","edu.ac","gov.ac","net.ac","mil.ac","org.ac","ad
 /***/ }),
 /* 66 */,
 /* 67 */,
-/* 68 */,
+/* 68 */
+/***/ (function(__unusedmodule, exports) {
+
+"use strict";
+
+
+Object.defineProperty(exports, '__esModule', { value: true });
+
+async function auth(token) {
+  const tokenType = token.split(/\./).length === 3 ? "app" : /^v\d+\./.test(token) ? "installation" : "oauth";
+  return {
+    type: "token",
+    token: token,
+    tokenType
+  };
+}
+
+/**
+ * Prefix token for usage in the Authorization header
+ *
+ * @param token OAuth token or JSON Web Token
+ */
+function withAuthorizationPrefix(token) {
+  if (token.split(/\./).length === 3) {
+    return `bearer ${token}`;
+  }
+
+  return `token ${token}`;
+}
+
+async function hook(token, request, route, parameters) {
+  const endpoint = request.endpoint.merge(route, parameters);
+  endpoint.headers.authorization = withAuthorizationPrefix(token);
+  return request(endpoint);
+}
+
+const createTokenAuth = function createTokenAuth(token) {
+  if (!token) {
+    throw new Error("[@octokit/auth-token] No token passed to createTokenAuth");
+  }
+
+  if (typeof token !== "string") {
+    throw new Error("[@octokit/auth-token] Token passed to createTokenAuth is not a string");
+  }
+
+  token = token.replace(/^(token|bearer) +/i, "");
+  return Object.assign(auth.bind(null, token), {
+    hook: hook.bind(null, token)
+  });
+};
+
+exports.createTokenAuth = createTokenAuth;
+//# sourceMappingURL=index.js.map
+
+
+/***/ }),
 /* 69 */,
 /* 70 */
 /***/ (function(__unusedmodule, exports) {
@@ -4128,6 +4265,7 @@ module.exports = v4;
 // We use any as a valid input type
 /* eslint-disable @typescript-eslint/no-explicit-any */
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.toCommandProperties = exports.toCommandValue = void 0;
 /**
  * Sanitizes an input into a string so it can be passed into issueCommand safely
  * @param input input to sanitize into a string
@@ -4142,6 +4280,26 @@ function toCommandValue(input) {
     return JSON.stringify(input);
 }
 exports.toCommandValue = toCommandValue;
+/**
+ *
+ * @param annotationProperties
+ * @returns The command properties to send with the actual annotation command
+ * See IssueCommandProperties: https://github.com/actions/runner/blob/main/src/Runner.Worker/ActionCommandManager.cs#L646
+ */
+function toCommandProperties(annotationProperties) {
+    if (!Object.keys(annotationProperties).length) {
+        return {};
+    }
+    return {
+        title: annotationProperties.title,
+        file: annotationProperties.file,
+        line: annotationProperties.startLine,
+        endLine: annotationProperties.endLine,
+        col: annotationProperties.startColumn,
+        endColumn: annotationProperties.endColumn
+    };
+}
+exports.toCommandProperties = toCommandProperties;
 //# sourceMappingURL=utils.js.map
 
 /***/ }),
@@ -5270,14 +5428,27 @@ main_1.run();
 "use strict";
 
 // For internal use, subject to change.
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
 var __importStar = (this && this.__importStar) || function (mod) {
     if (mod && mod.__esModule) return mod;
     var result = {};
-    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
-    result["default"] = mod;
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
     return result;
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.issueCommand = void 0;
 // We use any as a valid input type
 /* eslint-disable @typescript-eslint/no-explicit-any */
 const fs = __importStar(__webpack_require__(747));
@@ -8562,7 +8733,7 @@ module.exports = v1;
 
 module.exports = authenticationPlugin;
 
-const { createTokenAuth } = __webpack_require__(813);
+const { createTokenAuth } = __webpack_require__(68);
 const { Deprecation } = __webpack_require__(692);
 const once = __webpack_require__(969);
 
@@ -8643,7 +8814,70 @@ function authenticationPlugin(octokit, options) {
 /* 192 */,
 /* 193 */,
 /* 194 */,
-/* 195 */,
+/* 195 */
+/***/ (function(__unusedmodule, exports) {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", { value: true });
+function getProxyUrl(reqUrl) {
+    let usingSsl = reqUrl.protocol === 'https:';
+    let proxyUrl;
+    if (checkBypass(reqUrl)) {
+        return proxyUrl;
+    }
+    let proxyVar;
+    if (usingSsl) {
+        proxyVar = process.env['https_proxy'] || process.env['HTTPS_PROXY'];
+    }
+    else {
+        proxyVar = process.env['http_proxy'] || process.env['HTTP_PROXY'];
+    }
+    if (proxyVar) {
+        proxyUrl = new URL(proxyVar);
+    }
+    return proxyUrl;
+}
+exports.getProxyUrl = getProxyUrl;
+function checkBypass(reqUrl) {
+    if (!reqUrl.hostname) {
+        return false;
+    }
+    let noProxy = process.env['no_proxy'] || process.env['NO_PROXY'] || '';
+    if (!noProxy) {
+        return false;
+    }
+    // Determine the request port
+    let reqPort;
+    if (reqUrl.port) {
+        reqPort = Number(reqUrl.port);
+    }
+    else if (reqUrl.protocol === 'http:') {
+        reqPort = 80;
+    }
+    else if (reqUrl.protocol === 'https:') {
+        reqPort = 443;
+    }
+    // Format the request hostname and hostname with port
+    let upperReqHosts = [reqUrl.hostname.toUpperCase()];
+    if (typeof reqPort === 'number') {
+        upperReqHosts.push(`${upperReqHosts[0]}:${reqPort}`);
+    }
+    // Compare request host against noproxy
+    for (let upperNoProxyItem of noProxy
+        .split(',')
+        .map(x => x.trim().toUpperCase())
+        .filter(x => x)) {
+        if (upperReqHosts.some(x => x === upperNoProxyItem)) {
+            return true;
+        }
+    }
+    return false;
+}
+exports.checkBypass = checkBypass;
+
+
+/***/ }),
 /* 196 */
 /***/ (function(__unusedmodule, exports) {
 
@@ -9058,7 +9292,71 @@ exports.Pattern = Pattern;
 /***/ }),
 /* 224 */,
 /* 225 */,
-/* 226 */,
+/* 226 */
+/***/ (function(__unusedmodule, exports) {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", { value: true });
+class BasicCredentialHandler {
+    constructor(username, password) {
+        this.username = username;
+        this.password = password;
+    }
+    prepareRequest(options) {
+        options.headers['Authorization'] =
+            'Basic ' +
+                Buffer.from(this.username + ':' + this.password).toString('base64');
+    }
+    // This handler cannot handle 401
+    canHandleAuthentication(response) {
+        return false;
+    }
+    handleAuthentication(httpClient, requestInfo, objs) {
+        return null;
+    }
+}
+exports.BasicCredentialHandler = BasicCredentialHandler;
+class BearerCredentialHandler {
+    constructor(token) {
+        this.token = token;
+    }
+    // currently implements pre-authorization
+    // TODO: support preAuth = false where it hooks on 401
+    prepareRequest(options) {
+        options.headers['Authorization'] = 'Bearer ' + this.token;
+    }
+    // This handler cannot handle 401
+    canHandleAuthentication(response) {
+        return false;
+    }
+    handleAuthentication(httpClient, requestInfo, objs) {
+        return null;
+    }
+}
+exports.BearerCredentialHandler = BearerCredentialHandler;
+class PersonalAccessTokenCredentialHandler {
+    constructor(token) {
+        this.token = token;
+    }
+    // currently implements pre-authorization
+    // TODO: support preAuth = false where it hooks on 401
+    prepareRequest(options) {
+        options.headers['Authorization'] =
+            'Basic ' + Buffer.from('PAT:' + this.token).toString('base64');
+    }
+    // This handler cannot handle 401
+    canHandleAuthentication(response) {
+        return false;
+    }
+    handleAuthentication(httpClient, requestInfo, objs) {
+        return null;
+    }
+}
+exports.PersonalAccessTokenCredentialHandler = PersonalAccessTokenCredentialHandler;
+
+
+/***/ }),
 /* 227 */,
 /* 228 */,
 /* 229 */
@@ -42243,1677 +42541,543 @@ exports.getUserAgent = getUserAgent;
 /***/ (function(__unusedmodule, exports, __webpack_require__) {
 
 "use strict";
-/*!
- * Copyright (c) 2015, Salesforce.com, Inc.
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *
- * 1. Redistributions of source code must retain the above copyright notice,
- * this list of conditions and the following disclaimer.
- *
- * 2. Redistributions in binary form must reproduce the above copyright notice,
- * this list of conditions and the following disclaimer in the documentation
- * and/or other materials provided with the distribution.
- *
- * 3. Neither the name of Salesforce.com nor the names of its contributors may
- * be used to endorse or promote products derived from this software without
- * specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
- */
 
-const punycode = __webpack_require__(815);
-const urlParse = __webpack_require__(835).parse;
-const util = __webpack_require__(669);
-const pubsuffix = __webpack_require__(324);
-const Store = __webpack_require__(338).Store;
-const MemoryCookieStore = __webpack_require__(332).MemoryCookieStore;
-const pathMatch = __webpack_require__(678).pathMatch;
-const VERSION = __webpack_require__(460);
-const { fromCallback } = __webpack_require__(147);
-
-// From RFC6265 S4.1.1
-// note that it excludes \x3B ";"
-const COOKIE_OCTETS = /^[\x21\x23-\x2B\x2D-\x3A\x3C-\x5B\x5D-\x7E]+$/;
-
-const CONTROL_CHARS = /[\x00-\x1F]/;
-
-// From Chromium // '\r', '\n' and '\0' should be treated as a terminator in
-// the "relaxed" mode, see:
-// https://github.com/ChromiumWebApps/chromium/blob/b3d3b4da8bb94c1b2e061600df106d590fda3620/net/cookies/parsed_cookie.cc#L60
-const TERMINATORS = ["\n", "\r", "\0"];
-
-// RFC6265 S4.1.1 defines path value as 'any CHAR except CTLs or ";"'
-// Note ';' is \x3B
-const PATH_VALUE = /[\x20-\x3A\x3C-\x7E]+/;
-
-// date-time parsing constants (RFC6265 S5.1.1)
-
-const DATE_DELIM = /[\x09\x20-\x2F\x3B-\x40\x5B-\x60\x7B-\x7E]/;
-
-const MONTH_TO_NUM = {
-  jan: 0,
-  feb: 1,
-  mar: 2,
-  apr: 3,
-  may: 4,
-  jun: 5,
-  jul: 6,
-  aug: 7,
-  sep: 8,
-  oct: 9,
-  nov: 10,
-  dec: 11
-};
-
-const MAX_TIME = 2147483647000; // 31-bit max
-const MIN_TIME = 0; // 31-bit min
-const SAME_SITE_CONTEXT_VAL_ERR =
-  'Invalid sameSiteContext option for getCookies(); expected one of "strict", "lax", or "none"';
-
-function checkSameSiteContext(value) {
-  const context = String(value).toLowerCase();
-  if (context === "none" || context === "lax" || context === "strict") {
-    return context;
-  } else {
-    return null;
-  }
-}
-
-const PrefixSecurityEnum = Object.freeze({
-  SILENT: "silent",
-  STRICT: "strict",
-  DISABLED: "unsafe-disabled"
-});
-
-// Dumped from ip-regex@4.0.0, with the following changes:
-// * all capturing groups converted to non-capturing -- "(?:)"
-// * support for IPv6 Scoped Literal ("%eth1") removed
-// * lowercase hexadecimal only
-var IP_REGEX_LOWERCASE =/(?:^(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]\d|\d)(?:\.(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]\d|\d)){3}$)|(?:^(?:(?:[a-f\d]{1,4}:){7}(?:[a-f\d]{1,4}|:)|(?:[a-f\d]{1,4}:){6}(?:(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]\d|\d)(?:\.(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]\d|\d)){3}|:[a-f\d]{1,4}|:)|(?:[a-f\d]{1,4}:){5}(?::(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]\d|\d)(?:\.(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]\d|\d)){3}|(?::[a-f\d]{1,4}){1,2}|:)|(?:[a-f\d]{1,4}:){4}(?:(?::[a-f\d]{1,4}){0,1}:(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]\d|\d)(?:\.(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]\d|\d)){3}|(?::[a-f\d]{1,4}){1,3}|:)|(?:[a-f\d]{1,4}:){3}(?:(?::[a-f\d]{1,4}){0,2}:(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]\d|\d)(?:\.(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]\d|\d)){3}|(?::[a-f\d]{1,4}){1,4}|:)|(?:[a-f\d]{1,4}:){2}(?:(?::[a-f\d]{1,4}){0,3}:(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]\d|\d)(?:\.(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]\d|\d)){3}|(?::[a-f\d]{1,4}){1,5}|:)|(?:[a-f\d]{1,4}:){1}(?:(?::[a-f\d]{1,4}){0,4}:(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]\d|\d)(?:\.(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]\d|\d)){3}|(?::[a-f\d]{1,4}){1,6}|:)|(?::(?:(?::[a-f\d]{1,4}){0,5}:(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]\d|\d)(?:\.(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]\d|\d)){3}|(?::[a-f\d]{1,4}){1,7}|:)))$)/;
-
-/*
- * Parses a Natural number (i.e., non-negative integer) with either the
- *    <min>*<max>DIGIT ( non-digit *OCTET )
- * or
- *    <min>*<max>DIGIT
- * grammar (RFC6265 S5.1.1).
- *
- * The "trailingOK" boolean controls if the grammar accepts a
- * "( non-digit *OCTET )" trailer.
- */
-function parseDigits(token, minDigits, maxDigits, trailingOK) {
-  let count = 0;
-  while (count < token.length) {
-    const c = token.charCodeAt(count);
-    // "non-digit = %x00-2F / %x3A-FF"
-    if (c <= 0x2f || c >= 0x3a) {
-      break;
-    }
-    count++;
-  }
-
-  // constrain to a minimum and maximum number of digits.
-  if (count < minDigits || count > maxDigits) {
-    return null;
-  }
-
-  if (!trailingOK && count != token.length) {
-    return null;
-  }
-
-  return parseInt(token.substr(0, count), 10);
-}
-
-function parseTime(token) {
-  const parts = token.split(":");
-  const result = [0, 0, 0];
-
-  /* RF6256 S5.1.1:
-   *      time            = hms-time ( non-digit *OCTET )
-   *      hms-time        = time-field ":" time-field ":" time-field
-   *      time-field      = 1*2DIGIT
-   */
-
-  if (parts.length !== 3) {
-    return null;
-  }
-
-  for (let i = 0; i < 3; i++) {
-    // "time-field" must be strictly "1*2DIGIT", HOWEVER, "hms-time" can be
-    // followed by "( non-digit *OCTET )" so therefore the last time-field can
-    // have a trailer
-    const trailingOK = i == 2;
-    const num = parseDigits(parts[i], 1, 2, trailingOK);
-    if (num === null) {
-      return null;
-    }
-    result[i] = num;
-  }
-
-  return result;
-}
-
-function parseMonth(token) {
-  token = String(token)
-    .substr(0, 3)
-    .toLowerCase();
-  const num = MONTH_TO_NUM[token];
-  return num >= 0 ? num : null;
-}
-
-/*
- * RFC6265 S5.1.1 date parser (see RFC for full grammar)
- */
-function parseDate(str) {
-  if (!str) {
-    return;
-  }
-
-  /* RFC6265 S5.1.1:
-   * 2. Process each date-token sequentially in the order the date-tokens
-   * appear in the cookie-date
-   */
-  const tokens = str.split(DATE_DELIM);
-  if (!tokens) {
-    return;
-  }
-
-  let hour = null;
-  let minute = null;
-  let second = null;
-  let dayOfMonth = null;
-  let month = null;
-  let year = null;
-
-  for (let i = 0; i < tokens.length; i++) {
-    const token = tokens[i].trim();
-    if (!token.length) {
-      continue;
-    }
-
-    let result;
-
-    /* 2.1. If the found-time flag is not set and the token matches the time
-     * production, set the found-time flag and set the hour- value,
-     * minute-value, and second-value to the numbers denoted by the digits in
-     * the date-token, respectively.  Skip the remaining sub-steps and continue
-     * to the next date-token.
-     */
-    if (second === null) {
-      result = parseTime(token);
-      if (result) {
-        hour = result[0];
-        minute = result[1];
-        second = result[2];
-        continue;
-      }
-    }
-
-    /* 2.2. If the found-day-of-month flag is not set and the date-token matches
-     * the day-of-month production, set the found-day-of- month flag and set
-     * the day-of-month-value to the number denoted by the date-token.  Skip
-     * the remaining sub-steps and continue to the next date-token.
-     */
-    if (dayOfMonth === null) {
-      // "day-of-month = 1*2DIGIT ( non-digit *OCTET )"
-      result = parseDigits(token, 1, 2, true);
-      if (result !== null) {
-        dayOfMonth = result;
-        continue;
-      }
-    }
-
-    /* 2.3. If the found-month flag is not set and the date-token matches the
-     * month production, set the found-month flag and set the month-value to
-     * the month denoted by the date-token.  Skip the remaining sub-steps and
-     * continue to the next date-token.
-     */
-    if (month === null) {
-      result = parseMonth(token);
-      if (result !== null) {
-        month = result;
-        continue;
-      }
-    }
-
-    /* 2.4. If the found-year flag is not set and the date-token matches the
-     * year production, set the found-year flag and set the year-value to the
-     * number denoted by the date-token.  Skip the remaining sub-steps and
-     * continue to the next date-token.
-     */
-    if (year === null) {
-      // "year = 2*4DIGIT ( non-digit *OCTET )"
-      result = parseDigits(token, 2, 4, true);
-      if (result !== null) {
-        year = result;
-        /* From S5.1.1:
-         * 3.  If the year-value is greater than or equal to 70 and less
-         * than or equal to 99, increment the year-value by 1900.
-         * 4.  If the year-value is greater than or equal to 0 and less
-         * than or equal to 69, increment the year-value by 2000.
-         */
-        if (year >= 70 && year <= 99) {
-          year += 1900;
-        } else if (year >= 0 && year <= 69) {
-          year += 2000;
-        }
-      }
-    }
-  }
-
-  /* RFC 6265 S5.1.1
-   * "5. Abort these steps and fail to parse the cookie-date if:
-   *     *  at least one of the found-day-of-month, found-month, found-
-   *        year, or found-time flags is not set,
-   *     *  the day-of-month-value is less than 1 or greater than 31,
-   *     *  the year-value is less than 1601,
-   *     *  the hour-value is greater than 23,
-   *     *  the minute-value is greater than 59, or
-   *     *  the second-value is greater than 59.
-   *     (Note that leap seconds cannot be represented in this syntax.)"
-   *
-   * So, in order as above:
-   */
-  if (
-    dayOfMonth === null ||
-    month === null ||
-    year === null ||
-    second === null ||
-    dayOfMonth < 1 ||
-    dayOfMonth > 31 ||
-    year < 1601 ||
-    hour > 23 ||
-    minute > 59 ||
-    second > 59
-  ) {
-    return;
-  }
-
-  return new Date(Date.UTC(year, month, dayOfMonth, hour, minute, second));
-}
-
-function formatDate(date) {
-  return date.toUTCString();
-}
-
-// S5.1.2 Canonicalized Host Names
-function canonicalDomain(str) {
-  if (str == null) {
-    return null;
-  }
-  str = str.trim().replace(/^\./, ""); // S4.1.2.3 & S5.2.3: ignore leading .
-
-  // convert to IDN if any non-ASCII characters
-  if (punycode && /[^\u0001-\u007f]/.test(str)) {
-    str = punycode.toASCII(str);
-  }
-
-  return str.toLowerCase();
-}
-
-// S5.1.3 Domain Matching
-function domainMatch(str, domStr, canonicalize) {
-  if (str == null || domStr == null) {
-    return null;
-  }
-  if (canonicalize !== false) {
-    str = canonicalDomain(str);
-    domStr = canonicalDomain(domStr);
-  }
-
-  /*
-   * S5.1.3:
-   * "A string domain-matches a given domain string if at least one of the
-   * following conditions hold:"
-   *
-   * " o The domain string and the string are identical. (Note that both the
-   * domain string and the string will have been canonicalized to lower case at
-   * this point)"
-   */
-  if (str == domStr) {
-    return true;
-  }
-
-  /* " o All of the following [three] conditions hold:" */
-
-  /* "* The domain string is a suffix of the string" */
-  const idx = str.indexOf(domStr);
-  if (idx <= 0) {
-    return false; // it's a non-match (-1) or prefix (0)
-  }
-
-  // next, check it's a proper suffix
-  // e.g., "a.b.c".indexOf("b.c") === 2
-  // 5 === 3+2
-  if (str.length !== domStr.length + idx) {
-    return false; // it's not a suffix
-  }
-
-  /* "  * The last character of the string that is not included in the
-   * domain string is a %x2E (".") character." */
-  if (str.substr(idx-1,1) !== '.') {
-    return false; // doesn't align on "."
-  }
-
-  /* "  * The string is a host name (i.e., not an IP address)." */
-  if (IP_REGEX_LOWERCASE.test(str)) {
-    return false; // it's an IP address
-  }
-
-  return true;
-}
-
-// RFC6265 S5.1.4 Paths and Path-Match
-
-/*
- * "The user agent MUST use an algorithm equivalent to the following algorithm
- * to compute the default-path of a cookie:"
- *
- * Assumption: the path (and not query part or absolute uri) is passed in.
- */
-function defaultPath(path) {
-  // "2. If the uri-path is empty or if the first character of the uri-path is not
-  // a %x2F ("/") character, output %x2F ("/") and skip the remaining steps.
-  if (!path || path.substr(0, 1) !== "/") {
-    return "/";
-  }
-
-  // "3. If the uri-path contains no more than one %x2F ("/") character, output
-  // %x2F ("/") and skip the remaining step."
-  if (path === "/") {
-    return path;
-  }
-
-  const rightSlash = path.lastIndexOf("/");
-  if (rightSlash === 0) {
-    return "/";
-  }
-
-  // "4. Output the characters of the uri-path from the first character up to,
-  // but not including, the right-most %x2F ("/")."
-  return path.slice(0, rightSlash);
-}
-
-function trimTerminator(str) {
-  for (let t = 0; t < TERMINATORS.length; t++) {
-    const terminatorIdx = str.indexOf(TERMINATORS[t]);
-    if (terminatorIdx !== -1) {
-      str = str.substr(0, terminatorIdx);
-    }
-  }
-
-  return str;
-}
-
-function parseCookiePair(cookiePair, looseMode) {
-  cookiePair = trimTerminator(cookiePair);
-
-  let firstEq = cookiePair.indexOf("=");
-  if (looseMode) {
-    if (firstEq === 0) {
-      // '=' is immediately at start
-      cookiePair = cookiePair.substr(1);
-      firstEq = cookiePair.indexOf("="); // might still need to split on '='
-    }
-  } else {
-    // non-loose mode
-    if (firstEq <= 0) {
-      // no '=' or is at start
-      return; // needs to have non-empty "cookie-name"
-    }
-  }
-
-  let cookieName, cookieValue;
-  if (firstEq <= 0) {
-    cookieName = "";
-    cookieValue = cookiePair.trim();
-  } else {
-    cookieName = cookiePair.substr(0, firstEq).trim();
-    cookieValue = cookiePair.substr(firstEq + 1).trim();
-  }
-
-  if (CONTROL_CHARS.test(cookieName) || CONTROL_CHARS.test(cookieValue)) {
-    return;
-  }
-
-  const c = new Cookie();
-  c.key = cookieName;
-  c.value = cookieValue;
-  return c;
-}
-
-function parse(str, options) {
-  if (!options || typeof options !== "object") {
-    options = {};
-  }
-  str = str.trim();
-
-  // We use a regex to parse the "name-value-pair" part of S5.2
-  const firstSemi = str.indexOf(";"); // S5.2 step 1
-  const cookiePair = firstSemi === -1 ? str : str.substr(0, firstSemi);
-  const c = parseCookiePair(cookiePair, !!options.loose);
-  if (!c) {
-    return;
-  }
-
-  if (firstSemi === -1) {
-    return c;
-  }
-
-  // S5.2.3 "unparsed-attributes consist of the remainder of the set-cookie-string
-  // (including the %x3B (";") in question)." plus later on in the same section
-  // "discard the first ";" and trim".
-  const unparsed = str.slice(firstSemi + 1).trim();
-
-  // "If the unparsed-attributes string is empty, skip the rest of these
-  // steps."
-  if (unparsed.length === 0) {
-    return c;
-  }
-
-  /*
-   * S5.2 says that when looping over the items "[p]rocess the attribute-name
-   * and attribute-value according to the requirements in the following
-   * subsections" for every item.  Plus, for many of the individual attributes
-   * in S5.3 it says to use the "attribute-value of the last attribute in the
-   * cookie-attribute-list".  Therefore, in this implementation, we overwrite
-   * the previous value.
-   */
-  const cookie_avs = unparsed.split(";");
-  while (cookie_avs.length) {
-    const av = cookie_avs.shift().trim();
-    if (av.length === 0) {
-      // happens if ";;" appears
-      continue;
-    }
-    const av_sep = av.indexOf("=");
-    let av_key, av_value;
-
-    if (av_sep === -1) {
-      av_key = av;
-      av_value = null;
-    } else {
-      av_key = av.substr(0, av_sep);
-      av_value = av.substr(av_sep + 1);
-    }
-
-    av_key = av_key.trim().toLowerCase();
-
-    if (av_value) {
-      av_value = av_value.trim();
-    }
-
-    switch (av_key) {
-      case "expires": // S5.2.1
-        if (av_value) {
-          const exp = parseDate(av_value);
-          // "If the attribute-value failed to parse as a cookie date, ignore the
-          // cookie-av."
-          if (exp) {
-            // over and underflow not realistically a concern: V8's getTime() seems to
-            // store something larger than a 32-bit time_t (even with 32-bit node)
-            c.expires = exp;
-          }
-        }
-        break;
-
-      case "max-age": // S5.2.2
-        if (av_value) {
-          // "If the first character of the attribute-value is not a DIGIT or a "-"
-          // character ...[or]... If the remainder of attribute-value contains a
-          // non-DIGIT character, ignore the cookie-av."
-          if (/^-?[0-9]+$/.test(av_value)) {
-            const delta = parseInt(av_value, 10);
-            // "If delta-seconds is less than or equal to zero (0), let expiry-time
-            // be the earliest representable date and time."
-            c.setMaxAge(delta);
-          }
-        }
-        break;
-
-      case "domain": // S5.2.3
-        // "If the attribute-value is empty, the behavior is undefined.  However,
-        // the user agent SHOULD ignore the cookie-av entirely."
-        if (av_value) {
-          // S5.2.3 "Let cookie-domain be the attribute-value without the leading %x2E
-          // (".") character."
-          const domain = av_value.trim().replace(/^\./, "");
-          if (domain) {
-            // "Convert the cookie-domain to lower case."
-            c.domain = domain.toLowerCase();
-          }
-        }
-        break;
-
-      case "path": // S5.2.4
-        /*
-         * "If the attribute-value is empty or if the first character of the
-         * attribute-value is not %x2F ("/"):
-         *   Let cookie-path be the default-path.
-         * Otherwise:
-         *   Let cookie-path be the attribute-value."
-         *
-         * We'll represent the default-path as null since it depends on the
-         * context of the parsing.
-         */
-        c.path = av_value && av_value[0] === "/" ? av_value : null;
-        break;
-
-      case "secure": // S5.2.5
-        /*
-         * "If the attribute-name case-insensitively matches the string "Secure",
-         * the user agent MUST append an attribute to the cookie-attribute-list
-         * with an attribute-name of Secure and an empty attribute-value."
-         */
-        c.secure = true;
-        break;
-
-      case "httponly": // S5.2.6 -- effectively the same as 'secure'
-        c.httpOnly = true;
-        break;
-
-      case "samesite": // RFC6265bis-02 S5.3.7
-        const enforcement = av_value ? av_value.toLowerCase() : "";
-        switch (enforcement) {
-          case "strict":
-            c.sameSite = "strict";
-            break;
-          case "lax":
-            c.sameSite = "lax";
-            break;
-          default:
-            // RFC6265bis-02 S5.3.7 step 1:
-            // "If cookie-av's attribute-value is not a case-insensitive match
-            //  for "Strict" or "Lax", ignore the "cookie-av"."
-            // This effectively sets it to 'none' from the prototype.
-            break;
-        }
-        break;
-
-      default:
-        c.extensions = c.extensions || [];
-        c.extensions.push(av);
-        break;
-    }
-  }
-
-  return c;
-}
-
+Object.defineProperty(exports, "__esModule", { value: true });
+const http = __webpack_require__(605);
+const https = __webpack_require__(211);
+const pm = __webpack_require__(195);
+let tunnel;
+var HttpCodes;
+(function (HttpCodes) {
+    HttpCodes[HttpCodes["OK"] = 200] = "OK";
+    HttpCodes[HttpCodes["MultipleChoices"] = 300] = "MultipleChoices";
+    HttpCodes[HttpCodes["MovedPermanently"] = 301] = "MovedPermanently";
+    HttpCodes[HttpCodes["ResourceMoved"] = 302] = "ResourceMoved";
+    HttpCodes[HttpCodes["SeeOther"] = 303] = "SeeOther";
+    HttpCodes[HttpCodes["NotModified"] = 304] = "NotModified";
+    HttpCodes[HttpCodes["UseProxy"] = 305] = "UseProxy";
+    HttpCodes[HttpCodes["SwitchProxy"] = 306] = "SwitchProxy";
+    HttpCodes[HttpCodes["TemporaryRedirect"] = 307] = "TemporaryRedirect";
+    HttpCodes[HttpCodes["PermanentRedirect"] = 308] = "PermanentRedirect";
+    HttpCodes[HttpCodes["BadRequest"] = 400] = "BadRequest";
+    HttpCodes[HttpCodes["Unauthorized"] = 401] = "Unauthorized";
+    HttpCodes[HttpCodes["PaymentRequired"] = 402] = "PaymentRequired";
+    HttpCodes[HttpCodes["Forbidden"] = 403] = "Forbidden";
+    HttpCodes[HttpCodes["NotFound"] = 404] = "NotFound";
+    HttpCodes[HttpCodes["MethodNotAllowed"] = 405] = "MethodNotAllowed";
+    HttpCodes[HttpCodes["NotAcceptable"] = 406] = "NotAcceptable";
+    HttpCodes[HttpCodes["ProxyAuthenticationRequired"] = 407] = "ProxyAuthenticationRequired";
+    HttpCodes[HttpCodes["RequestTimeout"] = 408] = "RequestTimeout";
+    HttpCodes[HttpCodes["Conflict"] = 409] = "Conflict";
+    HttpCodes[HttpCodes["Gone"] = 410] = "Gone";
+    HttpCodes[HttpCodes["TooManyRequests"] = 429] = "TooManyRequests";
+    HttpCodes[HttpCodes["InternalServerError"] = 500] = "InternalServerError";
+    HttpCodes[HttpCodes["NotImplemented"] = 501] = "NotImplemented";
+    HttpCodes[HttpCodes["BadGateway"] = 502] = "BadGateway";
+    HttpCodes[HttpCodes["ServiceUnavailable"] = 503] = "ServiceUnavailable";
+    HttpCodes[HttpCodes["GatewayTimeout"] = 504] = "GatewayTimeout";
+})(HttpCodes = exports.HttpCodes || (exports.HttpCodes = {}));
+var Headers;
+(function (Headers) {
+    Headers["Accept"] = "accept";
+    Headers["ContentType"] = "content-type";
+})(Headers = exports.Headers || (exports.Headers = {}));
+var MediaTypes;
+(function (MediaTypes) {
+    MediaTypes["ApplicationJson"] = "application/json";
+})(MediaTypes = exports.MediaTypes || (exports.MediaTypes = {}));
 /**
- *  If the cookie-name begins with a case-sensitive match for the
- *  string "__Secure-", abort these steps and ignore the cookie
- *  entirely unless the cookie's secure-only-flag is true.
- * @param cookie
- * @returns boolean
+ * Returns the proxy URL, depending upon the supplied url and proxy environment variables.
+ * @param serverUrl  The server URL where the request will be sent. For example, https://api.github.com
  */
-function isSecurePrefixConditionMet(cookie) {
-  return !cookie.key.startsWith("__Secure-") || cookie.secure;
+function getProxyUrl(serverUrl) {
+    let proxyUrl = pm.getProxyUrl(new URL(serverUrl));
+    return proxyUrl ? proxyUrl.href : '';
 }
-
-/**
- *  If the cookie-name begins with a case-sensitive match for the
- *  string "__Host-", abort these steps and ignore the cookie
- *  entirely unless the cookie meets all the following criteria:
- *    1.  The cookie's secure-only-flag is true.
- *    2.  The cookie's host-only-flag is true.
- *    3.  The cookie-attribute-list contains an attribute with an
- *        attribute-name of "Path", and the cookie's path is "/".
- * @param cookie
- * @returns boolean
- */
-function isHostPrefixConditionMet(cookie) {
-  return (
-    !cookie.key.startsWith("__Host-") ||
-    (cookie.secure &&
-      cookie.hostOnly &&
-      cookie.path != null &&
-      cookie.path === "/")
-  );
-}
-
-// avoid the V8 deoptimization monster!
-function jsonParse(str) {
-  let obj;
-  try {
-    obj = JSON.parse(str);
-  } catch (e) {
-    return e;
-  }
-  return obj;
-}
-
-function fromJSON(str) {
-  if (!str) {
-    return null;
-  }
-
-  let obj;
-  if (typeof str === "string") {
-    obj = jsonParse(str);
-    if (obj instanceof Error) {
-      return null;
+exports.getProxyUrl = getProxyUrl;
+const HttpRedirectCodes = [
+    HttpCodes.MovedPermanently,
+    HttpCodes.ResourceMoved,
+    HttpCodes.SeeOther,
+    HttpCodes.TemporaryRedirect,
+    HttpCodes.PermanentRedirect
+];
+const HttpResponseRetryCodes = [
+    HttpCodes.BadGateway,
+    HttpCodes.ServiceUnavailable,
+    HttpCodes.GatewayTimeout
+];
+const RetryableHttpVerbs = ['OPTIONS', 'GET', 'DELETE', 'HEAD'];
+const ExponentialBackoffCeiling = 10;
+const ExponentialBackoffTimeSlice = 5;
+class HttpClientError extends Error {
+    constructor(message, statusCode) {
+        super(message);
+        this.name = 'HttpClientError';
+        this.statusCode = statusCode;
+        Object.setPrototypeOf(this, HttpClientError.prototype);
     }
-  } else {
-    // assume it's an Object
-    obj = str;
-  }
-
-  const c = new Cookie();
-  for (let i = 0; i < Cookie.serializableProperties.length; i++) {
-    const prop = Cookie.serializableProperties[i];
-    if (obj[prop] === undefined || obj[prop] === cookieDefaults[prop]) {
-      continue; // leave as prototype default
-    }
-
-    if (prop === "expires" || prop === "creation" || prop === "lastAccessed") {
-      if (obj[prop] === null) {
-        c[prop] = null;
-      } else {
-        c[prop] = obj[prop] == "Infinity" ? "Infinity" : new Date(obj[prop]);
-      }
-    } else {
-      c[prop] = obj[prop];
-    }
-  }
-
-  return c;
 }
-
-/* Section 5.4 part 2:
- * "*  Cookies with longer paths are listed before cookies with
- *     shorter paths.
- *
- *  *  Among cookies that have equal-length path fields, cookies with
- *     earlier creation-times are listed before cookies with later
- *     creation-times."
- */
-
-function cookieCompare(a, b) {
-  let cmp = 0;
-
-  // descending for length: b CMP a
-  const aPathLen = a.path ? a.path.length : 0;
-  const bPathLen = b.path ? b.path.length : 0;
-  cmp = bPathLen - aPathLen;
-  if (cmp !== 0) {
-    return cmp;
-  }
-
-  // ascending for time: a CMP b
-  const aTime = a.creation ? a.creation.getTime() : MAX_TIME;
-  const bTime = b.creation ? b.creation.getTime() : MAX_TIME;
-  cmp = aTime - bTime;
-  if (cmp !== 0) {
-    return cmp;
-  }
-
-  // break ties for the same millisecond (precision of JavaScript's clock)
-  cmp = a.creationIndex - b.creationIndex;
-
-  return cmp;
-}
-
-// Gives the permutation of all possible pathMatch()es of a given path. The
-// array is in longest-to-shortest order.  Handy for indexing.
-function permutePath(path) {
-  if (path === "/") {
-    return ["/"];
-  }
-  const permutations = [path];
-  while (path.length > 1) {
-    const lindex = path.lastIndexOf("/");
-    if (lindex === 0) {
-      break;
+exports.HttpClientError = HttpClientError;
+class HttpClientResponse {
+    constructor(message) {
+        this.message = message;
     }
-    path = path.substr(0, lindex);
-    permutations.push(path);
-  }
-  permutations.push("/");
-  return permutations;
-}
-
-function getCookieContext(url) {
-  if (url instanceof Object) {
-    return url;
-  }
-  // NOTE: decodeURI will throw on malformed URIs (see GH-32).
-  // Therefore, we will just skip decoding for such URIs.
-  try {
-    url = decodeURI(url);
-  } catch (err) {
-    // Silently swallow error
-  }
-
-  return urlParse(url);
-}
-
-const cookieDefaults = {
-  // the order in which the RFC has them:
-  key: "",
-  value: "",
-  expires: "Infinity",
-  maxAge: null,
-  domain: null,
-  path: null,
-  secure: false,
-  httpOnly: false,
-  extensions: null,
-  // set by the CookieJar:
-  hostOnly: null,
-  pathIsDefault: null,
-  creation: null,
-  lastAccessed: null,
-  sameSite: "none"
-};
-
-class Cookie {
-  constructor(options = {}) {
-    if (util.inspect.custom) {
-      this[util.inspect.custom] = this.inspect;
+    readBody() {
+        return new Promise(async (resolve, reject) => {
+            let output = Buffer.alloc(0);
+            this.message.on('data', (chunk) => {
+                output = Buffer.concat([output, chunk]);
+            });
+            this.message.on('end', () => {
+                resolve(output.toString());
+            });
+        });
     }
-
-    Object.assign(this, cookieDefaults, options);
-    this.creation = this.creation || new Date();
-
-    // used to break creation ties in cookieCompare():
-    Object.defineProperty(this, "creationIndex", {
-      configurable: false,
-      enumerable: false, // important for assert.deepEqual checks
-      writable: true,
-      value: ++Cookie.cookiesCreated
-    });
-  }
-
-  inspect() {
-    const now = Date.now();
-    const hostOnly = this.hostOnly != null ? this.hostOnly : "?";
-    const createAge = this.creation
-      ? `${now - this.creation.getTime()}ms`
-      : "?";
-    const accessAge = this.lastAccessed
-      ? `${now - this.lastAccessed.getTime()}ms`
-      : "?";
-    return `Cookie="${this.toString()}; hostOnly=${hostOnly}; aAge=${accessAge}; cAge=${createAge}"`;
-  }
-
-  toJSON() {
-    const obj = {};
-
-    for (const prop of Cookie.serializableProperties) {
-      if (this[prop] === cookieDefaults[prop]) {
-        continue; // leave as prototype default
-      }
-
-      if (
-        prop === "expires" ||
-        prop === "creation" ||
-        prop === "lastAccessed"
-      ) {
-        if (this[prop] === null) {
-          obj[prop] = null;
-        } else {
-          obj[prop] =
-            this[prop] == "Infinity" // intentionally not ===
-              ? "Infinity"
-              : this[prop].toISOString();
+}
+exports.HttpClientResponse = HttpClientResponse;
+function isHttps(requestUrl) {
+    let parsedUrl = new URL(requestUrl);
+    return parsedUrl.protocol === 'https:';
+}
+exports.isHttps = isHttps;
+class HttpClient {
+    constructor(userAgent, handlers, requestOptions) {
+        this._ignoreSslError = false;
+        this._allowRedirects = true;
+        this._allowRedirectDowngrade = false;
+        this._maxRedirects = 50;
+        this._allowRetries = false;
+        this._maxRetries = 1;
+        this._keepAlive = false;
+        this._disposed = false;
+        this.userAgent = userAgent;
+        this.handlers = handlers || [];
+        this.requestOptions = requestOptions;
+        if (requestOptions) {
+            if (requestOptions.ignoreSslError != null) {
+                this._ignoreSslError = requestOptions.ignoreSslError;
+            }
+            this._socketTimeout = requestOptions.socketTimeout;
+            if (requestOptions.allowRedirects != null) {
+                this._allowRedirects = requestOptions.allowRedirects;
+            }
+            if (requestOptions.allowRedirectDowngrade != null) {
+                this._allowRedirectDowngrade = requestOptions.allowRedirectDowngrade;
+            }
+            if (requestOptions.maxRedirects != null) {
+                this._maxRedirects = Math.max(requestOptions.maxRedirects, 0);
+            }
+            if (requestOptions.keepAlive != null) {
+                this._keepAlive = requestOptions.keepAlive;
+            }
+            if (requestOptions.allowRetries != null) {
+                this._allowRetries = requestOptions.allowRetries;
+            }
+            if (requestOptions.maxRetries != null) {
+                this._maxRetries = requestOptions.maxRetries;
+            }
         }
-      } else if (prop === "maxAge") {
-        if (this[prop] !== null) {
-          // again, intentionally not ===
-          obj[prop] =
-            this[prop] == Infinity || this[prop] == -Infinity
-              ? this[prop].toString()
-              : this[prop];
-        }
-      } else {
-        if (this[prop] !== cookieDefaults[prop]) {
-          obj[prop] = this[prop];
-        }
-      }
     }
-
-    return obj;
-  }
-
-  clone() {
-    return fromJSON(this.toJSON());
-  }
-
-  validate() {
-    if (!COOKIE_OCTETS.test(this.value)) {
-      return false;
+    options(requestUrl, additionalHeaders) {
+        return this.request('OPTIONS', requestUrl, null, additionalHeaders || {});
     }
-    if (
-      this.expires != Infinity &&
-      !(this.expires instanceof Date) &&
-      !parseDate(this.expires)
-    ) {
-      return false;
+    get(requestUrl, additionalHeaders) {
+        return this.request('GET', requestUrl, null, additionalHeaders || {});
     }
-    if (this.maxAge != null && this.maxAge <= 0) {
-      return false; // "Max-Age=" non-zero-digit *DIGIT
+    del(requestUrl, additionalHeaders) {
+        return this.request('DELETE', requestUrl, null, additionalHeaders || {});
     }
-    if (this.path != null && !PATH_VALUE.test(this.path)) {
-      return false;
+    post(requestUrl, data, additionalHeaders) {
+        return this.request('POST', requestUrl, data, additionalHeaders || {});
     }
-
-    const cdomain = this.cdomain();
-    if (cdomain) {
-      if (cdomain.match(/\.$/)) {
-        return false; // S4.1.2.3 suggests that this is bad. domainMatch() tests confirm this
-      }
-      const suffix = pubsuffix.getPublicSuffix(cdomain);
-      if (suffix == null) {
-        // it's a public suffix
-        return false;
-      }
+    patch(requestUrl, data, additionalHeaders) {
+        return this.request('PATCH', requestUrl, data, additionalHeaders || {});
     }
-    return true;
-  }
-
-  setExpires(exp) {
-    if (exp instanceof Date) {
-      this.expires = exp;
-    } else {
-      this.expires = parseDate(exp) || "Infinity";
+    put(requestUrl, data, additionalHeaders) {
+        return this.request('PUT', requestUrl, data, additionalHeaders || {});
     }
-  }
-
-  setMaxAge(age) {
-    if (age === Infinity || age === -Infinity) {
-      this.maxAge = age.toString(); // so JSON.stringify() works
-    } else {
-      this.maxAge = age;
+    head(requestUrl, additionalHeaders) {
+        return this.request('HEAD', requestUrl, null, additionalHeaders || {});
     }
-  }
-
-  cookieString() {
-    let val = this.value;
-    if (val == null) {
-      val = "";
+    sendStream(verb, requestUrl, stream, additionalHeaders) {
+        return this.request(verb, requestUrl, stream, additionalHeaders);
     }
-    if (this.key === "") {
-      return val;
-    }
-    return `${this.key}=${val}`;
-  }
-
-  // gives Set-Cookie header format
-  toString() {
-    let str = this.cookieString();
-
-    if (this.expires != Infinity) {
-      if (this.expires instanceof Date) {
-        str += `; Expires=${formatDate(this.expires)}`;
-      } else {
-        str += `; Expires=${this.expires}`;
-      }
-    }
-
-    if (this.maxAge != null && this.maxAge != Infinity) {
-      str += `; Max-Age=${this.maxAge}`;
-    }
-
-    if (this.domain && !this.hostOnly) {
-      str += `; Domain=${this.domain}`;
-    }
-    if (this.path) {
-      str += `; Path=${this.path}`;
-    }
-
-    if (this.secure) {
-      str += "; Secure";
-    }
-    if (this.httpOnly) {
-      str += "; HttpOnly";
-    }
-    if (this.sameSite && this.sameSite !== "none") {
-      const ssCanon = Cookie.sameSiteCanonical[this.sameSite.toLowerCase()];
-      str += `; SameSite=${ssCanon ? ssCanon : this.sameSite}`;
-    }
-    if (this.extensions) {
-      this.extensions.forEach(ext => {
-        str += `; ${ext}`;
-      });
-    }
-
-    return str;
-  }
-
-  // TTL() partially replaces the "expiry-time" parts of S5.3 step 3 (setCookie()
-  // elsewhere)
-  // S5.3 says to give the "latest representable date" for which we use Infinity
-  // For "expired" we use 0
-  TTL(now) {
-    /* RFC6265 S4.1.2.2 If a cookie has both the Max-Age and the Expires
-     * attribute, the Max-Age attribute has precedence and controls the
-     * expiration date of the cookie.
-     * (Concurs with S5.3 step 3)
+    /**
+     * Gets a typed object from an endpoint
+     * Be aware that not found returns a null.  Other errors (4xx, 5xx) reject the promise
      */
-    if (this.maxAge != null) {
-      return this.maxAge <= 0 ? 0 : this.maxAge * 1000;
+    async getJson(requestUrl, additionalHeaders = {}) {
+        additionalHeaders[Headers.Accept] = this._getExistingOrDefaultHeader(additionalHeaders, Headers.Accept, MediaTypes.ApplicationJson);
+        let res = await this.get(requestUrl, additionalHeaders);
+        return this._processResponse(res, this.requestOptions);
     }
-
-    let expires = this.expires;
-    if (expires != Infinity) {
-      if (!(expires instanceof Date)) {
-        expires = parseDate(expires) || Infinity;
-      }
-
-      if (expires == Infinity) {
-        return Infinity;
-      }
-
-      return expires.getTime() - (now || Date.now());
+    async postJson(requestUrl, obj, additionalHeaders = {}) {
+        let data = JSON.stringify(obj, null, 2);
+        additionalHeaders[Headers.Accept] = this._getExistingOrDefaultHeader(additionalHeaders, Headers.Accept, MediaTypes.ApplicationJson);
+        additionalHeaders[Headers.ContentType] = this._getExistingOrDefaultHeader(additionalHeaders, Headers.ContentType, MediaTypes.ApplicationJson);
+        let res = await this.post(requestUrl, data, additionalHeaders);
+        return this._processResponse(res, this.requestOptions);
     }
-
-    return Infinity;
-  }
-
-  // expiryTime() replaces the "expiry-time" parts of S5.3 step 3 (setCookie()
-  // elsewhere)
-  expiryTime(now) {
-    if (this.maxAge != null) {
-      const relativeTo = now || this.creation || new Date();
-      const age = this.maxAge <= 0 ? -Infinity : this.maxAge * 1000;
-      return relativeTo.getTime() + age;
+    async putJson(requestUrl, obj, additionalHeaders = {}) {
+        let data = JSON.stringify(obj, null, 2);
+        additionalHeaders[Headers.Accept] = this._getExistingOrDefaultHeader(additionalHeaders, Headers.Accept, MediaTypes.ApplicationJson);
+        additionalHeaders[Headers.ContentType] = this._getExistingOrDefaultHeader(additionalHeaders, Headers.ContentType, MediaTypes.ApplicationJson);
+        let res = await this.put(requestUrl, data, additionalHeaders);
+        return this._processResponse(res, this.requestOptions);
     }
-
-    if (this.expires == Infinity) {
-      return Infinity;
+    async patchJson(requestUrl, obj, additionalHeaders = {}) {
+        let data = JSON.stringify(obj, null, 2);
+        additionalHeaders[Headers.Accept] = this._getExistingOrDefaultHeader(additionalHeaders, Headers.Accept, MediaTypes.ApplicationJson);
+        additionalHeaders[Headers.ContentType] = this._getExistingOrDefaultHeader(additionalHeaders, Headers.ContentType, MediaTypes.ApplicationJson);
+        let res = await this.patch(requestUrl, data, additionalHeaders);
+        return this._processResponse(res, this.requestOptions);
     }
-    return this.expires.getTime();
-  }
-
-  // expiryDate() replaces the "expiry-time" parts of S5.3 step 3 (setCookie()
-  // elsewhere), except it returns a Date
-  expiryDate(now) {
-    const millisec = this.expiryTime(now);
-    if (millisec == Infinity) {
-      return new Date(MAX_TIME);
-    } else if (millisec == -Infinity) {
-      return new Date(MIN_TIME);
-    } else {
-      return new Date(millisec);
+    /**
+     * Makes a raw http request.
+     * All other methods such as get, post, patch, and request ultimately call this.
+     * Prefer get, del, post and patch
+     */
+    async request(verb, requestUrl, data, headers) {
+        if (this._disposed) {
+            throw new Error('Client has already been disposed.');
+        }
+        let parsedUrl = new URL(requestUrl);
+        let info = this._prepareRequest(verb, parsedUrl, headers);
+        // Only perform retries on reads since writes may not be idempotent.
+        let maxTries = this._allowRetries && RetryableHttpVerbs.indexOf(verb) != -1
+            ? this._maxRetries + 1
+            : 1;
+        let numTries = 0;
+        let response;
+        while (numTries < maxTries) {
+            response = await this.requestRaw(info, data);
+            // Check if it's an authentication challenge
+            if (response &&
+                response.message &&
+                response.message.statusCode === HttpCodes.Unauthorized) {
+                let authenticationHandler;
+                for (let i = 0; i < this.handlers.length; i++) {
+                    if (this.handlers[i].canHandleAuthentication(response)) {
+                        authenticationHandler = this.handlers[i];
+                        break;
+                    }
+                }
+                if (authenticationHandler) {
+                    return authenticationHandler.handleAuthentication(this, info, data);
+                }
+                else {
+                    // We have received an unauthorized response but have no handlers to handle it.
+                    // Let the response return to the caller.
+                    return response;
+                }
+            }
+            let redirectsRemaining = this._maxRedirects;
+            while (HttpRedirectCodes.indexOf(response.message.statusCode) != -1 &&
+                this._allowRedirects &&
+                redirectsRemaining > 0) {
+                const redirectUrl = response.message.headers['location'];
+                if (!redirectUrl) {
+                    // if there's no location to redirect to, we won't
+                    break;
+                }
+                let parsedRedirectUrl = new URL(redirectUrl);
+                if (parsedUrl.protocol == 'https:' &&
+                    parsedUrl.protocol != parsedRedirectUrl.protocol &&
+                    !this._allowRedirectDowngrade) {
+                    throw new Error('Redirect from HTTPS to HTTP protocol. This downgrade is not allowed for security reasons. If you want to allow this behavior, set the allowRedirectDowngrade option to true.');
+                }
+                // we need to finish reading the response before reassigning response
+                // which will leak the open socket.
+                await response.readBody();
+                // strip authorization header if redirected to a different hostname
+                if (parsedRedirectUrl.hostname !== parsedUrl.hostname) {
+                    for (let header in headers) {
+                        // header names are case insensitive
+                        if (header.toLowerCase() === 'authorization') {
+                            delete headers[header];
+                        }
+                    }
+                }
+                // let's make the request with the new redirectUrl
+                info = this._prepareRequest(verb, parsedRedirectUrl, headers);
+                response = await this.requestRaw(info, data);
+                redirectsRemaining--;
+            }
+            if (HttpResponseRetryCodes.indexOf(response.message.statusCode) == -1) {
+                // If not a retry code, return immediately instead of retrying
+                return response;
+            }
+            numTries += 1;
+            if (numTries < maxTries) {
+                await response.readBody();
+                await this._performExponentialBackoff(numTries);
+            }
+        }
+        return response;
     }
-  }
-
-  // This replaces the "persistent-flag" parts of S5.3 step 3
-  isPersistent() {
-    return this.maxAge != null || this.expires != Infinity;
-  }
-
-  // Mostly S5.1.2 and S5.2.3:
-  canonicalizedDomain() {
-    if (this.domain == null) {
-      return null;
+    /**
+     * Needs to be called if keepAlive is set to true in request options.
+     */
+    dispose() {
+        if (this._agent) {
+            this._agent.destroy();
+        }
+        this._disposed = true;
     }
-    return canonicalDomain(this.domain);
-  }
-
-  cdomain() {
-    return this.canonicalizedDomain();
-  }
+    /**
+     * Raw request.
+     * @param info
+     * @param data
+     */
+    requestRaw(info, data) {
+        return new Promise((resolve, reject) => {
+            let callbackForResult = function (err, res) {
+                if (err) {
+                    reject(err);
+                }
+                resolve(res);
+            };
+            this.requestRawWithCallback(info, data, callbackForResult);
+        });
+    }
+    /**
+     * Raw request with callback.
+     * @param info
+     * @param data
+     * @param onResult
+     */
+    requestRawWithCallback(info, data, onResult) {
+        let socket;
+        if (typeof data === 'string') {
+            info.options.headers['Content-Length'] = Buffer.byteLength(data, 'utf8');
+        }
+        let callbackCalled = false;
+        let handleResult = (err, res) => {
+            if (!callbackCalled) {
+                callbackCalled = true;
+                onResult(err, res);
+            }
+        };
+        let req = info.httpModule.request(info.options, (msg) => {
+            let res = new HttpClientResponse(msg);
+            handleResult(null, res);
+        });
+        req.on('socket', sock => {
+            socket = sock;
+        });
+        // If we ever get disconnected, we want the socket to timeout eventually
+        req.setTimeout(this._socketTimeout || 3 * 60000, () => {
+            if (socket) {
+                socket.end();
+            }
+            handleResult(new Error('Request timeout: ' + info.options.path), null);
+        });
+        req.on('error', function (err) {
+            // err has statusCode property
+            // res should have headers
+            handleResult(err, null);
+        });
+        if (data && typeof data === 'string') {
+            req.write(data, 'utf8');
+        }
+        if (data && typeof data !== 'string') {
+            data.on('close', function () {
+                req.end();
+            });
+            data.pipe(req);
+        }
+        else {
+            req.end();
+        }
+    }
+    /**
+     * Gets an http agent. This function is useful when you need an http agent that handles
+     * routing through a proxy server - depending upon the url and proxy environment variables.
+     * @param serverUrl  The server URL where the request will be sent. For example, https://api.github.com
+     */
+    getAgent(serverUrl) {
+        let parsedUrl = new URL(serverUrl);
+        return this._getAgent(parsedUrl);
+    }
+    _prepareRequest(method, requestUrl, headers) {
+        const info = {};
+        info.parsedUrl = requestUrl;
+        const usingSsl = info.parsedUrl.protocol === 'https:';
+        info.httpModule = usingSsl ? https : http;
+        const defaultPort = usingSsl ? 443 : 80;
+        info.options = {};
+        info.options.host = info.parsedUrl.hostname;
+        info.options.port = info.parsedUrl.port
+            ? parseInt(info.parsedUrl.port)
+            : defaultPort;
+        info.options.path =
+            (info.parsedUrl.pathname || '') + (info.parsedUrl.search || '');
+        info.options.method = method;
+        info.options.headers = this._mergeHeaders(headers);
+        if (this.userAgent != null) {
+            info.options.headers['user-agent'] = this.userAgent;
+        }
+        info.options.agent = this._getAgent(info.parsedUrl);
+        // gives handlers an opportunity to participate
+        if (this.handlers) {
+            this.handlers.forEach(handler => {
+                handler.prepareRequest(info.options);
+            });
+        }
+        return info;
+    }
+    _mergeHeaders(headers) {
+        const lowercaseKeys = obj => Object.keys(obj).reduce((c, k) => ((c[k.toLowerCase()] = obj[k]), c), {});
+        if (this.requestOptions && this.requestOptions.headers) {
+            return Object.assign({}, lowercaseKeys(this.requestOptions.headers), lowercaseKeys(headers));
+        }
+        return lowercaseKeys(headers || {});
+    }
+    _getExistingOrDefaultHeader(additionalHeaders, header, _default) {
+        const lowercaseKeys = obj => Object.keys(obj).reduce((c, k) => ((c[k.toLowerCase()] = obj[k]), c), {});
+        let clientHeader;
+        if (this.requestOptions && this.requestOptions.headers) {
+            clientHeader = lowercaseKeys(this.requestOptions.headers)[header];
+        }
+        return additionalHeaders[header] || clientHeader || _default;
+    }
+    _getAgent(parsedUrl) {
+        let agent;
+        let proxyUrl = pm.getProxyUrl(parsedUrl);
+        let useProxy = proxyUrl && proxyUrl.hostname;
+        if (this._keepAlive && useProxy) {
+            agent = this._proxyAgent;
+        }
+        if (this._keepAlive && !useProxy) {
+            agent = this._agent;
+        }
+        // if agent is already assigned use that agent.
+        if (!!agent) {
+            return agent;
+        }
+        const usingSsl = parsedUrl.protocol === 'https:';
+        let maxSockets = 100;
+        if (!!this.requestOptions) {
+            maxSockets = this.requestOptions.maxSockets || http.globalAgent.maxSockets;
+        }
+        if (useProxy) {
+            // If using proxy, need tunnel
+            if (!tunnel) {
+                tunnel = __webpack_require__(395);
+            }
+            const agentOptions = {
+                maxSockets: maxSockets,
+                keepAlive: this._keepAlive,
+                proxy: {
+                    ...((proxyUrl.username || proxyUrl.password) && {
+                        proxyAuth: `${proxyUrl.username}:${proxyUrl.password}`
+                    }),
+                    host: proxyUrl.hostname,
+                    port: proxyUrl.port
+                }
+            };
+            let tunnelAgent;
+            const overHttps = proxyUrl.protocol === 'https:';
+            if (usingSsl) {
+                tunnelAgent = overHttps ? tunnel.httpsOverHttps : tunnel.httpsOverHttp;
+            }
+            else {
+                tunnelAgent = overHttps ? tunnel.httpOverHttps : tunnel.httpOverHttp;
+            }
+            agent = tunnelAgent(agentOptions);
+            this._proxyAgent = agent;
+        }
+        // if reusing agent across request and tunneling agent isn't assigned create a new agent
+        if (this._keepAlive && !agent) {
+            const options = { keepAlive: this._keepAlive, maxSockets: maxSockets };
+            agent = usingSsl ? new https.Agent(options) : new http.Agent(options);
+            this._agent = agent;
+        }
+        // if not using private agent and tunnel agent isn't setup then use global agent
+        if (!agent) {
+            agent = usingSsl ? https.globalAgent : http.globalAgent;
+        }
+        if (usingSsl && this._ignoreSslError) {
+            // we don't want to set NODE_TLS_REJECT_UNAUTHORIZED=0 since that will affect request for entire process
+            // http.RequestOptions doesn't expose a way to modify RequestOptions.agent.options
+            // we have to cast it to any and change it directly
+            agent.options = Object.assign(agent.options || {}, {
+                rejectUnauthorized: false
+            });
+        }
+        return agent;
+    }
+    _performExponentialBackoff(retryNumber) {
+        retryNumber = Math.min(ExponentialBackoffCeiling, retryNumber);
+        const ms = ExponentialBackoffTimeSlice * Math.pow(2, retryNumber);
+        return new Promise(resolve => setTimeout(() => resolve(), ms));
+    }
+    static dateTimeDeserializer(key, value) {
+        if (typeof value === 'string') {
+            let a = new Date(value);
+            if (!isNaN(a.valueOf())) {
+                return a;
+            }
+        }
+        return value;
+    }
+    async _processResponse(res, options) {
+        return new Promise(async (resolve, reject) => {
+            const statusCode = res.message.statusCode;
+            const response = {
+                statusCode: statusCode,
+                result: null,
+                headers: {}
+            };
+            // not found leads to null obj returned
+            if (statusCode == HttpCodes.NotFound) {
+                resolve(response);
+            }
+            let obj;
+            let contents;
+            // get the result from the body
+            try {
+                contents = await res.readBody();
+                if (contents && contents.length > 0) {
+                    if (options && options.deserializeDates) {
+                        obj = JSON.parse(contents, HttpClient.dateTimeDeserializer);
+                    }
+                    else {
+                        obj = JSON.parse(contents);
+                    }
+                    response.result = obj;
+                }
+                response.headers = res.message.headers;
+            }
+            catch (err) {
+                // Invalid resource (contents not json);  leaving result obj null
+            }
+            // note that 3xx redirects are handled by the http layer.
+            if (statusCode > 299) {
+                let msg;
+                // if exception/error in body, attempt to get better error
+                if (obj && obj.message) {
+                    msg = obj.message;
+                }
+                else if (contents && contents.length > 0) {
+                    // it may be the case that the exception is in the body message as string
+                    msg = contents;
+                }
+                else {
+                    msg = 'Failed request: (' + statusCode + ')';
+                }
+                let err = new HttpClientError(msg, statusCode);
+                err.result = response.result;
+                reject(err);
+            }
+            else {
+                resolve(response);
+            }
+        });
+    }
 }
-
-Cookie.cookiesCreated = 0;
-Cookie.parse = parse;
-Cookie.fromJSON = fromJSON;
-Cookie.serializableProperties = Object.keys(cookieDefaults);
-Cookie.sameSiteLevel = {
-  strict: 3,
-  lax: 2,
-  none: 1
-};
-
-Cookie.sameSiteCanonical = {
-  strict: "Strict",
-  lax: "Lax"
-};
-
-function getNormalizedPrefixSecurity(prefixSecurity) {
-  if (prefixSecurity != null) {
-    const normalizedPrefixSecurity = prefixSecurity.toLowerCase();
-    /* The three supported options */
-    switch (normalizedPrefixSecurity) {
-      case PrefixSecurityEnum.STRICT:
-      case PrefixSecurityEnum.SILENT:
-      case PrefixSecurityEnum.DISABLED:
-        return normalizedPrefixSecurity;
-    }
-  }
-  /* Default is SILENT */
-  return PrefixSecurityEnum.SILENT;
-}
-
-class CookieJar {
-  constructor(store, options = { rejectPublicSuffixes: true }) {
-    if (typeof options === "boolean") {
-      options = { rejectPublicSuffixes: options };
-    }
-    this.rejectPublicSuffixes = options.rejectPublicSuffixes;
-    this.enableLooseMode = !!options.looseMode;
-    this.allowSpecialUseDomain = !!options.allowSpecialUseDomain;
-    this.store = store || new MemoryCookieStore();
-    this.prefixSecurity = getNormalizedPrefixSecurity(options.prefixSecurity);
-    this._cloneSync = syncWrap("clone");
-    this._importCookiesSync = syncWrap("_importCookies");
-    this.getCookiesSync = syncWrap("getCookies");
-    this.getCookieStringSync = syncWrap("getCookieString");
-    this.getSetCookieStringsSync = syncWrap("getSetCookieStrings");
-    this.removeAllCookiesSync = syncWrap("removeAllCookies");
-    this.setCookieSync = syncWrap("setCookie");
-    this.serializeSync = syncWrap("serialize");
-  }
-
-  setCookie(cookie, url, options, cb) {
-    let err;
-    const context = getCookieContext(url);
-    if (typeof options === "function") {
-      cb = options;
-      options = {};
-    }
-
-    const host = canonicalDomain(context.hostname);
-    const loose = options.loose || this.enableLooseMode;
-
-    let sameSiteContext = null;
-    if (options.sameSiteContext) {
-      sameSiteContext = checkSameSiteContext(options.sameSiteContext);
-      if (!sameSiteContext) {
-        return cb(new Error(SAME_SITE_CONTEXT_VAL_ERR));
-      }
-    }
-
-    // S5.3 step 1
-    if (typeof cookie === "string" || cookie instanceof String) {
-      cookie = Cookie.parse(cookie, { loose: loose });
-      if (!cookie) {
-        err = new Error("Cookie failed to parse");
-        return cb(options.ignoreError ? null : err);
-      }
-    } else if (!(cookie instanceof Cookie)) {
-      // If you're seeing this error, and are passing in a Cookie object,
-      // it *might* be a Cookie object from another loaded version of tough-cookie.
-      err = new Error(
-        "First argument to setCookie must be a Cookie object or string"
-      );
-      return cb(options.ignoreError ? null : err);
-    }
-
-    // S5.3 step 2
-    const now = options.now || new Date(); // will assign later to save effort in the face of errors
-
-    // S5.3 step 3: NOOP; persistent-flag and expiry-time is handled by getCookie()
-
-    // S5.3 step 4: NOOP; domain is null by default
-
-    // S5.3 step 5: public suffixes
-    if (this.rejectPublicSuffixes && cookie.domain) {
-      const suffix = pubsuffix.getPublicSuffix(cookie.cdomain());
-      if (suffix == null) {
-        // e.g. "com"
-        err = new Error("Cookie has domain set to a public suffix");
-        return cb(options.ignoreError ? null : err);
-      }
-    }
-
-    // S5.3 step 6:
-    if (cookie.domain) {
-      if (!domainMatch(host, cookie.cdomain(), false)) {
-        err = new Error(
-          `Cookie not in this host's domain. Cookie:${cookie.cdomain()} Request:${host}`
-        );
-        return cb(options.ignoreError ? null : err);
-      }
-
-      if (cookie.hostOnly == null) {
-        // don't reset if already set
-        cookie.hostOnly = false;
-      }
-    } else {
-      cookie.hostOnly = true;
-      cookie.domain = host;
-    }
-
-    //S5.2.4 If the attribute-value is empty or if the first character of the
-    //attribute-value is not %x2F ("/"):
-    //Let cookie-path be the default-path.
-    if (!cookie.path || cookie.path[0] !== "/") {
-      cookie.path = defaultPath(context.pathname);
-      cookie.pathIsDefault = true;
-    }
-
-    // S5.3 step 8: NOOP; secure attribute
-    // S5.3 step 9: NOOP; httpOnly attribute
-
-    // S5.3 step 10
-    if (options.http === false && cookie.httpOnly) {
-      err = new Error("Cookie is HttpOnly and this isn't an HTTP API");
-      return cb(options.ignoreError ? null : err);
-    }
-
-    // 6252bis-02 S5.4 Step 13 & 14:
-    if (cookie.sameSite !== "none" && sameSiteContext) {
-      // "If the cookie's "same-site-flag" is not "None", and the cookie
-      //  is being set from a context whose "site for cookies" is not an
-      //  exact match for request-uri's host's registered domain, then
-      //  abort these steps and ignore the newly created cookie entirely."
-      if (sameSiteContext === "none") {
-        err = new Error(
-          "Cookie is SameSite but this is a cross-origin request"
-        );
-        return cb(options.ignoreError ? null : err);
-      }
-    }
-
-    /* 6265bis-02 S5.4 Steps 15 & 16 */
-    const ignoreErrorForPrefixSecurity =
-      this.prefixSecurity === PrefixSecurityEnum.SILENT;
-    const prefixSecurityDisabled =
-      this.prefixSecurity === PrefixSecurityEnum.DISABLED;
-    /* If prefix checking is not disabled ...*/
-    if (!prefixSecurityDisabled) {
-      let errorFound = false;
-      let errorMsg;
-      /* Check secure prefix condition */
-      if (!isSecurePrefixConditionMet(cookie)) {
-        errorFound = true;
-        errorMsg = "Cookie has __Secure prefix but Secure attribute is not set";
-      } else if (!isHostPrefixConditionMet(cookie)) {
-        /* Check host prefix condition */
-        errorFound = true;
-        errorMsg =
-          "Cookie has __Host prefix but either Secure or HostOnly attribute is not set or Path is not '/'";
-      }
-      if (errorFound) {
-        return cb(
-          options.ignoreError || ignoreErrorForPrefixSecurity
-            ? null
-            : new Error(errorMsg)
-        );
-      }
-    }
-
-    const store = this.store;
-
-    if (!store.updateCookie) {
-      store.updateCookie = function(oldCookie, newCookie, cb) {
-        this.putCookie(newCookie, cb);
-      };
-    }
-
-    function withCookie(err, oldCookie) {
-      if (err) {
-        return cb(err);
-      }
-
-      const next = function(err) {
-        if (err) {
-          return cb(err);
-        } else {
-          cb(null, cookie);
-        }
-      };
-
-      if (oldCookie) {
-        // S5.3 step 11 - "If the cookie store contains a cookie with the same name,
-        // domain, and path as the newly created cookie:"
-        if (options.http === false && oldCookie.httpOnly) {
-          // step 11.2
-          err = new Error("old Cookie is HttpOnly and this isn't an HTTP API");
-          return cb(options.ignoreError ? null : err);
-        }
-        cookie.creation = oldCookie.creation; // step 11.3
-        cookie.creationIndex = oldCookie.creationIndex; // preserve tie-breaker
-        cookie.lastAccessed = now;
-        // Step 11.4 (delete cookie) is implied by just setting the new one:
-        store.updateCookie(oldCookie, cookie, next); // step 12
-      } else {
-        cookie.creation = cookie.lastAccessed = now;
-        store.putCookie(cookie, next); // step 12
-      }
-    }
-
-    store.findCookie(cookie.domain, cookie.path, cookie.key, withCookie);
-  }
-
-  // RFC6365 S5.4
-  getCookies(url, options, cb) {
-    const context = getCookieContext(url);
-    if (typeof options === "function") {
-      cb = options;
-      options = {};
-    }
-
-    const host = canonicalDomain(context.hostname);
-    const path = context.pathname || "/";
-
-    let secure = options.secure;
-    if (
-      secure == null &&
-      context.protocol &&
-      (context.protocol == "https:" || context.protocol == "wss:")
-    ) {
-      secure = true;
-    }
-
-    let sameSiteLevel = 0;
-    if (options.sameSiteContext) {
-      const sameSiteContext = checkSameSiteContext(options.sameSiteContext);
-      sameSiteLevel = Cookie.sameSiteLevel[sameSiteContext];
-      if (!sameSiteLevel) {
-        return cb(new Error(SAME_SITE_CONTEXT_VAL_ERR));
-      }
-    }
-
-    let http = options.http;
-    if (http == null) {
-      http = true;
-    }
-
-    const now = options.now || Date.now();
-    const expireCheck = options.expire !== false;
-    const allPaths = !!options.allPaths;
-    const store = this.store;
-
-    function matchingCookie(c) {
-      // "Either:
-      //   The cookie's host-only-flag is true and the canonicalized
-      //   request-host is identical to the cookie's domain.
-      // Or:
-      //   The cookie's host-only-flag is false and the canonicalized
-      //   request-host domain-matches the cookie's domain."
-      if (c.hostOnly) {
-        if (c.domain != host) {
-          return false;
-        }
-      } else {
-        if (!domainMatch(host, c.domain, false)) {
-          return false;
-        }
-      }
-
-      // "The request-uri's path path-matches the cookie's path."
-      if (!allPaths && !pathMatch(path, c.path)) {
-        return false;
-      }
-
-      // "If the cookie's secure-only-flag is true, then the request-uri's
-      // scheme must denote a "secure" protocol"
-      if (c.secure && !secure) {
-        return false;
-      }
-
-      // "If the cookie's http-only-flag is true, then exclude the cookie if the
-      // cookie-string is being generated for a "non-HTTP" API"
-      if (c.httpOnly && !http) {
-        return false;
-      }
-
-      // RFC6265bis-02 S5.3.7
-      if (sameSiteLevel) {
-        const cookieLevel = Cookie.sameSiteLevel[c.sameSite || "none"];
-        if (cookieLevel > sameSiteLevel) {
-          // only allow cookies at or below the request level
-          return false;
-        }
-      }
-
-      // deferred from S5.3
-      // non-RFC: allow retention of expired cookies by choice
-      if (expireCheck && c.expiryTime() <= now) {
-        store.removeCookie(c.domain, c.path, c.key, () => {}); // result ignored
-        return false;
-      }
-
-      return true;
-    }
-
-    store.findCookies(
-      host,
-      allPaths ? null : path,
-      this.allowSpecialUseDomain,
-      (err, cookies) => {
-        if (err) {
-          return cb(err);
-        }
-
-        cookies = cookies.filter(matchingCookie);
-
-        // sorting of S5.4 part 2
-        if (options.sort !== false) {
-          cookies = cookies.sort(cookieCompare);
-        }
-
-        // S5.4 part 3
-        const now = new Date();
-        for (const cookie of cookies) {
-          cookie.lastAccessed = now;
-        }
-        // TODO persist lastAccessed
-
-        cb(null, cookies);
-      }
-    );
-  }
-
-  getCookieString(...args) {
-    const cb = args.pop();
-    const next = function(err, cookies) {
-      if (err) {
-        cb(err);
-      } else {
-        cb(
-          null,
-          cookies
-            .sort(cookieCompare)
-            .map(c => c.cookieString())
-            .join("; ")
-        );
-      }
-    };
-    args.push(next);
-    this.getCookies.apply(this, args);
-  }
-
-  getSetCookieStrings(...args) {
-    const cb = args.pop();
-    const next = function(err, cookies) {
-      if (err) {
-        cb(err);
-      } else {
-        cb(
-          null,
-          cookies.map(c => {
-            return c.toString();
-          })
-        );
-      }
-    };
-    args.push(next);
-    this.getCookies.apply(this, args);
-  }
-
-  serialize(cb) {
-    let type = this.store.constructor.name;
-    if (type === "Object") {
-      type = null;
-    }
-
-    // update README.md "Serialization Format" if you change this, please!
-    const serialized = {
-      // The version of tough-cookie that serialized this jar. Generally a good
-      // practice since future versions can make data import decisions based on
-      // known past behavior. When/if this matters, use `semver`.
-      version: `tough-cookie@${VERSION}`,
-
-      // add the store type, to make humans happy:
-      storeType: type,
-
-      // CookieJar configuration:
-      rejectPublicSuffixes: !!this.rejectPublicSuffixes,
-
-      // this gets filled from getAllCookies:
-      cookies: []
-    };
-
-    if (
-      !(
-        this.store.getAllCookies &&
-        typeof this.store.getAllCookies === "function"
-      )
-    ) {
-      return cb(
-        new Error(
-          "store does not support getAllCookies and cannot be serialized"
-        )
-      );
-    }
-
-    this.store.getAllCookies((err, cookies) => {
-      if (err) {
-        return cb(err);
-      }
-
-      serialized.cookies = cookies.map(cookie => {
-        // convert to serialized 'raw' cookies
-        cookie = cookie instanceof Cookie ? cookie.toJSON() : cookie;
-
-        // Remove the index so new ones get assigned during deserialization
-        delete cookie.creationIndex;
-
-        return cookie;
-      });
-
-      return cb(null, serialized);
-    });
-  }
-
-  toJSON() {
-    return this.serializeSync();
-  }
-
-  // use the class method CookieJar.deserialize instead of calling this directly
-  _importCookies(serialized, cb) {
-    let cookies = serialized.cookies;
-    if (!cookies || !Array.isArray(cookies)) {
-      return cb(new Error("serialized jar has no cookies array"));
-    }
-    cookies = cookies.slice(); // do not modify the original
-
-    const putNext = err => {
-      if (err) {
-        return cb(err);
-      }
-
-      if (!cookies.length) {
-        return cb(err, this);
-      }
-
-      let cookie;
-      try {
-        cookie = fromJSON(cookies.shift());
-      } catch (e) {
-        return cb(e);
-      }
-
-      if (cookie === null) {
-        return putNext(null); // skip this cookie
-      }
-
-      this.store.putCookie(cookie, putNext);
-    };
-
-    putNext();
-  }
-
-  clone(newStore, cb) {
-    if (arguments.length === 1) {
-      cb = newStore;
-      newStore = null;
-    }
-
-    this.serialize((err, serialized) => {
-      if (err) {
-        return cb(err);
-      }
-      CookieJar.deserialize(serialized, newStore, cb);
-    });
-  }
-
-  cloneSync(newStore) {
-    if (arguments.length === 0) {
-      return this._cloneSync();
-    }
-    if (!newStore.synchronous) {
-      throw new Error(
-        "CookieJar clone destination store is not synchronous; use async API instead."
-      );
-    }
-    return this._cloneSync(newStore);
-  }
-
-  removeAllCookies(cb) {
-    const store = this.store;
-
-    // Check that the store implements its own removeAllCookies(). The default
-    // implementation in Store will immediately call the callback with a "not
-    // implemented" Error.
-    if (
-      typeof store.removeAllCookies === "function" &&
-      store.removeAllCookies !== Store.prototype.removeAllCookies
-    ) {
-      return store.removeAllCookies(cb);
-    }
-
-    store.getAllCookies((err, cookies) => {
-      if (err) {
-        return cb(err);
-      }
-
-      if (cookies.length === 0) {
-        return cb(null);
-      }
-
-      let completedCount = 0;
-      const removeErrors = [];
-
-      function removeCookieCb(removeErr) {
-        if (removeErr) {
-          removeErrors.push(removeErr);
-        }
-
-        completedCount++;
-
-        if (completedCount === cookies.length) {
-          return cb(removeErrors.length ? removeErrors[0] : null);
-        }
-      }
-
-      cookies.forEach(cookie => {
-        store.removeCookie(
-          cookie.domain,
-          cookie.path,
-          cookie.key,
-          removeCookieCb
-        );
-      });
-    });
-  }
-
-  static deserialize(strOrObj, store, cb) {
-    if (arguments.length !== 3) {
-      // store is optional
-      cb = store;
-      store = null;
-    }
-
-    let serialized;
-    if (typeof strOrObj === "string") {
-      serialized = jsonParse(strOrObj);
-      if (serialized instanceof Error) {
-        return cb(serialized);
-      }
-    } else {
-      serialized = strOrObj;
-    }
-
-    const jar = new CookieJar(store, serialized.rejectPublicSuffixes);
-    jar._importCookies(serialized, err => {
-      if (err) {
-        return cb(err);
-      }
-      cb(null, jar);
-    });
-  }
-
-  static deserializeSync(strOrObj, store) {
-    const serialized =
-      typeof strOrObj === "string" ? JSON.parse(strOrObj) : strOrObj;
-    const jar = new CookieJar(store, serialized.rejectPublicSuffixes);
-
-    // catch this mistake early:
-    if (!jar.store.synchronous) {
-      throw new Error(
-        "CookieJar store is not synchronous; use async API instead."
-      );
-    }
-
-    jar._importCookiesSync(serialized);
-    return jar;
-  }
-}
-CookieJar.fromJSON = CookieJar.deserializeSync;
-
-[
-  "_importCookies",
-  "clone",
-  "getCookies",
-  "getCookieString",
-  "getSetCookieStrings",
-  "removeAllCookies",
-  "serialize",
-  "setCookie"
-].forEach(name => {
-  CookieJar.prototype[name] = fromCallback(CookieJar.prototype[name]);
-});
-CookieJar.deserialize = fromCallback(CookieJar.deserialize);
-
-// Use a closure to provide a true imperative API for synchronous stores.
-function syncWrap(method) {
-  return function(...args) {
-    if (!this.store.synchronous) {
-      throw new Error(
-        "CookieJar store is not synchronous; use async API instead."
-      );
-    }
-
-    let syncErr, syncResult;
-    this[method](...args, (err, result) => {
-      syncErr = err;
-      syncResult = result;
-    });
-
-    if (syncErr) {
-      throw syncErr;
-    }
-    return syncResult;
-  };
-}
-
-exports.version = VERSION;
-exports.CookieJar = CookieJar;
-exports.Cookie = Cookie;
-exports.Store = Store;
-exports.MemoryCookieStore = MemoryCookieStore;
-exports.parseDate = parseDate;
-exports.formatDate = formatDate;
-exports.parse = parse;
-exports.fromJSON = fromJSON;
-exports.domainMatch = domainMatch;
-exports.defaultPath = defaultPath;
-exports.pathMatch = pathMatch;
-exports.getPublicSuffix = pubsuffix.getPublicSuffix;
-exports.cookieCompare = cookieCompare;
-exports.permuteDomain = __webpack_require__(898).permuteDomain;
-exports.permutePath = permutePath;
-exports.canonicalDomain = canonicalDomain;
-exports.PrefixSecurityEnum = PrefixSecurityEnum;
+exports.HttpClient = HttpClient;
 
 
 /***/ }),
@@ -43939,7 +43103,7 @@ exports.PrefixSecurityEnum = PrefixSecurityEnum;
  */
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ProxyTracerProvider = void 0;
-var ProxyTracer_1 = __webpack_require__(398);
+var ProxyTracer_1 = __webpack_require__(592);
 var NoopTracerProvider_1 = __webpack_require__(162);
 /**
  * Tracer provider which provides {@link ProxyTracer}s.
@@ -43979,63 +43143,59 @@ exports.ProxyTracerProvider = ProxyTracerProvider;
 //# sourceMappingURL=ProxyTracerProvider.js.map
 
 /***/ }),
-/* 395 */,
+/* 395 */
+/***/ (function(module, __unusedexports, __webpack_require__) {
+
+module.exports = __webpack_require__(544);
+
+
+/***/ }),
 /* 396 */,
 /* 397 */,
 /* 398 */
-/***/ (function(__unusedmodule, exports, __webpack_require__) {
+/***/ (function(__unusedmodule, exports) {
 
 "use strict";
 
-/*
- * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+// We use any as a valid input type
+/* eslint-disable @typescript-eslint/no-explicit-any */
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.ProxyTracer = void 0;
-var NoopTracer_1 = __webpack_require__(151);
+exports.toCommandProperties = exports.toCommandValue = void 0;
 /**
- * Proxy tracer provided by the proxy tracer provider
+ * Sanitizes an input into a string so it can be passed into issueCommand safely
+ * @param input input to sanitize into a string
  */
-var ProxyTracer = /** @class */ (function () {
-    function ProxyTracer(_provider, name, version) {
-        this._provider = _provider;
-        this.name = name;
-        this.version = version;
+function toCommandValue(input) {
+    if (input === null || input === undefined) {
+        return '';
     }
-    ProxyTracer.prototype.startSpan = function (name, options, context) {
-        return this._getTracer().startSpan(name, options, context);
+    else if (typeof input === 'string' || input instanceof String) {
+        return input;
+    }
+    return JSON.stringify(input);
+}
+exports.toCommandValue = toCommandValue;
+/**
+ *
+ * @param annotationProperties
+ * @returns The command properties to send with the actual annotation command
+ * See IssueCommandProperties: https://github.com/actions/runner/blob/main/src/Runner.Worker/ActionCommandManager.cs#L646
+ */
+function toCommandProperties(annotationProperties) {
+    if (!Object.keys(annotationProperties).length) {
+        return {};
+    }
+    return {
+        title: annotationProperties.title,
+        file: annotationProperties.file,
+        line: annotationProperties.startLine,
+        endLine: annotationProperties.endLine,
+        col: annotationProperties.startColumn,
+        endColumn: annotationProperties.endColumn
     };
-    /**
-     * Try to get a tracer from the proxy tracer provider.
-     * If the proxy tracer provider has no delegate, return a noop tracer.
-     */
-    ProxyTracer.prototype._getTracer = function () {
-        if (this._delegate) {
-            return this._delegate;
-        }
-        var tracer = this._provider.getDelegateTracer(this.name, this.version);
-        if (!tracer) {
-            return NoopTracer_1.NOOP_TRACER;
-        }
-        this._delegate = tracer;
-        return this._delegate;
-    };
-    return ProxyTracer;
-}());
-exports.ProxyTracer = ProxyTracer;
-//# sourceMappingURL=ProxyTracer.js.map
+}
+exports.toCommandProperties = toCommandProperties;
+//# sourceMappingURL=utils.js.map
 
 /***/ }),
 /* 399 */,
@@ -44495,7 +43655,7 @@ class HttpClient {
         if (useProxy) {
             // If using proxy, need tunnel
             if (!tunnel) {
-                tunnel = __webpack_require__(413);
+                tunnel = __webpack_require__(395);
             }
             const agentOptions = {
                 maxSockets: maxSockets,
@@ -45327,14 +44487,27 @@ function octokitValidate(octokit) {
 
 "use strict";
 
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
 var __importStar = (this && this.__importStar) || function (mod) {
     if (mod && mod.__esModule) return mod;
     var result = {};
-    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
-    result["default"] = mod;
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
     return result;
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.issue = exports.issueCommand = void 0;
 const os = __importStar(__webpack_require__(87));
 const utils_1 = __webpack_require__(82);
 /**
@@ -45628,7 +44801,7 @@ __exportStar(__webpack_require__(851), exports);
 __exportStar(__webpack_require__(95), exports);
 __exportStar(__webpack_require__(151), exports);
 __exportStar(__webpack_require__(162), exports);
-__exportStar(__webpack_require__(398), exports);
+__exportStar(__webpack_require__(592), exports);
 __exportStar(__webpack_require__(394), exports);
 __exportStar(__webpack_require__(781), exports);
 __exportStar(__webpack_require__(340), exports);
@@ -45682,7 +44855,54 @@ exports.default = {
 /* 442 */,
 /* 443 */,
 /* 444 */,
-/* 445 */,
+/* 445 */
+/***/ (function(__unusedmodule, exports, __webpack_require__) {
+
+"use strict";
+
+// For internal use, subject to change.
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.issueCommand = void 0;
+// We use any as a valid input type
+/* eslint-disable @typescript-eslint/no-explicit-any */
+const fs = __importStar(__webpack_require__(747));
+const os = __importStar(__webpack_require__(87));
+const utils_1 = __webpack_require__(398);
+function issueCommand(command, message) {
+    const filePath = process.env[`GITHUB_${command}`];
+    if (!filePath) {
+        throw new Error(`Unable to find environment variable for file command ${command}`);
+    }
+    if (!fs.existsSync(filePath)) {
+        throw new Error(`Missing file at path: ${filePath}`);
+    }
+    fs.appendFileSync(filePath, `${utils_1.toCommandValue(message)}${os.EOL}`, {
+        encoding: 'utf8'
+    });
+}
+exports.issueCommand = issueCommand;
+//# sourceMappingURL=file-command.js.map
+
+/***/ }),
 /* 446 */,
 /* 447 */,
 /* 448 */,
@@ -47901,6 +47121,25 @@ exports.GitHub = GitHub;
 
 "use strict";
 
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -47910,19 +47149,14 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
-    result["default"] = mod;
-    return result;
-};
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.getIDToken = exports.getState = exports.saveState = exports.group = exports.endGroup = exports.startGroup = exports.info = exports.notice = exports.warning = exports.error = exports.debug = exports.isDebug = exports.setFailed = exports.setCommandEcho = exports.setOutput = exports.getBooleanInput = exports.getMultilineInput = exports.getInput = exports.addPath = exports.setSecret = exports.exportVariable = exports.ExitCode = void 0;
 const command_1 = __webpack_require__(431);
 const file_command_1 = __webpack_require__(102);
 const utils_1 = __webpack_require__(82);
 const os = __importStar(__webpack_require__(87));
 const path = __importStar(__webpack_require__(622));
+const oidc_utils_1 = __webpack_require__(742);
 /**
  * The code to exit an action
  */
@@ -47984,7 +47218,9 @@ function addPath(inputPath) {
 }
 exports.addPath = addPath;
 /**
- * Gets the value of an input.  The value is also trimmed.
+ * Gets the value of an input.
+ * Unless trimWhitespace is set to false in InputOptions, the value is also trimmed.
+ * Returns an empty string if the value is not defined.
  *
  * @param     name     name of the input to get
  * @param     options  optional. See InputOptions.
@@ -47995,9 +47231,49 @@ function getInput(name, options) {
     if (options && options.required && !val) {
         throw new Error(`Input required and not supplied: ${name}`);
     }
+    if (options && options.trimWhitespace === false) {
+        return val;
+    }
     return val.trim();
 }
 exports.getInput = getInput;
+/**
+ * Gets the values of an multiline input.  Each value is also trimmed.
+ *
+ * @param     name     name of the input to get
+ * @param     options  optional. See InputOptions.
+ * @returns   string[]
+ *
+ */
+function getMultilineInput(name, options) {
+    const inputs = getInput(name, options)
+        .split('\n')
+        .filter(x => x !== '');
+    return inputs;
+}
+exports.getMultilineInput = getMultilineInput;
+/**
+ * Gets the input value of the boolean type in the YAML 1.2 "core schema" specification.
+ * Support boolean input list: `true | True | TRUE | false | False | FALSE` .
+ * The return value is also in boolean type.
+ * ref: https://yaml.org/spec/1.2/spec.html#id2804923
+ *
+ * @param     name     name of the input to get
+ * @param     options  optional. See InputOptions.
+ * @returns   boolean
+ */
+function getBooleanInput(name, options) {
+    const trueValue = ['true', 'True', 'TRUE'];
+    const falseValue = ['false', 'False', 'FALSE'];
+    const val = getInput(name, options);
+    if (trueValue.includes(val))
+        return true;
+    if (falseValue.includes(val))
+        return false;
+    throw new TypeError(`Input does not meet YAML 1.2 "Core Schema" specification: ${name}\n` +
+        `Support boolean input list: \`true | True | TRUE | false | False | FALSE\``);
+}
+exports.getBooleanInput = getBooleanInput;
 /**
  * Sets the value of an output.
  *
@@ -48006,6 +47282,7 @@ exports.getInput = getInput;
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function setOutput(name, value) {
+    process.stdout.write(os.EOL);
     command_1.issueCommand('set-output', { name }, value);
 }
 exports.setOutput = setOutput;
@@ -48052,19 +47329,30 @@ exports.debug = debug;
 /**
  * Adds an error issue
  * @param message error issue message. Errors will be converted to string via toString()
+ * @param properties optional properties to add to the annotation.
  */
-function error(message) {
-    command_1.issue('error', message instanceof Error ? message.toString() : message);
+function error(message, properties = {}) {
+    command_1.issueCommand('error', utils_1.toCommandProperties(properties), message instanceof Error ? message.toString() : message);
 }
 exports.error = error;
 /**
- * Adds an warning issue
+ * Adds a warning issue
  * @param message warning issue message. Errors will be converted to string via toString()
+ * @param properties optional properties to add to the annotation.
  */
-function warning(message) {
-    command_1.issue('warning', message instanceof Error ? message.toString() : message);
+function warning(message, properties = {}) {
+    command_1.issueCommand('warning', utils_1.toCommandProperties(properties), message instanceof Error ? message.toString() : message);
 }
 exports.warning = warning;
+/**
+ * Adds a notice issue
+ * @param message notice issue message. Errors will be converted to string via toString()
+ * @param properties optional properties to add to the annotation.
+ */
+function notice(message, properties = {}) {
+    command_1.issueCommand('notice', utils_1.toCommandProperties(properties), message instanceof Error ? message.toString() : message);
+}
+exports.notice = notice;
 /**
  * Writes info to log with console.log.
  * @param message info message
@@ -48137,6 +47425,12 @@ function getState(name) {
     return process.env[`STATE_${name}`] || '';
 }
 exports.getState = getState;
+function getIDToken(aud) {
+    return __awaiter(this, void 0, void 0, function* () {
+        return yield oidc_utils_1.OidcClient.getIDToken(aud);
+    });
+}
+exports.getIDToken = getIDToken;
 //# sourceMappingURL=core.js.map
 
 /***/ }),
@@ -50165,7 +49459,6 @@ module.exports = bytesToUuid;
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
-const url = __webpack_require__(835);
 const http = __webpack_require__(605);
 const https = __webpack_require__(211);
 const pm = __webpack_require__(950);
@@ -50193,6 +49486,7 @@ var HttpCodes;
     HttpCodes[HttpCodes["RequestTimeout"] = 408] = "RequestTimeout";
     HttpCodes[HttpCodes["Conflict"] = 409] = "Conflict";
     HttpCodes[HttpCodes["Gone"] = 410] = "Gone";
+    HttpCodes[HttpCodes["TooManyRequests"] = 429] = "TooManyRequests";
     HttpCodes[HttpCodes["InternalServerError"] = 500] = "InternalServerError";
     HttpCodes[HttpCodes["NotImplemented"] = 501] = "NotImplemented";
     HttpCodes[HttpCodes["BadGateway"] = 502] = "BadGateway";
@@ -50213,15 +49507,34 @@ var MediaTypes;
  * @param serverUrl  The server URL where the request will be sent. For example, https://api.github.com
  */
 function getProxyUrl(serverUrl) {
-    let proxyUrl = pm.getProxyUrl(url.parse(serverUrl));
+    let proxyUrl = pm.getProxyUrl(new URL(serverUrl));
     return proxyUrl ? proxyUrl.href : '';
 }
 exports.getProxyUrl = getProxyUrl;
-const HttpRedirectCodes = [HttpCodes.MovedPermanently, HttpCodes.ResourceMoved, HttpCodes.SeeOther, HttpCodes.TemporaryRedirect, HttpCodes.PermanentRedirect];
-const HttpResponseRetryCodes = [HttpCodes.BadGateway, HttpCodes.ServiceUnavailable, HttpCodes.GatewayTimeout];
+const HttpRedirectCodes = [
+    HttpCodes.MovedPermanently,
+    HttpCodes.ResourceMoved,
+    HttpCodes.SeeOther,
+    HttpCodes.TemporaryRedirect,
+    HttpCodes.PermanentRedirect
+];
+const HttpResponseRetryCodes = [
+    HttpCodes.BadGateway,
+    HttpCodes.ServiceUnavailable,
+    HttpCodes.GatewayTimeout
+];
 const RetryableHttpVerbs = ['OPTIONS', 'GET', 'DELETE', 'HEAD'];
 const ExponentialBackoffCeiling = 10;
 const ExponentialBackoffTimeSlice = 5;
+class HttpClientError extends Error {
+    constructor(message, statusCode) {
+        super(message);
+        this.name = 'HttpClientError';
+        this.statusCode = statusCode;
+        Object.setPrototypeOf(this, HttpClientError.prototype);
+    }
+}
+exports.HttpClientError = HttpClientError;
 class HttpClientResponse {
     constructor(message) {
         this.message = message;
@@ -50240,7 +49553,7 @@ class HttpClientResponse {
 }
 exports.HttpClientResponse = HttpClientResponse;
 function isHttps(requestUrl) {
-    let parsedUrl = url.parse(requestUrl);
+    let parsedUrl = new URL(requestUrl);
     return parsedUrl.protocol === 'https:';
 }
 exports.isHttps = isHttps;
@@ -50343,18 +49656,22 @@ class HttpClient {
      */
     async request(verb, requestUrl, data, headers) {
         if (this._disposed) {
-            throw new Error("Client has already been disposed.");
+            throw new Error('Client has already been disposed.');
         }
-        let parsedUrl = url.parse(requestUrl);
+        let parsedUrl = new URL(requestUrl);
         let info = this._prepareRequest(verb, parsedUrl, headers);
         // Only perform retries on reads since writes may not be idempotent.
-        let maxTries = (this._allowRetries && RetryableHttpVerbs.indexOf(verb) != -1) ? this._maxRetries + 1 : 1;
+        let maxTries = this._allowRetries && RetryableHttpVerbs.indexOf(verb) != -1
+            ? this._maxRetries + 1
+            : 1;
         let numTries = 0;
         let response;
         while (numTries < maxTries) {
             response = await this.requestRaw(info, data);
             // Check if it's an authentication challenge
-            if (response && response.message && response.message.statusCode === HttpCodes.Unauthorized) {
+            if (response &&
+                response.message &&
+                response.message.statusCode === HttpCodes.Unauthorized) {
                 let authenticationHandler;
                 for (let i = 0; i < this.handlers.length; i++) {
                     if (this.handlers[i].canHandleAuthentication(response)) {
@@ -50372,21 +49689,32 @@ class HttpClient {
                 }
             }
             let redirectsRemaining = this._maxRedirects;
-            while (HttpRedirectCodes.indexOf(response.message.statusCode) != -1
-                && this._allowRedirects
-                && redirectsRemaining > 0) {
-                const redirectUrl = response.message.headers["location"];
+            while (HttpRedirectCodes.indexOf(response.message.statusCode) != -1 &&
+                this._allowRedirects &&
+                redirectsRemaining > 0) {
+                const redirectUrl = response.message.headers['location'];
                 if (!redirectUrl) {
                     // if there's no location to redirect to, we won't
                     break;
                 }
-                let parsedRedirectUrl = url.parse(redirectUrl);
-                if (parsedUrl.protocol == 'https:' && parsedUrl.protocol != parsedRedirectUrl.protocol && !this._allowRedirectDowngrade) {
-                    throw new Error("Redirect from HTTPS to HTTP protocol. This downgrade is not allowed for security reasons. If you want to allow this behavior, set the allowRedirectDowngrade option to true.");
+                let parsedRedirectUrl = new URL(redirectUrl);
+                if (parsedUrl.protocol == 'https:' &&
+                    parsedUrl.protocol != parsedRedirectUrl.protocol &&
+                    !this._allowRedirectDowngrade) {
+                    throw new Error('Redirect from HTTPS to HTTP protocol. This downgrade is not allowed for security reasons. If you want to allow this behavior, set the allowRedirectDowngrade option to true.');
                 }
                 // we need to finish reading the response before reassigning response
                 // which will leak the open socket.
                 await response.readBody();
+                // strip authorization header if redirected to a different hostname
+                if (parsedRedirectUrl.hostname !== parsedUrl.hostname) {
+                    for (let header in headers) {
+                        // header names are case insensitive
+                        if (header.toLowerCase() === 'authorization') {
+                            delete headers[header];
+                        }
+                    }
+                }
                 // let's make the request with the new redirectUrl
                 info = this._prepareRequest(verb, parsedRedirectUrl, headers);
                 response = await this.requestRaw(info, data);
@@ -50437,8 +49765,8 @@ class HttpClient {
      */
     requestRawWithCallback(info, data, onResult) {
         let socket;
-        if (typeof (data) === 'string') {
-            info.options.headers["Content-Length"] = Buffer.byteLength(data, 'utf8');
+        if (typeof data === 'string') {
+            info.options.headers['Content-Length'] = Buffer.byteLength(data, 'utf8');
         }
         let callbackCalled = false;
         let handleResult = (err, res) => {
@@ -50451,7 +49779,7 @@ class HttpClient {
             let res = new HttpClientResponse(msg);
             handleResult(null, res);
         });
-        req.on('socket', (sock) => {
+        req.on('socket', sock => {
             socket = sock;
         });
         // If we ever get disconnected, we want the socket to timeout eventually
@@ -50466,10 +49794,10 @@ class HttpClient {
             // res should have headers
             handleResult(err, null);
         });
-        if (data && typeof (data) === 'string') {
+        if (data && typeof data === 'string') {
             req.write(data, 'utf8');
         }
-        if (data && typeof (data) !== 'string') {
+        if (data && typeof data !== 'string') {
             data.on('close', function () {
                 req.end();
             });
@@ -50485,7 +49813,7 @@ class HttpClient {
      * @param serverUrl  The server URL where the request will be sent. For example, https://api.github.com
      */
     getAgent(serverUrl) {
-        let parsedUrl = url.parse(serverUrl);
+        let parsedUrl = new URL(serverUrl);
         return this._getAgent(parsedUrl);
     }
     _prepareRequest(method, requestUrl, headers) {
@@ -50496,31 +49824,34 @@ class HttpClient {
         const defaultPort = usingSsl ? 443 : 80;
         info.options = {};
         info.options.host = info.parsedUrl.hostname;
-        info.options.port = info.parsedUrl.port ? parseInt(info.parsedUrl.port) : defaultPort;
-        info.options.path = (info.parsedUrl.pathname || '') + (info.parsedUrl.search || '');
+        info.options.port = info.parsedUrl.port
+            ? parseInt(info.parsedUrl.port)
+            : defaultPort;
+        info.options.path =
+            (info.parsedUrl.pathname || '') + (info.parsedUrl.search || '');
         info.options.method = method;
         info.options.headers = this._mergeHeaders(headers);
         if (this.userAgent != null) {
-            info.options.headers["user-agent"] = this.userAgent;
+            info.options.headers['user-agent'] = this.userAgent;
         }
         info.options.agent = this._getAgent(info.parsedUrl);
         // gives handlers an opportunity to participate
         if (this.handlers) {
-            this.handlers.forEach((handler) => {
+            this.handlers.forEach(handler => {
                 handler.prepareRequest(info.options);
             });
         }
         return info;
     }
     _mergeHeaders(headers) {
-        const lowercaseKeys = obj => Object.keys(obj).reduce((c, k) => (c[k.toLowerCase()] = obj[k], c), {});
+        const lowercaseKeys = obj => Object.keys(obj).reduce((c, k) => ((c[k.toLowerCase()] = obj[k]), c), {});
         if (this.requestOptions && this.requestOptions.headers) {
             return Object.assign({}, lowercaseKeys(this.requestOptions.headers), lowercaseKeys(headers));
         }
         return lowercaseKeys(headers || {});
     }
     _getExistingOrDefaultHeader(additionalHeaders, header, _default) {
-        const lowercaseKeys = obj => Object.keys(obj).reduce((c, k) => (c[k.toLowerCase()] = obj[k], c), {});
+        const lowercaseKeys = obj => Object.keys(obj).reduce((c, k) => ((c[k.toLowerCase()] = obj[k]), c), {});
         let clientHeader;
         if (this.requestOptions && this.requestOptions.headers) {
             clientHeader = lowercaseKeys(this.requestOptions.headers)[header];
@@ -50555,10 +49886,12 @@ class HttpClient {
                 maxSockets: maxSockets,
                 keepAlive: this._keepAlive,
                 proxy: {
-                    proxyAuth: proxyUrl.auth,
+                    ...((proxyUrl.username || proxyUrl.password) && {
+                        proxyAuth: `${proxyUrl.username}:${proxyUrl.password}`
+                    }),
                     host: proxyUrl.hostname,
                     port: proxyUrl.port
-                },
+                }
             };
             let tunnelAgent;
             const overHttps = proxyUrl.protocol === 'https:';
@@ -50585,7 +49918,9 @@ class HttpClient {
             // we don't want to set NODE_TLS_REJECT_UNAUTHORIZED=0 since that will affect request for entire process
             // http.RequestOptions doesn't expose a way to modify RequestOptions.agent.options
             // we have to cast it to any and change it directly
-            agent.options = Object.assign(agent.options || {}, { rejectUnauthorized: false });
+            agent.options = Object.assign(agent.options || {}, {
+                rejectUnauthorized: false
+            });
         }
         return agent;
     }
@@ -50646,14 +49981,10 @@ class HttpClient {
                     msg = contents;
                 }
                 else {
-                    msg = "Failed request: (" + statusCode + ")";
+                    msg = 'Failed request: (' + statusCode + ')';
                 }
-                let err = new Error(msg);
-                // attach statusCode and body obj (if available) to the error object
-                err['statusCode'] = statusCode;
-                if (response.result) {
-                    err['result'] = response.result;
-                }
+                let err = new HttpClientError(msg, statusCode);
+                err.result = response.result;
                 reject(err);
             }
             else {
@@ -50685,7 +50016,277 @@ exports.HttpClient = HttpClient;
 /***/ }),
 /* 542 */,
 /* 543 */,
-/* 544 */,
+/* 544 */
+/***/ (function(__unusedmodule, exports, __webpack_require__) {
+
+"use strict";
+
+
+var net = __webpack_require__(631);
+var tls = __webpack_require__(16);
+var http = __webpack_require__(605);
+var https = __webpack_require__(211);
+var events = __webpack_require__(614);
+var assert = __webpack_require__(357);
+var util = __webpack_require__(669);
+
+
+exports.httpOverHttp = httpOverHttp;
+exports.httpsOverHttp = httpsOverHttp;
+exports.httpOverHttps = httpOverHttps;
+exports.httpsOverHttps = httpsOverHttps;
+
+
+function httpOverHttp(options) {
+  var agent = new TunnelingAgent(options);
+  agent.request = http.request;
+  return agent;
+}
+
+function httpsOverHttp(options) {
+  var agent = new TunnelingAgent(options);
+  agent.request = http.request;
+  agent.createSocket = createSecureSocket;
+  agent.defaultPort = 443;
+  return agent;
+}
+
+function httpOverHttps(options) {
+  var agent = new TunnelingAgent(options);
+  agent.request = https.request;
+  return agent;
+}
+
+function httpsOverHttps(options) {
+  var agent = new TunnelingAgent(options);
+  agent.request = https.request;
+  agent.createSocket = createSecureSocket;
+  agent.defaultPort = 443;
+  return agent;
+}
+
+
+function TunnelingAgent(options) {
+  var self = this;
+  self.options = options || {};
+  self.proxyOptions = self.options.proxy || {};
+  self.maxSockets = self.options.maxSockets || http.Agent.defaultMaxSockets;
+  self.requests = [];
+  self.sockets = [];
+
+  self.on('free', function onFree(socket, host, port, localAddress) {
+    var options = toOptions(host, port, localAddress);
+    for (var i = 0, len = self.requests.length; i < len; ++i) {
+      var pending = self.requests[i];
+      if (pending.host === options.host && pending.port === options.port) {
+        // Detect the request to connect same origin server,
+        // reuse the connection.
+        self.requests.splice(i, 1);
+        pending.request.onSocket(socket);
+        return;
+      }
+    }
+    socket.destroy();
+    self.removeSocket(socket);
+  });
+}
+util.inherits(TunnelingAgent, events.EventEmitter);
+
+TunnelingAgent.prototype.addRequest = function addRequest(req, host, port, localAddress) {
+  var self = this;
+  var options = mergeOptions({request: req}, self.options, toOptions(host, port, localAddress));
+
+  if (self.sockets.length >= this.maxSockets) {
+    // We are over limit so we'll add it to the queue.
+    self.requests.push(options);
+    return;
+  }
+
+  // If we are under maxSockets create a new one.
+  self.createSocket(options, function(socket) {
+    socket.on('free', onFree);
+    socket.on('close', onCloseOrRemove);
+    socket.on('agentRemove', onCloseOrRemove);
+    req.onSocket(socket);
+
+    function onFree() {
+      self.emit('free', socket, options);
+    }
+
+    function onCloseOrRemove(err) {
+      self.removeSocket(socket);
+      socket.removeListener('free', onFree);
+      socket.removeListener('close', onCloseOrRemove);
+      socket.removeListener('agentRemove', onCloseOrRemove);
+    }
+  });
+};
+
+TunnelingAgent.prototype.createSocket = function createSocket(options, cb) {
+  var self = this;
+  var placeholder = {};
+  self.sockets.push(placeholder);
+
+  var connectOptions = mergeOptions({}, self.proxyOptions, {
+    method: 'CONNECT',
+    path: options.host + ':' + options.port,
+    agent: false,
+    headers: {
+      host: options.host + ':' + options.port
+    }
+  });
+  if (options.localAddress) {
+    connectOptions.localAddress = options.localAddress;
+  }
+  if (connectOptions.proxyAuth) {
+    connectOptions.headers = connectOptions.headers || {};
+    connectOptions.headers['Proxy-Authorization'] = 'Basic ' +
+        new Buffer(connectOptions.proxyAuth).toString('base64');
+  }
+
+  debug('making CONNECT request');
+  var connectReq = self.request(connectOptions);
+  connectReq.useChunkedEncodingByDefault = false; // for v0.6
+  connectReq.once('response', onResponse); // for v0.6
+  connectReq.once('upgrade', onUpgrade);   // for v0.6
+  connectReq.once('connect', onConnect);   // for v0.7 or later
+  connectReq.once('error', onError);
+  connectReq.end();
+
+  function onResponse(res) {
+    // Very hacky. This is necessary to avoid http-parser leaks.
+    res.upgrade = true;
+  }
+
+  function onUpgrade(res, socket, head) {
+    // Hacky.
+    process.nextTick(function() {
+      onConnect(res, socket, head);
+    });
+  }
+
+  function onConnect(res, socket, head) {
+    connectReq.removeAllListeners();
+    socket.removeAllListeners();
+
+    if (res.statusCode !== 200) {
+      debug('tunneling socket could not be established, statusCode=%d',
+        res.statusCode);
+      socket.destroy();
+      var error = new Error('tunneling socket could not be established, ' +
+        'statusCode=' + res.statusCode);
+      error.code = 'ECONNRESET';
+      options.request.emit('error', error);
+      self.removeSocket(placeholder);
+      return;
+    }
+    if (head.length > 0) {
+      debug('got illegal response body from proxy');
+      socket.destroy();
+      var error = new Error('got illegal response body from proxy');
+      error.code = 'ECONNRESET';
+      options.request.emit('error', error);
+      self.removeSocket(placeholder);
+      return;
+    }
+    debug('tunneling connection has established');
+    self.sockets[self.sockets.indexOf(placeholder)] = socket;
+    return cb(socket);
+  }
+
+  function onError(cause) {
+    connectReq.removeAllListeners();
+
+    debug('tunneling socket could not be established, cause=%s\n',
+          cause.message, cause.stack);
+    var error = new Error('tunneling socket could not be established, ' +
+                          'cause=' + cause.message);
+    error.code = 'ECONNRESET';
+    options.request.emit('error', error);
+    self.removeSocket(placeholder);
+  }
+};
+
+TunnelingAgent.prototype.removeSocket = function removeSocket(socket) {
+  var pos = this.sockets.indexOf(socket)
+  if (pos === -1) {
+    return;
+  }
+  this.sockets.splice(pos, 1);
+
+  var pending = this.requests.shift();
+  if (pending) {
+    // If we have pending requests and a socket gets closed a new one
+    // needs to be created to take over in the pool for the one that closed.
+    this.createSocket(pending, function(socket) {
+      pending.request.onSocket(socket);
+    });
+  }
+};
+
+function createSecureSocket(options, cb) {
+  var self = this;
+  TunnelingAgent.prototype.createSocket.call(self, options, function(socket) {
+    var hostHeader = options.request.getHeader('host');
+    var tlsOptions = mergeOptions({}, self.options, {
+      socket: socket,
+      servername: hostHeader ? hostHeader.replace(/:.*$/, '') : options.host
+    });
+
+    // 0 is dummy port for v0.6
+    var secureSocket = tls.connect(0, tlsOptions);
+    self.sockets[self.sockets.indexOf(socket)] = secureSocket;
+    cb(secureSocket);
+  });
+}
+
+
+function toOptions(host, port, localAddress) {
+  if (typeof host === 'string') { // since v0.10
+    return {
+      host: host,
+      port: port,
+      localAddress: localAddress
+    };
+  }
+  return host; // for v0.11 or later
+}
+
+function mergeOptions(target) {
+  for (var i = 1, len = arguments.length; i < len; ++i) {
+    var overrides = arguments[i];
+    if (typeof overrides === 'object') {
+      var keys = Object.keys(overrides);
+      for (var j = 0, keyLen = keys.length; j < keyLen; ++j) {
+        var k = keys[j];
+        if (overrides[k] !== undefined) {
+          target[k] = overrides[k];
+        }
+      }
+    }
+  }
+  return target;
+}
+
+
+var debug;
+if (process.env.NODE_DEBUG && /\btunnel\b/.test(process.env.NODE_DEBUG)) {
+  debug = function() {
+    var args = Array.prototype.slice.call(arguments);
+    if (typeof args[0] === 'string') {
+      args[0] = 'TUNNEL: ' + args[0];
+    } else {
+      args.unshift('TUNNEL:');
+    }
+    console.error.apply(console, args);
+  }
+} else {
+  debug = function() {};
+}
+exports.debug = debug; // for test
+
+
+/***/ }),
 /* 545 */
 /***/ (function(__unusedmodule, exports) {
 
@@ -51885,7 +51486,62 @@ function octokitRestApiEndpoints(octokit) {
 /* 589 */,
 /* 590 */,
 /* 591 */,
-/* 592 */,
+/* 592 */
+/***/ (function(__unusedmodule, exports, __webpack_require__) {
+
+"use strict";
+
+/*
+ * Copyright The OpenTelemetry Authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.ProxyTracer = void 0;
+var NoopTracer_1 = __webpack_require__(151);
+/**
+ * Proxy tracer provided by the proxy tracer provider
+ */
+var ProxyTracer = /** @class */ (function () {
+    function ProxyTracer(_provider, name, version) {
+        this._provider = _provider;
+        this.name = name;
+        this.version = version;
+    }
+    ProxyTracer.prototype.startSpan = function (name, options, context) {
+        return this._getTracer().startSpan(name, options, context);
+    };
+    /**
+     * Try to get a tracer from the proxy tracer provider.
+     * If the proxy tracer provider has no delegate, return a noop tracer.
+     */
+    ProxyTracer.prototype._getTracer = function () {
+        if (this._delegate) {
+            return this._delegate;
+        }
+        var tracer = this._provider.getDelegateTracer(this.name, this.version);
+        if (!tracer) {
+            return NoopTracer_1.NOOP_TRACER;
+        }
+        this._delegate = tracer;
+        return this._delegate;
+    };
+    return ProxyTracer;
+}());
+exports.ProxyTracer = ProxyTracer;
+//# sourceMappingURL=ProxyTracer.js.map
+
+/***/ }),
 /* 593 */,
 /* 594 */,
 /* 595 */,
@@ -53015,7 +52671,1684 @@ module.exports = require("net");
 /* 633 */,
 /* 634 */,
 /* 635 */,
-/* 636 */,
+/* 636 */
+/***/ (function(__unusedmodule, exports, __webpack_require__) {
+
+"use strict";
+/*!
+ * Copyright (c) 2015, Salesforce.com, Inc.
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright notice,
+ * this list of conditions and the following disclaimer.
+ *
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ * this list of conditions and the following disclaimer in the documentation
+ * and/or other materials provided with the distribution.
+ *
+ * 3. Neither the name of Salesforce.com nor the names of its contributors may
+ * be used to endorse or promote products derived from this software without
+ * specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ */
+
+const punycode = __webpack_require__(815);
+const urlParse = __webpack_require__(835).parse;
+const util = __webpack_require__(669);
+const pubsuffix = __webpack_require__(324);
+const Store = __webpack_require__(338).Store;
+const MemoryCookieStore = __webpack_require__(332).MemoryCookieStore;
+const pathMatch = __webpack_require__(678).pathMatch;
+const VERSION = __webpack_require__(460);
+const { fromCallback } = __webpack_require__(147);
+
+// From RFC6265 S4.1.1
+// note that it excludes \x3B ";"
+const COOKIE_OCTETS = /^[\x21\x23-\x2B\x2D-\x3A\x3C-\x5B\x5D-\x7E]+$/;
+
+const CONTROL_CHARS = /[\x00-\x1F]/;
+
+// From Chromium // '\r', '\n' and '\0' should be treated as a terminator in
+// the "relaxed" mode, see:
+// https://github.com/ChromiumWebApps/chromium/blob/b3d3b4da8bb94c1b2e061600df106d590fda3620/net/cookies/parsed_cookie.cc#L60
+const TERMINATORS = ["\n", "\r", "\0"];
+
+// RFC6265 S4.1.1 defines path value as 'any CHAR except CTLs or ";"'
+// Note ';' is \x3B
+const PATH_VALUE = /[\x20-\x3A\x3C-\x7E]+/;
+
+// date-time parsing constants (RFC6265 S5.1.1)
+
+const DATE_DELIM = /[\x09\x20-\x2F\x3B-\x40\x5B-\x60\x7B-\x7E]/;
+
+const MONTH_TO_NUM = {
+  jan: 0,
+  feb: 1,
+  mar: 2,
+  apr: 3,
+  may: 4,
+  jun: 5,
+  jul: 6,
+  aug: 7,
+  sep: 8,
+  oct: 9,
+  nov: 10,
+  dec: 11
+};
+
+const MAX_TIME = 2147483647000; // 31-bit max
+const MIN_TIME = 0; // 31-bit min
+const SAME_SITE_CONTEXT_VAL_ERR =
+  'Invalid sameSiteContext option for getCookies(); expected one of "strict", "lax", or "none"';
+
+function checkSameSiteContext(value) {
+  const context = String(value).toLowerCase();
+  if (context === "none" || context === "lax" || context === "strict") {
+    return context;
+  } else {
+    return null;
+  }
+}
+
+const PrefixSecurityEnum = Object.freeze({
+  SILENT: "silent",
+  STRICT: "strict",
+  DISABLED: "unsafe-disabled"
+});
+
+// Dumped from ip-regex@4.0.0, with the following changes:
+// * all capturing groups converted to non-capturing -- "(?:)"
+// * support for IPv6 Scoped Literal ("%eth1") removed
+// * lowercase hexadecimal only
+var IP_REGEX_LOWERCASE =/(?:^(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]\d|\d)(?:\.(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]\d|\d)){3}$)|(?:^(?:(?:[a-f\d]{1,4}:){7}(?:[a-f\d]{1,4}|:)|(?:[a-f\d]{1,4}:){6}(?:(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]\d|\d)(?:\.(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]\d|\d)){3}|:[a-f\d]{1,4}|:)|(?:[a-f\d]{1,4}:){5}(?::(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]\d|\d)(?:\.(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]\d|\d)){3}|(?::[a-f\d]{1,4}){1,2}|:)|(?:[a-f\d]{1,4}:){4}(?:(?::[a-f\d]{1,4}){0,1}:(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]\d|\d)(?:\.(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]\d|\d)){3}|(?::[a-f\d]{1,4}){1,3}|:)|(?:[a-f\d]{1,4}:){3}(?:(?::[a-f\d]{1,4}){0,2}:(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]\d|\d)(?:\.(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]\d|\d)){3}|(?::[a-f\d]{1,4}){1,4}|:)|(?:[a-f\d]{1,4}:){2}(?:(?::[a-f\d]{1,4}){0,3}:(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]\d|\d)(?:\.(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]\d|\d)){3}|(?::[a-f\d]{1,4}){1,5}|:)|(?:[a-f\d]{1,4}:){1}(?:(?::[a-f\d]{1,4}){0,4}:(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]\d|\d)(?:\.(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]\d|\d)){3}|(?::[a-f\d]{1,4}){1,6}|:)|(?::(?:(?::[a-f\d]{1,4}){0,5}:(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]\d|\d)(?:\.(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]\d|\d)){3}|(?::[a-f\d]{1,4}){1,7}|:)))$)/;
+
+/*
+ * Parses a Natural number (i.e., non-negative integer) with either the
+ *    <min>*<max>DIGIT ( non-digit *OCTET )
+ * or
+ *    <min>*<max>DIGIT
+ * grammar (RFC6265 S5.1.1).
+ *
+ * The "trailingOK" boolean controls if the grammar accepts a
+ * "( non-digit *OCTET )" trailer.
+ */
+function parseDigits(token, minDigits, maxDigits, trailingOK) {
+  let count = 0;
+  while (count < token.length) {
+    const c = token.charCodeAt(count);
+    // "non-digit = %x00-2F / %x3A-FF"
+    if (c <= 0x2f || c >= 0x3a) {
+      break;
+    }
+    count++;
+  }
+
+  // constrain to a minimum and maximum number of digits.
+  if (count < minDigits || count > maxDigits) {
+    return null;
+  }
+
+  if (!trailingOK && count != token.length) {
+    return null;
+  }
+
+  return parseInt(token.substr(0, count), 10);
+}
+
+function parseTime(token) {
+  const parts = token.split(":");
+  const result = [0, 0, 0];
+
+  /* RF6256 S5.1.1:
+   *      time            = hms-time ( non-digit *OCTET )
+   *      hms-time        = time-field ":" time-field ":" time-field
+   *      time-field      = 1*2DIGIT
+   */
+
+  if (parts.length !== 3) {
+    return null;
+  }
+
+  for (let i = 0; i < 3; i++) {
+    // "time-field" must be strictly "1*2DIGIT", HOWEVER, "hms-time" can be
+    // followed by "( non-digit *OCTET )" so therefore the last time-field can
+    // have a trailer
+    const trailingOK = i == 2;
+    const num = parseDigits(parts[i], 1, 2, trailingOK);
+    if (num === null) {
+      return null;
+    }
+    result[i] = num;
+  }
+
+  return result;
+}
+
+function parseMonth(token) {
+  token = String(token)
+    .substr(0, 3)
+    .toLowerCase();
+  const num = MONTH_TO_NUM[token];
+  return num >= 0 ? num : null;
+}
+
+/*
+ * RFC6265 S5.1.1 date parser (see RFC for full grammar)
+ */
+function parseDate(str) {
+  if (!str) {
+    return;
+  }
+
+  /* RFC6265 S5.1.1:
+   * 2. Process each date-token sequentially in the order the date-tokens
+   * appear in the cookie-date
+   */
+  const tokens = str.split(DATE_DELIM);
+  if (!tokens) {
+    return;
+  }
+
+  let hour = null;
+  let minute = null;
+  let second = null;
+  let dayOfMonth = null;
+  let month = null;
+  let year = null;
+
+  for (let i = 0; i < tokens.length; i++) {
+    const token = tokens[i].trim();
+    if (!token.length) {
+      continue;
+    }
+
+    let result;
+
+    /* 2.1. If the found-time flag is not set and the token matches the time
+     * production, set the found-time flag and set the hour- value,
+     * minute-value, and second-value to the numbers denoted by the digits in
+     * the date-token, respectively.  Skip the remaining sub-steps and continue
+     * to the next date-token.
+     */
+    if (second === null) {
+      result = parseTime(token);
+      if (result) {
+        hour = result[0];
+        minute = result[1];
+        second = result[2];
+        continue;
+      }
+    }
+
+    /* 2.2. If the found-day-of-month flag is not set and the date-token matches
+     * the day-of-month production, set the found-day-of- month flag and set
+     * the day-of-month-value to the number denoted by the date-token.  Skip
+     * the remaining sub-steps and continue to the next date-token.
+     */
+    if (dayOfMonth === null) {
+      // "day-of-month = 1*2DIGIT ( non-digit *OCTET )"
+      result = parseDigits(token, 1, 2, true);
+      if (result !== null) {
+        dayOfMonth = result;
+        continue;
+      }
+    }
+
+    /* 2.3. If the found-month flag is not set and the date-token matches the
+     * month production, set the found-month flag and set the month-value to
+     * the month denoted by the date-token.  Skip the remaining sub-steps and
+     * continue to the next date-token.
+     */
+    if (month === null) {
+      result = parseMonth(token);
+      if (result !== null) {
+        month = result;
+        continue;
+      }
+    }
+
+    /* 2.4. If the found-year flag is not set and the date-token matches the
+     * year production, set the found-year flag and set the year-value to the
+     * number denoted by the date-token.  Skip the remaining sub-steps and
+     * continue to the next date-token.
+     */
+    if (year === null) {
+      // "year = 2*4DIGIT ( non-digit *OCTET )"
+      result = parseDigits(token, 2, 4, true);
+      if (result !== null) {
+        year = result;
+        /* From S5.1.1:
+         * 3.  If the year-value is greater than or equal to 70 and less
+         * than or equal to 99, increment the year-value by 1900.
+         * 4.  If the year-value is greater than or equal to 0 and less
+         * than or equal to 69, increment the year-value by 2000.
+         */
+        if (year >= 70 && year <= 99) {
+          year += 1900;
+        } else if (year >= 0 && year <= 69) {
+          year += 2000;
+        }
+      }
+    }
+  }
+
+  /* RFC 6265 S5.1.1
+   * "5. Abort these steps and fail to parse the cookie-date if:
+   *     *  at least one of the found-day-of-month, found-month, found-
+   *        year, or found-time flags is not set,
+   *     *  the day-of-month-value is less than 1 or greater than 31,
+   *     *  the year-value is less than 1601,
+   *     *  the hour-value is greater than 23,
+   *     *  the minute-value is greater than 59, or
+   *     *  the second-value is greater than 59.
+   *     (Note that leap seconds cannot be represented in this syntax.)"
+   *
+   * So, in order as above:
+   */
+  if (
+    dayOfMonth === null ||
+    month === null ||
+    year === null ||
+    second === null ||
+    dayOfMonth < 1 ||
+    dayOfMonth > 31 ||
+    year < 1601 ||
+    hour > 23 ||
+    minute > 59 ||
+    second > 59
+  ) {
+    return;
+  }
+
+  return new Date(Date.UTC(year, month, dayOfMonth, hour, minute, second));
+}
+
+function formatDate(date) {
+  return date.toUTCString();
+}
+
+// S5.1.2 Canonicalized Host Names
+function canonicalDomain(str) {
+  if (str == null) {
+    return null;
+  }
+  str = str.trim().replace(/^\./, ""); // S4.1.2.3 & S5.2.3: ignore leading .
+
+  // convert to IDN if any non-ASCII characters
+  if (punycode && /[^\u0001-\u007f]/.test(str)) {
+    str = punycode.toASCII(str);
+  }
+
+  return str.toLowerCase();
+}
+
+// S5.1.3 Domain Matching
+function domainMatch(str, domStr, canonicalize) {
+  if (str == null || domStr == null) {
+    return null;
+  }
+  if (canonicalize !== false) {
+    str = canonicalDomain(str);
+    domStr = canonicalDomain(domStr);
+  }
+
+  /*
+   * S5.1.3:
+   * "A string domain-matches a given domain string if at least one of the
+   * following conditions hold:"
+   *
+   * " o The domain string and the string are identical. (Note that both the
+   * domain string and the string will have been canonicalized to lower case at
+   * this point)"
+   */
+  if (str == domStr) {
+    return true;
+  }
+
+  /* " o All of the following [three] conditions hold:" */
+
+  /* "* The domain string is a suffix of the string" */
+  const idx = str.indexOf(domStr);
+  if (idx <= 0) {
+    return false; // it's a non-match (-1) or prefix (0)
+  }
+
+  // next, check it's a proper suffix
+  // e.g., "a.b.c".indexOf("b.c") === 2
+  // 5 === 3+2
+  if (str.length !== domStr.length + idx) {
+    return false; // it's not a suffix
+  }
+
+  /* "  * The last character of the string that is not included in the
+   * domain string is a %x2E (".") character." */
+  if (str.substr(idx-1,1) !== '.') {
+    return false; // doesn't align on "."
+  }
+
+  /* "  * The string is a host name (i.e., not an IP address)." */
+  if (IP_REGEX_LOWERCASE.test(str)) {
+    return false; // it's an IP address
+  }
+
+  return true;
+}
+
+// RFC6265 S5.1.4 Paths and Path-Match
+
+/*
+ * "The user agent MUST use an algorithm equivalent to the following algorithm
+ * to compute the default-path of a cookie:"
+ *
+ * Assumption: the path (and not query part or absolute uri) is passed in.
+ */
+function defaultPath(path) {
+  // "2. If the uri-path is empty or if the first character of the uri-path is not
+  // a %x2F ("/") character, output %x2F ("/") and skip the remaining steps.
+  if (!path || path.substr(0, 1) !== "/") {
+    return "/";
+  }
+
+  // "3. If the uri-path contains no more than one %x2F ("/") character, output
+  // %x2F ("/") and skip the remaining step."
+  if (path === "/") {
+    return path;
+  }
+
+  const rightSlash = path.lastIndexOf("/");
+  if (rightSlash === 0) {
+    return "/";
+  }
+
+  // "4. Output the characters of the uri-path from the first character up to,
+  // but not including, the right-most %x2F ("/")."
+  return path.slice(0, rightSlash);
+}
+
+function trimTerminator(str) {
+  for (let t = 0; t < TERMINATORS.length; t++) {
+    const terminatorIdx = str.indexOf(TERMINATORS[t]);
+    if (terminatorIdx !== -1) {
+      str = str.substr(0, terminatorIdx);
+    }
+  }
+
+  return str;
+}
+
+function parseCookiePair(cookiePair, looseMode) {
+  cookiePair = trimTerminator(cookiePair);
+
+  let firstEq = cookiePair.indexOf("=");
+  if (looseMode) {
+    if (firstEq === 0) {
+      // '=' is immediately at start
+      cookiePair = cookiePair.substr(1);
+      firstEq = cookiePair.indexOf("="); // might still need to split on '='
+    }
+  } else {
+    // non-loose mode
+    if (firstEq <= 0) {
+      // no '=' or is at start
+      return; // needs to have non-empty "cookie-name"
+    }
+  }
+
+  let cookieName, cookieValue;
+  if (firstEq <= 0) {
+    cookieName = "";
+    cookieValue = cookiePair.trim();
+  } else {
+    cookieName = cookiePair.substr(0, firstEq).trim();
+    cookieValue = cookiePair.substr(firstEq + 1).trim();
+  }
+
+  if (CONTROL_CHARS.test(cookieName) || CONTROL_CHARS.test(cookieValue)) {
+    return;
+  }
+
+  const c = new Cookie();
+  c.key = cookieName;
+  c.value = cookieValue;
+  return c;
+}
+
+function parse(str, options) {
+  if (!options || typeof options !== "object") {
+    options = {};
+  }
+  str = str.trim();
+
+  // We use a regex to parse the "name-value-pair" part of S5.2
+  const firstSemi = str.indexOf(";"); // S5.2 step 1
+  const cookiePair = firstSemi === -1 ? str : str.substr(0, firstSemi);
+  const c = parseCookiePair(cookiePair, !!options.loose);
+  if (!c) {
+    return;
+  }
+
+  if (firstSemi === -1) {
+    return c;
+  }
+
+  // S5.2.3 "unparsed-attributes consist of the remainder of the set-cookie-string
+  // (including the %x3B (";") in question)." plus later on in the same section
+  // "discard the first ";" and trim".
+  const unparsed = str.slice(firstSemi + 1).trim();
+
+  // "If the unparsed-attributes string is empty, skip the rest of these
+  // steps."
+  if (unparsed.length === 0) {
+    return c;
+  }
+
+  /*
+   * S5.2 says that when looping over the items "[p]rocess the attribute-name
+   * and attribute-value according to the requirements in the following
+   * subsections" for every item.  Plus, for many of the individual attributes
+   * in S5.3 it says to use the "attribute-value of the last attribute in the
+   * cookie-attribute-list".  Therefore, in this implementation, we overwrite
+   * the previous value.
+   */
+  const cookie_avs = unparsed.split(";");
+  while (cookie_avs.length) {
+    const av = cookie_avs.shift().trim();
+    if (av.length === 0) {
+      // happens if ";;" appears
+      continue;
+    }
+    const av_sep = av.indexOf("=");
+    let av_key, av_value;
+
+    if (av_sep === -1) {
+      av_key = av;
+      av_value = null;
+    } else {
+      av_key = av.substr(0, av_sep);
+      av_value = av.substr(av_sep + 1);
+    }
+
+    av_key = av_key.trim().toLowerCase();
+
+    if (av_value) {
+      av_value = av_value.trim();
+    }
+
+    switch (av_key) {
+      case "expires": // S5.2.1
+        if (av_value) {
+          const exp = parseDate(av_value);
+          // "If the attribute-value failed to parse as a cookie date, ignore the
+          // cookie-av."
+          if (exp) {
+            // over and underflow not realistically a concern: V8's getTime() seems to
+            // store something larger than a 32-bit time_t (even with 32-bit node)
+            c.expires = exp;
+          }
+        }
+        break;
+
+      case "max-age": // S5.2.2
+        if (av_value) {
+          // "If the first character of the attribute-value is not a DIGIT or a "-"
+          // character ...[or]... If the remainder of attribute-value contains a
+          // non-DIGIT character, ignore the cookie-av."
+          if (/^-?[0-9]+$/.test(av_value)) {
+            const delta = parseInt(av_value, 10);
+            // "If delta-seconds is less than or equal to zero (0), let expiry-time
+            // be the earliest representable date and time."
+            c.setMaxAge(delta);
+          }
+        }
+        break;
+
+      case "domain": // S5.2.3
+        // "If the attribute-value is empty, the behavior is undefined.  However,
+        // the user agent SHOULD ignore the cookie-av entirely."
+        if (av_value) {
+          // S5.2.3 "Let cookie-domain be the attribute-value without the leading %x2E
+          // (".") character."
+          const domain = av_value.trim().replace(/^\./, "");
+          if (domain) {
+            // "Convert the cookie-domain to lower case."
+            c.domain = domain.toLowerCase();
+          }
+        }
+        break;
+
+      case "path": // S5.2.4
+        /*
+         * "If the attribute-value is empty or if the first character of the
+         * attribute-value is not %x2F ("/"):
+         *   Let cookie-path be the default-path.
+         * Otherwise:
+         *   Let cookie-path be the attribute-value."
+         *
+         * We'll represent the default-path as null since it depends on the
+         * context of the parsing.
+         */
+        c.path = av_value && av_value[0] === "/" ? av_value : null;
+        break;
+
+      case "secure": // S5.2.5
+        /*
+         * "If the attribute-name case-insensitively matches the string "Secure",
+         * the user agent MUST append an attribute to the cookie-attribute-list
+         * with an attribute-name of Secure and an empty attribute-value."
+         */
+        c.secure = true;
+        break;
+
+      case "httponly": // S5.2.6 -- effectively the same as 'secure'
+        c.httpOnly = true;
+        break;
+
+      case "samesite": // RFC6265bis-02 S5.3.7
+        const enforcement = av_value ? av_value.toLowerCase() : "";
+        switch (enforcement) {
+          case "strict":
+            c.sameSite = "strict";
+            break;
+          case "lax":
+            c.sameSite = "lax";
+            break;
+          default:
+            // RFC6265bis-02 S5.3.7 step 1:
+            // "If cookie-av's attribute-value is not a case-insensitive match
+            //  for "Strict" or "Lax", ignore the "cookie-av"."
+            // This effectively sets it to 'none' from the prototype.
+            break;
+        }
+        break;
+
+      default:
+        c.extensions = c.extensions || [];
+        c.extensions.push(av);
+        break;
+    }
+  }
+
+  return c;
+}
+
+/**
+ *  If the cookie-name begins with a case-sensitive match for the
+ *  string "__Secure-", abort these steps and ignore the cookie
+ *  entirely unless the cookie's secure-only-flag is true.
+ * @param cookie
+ * @returns boolean
+ */
+function isSecurePrefixConditionMet(cookie) {
+  return !cookie.key.startsWith("__Secure-") || cookie.secure;
+}
+
+/**
+ *  If the cookie-name begins with a case-sensitive match for the
+ *  string "__Host-", abort these steps and ignore the cookie
+ *  entirely unless the cookie meets all the following criteria:
+ *    1.  The cookie's secure-only-flag is true.
+ *    2.  The cookie's host-only-flag is true.
+ *    3.  The cookie-attribute-list contains an attribute with an
+ *        attribute-name of "Path", and the cookie's path is "/".
+ * @param cookie
+ * @returns boolean
+ */
+function isHostPrefixConditionMet(cookie) {
+  return (
+    !cookie.key.startsWith("__Host-") ||
+    (cookie.secure &&
+      cookie.hostOnly &&
+      cookie.path != null &&
+      cookie.path === "/")
+  );
+}
+
+// avoid the V8 deoptimization monster!
+function jsonParse(str) {
+  let obj;
+  try {
+    obj = JSON.parse(str);
+  } catch (e) {
+    return e;
+  }
+  return obj;
+}
+
+function fromJSON(str) {
+  if (!str) {
+    return null;
+  }
+
+  let obj;
+  if (typeof str === "string") {
+    obj = jsonParse(str);
+    if (obj instanceof Error) {
+      return null;
+    }
+  } else {
+    // assume it's an Object
+    obj = str;
+  }
+
+  const c = new Cookie();
+  for (let i = 0; i < Cookie.serializableProperties.length; i++) {
+    const prop = Cookie.serializableProperties[i];
+    if (obj[prop] === undefined || obj[prop] === cookieDefaults[prop]) {
+      continue; // leave as prototype default
+    }
+
+    if (prop === "expires" || prop === "creation" || prop === "lastAccessed") {
+      if (obj[prop] === null) {
+        c[prop] = null;
+      } else {
+        c[prop] = obj[prop] == "Infinity" ? "Infinity" : new Date(obj[prop]);
+      }
+    } else {
+      c[prop] = obj[prop];
+    }
+  }
+
+  return c;
+}
+
+/* Section 5.4 part 2:
+ * "*  Cookies with longer paths are listed before cookies with
+ *     shorter paths.
+ *
+ *  *  Among cookies that have equal-length path fields, cookies with
+ *     earlier creation-times are listed before cookies with later
+ *     creation-times."
+ */
+
+function cookieCompare(a, b) {
+  let cmp = 0;
+
+  // descending for length: b CMP a
+  const aPathLen = a.path ? a.path.length : 0;
+  const bPathLen = b.path ? b.path.length : 0;
+  cmp = bPathLen - aPathLen;
+  if (cmp !== 0) {
+    return cmp;
+  }
+
+  // ascending for time: a CMP b
+  const aTime = a.creation ? a.creation.getTime() : MAX_TIME;
+  const bTime = b.creation ? b.creation.getTime() : MAX_TIME;
+  cmp = aTime - bTime;
+  if (cmp !== 0) {
+    return cmp;
+  }
+
+  // break ties for the same millisecond (precision of JavaScript's clock)
+  cmp = a.creationIndex - b.creationIndex;
+
+  return cmp;
+}
+
+// Gives the permutation of all possible pathMatch()es of a given path. The
+// array is in longest-to-shortest order.  Handy for indexing.
+function permutePath(path) {
+  if (path === "/") {
+    return ["/"];
+  }
+  const permutations = [path];
+  while (path.length > 1) {
+    const lindex = path.lastIndexOf("/");
+    if (lindex === 0) {
+      break;
+    }
+    path = path.substr(0, lindex);
+    permutations.push(path);
+  }
+  permutations.push("/");
+  return permutations;
+}
+
+function getCookieContext(url) {
+  if (url instanceof Object) {
+    return url;
+  }
+  // NOTE: decodeURI will throw on malformed URIs (see GH-32).
+  // Therefore, we will just skip decoding for such URIs.
+  try {
+    url = decodeURI(url);
+  } catch (err) {
+    // Silently swallow error
+  }
+
+  return urlParse(url);
+}
+
+const cookieDefaults = {
+  // the order in which the RFC has them:
+  key: "",
+  value: "",
+  expires: "Infinity",
+  maxAge: null,
+  domain: null,
+  path: null,
+  secure: false,
+  httpOnly: false,
+  extensions: null,
+  // set by the CookieJar:
+  hostOnly: null,
+  pathIsDefault: null,
+  creation: null,
+  lastAccessed: null,
+  sameSite: "none"
+};
+
+class Cookie {
+  constructor(options = {}) {
+    if (util.inspect.custom) {
+      this[util.inspect.custom] = this.inspect;
+    }
+
+    Object.assign(this, cookieDefaults, options);
+    this.creation = this.creation || new Date();
+
+    // used to break creation ties in cookieCompare():
+    Object.defineProperty(this, "creationIndex", {
+      configurable: false,
+      enumerable: false, // important for assert.deepEqual checks
+      writable: true,
+      value: ++Cookie.cookiesCreated
+    });
+  }
+
+  inspect() {
+    const now = Date.now();
+    const hostOnly = this.hostOnly != null ? this.hostOnly : "?";
+    const createAge = this.creation
+      ? `${now - this.creation.getTime()}ms`
+      : "?";
+    const accessAge = this.lastAccessed
+      ? `${now - this.lastAccessed.getTime()}ms`
+      : "?";
+    return `Cookie="${this.toString()}; hostOnly=${hostOnly}; aAge=${accessAge}; cAge=${createAge}"`;
+  }
+
+  toJSON() {
+    const obj = {};
+
+    for (const prop of Cookie.serializableProperties) {
+      if (this[prop] === cookieDefaults[prop]) {
+        continue; // leave as prototype default
+      }
+
+      if (
+        prop === "expires" ||
+        prop === "creation" ||
+        prop === "lastAccessed"
+      ) {
+        if (this[prop] === null) {
+          obj[prop] = null;
+        } else {
+          obj[prop] =
+            this[prop] == "Infinity" // intentionally not ===
+              ? "Infinity"
+              : this[prop].toISOString();
+        }
+      } else if (prop === "maxAge") {
+        if (this[prop] !== null) {
+          // again, intentionally not ===
+          obj[prop] =
+            this[prop] == Infinity || this[prop] == -Infinity
+              ? this[prop].toString()
+              : this[prop];
+        }
+      } else {
+        if (this[prop] !== cookieDefaults[prop]) {
+          obj[prop] = this[prop];
+        }
+      }
+    }
+
+    return obj;
+  }
+
+  clone() {
+    return fromJSON(this.toJSON());
+  }
+
+  validate() {
+    if (!COOKIE_OCTETS.test(this.value)) {
+      return false;
+    }
+    if (
+      this.expires != Infinity &&
+      !(this.expires instanceof Date) &&
+      !parseDate(this.expires)
+    ) {
+      return false;
+    }
+    if (this.maxAge != null && this.maxAge <= 0) {
+      return false; // "Max-Age=" non-zero-digit *DIGIT
+    }
+    if (this.path != null && !PATH_VALUE.test(this.path)) {
+      return false;
+    }
+
+    const cdomain = this.cdomain();
+    if (cdomain) {
+      if (cdomain.match(/\.$/)) {
+        return false; // S4.1.2.3 suggests that this is bad. domainMatch() tests confirm this
+      }
+      const suffix = pubsuffix.getPublicSuffix(cdomain);
+      if (suffix == null) {
+        // it's a public suffix
+        return false;
+      }
+    }
+    return true;
+  }
+
+  setExpires(exp) {
+    if (exp instanceof Date) {
+      this.expires = exp;
+    } else {
+      this.expires = parseDate(exp) || "Infinity";
+    }
+  }
+
+  setMaxAge(age) {
+    if (age === Infinity || age === -Infinity) {
+      this.maxAge = age.toString(); // so JSON.stringify() works
+    } else {
+      this.maxAge = age;
+    }
+  }
+
+  cookieString() {
+    let val = this.value;
+    if (val == null) {
+      val = "";
+    }
+    if (this.key === "") {
+      return val;
+    }
+    return `${this.key}=${val}`;
+  }
+
+  // gives Set-Cookie header format
+  toString() {
+    let str = this.cookieString();
+
+    if (this.expires != Infinity) {
+      if (this.expires instanceof Date) {
+        str += `; Expires=${formatDate(this.expires)}`;
+      } else {
+        str += `; Expires=${this.expires}`;
+      }
+    }
+
+    if (this.maxAge != null && this.maxAge != Infinity) {
+      str += `; Max-Age=${this.maxAge}`;
+    }
+
+    if (this.domain && !this.hostOnly) {
+      str += `; Domain=${this.domain}`;
+    }
+    if (this.path) {
+      str += `; Path=${this.path}`;
+    }
+
+    if (this.secure) {
+      str += "; Secure";
+    }
+    if (this.httpOnly) {
+      str += "; HttpOnly";
+    }
+    if (this.sameSite && this.sameSite !== "none") {
+      const ssCanon = Cookie.sameSiteCanonical[this.sameSite.toLowerCase()];
+      str += `; SameSite=${ssCanon ? ssCanon : this.sameSite}`;
+    }
+    if (this.extensions) {
+      this.extensions.forEach(ext => {
+        str += `; ${ext}`;
+      });
+    }
+
+    return str;
+  }
+
+  // TTL() partially replaces the "expiry-time" parts of S5.3 step 3 (setCookie()
+  // elsewhere)
+  // S5.3 says to give the "latest representable date" for which we use Infinity
+  // For "expired" we use 0
+  TTL(now) {
+    /* RFC6265 S4.1.2.2 If a cookie has both the Max-Age and the Expires
+     * attribute, the Max-Age attribute has precedence and controls the
+     * expiration date of the cookie.
+     * (Concurs with S5.3 step 3)
+     */
+    if (this.maxAge != null) {
+      return this.maxAge <= 0 ? 0 : this.maxAge * 1000;
+    }
+
+    let expires = this.expires;
+    if (expires != Infinity) {
+      if (!(expires instanceof Date)) {
+        expires = parseDate(expires) || Infinity;
+      }
+
+      if (expires == Infinity) {
+        return Infinity;
+      }
+
+      return expires.getTime() - (now || Date.now());
+    }
+
+    return Infinity;
+  }
+
+  // expiryTime() replaces the "expiry-time" parts of S5.3 step 3 (setCookie()
+  // elsewhere)
+  expiryTime(now) {
+    if (this.maxAge != null) {
+      const relativeTo = now || this.creation || new Date();
+      const age = this.maxAge <= 0 ? -Infinity : this.maxAge * 1000;
+      return relativeTo.getTime() + age;
+    }
+
+    if (this.expires == Infinity) {
+      return Infinity;
+    }
+    return this.expires.getTime();
+  }
+
+  // expiryDate() replaces the "expiry-time" parts of S5.3 step 3 (setCookie()
+  // elsewhere), except it returns a Date
+  expiryDate(now) {
+    const millisec = this.expiryTime(now);
+    if (millisec == Infinity) {
+      return new Date(MAX_TIME);
+    } else if (millisec == -Infinity) {
+      return new Date(MIN_TIME);
+    } else {
+      return new Date(millisec);
+    }
+  }
+
+  // This replaces the "persistent-flag" parts of S5.3 step 3
+  isPersistent() {
+    return this.maxAge != null || this.expires != Infinity;
+  }
+
+  // Mostly S5.1.2 and S5.2.3:
+  canonicalizedDomain() {
+    if (this.domain == null) {
+      return null;
+    }
+    return canonicalDomain(this.domain);
+  }
+
+  cdomain() {
+    return this.canonicalizedDomain();
+  }
+}
+
+Cookie.cookiesCreated = 0;
+Cookie.parse = parse;
+Cookie.fromJSON = fromJSON;
+Cookie.serializableProperties = Object.keys(cookieDefaults);
+Cookie.sameSiteLevel = {
+  strict: 3,
+  lax: 2,
+  none: 1
+};
+
+Cookie.sameSiteCanonical = {
+  strict: "Strict",
+  lax: "Lax"
+};
+
+function getNormalizedPrefixSecurity(prefixSecurity) {
+  if (prefixSecurity != null) {
+    const normalizedPrefixSecurity = prefixSecurity.toLowerCase();
+    /* The three supported options */
+    switch (normalizedPrefixSecurity) {
+      case PrefixSecurityEnum.STRICT:
+      case PrefixSecurityEnum.SILENT:
+      case PrefixSecurityEnum.DISABLED:
+        return normalizedPrefixSecurity;
+    }
+  }
+  /* Default is SILENT */
+  return PrefixSecurityEnum.SILENT;
+}
+
+class CookieJar {
+  constructor(store, options = { rejectPublicSuffixes: true }) {
+    if (typeof options === "boolean") {
+      options = { rejectPublicSuffixes: options };
+    }
+    this.rejectPublicSuffixes = options.rejectPublicSuffixes;
+    this.enableLooseMode = !!options.looseMode;
+    this.allowSpecialUseDomain = !!options.allowSpecialUseDomain;
+    this.store = store || new MemoryCookieStore();
+    this.prefixSecurity = getNormalizedPrefixSecurity(options.prefixSecurity);
+    this._cloneSync = syncWrap("clone");
+    this._importCookiesSync = syncWrap("_importCookies");
+    this.getCookiesSync = syncWrap("getCookies");
+    this.getCookieStringSync = syncWrap("getCookieString");
+    this.getSetCookieStringsSync = syncWrap("getSetCookieStrings");
+    this.removeAllCookiesSync = syncWrap("removeAllCookies");
+    this.setCookieSync = syncWrap("setCookie");
+    this.serializeSync = syncWrap("serialize");
+  }
+
+  setCookie(cookie, url, options, cb) {
+    let err;
+    const context = getCookieContext(url);
+    if (typeof options === "function") {
+      cb = options;
+      options = {};
+    }
+
+    const host = canonicalDomain(context.hostname);
+    const loose = options.loose || this.enableLooseMode;
+
+    let sameSiteContext = null;
+    if (options.sameSiteContext) {
+      sameSiteContext = checkSameSiteContext(options.sameSiteContext);
+      if (!sameSiteContext) {
+        return cb(new Error(SAME_SITE_CONTEXT_VAL_ERR));
+      }
+    }
+
+    // S5.3 step 1
+    if (typeof cookie === "string" || cookie instanceof String) {
+      cookie = Cookie.parse(cookie, { loose: loose });
+      if (!cookie) {
+        err = new Error("Cookie failed to parse");
+        return cb(options.ignoreError ? null : err);
+      }
+    } else if (!(cookie instanceof Cookie)) {
+      // If you're seeing this error, and are passing in a Cookie object,
+      // it *might* be a Cookie object from another loaded version of tough-cookie.
+      err = new Error(
+        "First argument to setCookie must be a Cookie object or string"
+      );
+      return cb(options.ignoreError ? null : err);
+    }
+
+    // S5.3 step 2
+    const now = options.now || new Date(); // will assign later to save effort in the face of errors
+
+    // S5.3 step 3: NOOP; persistent-flag and expiry-time is handled by getCookie()
+
+    // S5.3 step 4: NOOP; domain is null by default
+
+    // S5.3 step 5: public suffixes
+    if (this.rejectPublicSuffixes && cookie.domain) {
+      const suffix = pubsuffix.getPublicSuffix(cookie.cdomain());
+      if (suffix == null) {
+        // e.g. "com"
+        err = new Error("Cookie has domain set to a public suffix");
+        return cb(options.ignoreError ? null : err);
+      }
+    }
+
+    // S5.3 step 6:
+    if (cookie.domain) {
+      if (!domainMatch(host, cookie.cdomain(), false)) {
+        err = new Error(
+          `Cookie not in this host's domain. Cookie:${cookie.cdomain()} Request:${host}`
+        );
+        return cb(options.ignoreError ? null : err);
+      }
+
+      if (cookie.hostOnly == null) {
+        // don't reset if already set
+        cookie.hostOnly = false;
+      }
+    } else {
+      cookie.hostOnly = true;
+      cookie.domain = host;
+    }
+
+    //S5.2.4 If the attribute-value is empty or if the first character of the
+    //attribute-value is not %x2F ("/"):
+    //Let cookie-path be the default-path.
+    if (!cookie.path || cookie.path[0] !== "/") {
+      cookie.path = defaultPath(context.pathname);
+      cookie.pathIsDefault = true;
+    }
+
+    // S5.3 step 8: NOOP; secure attribute
+    // S5.3 step 9: NOOP; httpOnly attribute
+
+    // S5.3 step 10
+    if (options.http === false && cookie.httpOnly) {
+      err = new Error("Cookie is HttpOnly and this isn't an HTTP API");
+      return cb(options.ignoreError ? null : err);
+    }
+
+    // 6252bis-02 S5.4 Step 13 & 14:
+    if (cookie.sameSite !== "none" && sameSiteContext) {
+      // "If the cookie's "same-site-flag" is not "None", and the cookie
+      //  is being set from a context whose "site for cookies" is not an
+      //  exact match for request-uri's host's registered domain, then
+      //  abort these steps and ignore the newly created cookie entirely."
+      if (sameSiteContext === "none") {
+        err = new Error(
+          "Cookie is SameSite but this is a cross-origin request"
+        );
+        return cb(options.ignoreError ? null : err);
+      }
+    }
+
+    /* 6265bis-02 S5.4 Steps 15 & 16 */
+    const ignoreErrorForPrefixSecurity =
+      this.prefixSecurity === PrefixSecurityEnum.SILENT;
+    const prefixSecurityDisabled =
+      this.prefixSecurity === PrefixSecurityEnum.DISABLED;
+    /* If prefix checking is not disabled ...*/
+    if (!prefixSecurityDisabled) {
+      let errorFound = false;
+      let errorMsg;
+      /* Check secure prefix condition */
+      if (!isSecurePrefixConditionMet(cookie)) {
+        errorFound = true;
+        errorMsg = "Cookie has __Secure prefix but Secure attribute is not set";
+      } else if (!isHostPrefixConditionMet(cookie)) {
+        /* Check host prefix condition */
+        errorFound = true;
+        errorMsg =
+          "Cookie has __Host prefix but either Secure or HostOnly attribute is not set or Path is not '/'";
+      }
+      if (errorFound) {
+        return cb(
+          options.ignoreError || ignoreErrorForPrefixSecurity
+            ? null
+            : new Error(errorMsg)
+        );
+      }
+    }
+
+    const store = this.store;
+
+    if (!store.updateCookie) {
+      store.updateCookie = function(oldCookie, newCookie, cb) {
+        this.putCookie(newCookie, cb);
+      };
+    }
+
+    function withCookie(err, oldCookie) {
+      if (err) {
+        return cb(err);
+      }
+
+      const next = function(err) {
+        if (err) {
+          return cb(err);
+        } else {
+          cb(null, cookie);
+        }
+      };
+
+      if (oldCookie) {
+        // S5.3 step 11 - "If the cookie store contains a cookie with the same name,
+        // domain, and path as the newly created cookie:"
+        if (options.http === false && oldCookie.httpOnly) {
+          // step 11.2
+          err = new Error("old Cookie is HttpOnly and this isn't an HTTP API");
+          return cb(options.ignoreError ? null : err);
+        }
+        cookie.creation = oldCookie.creation; // step 11.3
+        cookie.creationIndex = oldCookie.creationIndex; // preserve tie-breaker
+        cookie.lastAccessed = now;
+        // Step 11.4 (delete cookie) is implied by just setting the new one:
+        store.updateCookie(oldCookie, cookie, next); // step 12
+      } else {
+        cookie.creation = cookie.lastAccessed = now;
+        store.putCookie(cookie, next); // step 12
+      }
+    }
+
+    store.findCookie(cookie.domain, cookie.path, cookie.key, withCookie);
+  }
+
+  // RFC6365 S5.4
+  getCookies(url, options, cb) {
+    const context = getCookieContext(url);
+    if (typeof options === "function") {
+      cb = options;
+      options = {};
+    }
+
+    const host = canonicalDomain(context.hostname);
+    const path = context.pathname || "/";
+
+    let secure = options.secure;
+    if (
+      secure == null &&
+      context.protocol &&
+      (context.protocol == "https:" || context.protocol == "wss:")
+    ) {
+      secure = true;
+    }
+
+    let sameSiteLevel = 0;
+    if (options.sameSiteContext) {
+      const sameSiteContext = checkSameSiteContext(options.sameSiteContext);
+      sameSiteLevel = Cookie.sameSiteLevel[sameSiteContext];
+      if (!sameSiteLevel) {
+        return cb(new Error(SAME_SITE_CONTEXT_VAL_ERR));
+      }
+    }
+
+    let http = options.http;
+    if (http == null) {
+      http = true;
+    }
+
+    const now = options.now || Date.now();
+    const expireCheck = options.expire !== false;
+    const allPaths = !!options.allPaths;
+    const store = this.store;
+
+    function matchingCookie(c) {
+      // "Either:
+      //   The cookie's host-only-flag is true and the canonicalized
+      //   request-host is identical to the cookie's domain.
+      // Or:
+      //   The cookie's host-only-flag is false and the canonicalized
+      //   request-host domain-matches the cookie's domain."
+      if (c.hostOnly) {
+        if (c.domain != host) {
+          return false;
+        }
+      } else {
+        if (!domainMatch(host, c.domain, false)) {
+          return false;
+        }
+      }
+
+      // "The request-uri's path path-matches the cookie's path."
+      if (!allPaths && !pathMatch(path, c.path)) {
+        return false;
+      }
+
+      // "If the cookie's secure-only-flag is true, then the request-uri's
+      // scheme must denote a "secure" protocol"
+      if (c.secure && !secure) {
+        return false;
+      }
+
+      // "If the cookie's http-only-flag is true, then exclude the cookie if the
+      // cookie-string is being generated for a "non-HTTP" API"
+      if (c.httpOnly && !http) {
+        return false;
+      }
+
+      // RFC6265bis-02 S5.3.7
+      if (sameSiteLevel) {
+        const cookieLevel = Cookie.sameSiteLevel[c.sameSite || "none"];
+        if (cookieLevel > sameSiteLevel) {
+          // only allow cookies at or below the request level
+          return false;
+        }
+      }
+
+      // deferred from S5.3
+      // non-RFC: allow retention of expired cookies by choice
+      if (expireCheck && c.expiryTime() <= now) {
+        store.removeCookie(c.domain, c.path, c.key, () => {}); // result ignored
+        return false;
+      }
+
+      return true;
+    }
+
+    store.findCookies(
+      host,
+      allPaths ? null : path,
+      this.allowSpecialUseDomain,
+      (err, cookies) => {
+        if (err) {
+          return cb(err);
+        }
+
+        cookies = cookies.filter(matchingCookie);
+
+        // sorting of S5.4 part 2
+        if (options.sort !== false) {
+          cookies = cookies.sort(cookieCompare);
+        }
+
+        // S5.4 part 3
+        const now = new Date();
+        for (const cookie of cookies) {
+          cookie.lastAccessed = now;
+        }
+        // TODO persist lastAccessed
+
+        cb(null, cookies);
+      }
+    );
+  }
+
+  getCookieString(...args) {
+    const cb = args.pop();
+    const next = function(err, cookies) {
+      if (err) {
+        cb(err);
+      } else {
+        cb(
+          null,
+          cookies
+            .sort(cookieCompare)
+            .map(c => c.cookieString())
+            .join("; ")
+        );
+      }
+    };
+    args.push(next);
+    this.getCookies.apply(this, args);
+  }
+
+  getSetCookieStrings(...args) {
+    const cb = args.pop();
+    const next = function(err, cookies) {
+      if (err) {
+        cb(err);
+      } else {
+        cb(
+          null,
+          cookies.map(c => {
+            return c.toString();
+          })
+        );
+      }
+    };
+    args.push(next);
+    this.getCookies.apply(this, args);
+  }
+
+  serialize(cb) {
+    let type = this.store.constructor.name;
+    if (type === "Object") {
+      type = null;
+    }
+
+    // update README.md "Serialization Format" if you change this, please!
+    const serialized = {
+      // The version of tough-cookie that serialized this jar. Generally a good
+      // practice since future versions can make data import decisions based on
+      // known past behavior. When/if this matters, use `semver`.
+      version: `tough-cookie@${VERSION}`,
+
+      // add the store type, to make humans happy:
+      storeType: type,
+
+      // CookieJar configuration:
+      rejectPublicSuffixes: !!this.rejectPublicSuffixes,
+
+      // this gets filled from getAllCookies:
+      cookies: []
+    };
+
+    if (
+      !(
+        this.store.getAllCookies &&
+        typeof this.store.getAllCookies === "function"
+      )
+    ) {
+      return cb(
+        new Error(
+          "store does not support getAllCookies and cannot be serialized"
+        )
+      );
+    }
+
+    this.store.getAllCookies((err, cookies) => {
+      if (err) {
+        return cb(err);
+      }
+
+      serialized.cookies = cookies.map(cookie => {
+        // convert to serialized 'raw' cookies
+        cookie = cookie instanceof Cookie ? cookie.toJSON() : cookie;
+
+        // Remove the index so new ones get assigned during deserialization
+        delete cookie.creationIndex;
+
+        return cookie;
+      });
+
+      return cb(null, serialized);
+    });
+  }
+
+  toJSON() {
+    return this.serializeSync();
+  }
+
+  // use the class method CookieJar.deserialize instead of calling this directly
+  _importCookies(serialized, cb) {
+    let cookies = serialized.cookies;
+    if (!cookies || !Array.isArray(cookies)) {
+      return cb(new Error("serialized jar has no cookies array"));
+    }
+    cookies = cookies.slice(); // do not modify the original
+
+    const putNext = err => {
+      if (err) {
+        return cb(err);
+      }
+
+      if (!cookies.length) {
+        return cb(err, this);
+      }
+
+      let cookie;
+      try {
+        cookie = fromJSON(cookies.shift());
+      } catch (e) {
+        return cb(e);
+      }
+
+      if (cookie === null) {
+        return putNext(null); // skip this cookie
+      }
+
+      this.store.putCookie(cookie, putNext);
+    };
+
+    putNext();
+  }
+
+  clone(newStore, cb) {
+    if (arguments.length === 1) {
+      cb = newStore;
+      newStore = null;
+    }
+
+    this.serialize((err, serialized) => {
+      if (err) {
+        return cb(err);
+      }
+      CookieJar.deserialize(serialized, newStore, cb);
+    });
+  }
+
+  cloneSync(newStore) {
+    if (arguments.length === 0) {
+      return this._cloneSync();
+    }
+    if (!newStore.synchronous) {
+      throw new Error(
+        "CookieJar clone destination store is not synchronous; use async API instead."
+      );
+    }
+    return this._cloneSync(newStore);
+  }
+
+  removeAllCookies(cb) {
+    const store = this.store;
+
+    // Check that the store implements its own removeAllCookies(). The default
+    // implementation in Store will immediately call the callback with a "not
+    // implemented" Error.
+    if (
+      typeof store.removeAllCookies === "function" &&
+      store.removeAllCookies !== Store.prototype.removeAllCookies
+    ) {
+      return store.removeAllCookies(cb);
+    }
+
+    store.getAllCookies((err, cookies) => {
+      if (err) {
+        return cb(err);
+      }
+
+      if (cookies.length === 0) {
+        return cb(null);
+      }
+
+      let completedCount = 0;
+      const removeErrors = [];
+
+      function removeCookieCb(removeErr) {
+        if (removeErr) {
+          removeErrors.push(removeErr);
+        }
+
+        completedCount++;
+
+        if (completedCount === cookies.length) {
+          return cb(removeErrors.length ? removeErrors[0] : null);
+        }
+      }
+
+      cookies.forEach(cookie => {
+        store.removeCookie(
+          cookie.domain,
+          cookie.path,
+          cookie.key,
+          removeCookieCb
+        );
+      });
+    });
+  }
+
+  static deserialize(strOrObj, store, cb) {
+    if (arguments.length !== 3) {
+      // store is optional
+      cb = store;
+      store = null;
+    }
+
+    let serialized;
+    if (typeof strOrObj === "string") {
+      serialized = jsonParse(strOrObj);
+      if (serialized instanceof Error) {
+        return cb(serialized);
+      }
+    } else {
+      serialized = strOrObj;
+    }
+
+    const jar = new CookieJar(store, serialized.rejectPublicSuffixes);
+    jar._importCookies(serialized, err => {
+      if (err) {
+        return cb(err);
+      }
+      cb(null, jar);
+    });
+  }
+
+  static deserializeSync(strOrObj, store) {
+    const serialized =
+      typeof strOrObj === "string" ? JSON.parse(strOrObj) : strOrObj;
+    const jar = new CookieJar(store, serialized.rejectPublicSuffixes);
+
+    // catch this mistake early:
+    if (!jar.store.synchronous) {
+      throw new Error(
+        "CookieJar store is not synchronous; use async API instead."
+      );
+    }
+
+    jar._importCookiesSync(serialized);
+    return jar;
+  }
+}
+CookieJar.fromJSON = CookieJar.deserializeSync;
+
+[
+  "_importCookies",
+  "clone",
+  "getCookies",
+  "getCookieString",
+  "getSetCookieStrings",
+  "removeAllCookies",
+  "serialize",
+  "setCookie"
+].forEach(name => {
+  CookieJar.prototype[name] = fromCallback(CookieJar.prototype[name]);
+});
+CookieJar.deserialize = fromCallback(CookieJar.deserialize);
+
+// Use a closure to provide a true imperative API for synchronous stores.
+function syncWrap(method) {
+  return function(...args) {
+    if (!this.store.synchronous) {
+      throw new Error(
+        "CookieJar store is not synchronous; use async API instead."
+      );
+    }
+
+    let syncErr, syncResult;
+    this[method](...args, (err, result) => {
+      syncErr = err;
+      syncResult = result;
+    });
+
+    if (syncErr) {
+      throw syncErr;
+    }
+    return syncResult;
+  };
+}
+
+exports.version = VERSION;
+exports.CookieJar = CookieJar;
+exports.Cookie = Cookie;
+exports.Store = Store;
+exports.MemoryCookieStore = MemoryCookieStore;
+exports.parseDate = parseDate;
+exports.formatDate = formatDate;
+exports.parse = parse;
+exports.fromJSON = fromJSON;
+exports.domainMatch = domainMatch;
+exports.defaultPath = defaultPath;
+exports.pathMatch = pathMatch;
+exports.getPublicSuffix = pubsuffix.getPublicSuffix;
+exports.cookieCompare = cookieCompare;
+exports.permuteDomain = __webpack_require__(898).permuteDomain;
+exports.permutePath = permutePath;
+exports.canonicalDomain = canonicalDomain;
+exports.PrefixSecurityEnum = PrefixSecurityEnum;
+
+
+/***/ }),
 /* 637 */,
 /* 638 */
 /***/ (function(__unusedmodule, exports, __webpack_require__) {
@@ -57198,66 +58531,86 @@ exports.PersonalAccessTokenCredentialHandler = PersonalAccessTokenCredentialHand
 /* 740 */,
 /* 741 */,
 /* 742 */
-/***/ (function(module, __unusedexports, __webpack_require__) {
+/***/ (function(__unusedmodule, exports, __webpack_require__) {
 
-var fs = __webpack_require__(747)
-var core
-if (process.platform === 'win32' || global.TESTING_WINDOWS) {
-  core = __webpack_require__(818)
-} else {
-  core = __webpack_require__(197)
-}
+"use strict";
 
-module.exports = isexe
-isexe.sync = sync
-
-function isexe (path, options, cb) {
-  if (typeof options === 'function') {
-    cb = options
-    options = {}
-  }
-
-  if (!cb) {
-    if (typeof Promise !== 'function') {
-      throw new TypeError('callback not provided')
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.OidcClient = void 0;
+const http_client_1 = __webpack_require__(539);
+const auth_1 = __webpack_require__(226);
+const core_1 = __webpack_require__(470);
+class OidcClient {
+    static createHttpClient(allowRetry = true, maxRetry = 10) {
+        const requestOptions = {
+            allowRetries: allowRetry,
+            maxRetries: maxRetry
+        };
+        return new http_client_1.HttpClient('actions/oidc-client', [new auth_1.BearerCredentialHandler(OidcClient.getRequestToken())], requestOptions);
     }
-
-    return new Promise(function (resolve, reject) {
-      isexe(path, options || {}, function (er, is) {
-        if (er) {
-          reject(er)
-        } else {
-          resolve(is)
+    static getRequestToken() {
+        const token = process.env['ACTIONS_ID_TOKEN_REQUEST_TOKEN'];
+        if (!token) {
+            throw new Error('Unable to get ACTIONS_ID_TOKEN_REQUEST_TOKEN env variable');
         }
-      })
-    })
-  }
-
-  core(path, options || {}, function (er, is) {
-    // ignore EACCES because that just means we aren't allowed to run it
-    if (er) {
-      if (er.code === 'EACCES' || options && options.ignoreErrors) {
-        er = null
-        is = false
-      }
+        return token;
     }
-    cb(er, is)
-  })
-}
-
-function sync (path, options) {
-  // my kingdom for a filtered catch
-  try {
-    return core.sync(path, options || {})
-  } catch (er) {
-    if (options && options.ignoreErrors || er.code === 'EACCES') {
-      return false
-    } else {
-      throw er
+    static getIDTokenUrl() {
+        const runtimeUrl = process.env['ACTIONS_ID_TOKEN_REQUEST_URL'];
+        if (!runtimeUrl) {
+            throw new Error('Unable to get ACTIONS_ID_TOKEN_REQUEST_URL env variable');
+        }
+        return runtimeUrl;
     }
-  }
+    static getCall(id_token_url) {
+        var _a;
+        return __awaiter(this, void 0, void 0, function* () {
+            const httpclient = OidcClient.createHttpClient();
+            const res = yield httpclient
+                .getJson(id_token_url)
+                .catch(error => {
+                throw new Error(`Failed to get ID Token. \n 
+        Error Code : ${error.statusCode}\n 
+        Error Message: ${error.result.message}`);
+            });
+            const id_token = (_a = res.result) === null || _a === void 0 ? void 0 : _a.value;
+            if (!id_token) {
+                throw new Error('Response json body do not have ID Token field');
+            }
+            return id_token;
+        });
+    }
+    static getIDToken(audience) {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                // New ID Token is requested from action service
+                let id_token_url = OidcClient.getIDTokenUrl();
+                if (audience) {
+                    const encodedAudience = encodeURIComponent(audience);
+                    id_token_url = `${id_token_url}&audience=${encodedAudience}`;
+                }
+                core_1.debug(`ID token url is ${id_token_url}`);
+                const id_token = yield OidcClient.getCall(id_token_url);
+                core_1.setSecret(id_token);
+                return id_token;
+            }
+            catch (error) {
+                throw new Error(`Error message: ${error.message}`);
+            }
+        });
+    }
 }
-
+exports.OidcClient = OidcClient;
+//# sourceMappingURL=oidc-utils.js.map
 
 /***/ }),
 /* 743 */,
@@ -59873,58 +61226,65 @@ function gather(octokit, results, iterator, mapFn) {
 /* 811 */,
 /* 812 */,
 /* 813 */
-/***/ (function(__unusedmodule, exports) {
+/***/ (function(module, __unusedexports, __webpack_require__) {
 
-"use strict";
-
-
-Object.defineProperty(exports, '__esModule', { value: true });
-
-async function auth(token) {
-  const tokenType = token.split(/\./).length === 3 ? "app" : /^v\d+\./.test(token) ? "installation" : "oauth";
-  return {
-    type: "token",
-    token: token,
-    tokenType
-  };
+var fs = __webpack_require__(747)
+var core
+if (process.platform === 'win32' || global.TESTING_WINDOWS) {
+  core = __webpack_require__(818)
+} else {
+  core = __webpack_require__(197)
 }
 
-/**
- * Prefix token for usage in the Authorization header
- *
- * @param token OAuth token or JSON Web Token
- */
-function withAuthorizationPrefix(token) {
-  if (token.split(/\./).length === 3) {
-    return `bearer ${token}`;
+module.exports = isexe
+isexe.sync = sync
+
+function isexe (path, options, cb) {
+  if (typeof options === 'function') {
+    cb = options
+    options = {}
   }
 
-  return `token ${token}`;
+  if (!cb) {
+    if (typeof Promise !== 'function') {
+      throw new TypeError('callback not provided')
+    }
+
+    return new Promise(function (resolve, reject) {
+      isexe(path, options || {}, function (er, is) {
+        if (er) {
+          reject(er)
+        } else {
+          resolve(is)
+        }
+      })
+    })
+  }
+
+  core(path, options || {}, function (er, is) {
+    // ignore EACCES because that just means we aren't allowed to run it
+    if (er) {
+      if (er.code === 'EACCES' || options && options.ignoreErrors) {
+        er = null
+        is = false
+      }
+    }
+    cb(er, is)
+  })
 }
 
-async function hook(token, request, route, parameters) {
-  const endpoint = request.endpoint.merge(route, parameters);
-  endpoint.headers.authorization = withAuthorizationPrefix(token);
-  return request(endpoint);
+function sync (path, options) {
+  // my kingdom for a filtered catch
+  try {
+    return core.sync(path, options || {})
+  } catch (er) {
+    if (options && options.ignoreErrors || er.code === 'EACCES') {
+      return false
+    } else {
+      throw er
+    }
+  }
 }
-
-const createTokenAuth = function createTokenAuth(token) {
-  if (!token) {
-    throw new Error("[@octokit/auth-token] No token passed to createTokenAuth");
-  }
-
-  if (typeof token !== "string") {
-    throw new Error("[@octokit/auth-token] Token passed to createTokenAuth is not a string");
-  }
-
-  token = token.replace(/^(token|bearer) +/i, "");
-  return Object.assign(auth.bind(null, token), {
-    hook: hook.bind(null, token)
-  });
-};
-
-exports.createTokenAuth = createTokenAuth;
-//# sourceMappingURL=index.js.map
 
 
 /***/ }),
@@ -59940,7 +61300,7 @@ var isWindows = process.platform === 'win32' ||
 
 var path = __webpack_require__(622)
 var COLON = isWindows ? ';' : ':'
-var isexe = __webpack_require__(742)
+var isexe = __webpack_require__(813)
 
 function getNotFoundError (cmd) {
   var er = new Error('not found: ' + cmd)
@@ -60217,7 +61577,71 @@ module.exports = require("url");
 /***/ }),
 /* 836 */,
 /* 837 */,
-/* 838 */,
+/* 838 */
+/***/ (function(__unusedmodule, exports) {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", { value: true });
+class BasicCredentialHandler {
+    constructor(username, password) {
+        this.username = username;
+        this.password = password;
+    }
+    prepareRequest(options) {
+        options.headers['Authorization'] =
+            'Basic ' +
+                Buffer.from(this.username + ':' + this.password).toString('base64');
+    }
+    // This handler cannot handle 401
+    canHandleAuthentication(response) {
+        return false;
+    }
+    handleAuthentication(httpClient, requestInfo, objs) {
+        return null;
+    }
+}
+exports.BasicCredentialHandler = BasicCredentialHandler;
+class BearerCredentialHandler {
+    constructor(token) {
+        this.token = token;
+    }
+    // currently implements pre-authorization
+    // TODO: support preAuth = false where it hooks on 401
+    prepareRequest(options) {
+        options.headers['Authorization'] = 'Bearer ' + this.token;
+    }
+    // This handler cannot handle 401
+    canHandleAuthentication(response) {
+        return false;
+    }
+    handleAuthentication(httpClient, requestInfo, objs) {
+        return null;
+    }
+}
+exports.BearerCredentialHandler = BearerCredentialHandler;
+class PersonalAccessTokenCredentialHandler {
+    constructor(token) {
+        this.token = token;
+    }
+    // currently implements pre-authorization
+    // TODO: support preAuth = false where it hooks on 401
+    prepareRequest(options) {
+        options.headers['Authorization'] =
+            'Basic ' + Buffer.from('PAT:' + this.token).toString('base64');
+    }
+    // This handler cannot handle 401
+    canHandleAuthentication(response) {
+        return false;
+    }
+    handleAuthentication(httpClient, requestInfo, objs) {
+        return null;
+    }
+}
+exports.PersonalAccessTokenCredentialHandler = PersonalAccessTokenCredentialHandler;
+
+
+/***/ }),
 /* 839 */
 /***/ (function(__unusedmodule, exports) {
 
@@ -63584,15 +65008,29 @@ module.exports = set;
 
 "use strict";
 
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
 var __importStar = (this && this.__importStar) || function (mod) {
     if (mod && mod.__esModule) return mod;
     var result = {};
-    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
-    result["default"] = mod;
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
     return result;
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.issue = exports.issueCommand = void 0;
 const os = __importStar(__webpack_require__(87));
+const utils_1 = __webpack_require__(398);
 /**
  * Commands
  *
@@ -63646,28 +65084,14 @@ class Command {
         return cmdStr;
     }
 }
-/**
- * Sanitizes an input into a string so it can be passed into issueCommand safely
- * @param input input to sanitize into a string
- */
-function toCommandValue(input) {
-    if (input === null || input === undefined) {
-        return '';
-    }
-    else if (typeof input === 'string' || input instanceof String) {
-        return input;
-    }
-    return JSON.stringify(input);
-}
-exports.toCommandValue = toCommandValue;
 function escapeData(s) {
-    return toCommandValue(s)
+    return utils_1.toCommandValue(s)
         .replace(/%/g, '%25')
         .replace(/\r/g, '%0D')
         .replace(/\n/g, '%0A');
 }
 function escapeProperty(s) {
-    return toCommandValue(s)
+    return utils_1.toCommandValue(s)
         .replace(/%/g, '%25')
         .replace(/\r/g, '%0D')
         .replace(/\n/g, '%0A')
@@ -64537,6 +65961,25 @@ function patchForDeprecation(octokit, apiOptions, method, methodName) {
 
 "use strict";
 
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -64546,17 +65989,14 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
-    result["default"] = mod;
-    return result;
-};
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.getIDToken = exports.getState = exports.saveState = exports.group = exports.endGroup = exports.startGroup = exports.info = exports.notice = exports.warning = exports.error = exports.debug = exports.isDebug = exports.setFailed = exports.setCommandEcho = exports.setOutput = exports.getBooleanInput = exports.getMultilineInput = exports.getInput = exports.addPath = exports.setSecret = exports.exportVariable = exports.ExitCode = void 0;
 const command_1 = __webpack_require__(888);
+const file_command_1 = __webpack_require__(445);
+const utils_1 = __webpack_require__(398);
 const os = __importStar(__webpack_require__(87));
 const path = __importStar(__webpack_require__(622));
+const oidc_utils_1 = __webpack_require__(13);
 /**
  * The code to exit an action
  */
@@ -64581,9 +66021,17 @@ var ExitCode;
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function exportVariable(name, val) {
-    const convertedVal = command_1.toCommandValue(val);
+    const convertedVal = utils_1.toCommandValue(val);
     process.env[name] = convertedVal;
-    command_1.issueCommand('set-env', { name }, convertedVal);
+    const filePath = process.env['GITHUB_ENV'] || '';
+    if (filePath) {
+        const delimiter = '_GitHubActionsFileCommandDelimeter_';
+        const commandValue = `${name}<<${delimiter}${os.EOL}${convertedVal}${os.EOL}${delimiter}`;
+        file_command_1.issueCommand('ENV', commandValue);
+    }
+    else {
+        command_1.issueCommand('set-env', { name }, convertedVal);
+    }
 }
 exports.exportVariable = exportVariable;
 /**
@@ -64599,12 +66047,20 @@ exports.setSecret = setSecret;
  * @param inputPath
  */
 function addPath(inputPath) {
-    command_1.issueCommand('add-path', {}, inputPath);
+    const filePath = process.env['GITHUB_PATH'] || '';
+    if (filePath) {
+        file_command_1.issueCommand('PATH', inputPath);
+    }
+    else {
+        command_1.issueCommand('add-path', {}, inputPath);
+    }
     process.env['PATH'] = `${inputPath}${path.delimiter}${process.env['PATH']}`;
 }
 exports.addPath = addPath;
 /**
- * Gets the value of an input.  The value is also trimmed.
+ * Gets the value of an input.
+ * Unless trimWhitespace is set to false in InputOptions, the value is also trimmed.
+ * Returns an empty string if the value is not defined.
  *
  * @param     name     name of the input to get
  * @param     options  optional. See InputOptions.
@@ -64615,9 +66071,49 @@ function getInput(name, options) {
     if (options && options.required && !val) {
         throw new Error(`Input required and not supplied: ${name}`);
     }
+    if (options && options.trimWhitespace === false) {
+        return val;
+    }
     return val.trim();
 }
 exports.getInput = getInput;
+/**
+ * Gets the values of an multiline input.  Each value is also trimmed.
+ *
+ * @param     name     name of the input to get
+ * @param     options  optional. See InputOptions.
+ * @returns   string[]
+ *
+ */
+function getMultilineInput(name, options) {
+    const inputs = getInput(name, options)
+        .split('\n')
+        .filter(x => x !== '');
+    return inputs;
+}
+exports.getMultilineInput = getMultilineInput;
+/**
+ * Gets the input value of the boolean type in the YAML 1.2 "core schema" specification.
+ * Support boolean input list: `true | True | TRUE | false | False | FALSE` .
+ * The return value is also in boolean type.
+ * ref: https://yaml.org/spec/1.2/spec.html#id2804923
+ *
+ * @param     name     name of the input to get
+ * @param     options  optional. See InputOptions.
+ * @returns   boolean
+ */
+function getBooleanInput(name, options) {
+    const trueValue = ['true', 'True', 'TRUE'];
+    const falseValue = ['false', 'False', 'FALSE'];
+    const val = getInput(name, options);
+    if (trueValue.includes(val))
+        return true;
+    if (falseValue.includes(val))
+        return false;
+    throw new TypeError(`Input does not meet YAML 1.2 "Core Schema" specification: ${name}\n` +
+        `Support boolean input list: \`true | True | TRUE | false | False | FALSE\``);
+}
+exports.getBooleanInput = getBooleanInput;
 /**
  * Sets the value of an output.
  *
@@ -64626,6 +66122,7 @@ exports.getInput = getInput;
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function setOutput(name, value) {
+    process.stdout.write(os.EOL);
     command_1.issueCommand('set-output', { name }, value);
 }
 exports.setOutput = setOutput;
@@ -64672,19 +66169,30 @@ exports.debug = debug;
 /**
  * Adds an error issue
  * @param message error issue message. Errors will be converted to string via toString()
+ * @param properties optional properties to add to the annotation.
  */
-function error(message) {
-    command_1.issue('error', message instanceof Error ? message.toString() : message);
+function error(message, properties = {}) {
+    command_1.issueCommand('error', utils_1.toCommandProperties(properties), message instanceof Error ? message.toString() : message);
 }
 exports.error = error;
 /**
- * Adds an warning issue
+ * Adds a warning issue
  * @param message warning issue message. Errors will be converted to string via toString()
+ * @param properties optional properties to add to the annotation.
  */
-function warning(message) {
-    command_1.issue('warning', message instanceof Error ? message.toString() : message);
+function warning(message, properties = {}) {
+    command_1.issueCommand('warning', utils_1.toCommandProperties(properties), message instanceof Error ? message.toString() : message);
 }
 exports.warning = warning;
+/**
+ * Adds a notice issue
+ * @param message notice issue message. Errors will be converted to string via toString()
+ * @param properties optional properties to add to the annotation.
+ */
+function notice(message, properties = {}) {
+    command_1.issueCommand('notice', utils_1.toCommandProperties(properties), message instanceof Error ? message.toString() : message);
+}
+exports.notice = notice;
 /**
  * Writes info to log with console.log.
  * @param message info message
@@ -64757,6 +66265,12 @@ function getState(name) {
     return process.env[`STATE_${name}`] || '';
 }
 exports.getState = getState;
+function getIDToken(aud) {
+    return __awaiter(this, void 0, void 0, function* () {
+        return yield oidc_utils_1.OidcClient.getIDToken(aud);
+    });
+}
+exports.getIDToken = getIDToken;
 //# sourceMappingURL=core.js.map
 
 /***/ }),
@@ -65891,12 +67405,11 @@ module.exports = function(fn) {
 /***/ }),
 /* 949 */,
 /* 950 */
-/***/ (function(__unusedmodule, exports, __webpack_require__) {
+/***/ (function(__unusedmodule, exports) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
-const url = __webpack_require__(835);
 function getProxyUrl(reqUrl) {
     let usingSsl = reqUrl.protocol === 'https:';
     let proxyUrl;
@@ -65905,15 +67418,13 @@ function getProxyUrl(reqUrl) {
     }
     let proxyVar;
     if (usingSsl) {
-        proxyVar = process.env["https_proxy"] ||
-            process.env["HTTPS_PROXY"];
+        proxyVar = process.env['https_proxy'] || process.env['HTTPS_PROXY'];
     }
     else {
-        proxyVar = process.env["http_proxy"] ||
-            process.env["HTTP_PROXY"];
+        proxyVar = process.env['http_proxy'] || process.env['HTTP_PROXY'];
     }
     if (proxyVar) {
-        proxyUrl = url.parse(proxyVar);
+        proxyUrl = new URL(proxyVar);
     }
     return proxyUrl;
 }
@@ -65922,7 +67433,7 @@ function checkBypass(reqUrl) {
     if (!reqUrl.hostname) {
         return false;
     }
-    let noProxy = process.env["no_proxy"] || process.env["NO_PROXY"] || '';
+    let noProxy = process.env['no_proxy'] || process.env['NO_PROXY'] || '';
     if (!noProxy) {
         return false;
     }
@@ -65943,7 +67454,10 @@ function checkBypass(reqUrl) {
         upperReqHosts.push(`${upperReqHosts[0]}:${reqPort}`);
     }
     // Compare request host against noproxy
-    for (let upperNoProxyItem of noProxy.split(',').map(x => x.trim().toUpperCase()).filter(x => x)) {
+    for (let upperNoProxyItem of noProxy
+        .split(',')
+        .map(x => x.trim().toUpperCase())
+        .filter(x => x)) {
         if (upperReqHosts.some(x => x === upperNoProxyItem)) {
             return true;
         }
@@ -67419,7 +68933,7 @@ function _interopDefault (ex) { return (ex && (typeof ex === 'object') && 'defau
 
 var tslib = __webpack_require__(865);
 var uuid = __webpack_require__(585);
-var tough = __webpack_require__(393);
+var tough = __webpack_require__(636);
 var http = __webpack_require__(605);
 var https = __webpack_require__(211);
 var node_fetch = _interopDefault(__webpack_require__(454));
