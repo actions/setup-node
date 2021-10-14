@@ -7,11 +7,12 @@ assignees: ''
 
 ---
 
+<!--- Before opening up a new bug report, please make sure to check for similar existing issues -->
+
 **Description:**
 A clear and concise description of what the bug is.
-
-**Task version:**
-Specify the task version
+**Action version:**
+Specify the action version
 
 **Platform:**
 - [ ] Ubuntu
@@ -21,6 +22,9 @@ Specify the task version
 **Runner type:**
 - [ ] Hosted
 - [ ] Self-hosted
+
+**Tools version:**
+<!--- Please specify versions of node and package manager (npm, yarn, pnpm and etc)-->
 
 **Repro steps:**  
 A description with steps to reproduce the issue. If your have a public example or repo to share, please provide the link.
