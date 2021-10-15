@@ -12,6 +12,7 @@ assignees: ''
 
 **Description:**
 A clear and concise description of what the bug is.
+
 **Action version:**
 Specify the action version
 
