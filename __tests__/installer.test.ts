@@ -348,7 +348,7 @@ describe('setup-node', () => {
     expect(cnSpy).toHaveBeenCalledWith(`::error::${errMsg}${osm.EOL}`);
   });
 
-  it('Acquires specified architecture of node', async () => {
+  it('acquires specified architecture of node', async () => {
     for (const {arch, version, osSpec} of [
       {arch: 'x86', version: '12.16.2', osSpec: 'win32'},
       {arch: 'x86', version: '14.0.0', osSpec: 'win32'}
@@ -555,7 +555,7 @@ describe('setup-node', () => {
   });
 
   describe('node-version-file flag', () => {
-    it('Not used if node-version is provided', async () => {
+    it('not used if node-version is provided', async () => {
       // Arrange
       inputs['node-version'] = '12';
 
@@ -566,7 +566,7 @@ describe('setup-node', () => {
       expect(readFileSyncSpy).toHaveBeenCalledTimes(0);
     });
 
-    it('Not used if node-version-file not provided', async () => {
+    it('not used if node-version-file not provided', async () => {
       // Act
       await main.run();
 
@@ -574,7 +574,7 @@ describe('setup-node', () => {
       expect(readFileSyncSpy).toHaveBeenCalledTimes(0);
     });
 
-    it('Reads node-version-file if provided', async () => {
+    it('reads node-version-file if provided', async () => {
       // Arrange
       const versionSpec = 'v12';
       const versionFile = '.nvmrc';
