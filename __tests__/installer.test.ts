@@ -8,6 +8,7 @@ import osm = require('os');
 import path from 'path';
 import * as main from '../src/main';
 import * as auth from '../src/authutil';
+
 let nodeTestManifest = require('./data/versions-manifest.json');
 let nodeTestDist = require('./data/node-dist-index.json');
 
