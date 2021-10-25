@@ -13,25 +13,7 @@ export async function run() {
     // Version is optional.  If supplied, install / use from the tool cache
     // If not supplied then task is still used to setup proxy, auth, etc...
     //
-    let version = core.getInput('node-version');
-    if (!version) {
-      version = core.getInput('version');
-
-      if (!version) {
-        const versionFile = core.getInput('node-version-file');
-
-        if (!!versionFile) {
-          const versionFilePath = path.join(
-            process.env.GITHUB_WORKSPACE!,
-            versionFile
-          );
-          version = installer.parseNodeVersionFile(
-            fs.readFileSync(versionFilePath, 'utf8')
-          );
-          core.info(`Resolved ${versionFile} as ${version}`);
-        }
-      }
-    }
+    let version = resolveVersionInput();
 
     let arch = core.getInput('architecture');
     const cache = core.getInput('cache');
@@ -89,4 +71,26 @@ function isGhes(): boolean {
     process.env['GITHUB_SERVER_URL'] || 'https://github.com'
   );
   return ghUrl.hostname.toUpperCase() !== 'GITHUB.COM';
+}
+
+function resolveVersionInput(): string {
+  let version = core.getInput('node-version') || core.getInput('version');
+  if (version) {
+    return version;
+  }
+
+  const versionFileInput = core.getInput('node-version-file');
+  if (versionFileInput) {
+    const versionFilePath = path.join(
+            process.env.GITHUB_WORKSPACE!,
+            versionFileInput
+    );
+    version = installer.parseNodeVersionFile(
+            fs.readFileSync(versionFilePath, 'utf8')
+    );
+    core.info(`Resolved ${versionFileInput} as ${version}`);
+    return version;
+  }
+
+  return null as any;
 }
