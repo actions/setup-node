@@ -82,11 +82,11 @@ function resolveVersionInput(): string {
   const versionFileInput = core.getInput('node-version-file');
   if (versionFileInput) {
     const versionFilePath = path.join(
-            process.env.GITHUB_WORKSPACE!,
-            versionFileInput
+      process.env.GITHUB_WORKSPACE!,
+      versionFileInput
     );
     version = installer.parseNodeVersionFile(
-            fs.readFileSync(versionFilePath, 'utf8')
+      fs.readFileSync(versionFilePath, 'utf8')
     );
     core.info(`Resolved ${versionFileInput} as ${version}`);
   }
