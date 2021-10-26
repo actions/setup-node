@@ -89,8 +89,7 @@ function resolveVersionInput(): string {
             fs.readFileSync(versionFilePath, 'utf8')
     );
     core.info(`Resolved ${versionFileInput} as ${version}`);
-    return version;
   }
 
-  return null as any;
+  return version;
 }
