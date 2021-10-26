@@ -90,7 +90,9 @@ jobs:
         uses: ./
         with:
           node-version-file: '.nvmrc'
-          
+      - name: Verify node
+      - run: __tests__/verify-node.sh 14
+
   node-dist:
     runs-on: ${{ matrix.os }}
     strategy:
