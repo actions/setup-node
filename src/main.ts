@@ -74,25 +74,25 @@ function isGhes(): boolean {
 }
 
 function resolveVersionInput(): string {
-  if (!(core.getInput('node-version') || core.getInput('version'))) {
-    core.error('No specified file exists');
-  }
-
-  if (core.getInput('node-version') && core.getInput('version')) {
-    core.warning('Both version and node-version-file are specified');
-  }
-
   let version = core.getInput('node-version') || core.getInput('version');
+  const versionFileInput = core.getInput('node-version-file');
+  
+  if (version && versionFileInput) {
+    core.warning('Both node-version and node-version-file are specified');
+  }
+
   if (version) {
     return version;
   }
 
-  const versionFileInput = core.getInput('node-version-file');
   if (versionFileInput) {
     const versionFilePath = path.join(
       process.env.GITHUB_WORKSPACE!,
       versionFileInput
     );
+    if (!fs.existsSync(versionFilePath)) {
+      throw new Error('No specified file exists');
+    }
     version = installer.parseNodeVersionFile(
       fs.readFileSync(versionFilePath, 'utf8')
     );
