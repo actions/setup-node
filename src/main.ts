@@ -74,6 +74,17 @@ function isGhes(): boolean {
 }
 
 function resolveVersionInput(): string {
+ 
+  if(!(core.getInput('node-version') || core.getInput('version')))
+  {
+    core.error('No specified file exists')
+  }
+
+  if(core.getInput('node-version') && core.getInput('version'))
+  {
+    core.warning('Both version and node-version-file are specified')
+  }
+
   let version = core.getInput('node-version') || core.getInput('version');
   if (version) {
     return version;
