@@ -20,11 +20,10 @@ steps:
 ```
 
 ## Node version file
-
-The action will search for the node version file relative to repository root.  
+  
 The `node-version-file` input contains the version of node used by project, for example `.nvmrc`. If both the `node-version` and the `node-version-file` inputs are provided the `node-version` input is used. 
 You can check [supported version syntax](https://github.com/actions/setup-node#supported-version-syntax)  
-> The node version file is read from the project root
+> The action will search for the node version file relative to repository root.
 
 ```yaml
 steps:
