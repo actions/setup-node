@@ -1,5 +1,31 @@
 [
     {
+      "version": "16.13.0",
+      "stable": true,
+      "lts": "Gallium",
+      "release_url": "https://github.com/actions/node-versions/releases/tag/16.13.0-1386584131",
+      "files": [
+        {
+          "filename": "node-16.13.0-darwin-x64.tar.gz",
+          "arch": "x64",
+          "platform": "darwin",
+          "download_url": "https://github.com/actions/node-versions/releases/download/16.13.0-1386584131/node-16.13.0-darwin-x64.tar.gz"
+        },
+        {
+          "filename": "node-16.13.0-linux-x64.tar.gz",
+          "arch": "x64",
+          "platform": "linux",
+          "download_url": "https://github.com/actions/node-versions/releases/download/16.13.0-1386584131/node-16.13.0-linux-x64.tar.gz"
+        },
+        {
+          "filename": "node-16.13.0-win32-x64.7z",
+          "arch": "x64",
+          "platform": "win32",
+          "download_url": "https://github.com/actions/node-versions/releases/download/16.13.0-1386584131/node-16.13.0-win32-x64.7z"
+        }
+      ]
+    },
+    {
       "version": "14.0.0",
       "stable": true,
       "lts": "Fermium",
