@@ -92,7 +92,7 @@ function resolveVersionInput(): string {
       process.env.GITHUB_WORKSPACE!,
       versionFileInput
     );
-    if (fs.existsSync(versionFilePath) === false) {
+    if (!fs.existsSync(versionFilePath)) {
       throw new Error('The specified node version file does not exist');
     }
     version = installer.parseNodeVersionFile(
