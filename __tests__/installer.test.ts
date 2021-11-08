@@ -574,11 +574,25 @@ describe('setup-node', () => {
       expect(readFileSyncSpy).toHaveBeenCalledTimes(0);
     });
 
+    it('warns if node-version and node-version-file are provided', async () => {
+      //Arrange
+      inputs['node-version'] = '12';
+      inputs['node-version-file'] = '__tests__/data/.nvmrc';
+      // Act
+      await main.run();
+
+      // Assert
+      expect(warningSpy).toHaveBeenCalledTimes(1);
+      expect(warningSpy).toHaveBeenCalledWith(
+        `Both node-version and node-version-file inputs are specified, only node-version will be used`
+      );
+    });
+
     it('reads node-version-file if provided', async () => {
       // Arrange
-      const versionSpec = 'v12';
-      const versionFile = '.nvmrc';
-      const expectedVersionSpec = '12';
+      const versionSpec = 'v14';
+      const versionFile = '__tests__/data/.nvmrc';
+      const expectedVersionSpec = '14';
       process.env['GITHUB_WORKSPACE'] = path.join(__dirname, '..');
       inputs['node-version-file'] = versionFile;
 
@@ -597,6 +611,25 @@ describe('setup-node', () => {
       expect(parseNodeVersionSpy).toHaveBeenCalledWith(versionSpec);
       expect(logSpy).toHaveBeenCalledWith(
         `Resolved ${versionFile} as ${expectedVersionSpec}`
+      );
+    });
+
+    it('throws error if node-version-file doesnt exist', async () => {
+      // Arrange
+      const versionFile = '__tests__/meta/.nvmrc';
+      process.env['GITHUB_WORKSPACE'] = path.join(__dirname, '..');
+      inputs['node-version-file'] = versionFile;
+
+      // Act
+      await main.run();
+
+      // Assert
+      expect(existsSpy).toHaveBeenCalledTimes(1);
+      expect(existsSpy).toHaveBeenCalledWith(
+        path.join(process.env.GITHUB_WORKSPACE, versionFile)
+      );
+      expect(cnSpy).toHaveBeenCalledWith(
+        `::error::The specified node version file does not exist${osm.EOL}`
       );
     });
   });

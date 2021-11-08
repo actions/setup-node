@@ -78,7 +78,9 @@ function resolveVersionInput(): string {
   const versionFileInput = core.getInput('node-version-file');
 
   if (version && versionFileInput) {
-    core.warning('Both node-version and node-version-file are specified');
+    core.warning(
+      'Both node-version and node-version-file inputs are specified, only node-version will be used'
+    );
   }
 
   if (version) {
