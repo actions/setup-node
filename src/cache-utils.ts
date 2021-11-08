@@ -32,7 +32,7 @@ export const supportedPackageManagers: SupportedPackageManagers = {
 export const getCommandOutput = async (toolCommand: string) => {
   const {stdout, stderr, exitCode} = await exec.getExecOutput(toolCommand);
 
-  if (stderr) {
+  if (exitCode && stderr) {
     throw new Error(stderr);
   }
 

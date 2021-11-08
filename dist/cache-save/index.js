@@ -4339,7 +4339,7 @@ exports.supportedPackageManagers = {
 };
 exports.getCommandOutput = (toolCommand) => __awaiter(void 0, void 0, void 0, function* () {
     const { stdout, stderr, exitCode } = yield exec.getExecOutput(toolCommand);
-    if (stderr) {
+    if (exitCode && stderr) {
         throw new Error(stderr);
     }
     return stdout.trim();
