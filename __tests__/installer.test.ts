@@ -577,20 +577,6 @@ describe('setup-node', () => {
       expect(parseNodeVersionSpy).toHaveBeenCalledTimes(0);
     });
 
-    it('warns if node-version and node-version-file are provided', async () => {
-      //Arrange
-      inputs['node-version'] = '12';
-      inputs['node-version-file'] = '__tests__/data/.nvmrc';
-      // Act
-      await main.run();
-
-      // Assert
-      expect(warningSpy).toHaveBeenCalledTimes(1);
-      expect(warningSpy).toHaveBeenCalledWith(
-        `Both node-version and node-version-file inputs are specified, only node-version will be used`
-      );
-    });
-
     it('reads node-version-file if provided', async () => {
       // Arrange
       const versionSpec = 'v14';
