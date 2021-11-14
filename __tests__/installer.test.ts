@@ -117,7 +117,7 @@ describe('setup-node', () => {
   });
 
   it('can mock dist versions', async () => {
-    let versions: im.INodeVersion[] = await im.getVersionsFromDist();
+    let versions: im.INodeVersion[] = await im.getVersionsFromDist("https://nodejs.org/dist");
     expect(versions).toBeDefined();
     expect(versions?.length).toBe(23);
   });
