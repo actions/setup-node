@@ -14,6 +14,7 @@ import fs = require('fs');
 //
 export interface INodeVersion {
   version: string;
+  date: string;
   files: string[];
 }
 
@@ -33,7 +34,8 @@ export async function getNode(
   stable: boolean,
   checkLatest: boolean,
   auth: string | undefined,
-  arch: string = os.arch()
+  arch: string = os.arch(),
+  mirror: string
 ) {
   // Store manifest data to avoid multiple calls
   let manifest: INodeRelease[] | undefined;
@@ -119,7 +121,7 @@ export async function getNode(
     // Download from nodejs.org
     //
     if (!downloadPath) {
-      info = await getInfoFromDist(versionSpec, arch);
+      info = await getInfoFromDist(versionSpec, arch, mirror);
       if (!info) {
         throw new Error(
           `Unable to find Node version '${versionSpec}' for platform ${osPlat} and architecture ${osArch}.`
@@ -135,7 +137,8 @@ export async function getNode(
         if (err instanceof tc.HTTPError && err.httpStatusCode == 404) {
           return await acquireNodeFromFallbackLocation(
             info.resolvedVersion,
-            info.arch
+            info.arch,
+            mirror
           );
         }
 
@@ -265,14 +268,15 @@ async function getInfoFromManifest(
 
 async function getInfoFromDist(
   versionSpec: string,
-  arch: string = os.arch()
+  arch: string = os.arch(),
+  mirror: string
 ): Promise<INodeVersionInfo | null> {
   let osPlat: string = os.platform();
   let osArch: string = translateArchToDistUrl(arch);
 
   let version: string;
 
-  version = await queryDistForMatch(versionSpec, arch);
+  version = await queryDistForMatch(versionSpec, arch, mirror);
   if (!version) {
     return null;
   }
@@ -287,7 +291,7 @@ async function getInfoFromDist(
       : `node-v${version}-${osPlat}-${osArch}`;
   let urlFileName: string =
     osPlat == 'win32' ? `${fileName}.7z` : `${fileName}.tar.gz`;
-  let url = `https://nodejs.org/dist/v${version}/${urlFileName}`;
+  let url = `${mirror}/v${version}/${urlFileName}`;
 
   return <INodeVersionInfo>{
     downloadUrl: url,
@@ -320,17 +324,29 @@ async function resolveVersionFromManifest(
 }
 
 // TODO - should we just export this from @actions/tool-cache? Lifted directly from there
-function evaluateVersions(versions: string[], versionSpec: string): string {
+function evaluateVersions(versions: INodeVersion[], versionSpec: string): string {
   let version = '';
   core.debug(`evaluating ${versions.length} versions`);
   versions = versions.sort((a, b) => {
-    if (semver.gt(a, b)) {
+    const versionA = semver.coerce(a.version);
+    const versionB = semver.coerce(b.version);
+    // If versions are equal, compare date instead
+    if (versionA === versionB || versionA === null || versionB === null) {
+      if (new Date(a.date) > new Date(b.date)) {
+          return 1;
+      }
+      return -1;
+  }
+  if (semver.gt(versionA, versionB)) {
       return 1;
     }
     return -1;
   });
   for (let i = versions.length - 1; i >= 0; i--) {
-    const potential: string = versions[i];
+    const potential: string = versions[i].version;
+    const semverPotential = semver.coerce(potential);
+        if (semverPotential === null)
+            continue;
     const satisfied: boolean = semver.satisfies(potential, versionSpec);
     if (satisfied) {
       version = potential;
@@ -347,9 +363,10 @@ function evaluateVersions(versions: string[], versionSpec: string): string {
   return version;
 }
 
-async function queryDistForMatch(
+export async function queryDistForMatch(
   versionSpec: string,
-  arch: string = os.arch()
+  arch: string = os.arch(),
+  mirror: string
 ): Promise<string> {
   let osPlat: string = os.platform();
   let osArch: string = translateArchToDistUrl(arch);
@@ -370,13 +387,13 @@ async function queryDistForMatch(
       throw new Error(`Unexpected OS '${osPlat}'`);
   }
 
-  let versions: string[] = [];
-  let nodeVersions = await module.exports.getVersionsFromDist();
+  let versions: INodeVersion[] = [];
+  let nodeVersions = await module.exports.getVersionsFromDist(mirror);
 
   nodeVersions.forEach((nodeVersion: INodeVersion) => {
     // ensure this version supports your os and platform
     if (nodeVersion.files.indexOf(dataFileName) >= 0) {
-      versions.push(nodeVersion.version);
+      versions.push(nodeVersion);
     }
   });
 
@@ -385,8 +402,8 @@ async function queryDistForMatch(
   return version;
 }
 
-export async function getVersionsFromDist(): Promise<INodeVersion[]> {
-  let dataUrl = 'https://nodejs.org/dist/index.json';
+export async function getVersionsFromDist(mirror: string): Promise<INodeVersion[]> {
+  let dataUrl = `${mirror}/index.json`;
   let httpClient = new hc.HttpClient('setup-node', [], {
     allowRetries: true,
     maxRetries: 3
@@ -409,7 +426,8 @@ export async function getVersionsFromDist(): Promise<INodeVersion[]> {
 // and lib file in a folder, not zipped.
 async function acquireNodeFromFallbackLocation(
   version: string,
-  arch: string = os.arch()
+  arch: string = os.arch(),
+  mirror: string
 ): Promise<string> {
   let osPlat: string = os.platform();
   let osArch: string = translateArchToDistUrl(arch);
@@ -424,8 +442,8 @@ async function acquireNodeFromFallbackLocation(
   let exeUrl: string;
   let libUrl: string;
   try {
-    exeUrl = `https://nodejs.org/dist/v${version}/win-${osArch}/node.exe`;
-    libUrl = `https://nodejs.org/dist/v${version}/win-${osArch}/node.lib`;
+    exeUrl = `${mirror}/v${version}/win-${osArch}/node.exe`;
+    libUrl = `${mirror}/v${version}/win-${osArch}/node.lib`;
 
     core.info(`Downloading only node binary from ${exeUrl}`);
 
@@ -435,8 +453,8 @@ async function acquireNodeFromFallbackLocation(
     await io.cp(libPath, path.join(tempDir, 'node.lib'));
   } catch (err) {
     if (err instanceof tc.HTTPError && err.httpStatusCode == 404) {
-      exeUrl = `https://nodejs.org/dist/v${version}/node.exe`;
-      libUrl = `https://nodejs.org/dist/v${version}/node.lib`;
+      exeUrl = `${mirror}/v${version}/node.exe`;
+      libUrl = `${mirror}/v${version}/node.lib`;
 
       const exePath = await tc.downloadTool(exeUrl);
       await io.cp(exePath, path.join(tempDir, 'node.exe'));
