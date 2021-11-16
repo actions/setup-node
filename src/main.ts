@@ -93,7 +93,9 @@ function resolveVersionInput(): string {
       versionFileInput
     );
     if (!fs.existsSync(versionFilePath)) {
-      throw new Error('The specified node version file does not exist');
+      throw new Error(
+        `The specified node version file at: ${versionFilePath} does not exist`
+      );
     }
     version = installer.parseNodeVersionFile(
       fs.readFileSync(versionFilePath, 'utf8')

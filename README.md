@@ -1,4 +1,5 @@
 # setup-node
+
 <p align="left">
   <a href="https://github.com/actions/setup-node/actions?query=workflow%3Abuild-test"><img alt="build-test status" src="https://github.com/actions/setup-node/workflows/build-test/badge.svg"></a> <a href="https://github.com/actions/setup-node/actions?query=workflow%3Aversions"><img alt="versions status" src="https://github.com/actions/setup-node/workflows/versions/badge.svg"></a> <a href="https://github.com/actions/setup-node/actions?query=workflow%3Aproxy"><img alt="proxy status" src="https://github.com/actions/setup-node/workflows/proxy/badge.svg"></a> 
 </p>
@@ -71,7 +72,6 @@ steps:
 - run: npm test
 ```
 
-
 ## Matrix Testing:
 ```yaml
 jobs:
@@ -93,7 +93,7 @@ jobs:
 ## Advanced usage
 
 1. [Check latest version](docs/advanced-usage.md#check-latest-version)
-2. [Using a node version file](docs/advanced-usage.md#Node-version-file)
+2. [Using a node version file](docs/advanced-usage.md#node-version-file)
 3. [Using different architectures](docs/advanced-usage.md#architecture)
 4. [Caching packages dependencies](docs/advanced-usage.md#caching-packages-dependencies)
 5. [Using multiple operating systems and architectures](docs/advanced-usage.md#multiple-operating-systems-and-architectures)

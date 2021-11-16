@@ -7014,7 +7014,7 @@ function resolveVersionInput() {
     if (versionFileInput) {
         const versionFilePath = path.join(process.env.GITHUB_WORKSPACE, versionFileInput);
         if (!fs_1.default.existsSync(versionFilePath)) {
-            throw new Error('The specified node version file does not exist');
+            throw new Error(`The specified node version file at: ${versionFilePath} does not exist`);
         }
         version = installer.parseNodeVersionFile(fs_1.default.readFileSync(versionFilePath, 'utf8'));
         core.info(`Resolved ${versionFileInput} as ${version}`);

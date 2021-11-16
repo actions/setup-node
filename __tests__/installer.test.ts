@@ -624,8 +624,7 @@ describe('setup-node', () => {
 
     it('should throw an error if node-version-file is not found', async () => {
       const versionFile = '.nvmrc';
-      const expectedVersionSpec = '14';
-      process.env['GITHUB_WORKSPACE'] = path.join(__dirname);
+      const versionFilePath = path.join(__dirname, '..', versionFile);
       inputs['node-version-file'] = versionFile;
 
       inSpy.mockImplementation(name => inputs[name]);
@@ -641,7 +640,7 @@ describe('setup-node', () => {
       expect(existsSpy).toHaveReturnedWith(false);
       expect(parseNodeVersionSpy).not.toHaveBeenCalled();
       expect(cnSpy).toHaveBeenCalledWith(
-        `::error::The specified node version file does not exist${osm.EOL}`
+        `::error::The specified node version file at: ${versionFilePath} does not exist${osm.EOL}`
       );
     });
   });
