@@ -6949,7 +6949,7 @@ const auth = __importStar(__webpack_require__(749));
 const path = __importStar(__webpack_require__(622));
 const cache_restore_1 = __webpack_require__(409);
 const url_1 = __webpack_require__(835);
-const os_1 = __importDefault(__webpack_require__(87));
+const os = __webpack_require__(87);
 function run() {
     return __awaiter(this, void 0, void 0, function* () {
         try {
@@ -6966,7 +6966,7 @@ function run() {
                 core.warning('`architecture` is provided but `node-version` is missing. In this configuration, the version/architecture of Node will not be changed. To fix this, provide `architecture` in combination with `node-version`');
             }
             if (!arch) {
-                arch = os_1.default.arch();
+                arch = os.arch();
             }
             if (version) {
                 let token = core.getInput('token');
