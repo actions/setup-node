@@ -5,7 +5,7 @@ import * as auth from './authutil';
 import * as path from 'path';
 import {restoreCache} from './cache-restore';
 import {URL} from 'url';
-import os from 'os';
+import os = require('os');
 
 export async function run() {
   try {
