@@ -78,7 +78,9 @@ function resolveVersionInput(): string {
   const versionFileInput = core.getInput('node-version-file');
 
   if (version && versionFileInput) {
-    core.warning('Both node-version and node-version-file are specified');
+    core.warning(
+      'Both node-version and node-version-file inputs are specified, only node-version will be used'
+    );
   }
 
   if (version) {
@@ -91,7 +93,9 @@ function resolveVersionInput(): string {
       versionFileInput
     );
     if (!fs.existsSync(versionFilePath)) {
-      throw new Error('No specified file exists');
+      throw new Error(
+        `The specified node version file at: ${versionFilePath} does not exist`
+      );
     }
     version = installer.parseNodeVersionFile(
       fs.readFileSync(versionFilePath, 'utf8')

@@ -7006,7 +7006,7 @@ function resolveVersionInput() {
     let version = core.getInput('node-version') || core.getInput('version');
     const versionFileInput = core.getInput('node-version-file');
     if (version && versionFileInput) {
-        core.warning('Both node-version and node-version-file are specified');
+        core.warning('Both node-version and node-version-file inputs are specified, only node-version will be used');
     }
     if (version) {
         return version;
@@ -7014,7 +7014,7 @@ function resolveVersionInput() {
     if (versionFileInput) {
         const versionFilePath = path.join(process.env.GITHUB_WORKSPACE, versionFileInput);
         if (!fs_1.default.existsSync(versionFilePath)) {
-            throw new Error('No specified file exists');
+            throw new Error(`The specified node version file at: ${versionFilePath} does not exist`);
         }
         version = installer.parseNodeVersionFile(fs_1.default.readFileSync(versionFilePath, 'utf8'));
         core.info(`Resolved ${versionFileInput} as ${version}`);

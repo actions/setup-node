@@ -21,9 +21,9 @@ steps:
 
 ## Node version file
   
-The `node-version-file` input contains the version of node used by project, for example `.nvmrc`. If both the `node-version` and the `node-version-file` inputs are provided the `node-version` input is used. 
-You can check [supported version syntax](https://github.com/actions/setup-node#supported-version-syntax)  
-> The action will search for the node version file relative to repository root.
+The `node-version-file` input accepts a path to a file containing the version of Node.js to be used by a project, for example `.nvmrc` or `.node-version`. If both the `node-version` and the `node-version-file` inputs are provided then the `node-version` input is used. 
+See [supported version syntax](https://github.com/actions/setup-node#supported-version-syntax) 
+> The action will search for the node version file relative to the repository root.
 
 ```yaml
 steps:

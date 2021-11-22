@@ -89,7 +89,7 @@ jobs:
       - name: Setup node from node version file
         uses: ./
         with:
-          node-version-file: '.nvmrc'
+          node-version-file: '__tests__/data/.nvmrc'
       - name: Verify node
         run: __tests__/verify-node.sh 14
 
