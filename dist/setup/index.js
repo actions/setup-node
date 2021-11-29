@@ -6938,9 +6938,13 @@ var __importStar = (this && this.__importStar) || function (mod) {
     result["default"] = mod;
     return result;
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 const core = __importStar(__webpack_require__(470));
 const installer = __importStar(__webpack_require__(923));
+const fs_1 = __importDefault(__webpack_require__(747));
 const auth = __importStar(__webpack_require__(749));
 const path = __importStar(__webpack_require__(622));
 const cache_restore_1 = __webpack_require__(409);
@@ -6953,10 +6957,7 @@ function run() {
             // Version is optional.  If supplied, install / use from the tool cache
             // If not supplied then task is still used to setup proxy, auth, etc...
             //
-            let version = core.getInput('node-version');
-            if (!version) {
-                version = core.getInput('version');
-            }
+            let version = resolveVersionInput();
             let arch = core.getInput('architecture');
             const cache = core.getInput('cache');
             // if architecture supplied but node-version is not
@@ -6991,8 +6992,8 @@ function run() {
             core.info(`##[add-matcher]${path.join(matchersPath, 'eslint-stylish.json')}`);
             core.info(`##[add-matcher]${path.join(matchersPath, 'eslint-compact.json')}`);
         }
-        catch (error) {
-            core.setFailed(error.message);
+        catch (err) {
+            core.setFailed(err.message);
         }
     });
 }
@@ -7000,6 +7001,25 @@ exports.run = run;
 function isGhes() {
     const ghUrl = new url_1.URL(process.env['GITHUB_SERVER_URL'] || 'https://github.com');
     return ghUrl.hostname.toUpperCase() !== 'GITHUB.COM';
+}
+function resolveVersionInput() {
+    let version = core.getInput('node-version') || core.getInput('version');
+    const versionFileInput = core.getInput('node-version-file');
+    if (version && versionFileInput) {
+        core.warning('Both node-version and node-version-file inputs are specified, only node-version will be used');
+    }
+    if (version) {
+        return version;
+    }
+    if (versionFileInput) {
+        const versionFilePath = path.join(process.env.GITHUB_WORKSPACE, versionFileInput);
+        if (!fs_1.default.existsSync(versionFilePath)) {
+            throw new Error(`The specified node version file at: ${versionFilePath} does not exist`);
+        }
+        version = installer.parseNodeVersionFile(fs_1.default.readFileSync(versionFilePath, 'utf8'));
+        core.info(`Resolved ${versionFileInput} as ${version}`);
+    }
+    return version;
 }
 
 
@@ -65340,7 +65360,7 @@ exports.NOOP_TEXT_MAP_PROPAGATOR = new NoopTextMapPropagator();
 /* 921 */,
 /* 922 */,
 /* 923 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ (function(__unusedmodule, exports, __webpack_require__) {
 
 "use strict";
 
@@ -65617,7 +65637,7 @@ function queryDistForMatch(versionSpec, arch = os.arch()) {
                 throw new Error(`Unexpected OS '${osPlat}'`);
         }
         let versions = [];
-        let nodeVersions = yield module.exports.getVersionsFromDist();
+        let nodeVersions = yield getVersionsFromDist();
         nodeVersions.forEach((nodeVersion) => {
             // ensure this version supports your os and platform
             if (nodeVersion.files.indexOf(dataFileName) >= 0) {
@@ -65705,6 +65725,14 @@ function translateArchToDistUrl(arch) {
             return arch;
     }
 }
+function parseNodeVersionFile(contents) {
+    let nodeVersion = contents.trim();
+    if (/^v\d/.test(nodeVersion)) {
+        nodeVersion = nodeVersion.substring(1);
+    }
+    return nodeVersion;
+}
+exports.parseNodeVersionFile = parseNodeVersionFile;
 
 
 /***/ }),
