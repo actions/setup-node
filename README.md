@@ -22,7 +22,7 @@ steps:
 - uses: actions/setup-node@v2
   with:
     node-version: '14'
-- run: npm install
+- run: npm ci
 - run: npm test
 ```
 
@@ -55,7 +55,7 @@ steps:
   with:
     node-version: '14'
     cache: 'npm'
-- run: npm install
+- run: npm ci
 - run: npm test
 ```
 
@@ -68,7 +68,7 @@ steps:
     node-version: '14'
     cache: 'npm'
     cache-dependency-path: subdir/package-lock.json
-- run: npm install
+- run: npm ci
 - run: npm test
 ```
 
@@ -87,7 +87,7 @@ jobs:
         uses: actions/setup-node@v2
         with:
           node-version: ${{ matrix.node }}
-      - run: npm install
+      - run: npm ci
       - run: npm test
 ```
 ## Advanced usage
