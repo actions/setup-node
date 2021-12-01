@@ -70963,11 +70963,15 @@ function translateArchToDistUrl(arch) {
     }
 }
 function parseNodeVersionFile(contents) {
-    let nodeVersion = contents.trim();
-    if (/^v\d/.test(nodeVersion)) {
-        nodeVersion = nodeVersion.substring(1);
+    var _a;
+    const found = contents.match(/^(?:nodejs\s+)?v?(?<version>[^\s]+)$/m);
+    const nodeVersion = (_a = found === null || found === void 0 ? void 0 : found.groups) === null || _a === void 0 ? void 0 : _a.version;
+    if (nodeVersion) {
+        return nodeVersion;
     }
-    return nodeVersion;
+    // In the case of an unknown format,
+    // return as is and evaluate the version separately.
+    return contents.trim();
 }
 exports.parseNodeVersionFile = parseNodeVersionFile;
 function isLatestSyntax(versionSpec) {

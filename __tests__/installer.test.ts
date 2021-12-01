@@ -946,15 +946,17 @@ describe('setup-node', () => {
 describe('helper methods', () => {
   describe('parseNodeVersionFile', () => {
     each`
-      contents            | expected
-      ${'12'}             | ${'12'}
-      ${'12.3'}           | ${'12.3'}
-      ${'12.3.4'}         | ${'12.3.4'}
-      ${'v12.3.4'}        | ${'12.3.4'}
-      ${'lts/erbium'}     | ${'lts/erbium'}
-      ${'lts/*'}          | ${'lts/*'}
-      ${''}               | ${''}
-      ${'unknown format'} | ${'unknown format'}
+      contents                                     | expected
+      ${'12'}                                      | ${'12'}
+      ${'12.3'}                                    | ${'12.3'}
+      ${'12.3.4'}                                  | ${'12.3.4'}
+      ${'v12.3.4'}                                 | ${'12.3.4'}
+      ${'lts/erbium'}                              | ${'lts/erbium'}
+      ${'lts/*'}                                   | ${'lts/*'}
+      ${'nodejs 12.3.4'}                           | ${'12.3.4'}
+      ${'ruby 2.3.4\nnodejs 12.3.4\npython 3.4.5'} | ${'12.3.4'}
+      ${''}                                        | ${''}
+      ${'unknown format'}                          | ${'unknown format'}
     `.it('parses "$contents"', ({contents, expected}) => {
       expect(im.parseNodeVersionFile(contents)).toBe(expected);
     });

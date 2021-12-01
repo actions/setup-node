@@ -84,12 +84,13 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
+        node-version-file: [.nvmrc, .tool-versions]
     steps:
       - uses: actions/checkout@v3
       - name: Setup node from node version file
         uses: ./
         with:
-          node-version-file: '__tests__/data/.nvmrc'
+          node-version-file: '__tests__/data/${{ matrix.node-version-file }}'
       - name: Verify node
         run: __tests__/verify-node.sh 14
 
