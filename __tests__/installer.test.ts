@@ -7,6 +7,7 @@ import fs from 'fs';
 import cp from 'child_process';
 import osm = require('os');
 import path from 'path';
+import each from 'jest-each';
 import * as main from '../src/main';
 import * as auth from '../src/authutil';
 
@@ -939,5 +940,23 @@ describe('setup-node', () => {
         expect(logSpy).toHaveBeenCalledWith('getting latest node version...');
       }
     );
+  });
+});
+
+describe('helper methods', () => {
+  describe('parseNodeVersionFile', () => {
+    each`
+      contents            | expected
+      ${'12'}             | ${'12'}
+      ${'12.3'}           | ${'12.3'}
+      ${'12.3.4'}         | ${'12.3.4'}
+      ${'v12.3.4'}        | ${'12.3.4'}
+      ${'lts/erbium'}     | ${'lts/erbium'}
+      ${'lts/*'}          | ${'lts/*'}
+      ${''}               | ${''}
+      ${'unknown format'} | ${'unknown format'}
+    `.it('parses "$contents"', ({contents, expected}) => {
+      expect(im.parseNodeVersionFile(contents)).toBe(expected);
+    });
   });
 });
