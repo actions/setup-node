@@ -371,7 +371,7 @@ async function queryDistForMatch(
   }
 
   let versions: string[] = [];
-  let nodeVersions = await module.exports.getVersionsFromDist();
+  let nodeVersions = await getVersionsFromDist();
 
   nodeVersions.forEach((nodeVersion: INodeVersion) => {
     // ensure this version supports your os and platform
@@ -463,4 +463,13 @@ function translateArchToDistUrl(arch: string): string {
     default:
       return arch;
   }
+}
+
+export function parseNodeVersionFile(contents: string): string {
+  let nodeVersion = contents.trim();
+
+  if (/^v\d/.test(nodeVersion)) {
+    nodeVersion = nodeVersion.substring(1);
+  }
+  return nodeVersion;
 }

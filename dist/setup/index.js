@@ -6636,9 +6636,13 @@ var __importStar = (this && this.__importStar) || function (mod) {
     result["default"] = mod;
     return result;
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 const core = __importStar(__webpack_require__(470));
 const installer = __importStar(__webpack_require__(923));
+const fs_1 = __importDefault(__webpack_require__(747));
 const auth = __importStar(__webpack_require__(749));
 const path = __importStar(__webpack_require__(622));
 const cache_restore_1 = __webpack_require__(409);
@@ -6651,10 +6655,7 @@ function run() {
             // Version is optional.  If supplied, install / use from the tool cache
             // If not supplied then task is still used to setup proxy, auth, etc...
             //
-            let version = core.getInput('node-version');
-            if (!version) {
-                version = core.getInput('version');
-            }
+            let version = resolveVersionInput();
             let arch = core.getInput('architecture');
             const cache = core.getInput('cache');
             // if architecture supplied but node-version is not
@@ -6689,8 +6690,8 @@ function run() {
             core.info(`##[add-matcher]${path.join(matchersPath, 'eslint-stylish.json')}`);
             core.info(`##[add-matcher]${path.join(matchersPath, 'eslint-compact.json')}`);
         }
-        catch (error) {
-            core.setFailed(error.message);
+        catch (err) {
+            core.setFailed(err.message);
         }
     });
 }
@@ -6698,6 +6699,25 @@ exports.run = run;
 function isGhes() {
     const ghUrl = new url_1.URL(process.env['GITHUB_SERVER_URL'] || 'https://github.com');
     return ghUrl.hostname.toUpperCase() !== 'GITHUB.COM';
+}
+function resolveVersionInput() {
+    let version = core.getInput('node-version') || core.getInput('version');
+    const versionFileInput = core.getInput('node-version-file');
+    if (version && versionFileInput) {
+        core.warning('Both node-version and node-version-file inputs are specified, only node-version will be used');
+    }
+    if (version) {
+        return version;
+    }
+    if (versionFileInput) {
+        const versionFilePath = path.join(process.env.GITHUB_WORKSPACE, versionFileInput);
+        if (!fs_1.default.existsSync(versionFilePath)) {
+            throw new Error(`The specified node version file at: ${versionFilePath} does not exist`);
+        }
+        version = installer.parseNodeVersionFile(fs_1.default.readFileSync(versionFilePath, 'utf8'));
+        core.info(`Resolved ${versionFileInput} as ${version}`);
+    }
+    return version;
 }
 
 
@@ -47365,20 +47385,117 @@ module.exports = require("path");
 
 "use strict";
 
-
-/*!
- * isobject <https://github.com/jonschlinkert/isobject>
- *
- * Copyright (c) 2014-2017, Jon Schlinkert.
- * Released under the MIT License.
- */
-
-function isObject(val) {
-  return val != null && typeof val === 'object' && Array.isArray(val) === false;
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
+    result["default"] = mod;
+    return result;
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+const core = __importStar(__webpack_require__(470));
+const path = __importStar(__webpack_require__(622));
+const utils = __importStar(__webpack_require__(15));
+const cacheHttpClient = __importStar(__webpack_require__(114));
+const tar_1 = __webpack_require__(434);
+class ValidationError extends Error {
+    constructor(message) {
+        super(message);
+        this.name = 'ValidationError';
+        Object.setPrototypeOf(this, ValidationError.prototype);
+    }
 }
-
-/*!
- * is-plain-object <https://github.com/jonschlinkert/is-plain-object>
+exports.ValidationError = ValidationError;
+class ReserveCacheError extends Error {
+    constructor(message) {
+        super(message);
+        this.name = 'ReserveCacheError';
+        Object.setPrototypeOf(this, ReserveCacheError.prototype);
+    }
+}
+exports.ReserveCacheError = ReserveCacheError;
+function checkPaths(paths) {
+    if (!paths || paths.length === 0) {
+        throw new ValidationError(`Path Validation Error: At least one directory or file path is required`);
+    }
+}
+function checkKey(key) {
+    if (key.length > 512) {
+        throw new ValidationError(`Key Validation Error: ${key} cannot be larger than 512 characters.`);
+    }
+    const regex = /^[^,]*$/;
+    if (!regex.test(key)) {
+        throw new ValidationError(`Key Validation Error: ${key} cannot contain commas.`);
+    }
+}
+/**
+ * Restores cache from keys
+ *
+ * @param paths a list of file paths to restore from the cache
+ * @param primaryKey an explicit key for restoring the cache
+ * @param restoreKeys an optional ordered list of keys to use for restoring the cache if no cache hit occurred for key
+ * @param downloadOptions cache download options
+ * @returns string returns the key for the cache hit, otherwise returns undefined
+ */
+function restoreCache(paths, primaryKey, restoreKeys, options) {
+    return __awaiter(this, void 0, void 0, function* () {
+        checkPaths(paths);
+        restoreKeys = restoreKeys || [];
+        const keys = [primaryKey, ...restoreKeys];
+        core.debug('Resolved Keys:');
+        core.debug(JSON.stringify(keys));
+        if (keys.length > 10) {
+            throw new ValidationError(`Key Validation Error: Keys are limited to a maximum of 10.`);
+        }
+        for (const key of keys) {
+            checkKey(key);
+        }
+        const compressionMethod = yield utils.getCompressionMethod();
+        // path are needed to compute version
+        const cacheEntry = yield cacheHttpClient.getCacheEntry(keys, paths, {
+            compressionMethod
+        });
+        if (!(cacheEntry === null || cacheEntry === void 0 ? void 0 : cacheEntry.archiveLocation)) {
+            // Cache not found
+            return undefined;
+        }
+        const archivePath = path.join(yield utils.createTempDirectory(), utils.getCacheFileName(compressionMethod));
+        core.debug(`Archive Path: ${archivePath}`);
+        try {
+            // Download the cache from the cache entry
+            yield cacheHttpClient.downloadCache(cacheEntry.archiveLocation, archivePath, options);
+            if (core.isDebug()) {
+                yield tar_1.listTar(archivePath, compressionMethod);
+            }
+            const archiveFileSize = utils.getArchiveFileSizeInBytes(archivePath);
+            core.info(`Cache Size: ~${Math.round(archiveFileSize / (1024 * 1024))} MB (${archiveFileSize} B)`);
+            yield tar_1.extractTar(archivePath, compressionMethod);
+            core.info('Cache restored successfully');
+        }
+        finally {
+            // Try to delete the archive to save space
+            try {
+                yield utils.unlinkFile(archivePath);
+            }
+            catch (error) {
+                core.debug(`Failed to delete archive: ${error}`);
+            }
+        }
+        return cacheEntry.cacheKey;
+    });
+}
+exports.restoreCache = restoreCache;
+/**
+ * Saves a list of files with the specified key
  *
  * Copyright (c) 2014-2017, Jon Schlinkert.
  * Released under the MIT License.
@@ -61348,7 +61465,7 @@ exports.NoopTextMapPropagator = NoopTextMapPropagator;
 /* 921 */,
 /* 922 */,
 /* 923 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ (function(__unusedmodule, exports, __webpack_require__) {
 
 "use strict";
 
@@ -61625,7 +61742,7 @@ function queryDistForMatch(versionSpec, arch = os.arch()) {
                 throw new Error(`Unexpected OS '${osPlat}'`);
         }
         let versions = [];
-        let nodeVersions = yield module.exports.getVersionsFromDist();
+        let nodeVersions = yield getVersionsFromDist();
         nodeVersions.forEach((nodeVersion) => {
             // ensure this version supports your os and platform
             if (nodeVersion.files.indexOf(dataFileName) >= 0) {
@@ -61713,6 +61830,14 @@ function translateArchToDistUrl(arch) {
             return arch;
     }
 }
+function parseNodeVersionFile(contents) {
+    let nodeVersion = contents.trim();
+    if (/^v\d/.test(nodeVersion)) {
+        nodeVersion = nodeVersion.substring(1);
+    }
+    return nodeVersion;
+}
+exports.parseNodeVersionFile = parseNodeVersionFile;
 
 
 /***/ }),
