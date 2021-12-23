@@ -37,7 +37,7 @@ export const getCommandOutput = async (toolCommand: string) => {
   );
 
   if (exitCode) {
-    stderr = !stderr
+    stderr = !stderr.trim()
       ? `The '${toolCommand}' command failed with exit code: ${exitCode}`
       : stderr;
     throw new Error(stderr);
