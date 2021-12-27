@@ -19,6 +19,22 @@ steps:
 - run: npm test
 ```
 
+## Node version file
+  
+The `node-version-file` input accepts a path to a file containing the version of Node.js to be used by a project, for example `.nvmrc` or `.node-version`. If both the `node-version` and the `node-version-file` inputs are provided then the `node-version` input is used. 
+See [supported version syntax](https://github.com/actions/setup-node#supported-version-syntax) 
+> The action will search for the node version file relative to the repository root.
+
+```yaml
+steps:
+- uses: actions/checkout@v2
+- uses: actions/setup-node@v2
+  with:
+    node-version-file: '.nvmrc'
+- run: npm install
+- run: npm test
+```
+
 ## Architecture
 
 You can use any of the [supported operating systems](https://docs.github.com/en/actions/reference/virtual-environments-for-github-hosted-runners), and the compatible `architecture` can be selected using `architecture`. Values are `x86`, `x64`, `arm64`, `armv6l`, `armv7l`, `ppc64le`, `s390x` (not all of the architectures are available on all platforms).
