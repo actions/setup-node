@@ -3836,8 +3836,11 @@ exports.supportedPackageManagers = {
     }
 };
 exports.getCommandOutput = (toolCommand) => __awaiter(void 0, void 0, void 0, function* () {
-    const { stdout, stderr, exitCode } = yield exec.getExecOutput(toolCommand);
-    if (stderr) {
+    let { stdout, stderr, exitCode } = yield exec.getExecOutput(toolCommand, undefined, { ignoreReturnCode: true });
+    if (exitCode) {
+        stderr = !stderr.trim()
+            ? `The '${toolCommand}' command failed with exit code: ${exitCode}`
+            : stderr;
         throw new Error(stderr);
     }
     return stdout.trim();

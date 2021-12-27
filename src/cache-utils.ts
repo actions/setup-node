@@ -30,9 +30,16 @@ export const supportedPackageManagers: SupportedPackageManagers = {
 };
 
 export const getCommandOutput = async (toolCommand: string) => {
-  const {stdout, stderr, exitCode} = await exec.getExecOutput(toolCommand);
+  let {stdout, stderr, exitCode} = await exec.getExecOutput(
+    toolCommand,
+    undefined,
+    {ignoreReturnCode: true}
+  );
 
-  if (stderr) {
+  if (exitCode) {
+    stderr = !stderr.trim()
+      ? `The '${toolCommand}' command failed with exit code: ${exitCode}`
+      : stderr;
     throw new Error(stderr);
   }
 
