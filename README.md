@@ -111,4 +111,4 @@ Contributions are welcome!  See [Contributor's Guide](docs/contributors.md)
 
 ## Code of Conduct
 
-:wave: Be nice.  See [our code of conduct](CONDUCT)
+:wave: Be nice.  See [our code of conduct](CODE_OF_CONDUCT.md)
