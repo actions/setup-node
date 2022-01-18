@@ -38,6 +38,7 @@ The `node-version` input supports the following syntax:
 major versions: `12`, `14`, `16`  
 more specific versions: `10.15`, `14.2.0`, `16.3.0`  
 nvm lts syntax: `lts/erbium`, `lts/fermium`, `lts/*`  
+latest version: `current` or `latest`
 
 ## Caching packages dependencies
 
