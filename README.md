@@ -52,10 +52,12 @@ See the examples of using cache for `yarn` / `pnpm` and  `cache-dependency-path`
 steps:
 - uses: actions/checkout@v2
 - uses: actions/setup-node@v2
+  id: setup
   with:
     node-version: '14'
     cache: 'npm'
-- run: npm install
+- if: !steps.setup.outputs.cache-hit != 'true'
+  run: npm install
 - run: npm test
 ```
 
