@@ -56,7 +56,7 @@ steps:
   with:
     node-version: '14'
     cache: 'npm'
-- if: !steps.setup.outputs.cache-hit != 'true'
+- if: steps.setup.outputs.cache-hit != 'true'
   run: npm install
 - run: npm test
 ```
