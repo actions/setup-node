@@ -14,6 +14,10 @@ describe('cache-utils', () => {
   function getPackagePath(name: string) {
     if (name === utils.supportedPackageManagers.npm.getCacheFolderCommand) {
       return `${commonPath}/npm`;
+    } else if (
+      name === utils.supportedPackageManagers.pnpm.getCacheFolderCommand
+    ) {
+      return `${commonPath}/pnpm`;
     } else {
       if (name === utils.supportedPackageManagers.yarn1.getCacheFolderCommand) {
         return `${commonPath}/yarn1`;
@@ -34,6 +38,7 @@ describe('cache-utils', () => {
   describe('getPackageManagerInfo', () => {
     it.each<[string, PackageManagerInfo | null]>([
       ['npm', utils.supportedPackageManagers.npm],
+      ['pnpm', utils.supportedPackageManagers.pnpm],
       ['yarn', utils.supportedPackageManagers.yarn1],
       ['yarn1', null],
       ['yarn2', null],

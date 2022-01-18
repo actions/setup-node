@@ -1,6 +1,6 @@
 # Advanced usage
 
-### Check latest version:
+## Check latest version
 
 The `check-latest` flag defaults to `false`. When set to `false`, the action will first check the local cache for a semver match. If unable to find a specific version in the cache, the action will attempt to download a version of Node.js. It will pull LTS versions from [node-versions releases](https://github.com/actions/node-versions/releases) and on miss or failure will fall back to the previous behavior of downloading directly from [node dist](https://nodejs.org/dist/). Use the default or set `check-latest` to `false` if you prefer stability and if you want to ensure a specific version of Node.js is always used.
 
@@ -19,7 +19,23 @@ steps:
 - run: npm test
 ```
 
-### Architecture:
+## Node version file
+  
+The `node-version-file` input accepts a path to a file containing the version of Node.js to be used by a project, for example `.nvmrc` or `.node-version`. If both the `node-version` and the `node-version-file` inputs are provided then the `node-version` input is used. 
+See [supported version syntax](https://github.com/actions/setup-node#supported-version-syntax) 
+> The action will search for the node version file relative to the repository root.
+
+```yaml
+steps:
+- uses: actions/checkout@v2
+- uses: actions/setup-node@v2
+  with:
+    node-version-file: '.nvmrc'
+- run: npm install
+- run: npm test
+```
+
+## Architecture
 
 You can use any of the [supported operating systems](https://docs.github.com/en/actions/reference/virtual-environments-for-github-hosted-runners), and the compatible `architecture` can be selected using `architecture`. Values are `x86`, `x64`, `arm64`, `armv6l`, `armv7l`, `ppc64le`, `s390x` (not all of the architectures are available on all platforms).
 
@@ -39,7 +55,73 @@ jobs:
       - run: npm test
 ```
 
-### Multiple Operating Systems and Architectures:
+## Caching packages dependencies
+The action follows [actions/cache](https://github.com/actions/cache/blob/main/examples.md#node---npm) guidelines, and caches global cache on the machine instead of `node_modules`, so cache can be reused between different Node.js versions.
+
+**Caching yarn dependencies:**  
+Yarn caching handles both yarn versions: 1 or 2.
+```yaml
+steps:
+- uses: actions/checkout@v2
+- uses: actions/setup-node@v2
+  with:
+    node-version: '14'
+    cache: 'yarn'
+- run: yarn install
+- run: yarn test
+```
+
+**Caching pnpm (v6.10+) dependencies:**
+```yaml
+# This workflow uses actions that are not certified by GitHub.
+# They are provided by a third-party and are governed by
+# separate terms of service, privacy policy, and support
+# documentation.
+
+# NOTE: pnpm caching support requires pnpm version >= 6.10.0
+
+steps:
+- uses: actions/checkout@v2
+- uses: pnpm/action-setup@646cdf48217256a3d0b80361c5a50727664284f2
+  with:
+    version: 6.10.0
+- uses: actions/setup-node@v2
+  with:
+    node-version: '14'
+    cache: 'pnpm'
+- run: pnpm install
+- run: pnpm test
+```
+
+**Using wildcard patterns to cache dependencies**
+```yaml
+steps:
+- uses: actions/checkout@v2
+- uses: actions/setup-node@v2
+  with:
+    node-version: '14'
+    cache: 'npm'
+    cache-dependency-path: '**/package-lock.json'
+- run: npm install
+- run: npm test
+```
+
+**Using a list of file paths to cache dependencies**
+```yaml
+steps:
+- uses: actions/checkout@v2
+- uses: actions/setup-node@v2
+  with:
+    node-version: '14'
+    cache: 'npm'
+    cache-dependency-path: |
+      server/app/package-lock.json
+      frontend/app/package-lock.json
+- run: npm install
+- run: npm test
+```
+
+## Multiple Operating Systems and Architectures
 
 ```yaml
 jobs:
@@ -74,7 +156,7 @@ jobs:
       - run: npm test
 ```
 
-### Publish to npmjs and GPR with npm:
+## Publish to npmjs and GPR with npm
 ```yaml
 steps:
 - uses: actions/checkout@v2
@@ -94,7 +176,7 @@ steps:
     NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 ```
 
-### Publish to npmjs and GPR with yarn:
+## Publish to npmjs and GPR with yarn
 ```yaml
 steps:
 - uses: actions/checkout@v2
@@ -114,7 +196,7 @@ steps:
     NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 ```
 
-### Use private packages:
+## Use private packages
 ```yaml
 steps:
 - uses: actions/checkout@v2

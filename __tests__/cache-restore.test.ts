@@ -14,14 +14,18 @@ describe('cache-restore', () => {
   const platform = process.env.RUNNER_OS;
   const commonPath = '/some/random/path';
   const npmCachePath = `${commonPath}/npm`;
+  const pnpmCachePath = `${commonPath}/pnpm`;
   const yarn1CachePath = `${commonPath}/yarn1`;
   const yarn2CachePath = `${commonPath}/yarn2`;
   const yarnFileHash =
     'b8a0bae5243251f7c07dd52d1f78ff78281dfefaded700a176261b6b54fa245b';
   const npmFileHash =
     'abf7c9b306a3149dcfba4673e2362755503bcceaab46f0e4e6fee0ade493e20c';
+  const pnpmFileHash =
+    '26309058093e84713f38869c50cf1cee9b08155ede874ec1b44ce3fca8c68c70';
   const cachesObject = {
     [npmCachePath]: npmFileHash,
+    [pnpmCachePath]: pnpmFileHash,
     [yarn1CachePath]: yarnFileHash,
     [yarn2CachePath]: yarnFileHash
   };
@@ -30,6 +34,8 @@ describe('cache-restore', () => {
     switch (command) {
       case utils.supportedPackageManagers.npm.getCacheFolderCommand:
         return npmCachePath;
+      case utils.supportedPackageManagers.pnpm.getCacheFolderCommand:
+        return pnpmCachePath;
       case utils.supportedPackageManagers.yarn1.getCacheFolderCommand:
         return yarn1CachePath;
       case utils.supportedPackageManagers.yarn2.getCacheFolderCommand:
@@ -66,6 +72,8 @@ describe('cache-restore', () => {
     hashFilesSpy.mockImplementation((pattern: string) => {
       if (pattern.includes('package-lock.json')) {
         return npmFileHash;
+      } else if (pattern.includes('pnpm-lock.yaml')) {
+        return pnpmFileHash;
       } else if (pattern.includes('yarn.lock')) {
         return yarnFileHash;
       } else {
@@ -97,7 +105,7 @@ describe('cache-restore', () => {
   });
 
   describe('Validate provided package manager', () => {
-    it.each([['npm7'], ['npm6'], ['yarn1'], ['yarn2'], ['random']])(
+    it.each([['npm7'], ['npm6'], ['pnpm6'], ['yarn1'], ['yarn2'], ['random']])(
       'Throw an error because %s is not supported',
       async packageManager => {
         await expect(restoreCache(packageManager)).rejects.toThrowError(
@@ -111,7 +119,8 @@ describe('cache-restore', () => {
     it.each([
       ['yarn', '2.1.2', yarnFileHash],
       ['yarn', '1.2.3', yarnFileHash],
-      ['npm', '', npmFileHash]
+      ['npm', '', npmFileHash],
+      ['pnpm', '', pnpmFileHash]
     ])(
       'restored dependencies for %s',
       async (packageManager, toolVersion, fileHash) => {
@@ -131,6 +140,7 @@ describe('cache-restore', () => {
         expect(infoSpy).not.toHaveBeenCalledWith(
           `${packageManager} cache is not found`
         );
+        expect(setOutputSpy).toHaveBeenCalledWith('cache-hit', true);
       }
     );
   });
@@ -139,7 +149,8 @@ describe('cache-restore', () => {
     it.each([
       ['yarn', '2.1.2', yarnFileHash],
       ['yarn', '1.2.3', yarnFileHash],
-      ['npm', '', npmFileHash]
+      ['npm', '', npmFileHash],
+      ['pnpm', '', pnpmFileHash]
     ])(
       'dependencies are changed %s',
       async (packageManager, toolVersion, fileHash) => {
@@ -157,6 +168,7 @@ describe('cache-restore', () => {
         expect(infoSpy).toHaveBeenCalledWith(
           `${packageManager} cache is not found`
         );
+        expect(setOutputSpy).toHaveBeenCalledWith('cache-hit', false);
       }
     );
   });

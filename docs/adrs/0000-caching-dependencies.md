@@ -1,7 +1,7 @@
 # 0. Caching dependencies
 Date: 2021-05-21
 
-Status: Proposed
+Status: Accepted
 
 # Context
 `actions/setup-node` is the 2nd most popular action in GitHub Actions. A lot of customers use it in conjunction with [actions/cache](https://github.com/actions/cache) to speed up dependencies installation.  

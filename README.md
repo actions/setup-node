@@ -7,7 +7,7 @@
 This action provides the following functionality for GitHub Actions users:
 
 - Optionally downloading and caching distribution of the requested Node.js version, and adding it to the PATH
-- Optionally caching npm/yarn dependencies
+- Optionally caching npm/yarn/pnpm dependencies
 - Registering problem matchers for error output
 - Configuring authentication for GPR or npm
 
@@ -39,9 +39,13 @@ major versions: `12`, `14`, `16`
 more specific versions: `10.15`, `14.2.0`, `16.3.0`  
 nvm lts syntax: `lts/erbium`, `lts/fermium`, `lts/*`  
 
-### Caching packages dependencies
+## Caching packages dependencies
 
-The action has a built-in functionality for caching and restoring npm/yarn dependencies. Supported package managers are `npm`, `yarn`. The `cache` input is optional, and caching is turned off by default.
+The action has a built-in functionality for caching and restoring dependencies. It uses [actions/cache](https://github.com/actions/cache) under the hood for caching dependencies but requires less configuration settings. Supported package managers are `npm`, `yarn`, `pnpm` (v6.10+). The `cache` input is optional, and caching is turned off by default.
+
+The action defaults to search for the dependency file (`package-lock.json` or `yarn.lock`) in the repository root, and uses its hash as a part of the cache key. Use `cache-dependency-path` for cases when multiple dependency files are used, or they are located in different subdirectories.
+
+See the examples of using cache for `yarn` / `pnpm` and  `cache-dependency-path` input in the [Advanced usage](docs/advanced-usage.md#caching-packages-dependencies) guide.
 
 **Caching npm dependencies:**
 ```yaml
@@ -55,22 +59,20 @@ steps:
 - run: npm test
 ```
 
-**Caching yarn dependencies:**
+**Caching npm dependencies in monorepos:**
 ```yaml
 steps:
 - uses: actions/checkout@v2
 - uses: actions/setup-node@v2
   with:
     node-version: '14'
-    cache: 'yarn'
-- run: yarn install
-- run: yarn test
+    cache: 'npm'
+    cache-dependency-path: subdir/package-lock.json
+- run: npm install
+- run: npm test
 ```
-Yarn caching handles both yarn versions: 1 or 2. 
 
-> At the moment, only `lock` files in the project root are supported.
-
-### Matrix Testing:
+## Matrix Testing:
 ```yaml
 jobs:
   build:
@@ -91,11 +93,13 @@ jobs:
 ## Advanced usage
 
 1. [Check latest version](docs/advanced-usage.md#check-latest-version)
-2. [Using different architectures](docs/advanced-usage.md#architecture)
-3. [Using multiple operating systems and architectures](docs/advanced-usage.md#multiple-operating-systems-and-architectures)
-4. [Publishing to npmjs and GPR with npm](docs/advanced-usage.md#publish-to-npmjs-and-gpr-with-npm)
-5. [Publishing to npmjs and GPR with yarn](docs/advanced-usage.md#publish-to-npmjs-and-gpr-with-yarn)
-6. [Using private packages](docs/advanced-usage.md#use-private-packages)
+2. [Using a node version file](docs/advanced-usage.md#node-version-file)
+3. [Using different architectures](docs/advanced-usage.md#architecture)
+4. [Caching packages dependencies](docs/advanced-usage.md#caching-packages-dependencies)
+5. [Using multiple operating systems and architectures](docs/advanced-usage.md#multiple-operating-systems-and-architectures)
+6. [Publishing to npmjs and GPR with npm](docs/advanced-usage.md#publish-to-npmjs-and-gpr-with-npm)
+7. [Publishing to npmjs and GPR with yarn](docs/advanced-usage.md#publish-to-npmjs-and-gpr-with-yarn)
+8. [Using private packages](docs/advanced-usage.md#use-private-packages)
 
 # License
 
