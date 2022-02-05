@@ -1,0 +1,452 @@
+Main logo
+Search for transactions, addresses, blocks and embedded text data...
+
+
+API
+API documentation
+API documentation
+Introduction
+General stats endpoints
+Retrieve overall information about blockchains and tokens
+Stats on multiple blockchains at once
+Bitcoin-like blockchain stats
+Ethereum-like blockchain stats
+Ripple-like blockchain stats
+Stellar-like blockchain stats
+Monero-like blockchain stats
+Cardano-like blockchain stats
+Mixin-like DAG stats
+Tezos-like blockchain stats
+EOS-like blockchain stats
+Cross-chain token stats
+Omni Layer stats
+ERC-20 stats
+Dashboard endpoints
+Retrieve information about various entities in a neat format from our databases
+Raw data endpoints
+Retrieve raw information about various entities directly from our full nodes
+Infinitable endpoints
+SQL-like queries: filter, sort, and aggregate blockchain data
+Misc endpoints
+Privacy-o-meter
+News aggregator
+Support
+Show all
+Blockchair API
+Blockchair API
+Blockchair API provides developers, researchers, and businesses with access to data contained in 19 blockchains
+Explore pricing plans
+Stats on multiple blockchains at once
+Allows to retrieve the most important stats on all blockchains we support via just one API request.
+
+Endpoint:
+
+https://api.blockchair.com/stats
+If you require data on just one blockchain, please use https://api.blockchair.com/{:chain}/stats instead.
+
+Output:
+
+data contains an array with stats on 15 blockchains we support at once:
+
+Bitcoin
+Bitcoin Cash
+Ethereum
+Litecoin
+Bitcoin SV
+Dogecoin
+Dash
+Ripple
+Groestlcoin
+Stellar
+Monero
+Cardano
+Zcash
+Mixin
+Tezos
+eCash
+and on 3 cross-chain tokens:
+
+Tether (USDT)
+USD Coin (USDC)
+Binance USD (BUSD)
+Note that Bitcoin Testnet stats are not included in this output.
+
+Description of the fields is available in the next three sections of documentation.
+
+Example output:
+
+https://api.blockchair.com/stats:
+
+{
+  "data": {
+    "bitcoin": {
+      "data": {
+        "blocks": 599952,
+        ...
+      }
+    },
+    "bitcoin-cash": {
+      "data": {
+        "blocks": 605134,
+        ...
+      }
+    },
+    "bitcoin-sv": {
+      "data": {
+        "blocks": 604886,
+        ...
+      }
+    },
+    "ethereum": {
+      "data": {
+        "blocks": 8766052,
+        ...
+      }
+    },
+    "litecoin": {
+      "data": {
+        "blocks": 1721519,
+        ...
+      }
+    },
+    "dogecoin": {
+      "data": {
+        "blocks": 2941267,
+        ...
+      }
+    },
+    "dash": {
+      "data": {
+        "blocks": 1156197,
+        ...
+      }
+    },
+    "ripple": {
+      "data": {
+        "ledgers": 50795982,
+        ...
+      }
+    },
+    "groestlcoin": {
+      "data": {
+        "blocks": 2801282,
+        ...
+      }
+    },
+    "stellar": {
+      "data": {
+        "ledgers": 26968006,
+        ...
+      }
+    },
+    "monero": {
+      "data": {
+        "blocks": 2014108,
+        ...
+      }
+    },
+    "cardano": {
+      "data": {
+        "blocks": 3673733,
+        ...
+      }
+    },
+    "zcash": {
+      "data": {
+        "blocks": 756512,
+        ...
+      }
+    },
+    "mixin": {
+      "data": {
+        "snapshots": 18632532,
+        ...
+      }
+    },
+    "tezos": {
+      "data": {
+        "blocks": 974144,
+        ...
+      }
+    },
+    "cross-chain": {
+      "tether": {
+        "data": ...
+      },
+      "usd-coin": {
+        "data": ...
+      },
+      "binance-usd": {
+        "data": ...
+      }
+    }
+  },
+  "context": {
+    "code": 200,
+    ...
+    }
+  }
+}
+Endpoint:
+
+https://api.blockchair.com/stellar/stats
+Output:
+
+data contains an array with blockchain statistics:
+
+ledgers — total number of ledgers
+circulation — number of coins in circulation (in stroops)
+best_ledger_height — the latest ledger number
+best_ledger_hash — the latest ledger hash
+best_ledger_time — the latest ledger time
+ledgers_24h — number of ledgers closed over the last 24 hours
+transactions_24h — number of transactions confirmed over the last 24 hours
+successful_transactions_24h— number of successful transactions over the last 24 hours
+failed_transactions_24h— number of failed transactions over the last 24 hours
+operations_24h — number of operations over the last 24 hours
+average_transaction_fee_24h — average transaction fee over the last 24 hours
+average_transaction_fee_usd_24h — the same in USD
+market_price_usd — average market price of 1 coin in USD (market data source: CoinGecko)
+market_price_btc — average market price of 1 coin in BTC
+market_price_usd_change_24h_percentage — market price change in percent for 24 hours
+market_cap_usd — market capitalization (coins in circulation * price per coin in USD)
+market_dominance_percentage — dominance index (how much % of the total cryptocurrency market is the market capitalization of the coin)
+countdowns (optional) — an optional array of events ([event, time_left] format), where time_left is the number of seconds till the event
+Example output:
+
+https://api.blockchair.com/stellar/stats:
+
+{
+  "data": {
+    "ledgers": 26602978,
+    "best_ledger_height": 26602978,
+    "best_ledger_hash": "3151f16e9a6ce9ee43f57a068c83a04c7e864ccc7d1027519d42aab79e13b40f",
+    "best_ledger_time": "2019-11-02 16:42:01",
+    "circulation": 1054439020873472900,
+    "ledgers_24h": 15643,
+    "transactions_24h": 461072,
+    "successful_transactions_24h": 285958,
+    "failed_transactions_24h": 175114,
+    "operations_24h": 1085466,
+    "average_transaction_fee_24h": 283.5731513695005,
+    "average_transaction_fee_usd_24h": 0.000001991250668916633,
+    "market_price_usd": 0.07022,
+    "market_price_btc": 0.0000075229454120425,
+    "market_price_usd_change_24h_percentage": 3.41847,
+    "market_cap_usd": 1406714595,
+    "market_dominance_percentage": 0.56
+  },
+  "context": {
+    "code": 200,
+    ...
+  }
+}
+Request cost formula:
+
+Always 1.
+
+Explore visualization on our front-end:
+
+https://blockchair.com/stellar
+Request cost formula:
+rs, and businesses with access to data contained in 19 blockchains
+Explore pricing plans
+Bitcoin-like blockchain stats
+Endpoints:
+
+https://api.blockchair.com/bitcoin/stats
+https://api.blockchair.com/bitcoin-cash/stats
+https://api.blockchair.com/litecoin/stats
+https://api.blockchair.com/bitcoin-sv/stats
+https://api.blockchair.com/dogecoin/stats
+https://api.blockchair.com/dash/stats
+https://api.blockchair.com/groestlcoin/stats
+https://api.blockchair.com/zcash/stats
+https://api.blockchair.com/ecash/stats
+https://api.blockchair.com/bitcoin/testnet/stats
+Output:
+
+data contains an array with blockchain statistics:
+
+blocks — total number of blocks (note that it's 1 more than the latest block number as there is block #0)
+transactions — total number of transactions
+outputs — total number of outputs (including spent)
+circulation — number of coins in circulation (in satoshi)
+blockchain_size — total size of all blocks in bytes (note: it's not the size of a full node, it's just bare blocks; nodes are bigger in size as they use database indexing, etc)
+nodes— number of full network nodes (it's an approximate number and actually not a blockchain metric)
+difficulty — current mining difficulty
+hashrate_24h — approximated hashrate over the last 24 hours (returned as a string as it doesn't fit into an integer)
+next_retarget_time_estimate — approximate timestamp of the next difficulty retarget (this field is available for Bitcoin and Litecoin only)
+next_difficulty_estimate — approximate next difficulty value (this field is available for Bitcoin and Litecoin only)
+best_block_height — the latest block height
+best_block_hash — the latest block hash
+best_block_time — the latest block time
+mempool_transactions — number of transactions in the mempool
+mempool_outputs — number of outputs in the mempool
+mempool_size — mempool size in bytes
+mempool_tps — number of transactions per second added to the mempool
+mempool_total_fee_usd — sum of transaction fees in the mempool, in USD
+blocks_24h — number of blocks mined over the last 24 hours
+transactions_24h — number of transactions confirmed over the last 24 hours
+volume_24h — total monetary volume of transactions over the last 24 hours
+average_transaction_fee_24h — average transaction fee over the last 24 hours
+average_transaction_fee_usd_24h — the same in USD
+median_transaction_fee_24h— median transaction fee over the last 24 hours
+median_transaction_fee_usd_24h — the same in USD
+inflation_24h— number of new coins mined over the last 24 hours (in satoshi), this can be considered as the daily inflation
+inflation_usd_24h — the same in USD
+cdd_24h— total coindays destroyed over the last 24 hours
+largest_transaction_24h — array of hash and value_usd — biggest payment over the last 24 hours
+market_price_usd — average market price of 1 coin in USD (market data source: CoinGecko)
+market_price_btc — average market price of 1 coin in BTC (for Bitcoin it always returns 1)
+market_price_usd_change_24h_percentage — market price change in percent for 24 hours
+market_cap_usd — market capitalization (coins in circulation * price per coin in USD)
+market_dominance_percentage — dominance index (how much % of the total cryptocurrency market is the market capitalization of the coin)
+countdowns (optional) — an optional array of events ([event, time_left] format), where time_left is the number of seconds till the event
+suggested_transaction_fee_per_byte_sat — suggests a proper transaction fee in satoshi per byte based on the latest block
+hodling_addresses — the total number of addresses with positive balance
+Example output:
+
+https://api.blockchair.com/bitcoin/stats:
+
+{
+  "data": {
+    "blocks": 690165,
+    "transactions": 654248075,
+    "outputs": 1776138129,
+    "circulation": 1875100229497096,
+    "blocks_24h": 130,
+    "transactions_24h": 229726,
+    "difficulty": 14363025673660,
+    "volume_24h": 187713267560047,
+    "mempool_transactions": 6591,
+    "mempool_outputs": 16532,
+    "mempool_size": 5076549,
+    "mempool_tps": 5.416666666666667,
+    "mempool_total_fee_usd": 14219.1005,
+    "best_block_height": 690164,
+    "best_block_hash": "000000000000000000023fcb3703bf89ddbfc1ef5109f21c2387a9d630b78c6e",
+    "best_block_time": "2021-07-08 14:37:00",
+    "blockchain_size": 353767186147,
+    "average_transaction_fee_24h": 14421,
+    "inflation_24h": 81250000000,
+    "median_transaction_fee_24h": 5269,
+    "cdd_24h": 3696149.5996842394,
+    "mempool_outputs": 44316,
+    "largest_transaction_24h": {
+      "hash": "7a83c11f42dadad1c6916cceb079835aa09ed70127dba7cdf15aa904277c907d",
+      "value_usd": 773548352
+    },
+    "nodes": 8502,
+    "hashrate_24h": "92904707138521187685",
+    "inflation_usd_24h": 26587437.5,
+    "average_transaction_fee_usd_24h": 4.719001232335435,
+    "median_transaction_fee_usd_24h": 1.724338485,
+    "market_price_usd": 32723,
+    "market_price_btc": 1,
+    "market_price_usd_change_24h_percentage": -5.7534,
+    "market_cap_usd": 613578128025,
+    "market_dominance_percentage": 43.03,
+    "next_retarget_time_estimate": "2021-07-18 19:23:20",
+    "next_difficulty_estimate": 17958208674260,
+    "countdowns": [],
+    "suggested_transaction_fee_per_byte_sat": 17,
+    "hodling_addresses": 38343147
+  },
+  "context": {
+    "code": 200,
+    ...
+  }
+}
+
+Always 1.
+
+Explore visualizations on our front-end:
+
+https://blockchair.com/
+https://blockchair.com/compare
+Explorers
+Bitcoin
+Ethereum
+Litecoin
+Cardano
+Ripple
+Polkadot
+Dogecoin
+Solana new
+Bitcoin Cash
+Stellar
+Monero
+EOS
+Kusama
+Bitcoin SV
+eCash
+Zcash
+Dash
+Mixin
+Groestlcoin
+Tether USD
+USD Coin
+Binance USD
+Data
+API
+Database dumps
+Full node dumps
+Charts
+Services
+Blockchair News
+Blockchair Donut
+Blockchair Awesome
+Products
+Transaction receipts
+Wallet statements
+Portfolio tracker
+Broadcast transaction
+Privacy-o-meter
+Node explorers
+Release monitor
+Halving countdown
+Compare blockchains
+Get Blockchair extension
+Useful links
+About Blockchair
+FAQ
+Changelog
+Careers
+Terms of service
+Privacy policy
+Blockchair Onion v3 URL 
+Blockchair Onion v2 URL 
+For partners
+Partnerships
+Advertise with us
+Brand kit
+For developers
+Submit a bug or request
+Bug bounty program
+API documentation
+Status
+Social
+Twitter
+Telegram
+GitHub
+LinkedIn
+Languages
+English
+Español
+Français
+Italiano
+Nederlands
+Português
+Русский
+中文
+فارسی
+Вahasa Indonesia
+Türkçe
+日本語
+한국어
+Deutsch
+© 2021 Blockchair
+Footer Blockchair logoNo 3d party trackers
+Works without javascript
+1.010-3049-g4e40c42b Thu Feb 3 12:14:18 UTC 2022
