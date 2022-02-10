@@ -19,10 +19,10 @@ jobs:
         os: [ubuntu-latest, windows-latest, macos-latest]
     steps:
       - uses: actions/checkout@v2
-      - name: Setup node 12
+      - name: Setup node 16
         uses: actions/setup-node@v2
         with:
-          node-version: 12.x
+          node-version: 16.x
           cache: npm
       - run: npm ci
       - run: npm run build
