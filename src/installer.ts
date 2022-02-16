@@ -373,6 +373,10 @@ async function queryDistForMatch(
   let versions: string[] = [];
   let nodeVersions = await getVersionsFromDist();
 
+  if (versionSpec === 'node') {
+    return nodeVersions[0].version;
+  }
+
   nodeVersions.forEach((nodeVersion: INodeVersion) => {
     // ensure this version supports your os and platform
     if (nodeVersion.files.indexOf(dataFileName) >= 0) {
