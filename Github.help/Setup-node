@@ -9,8 +9,7 @@ This action provides the following functionality for GitHub Actions users:
 - Optionally downloading and caching distribution of the requested Node.js version, and adding it to the PATH
 - Optionally caching npm/yarn/pnpm dependencies
 - Registering problem matchers for error output
-- Configuring authentication for GPR or npm
-
+- Configuring authentication for GPR
 # Usage
 
 See [action.yml](action.yml)
