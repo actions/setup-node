@@ -35,7 +35,7 @@ outputs:
   cache-hit: 
     description: 'A boolean value to indicate if a cache was hit'
 runs:
-  using: 'node12'
+  using: 'node16'
   main: 'dist/setup/index.js'
   post: 'dist/cache-save/index.js'
   post-if: success()
