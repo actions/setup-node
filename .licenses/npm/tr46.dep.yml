@@ -1,9 +1,9 @@
 ---
-name: "@actions/core"
-version: 1.2.4
+name: tr46
+version: 0.0.3
 type: npm
-summary: Actions core lib
-homepage: https://github.com/actions/toolkit/tree/master/packages/core
+summary: An implementation of the Unicode TR46 spec
+homepage: https://github.com/Sebmaster/tr46.js#readme
 license: mit
 licenses:
 - sources: Auto-generated MIT license text
