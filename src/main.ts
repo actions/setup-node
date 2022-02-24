@@ -74,7 +74,7 @@ function isGhes(): boolean {
 }
 
 function resolveVersionInput(): string {
-  let version = core.getInput('node-version') || core.getInput('version');
+  let version = core.getInput('node-version');
   const versionFileInput = core.getInput('node-version-file');
 
   if (version && versionFileInput) {
