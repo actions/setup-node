@@ -6643,7 +6643,7 @@ function isGhes() {
     return ghUrl.hostname.toUpperCase() !== 'GITHUB.COM';
 }
 function resolveVersionInput() {
-    let version = core.getInput('node-version') || core.getInput('version');
+    let version = core.getInput('node-version');
     const versionFileInput = core.getInput('node-version-file');
     if (version && versionFileInput) {
         core.warning('Both node-version and node-version-file inputs are specified, only node-version will be used');
