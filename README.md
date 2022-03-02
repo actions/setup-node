@@ -1,8 +1,8 @@
 # setup-node
 
-<p align="left">
-  <a href="https://github.com/actions/setup-node/actions?query=workflow%3Abuild-test"><img alt="build-test status" src="https://github.com/actions/setup-node/workflows/build-test/badge.svg"></a> <a href="https://github.com/actions/setup-node/actions?query=workflow%3Aversions"><img alt="versions status" src="https://github.com/actions/setup-node/workflows/versions/badge.svg"></a> <a href="https://github.com/actions/setup-node/actions?query=workflow%3Aproxy"><img alt="proxy status" src="https://github.com/actions/setup-node/workflows/proxy/badge.svg"></a> 
-</p>
+[![build-test](https://github.com/actions/setup-node/actions/workflows/build-test.yml/badge.svg)](https://github.com/actions/setup-node/actions/workflows/build-test.yml)
+[![versions](https://github.com/actions/setup-node/actions/workflows/versions.yml/badge.svg)](https://github.com/actions/setup-node/actions/workflows/versions.yml)
+[![proxy](https://github.com/actions/setup-node/actions/workflows/proxy.yml/badge.svg)](https://github.com/actions/setup-node/actions/workflows/proxy.yml)
 
 This action provides the following functionality for GitHub Actions users:
 
@@ -33,6 +33,7 @@ The action will first check the local cache for a semver match. If unable to fin
 For information regarding locally cached versions of Node.js on GitHub hosted runners, check out [GitHub Actions Virtual Environments](https://github.com/actions/virtual-environments).
 
 #### Supported version syntax
+
 The `node-version` input supports the following syntax:
 
 major versions: `12`, `14`, `16`
@@ -73,6 +74,7 @@ steps:
 ```
 
 ## Matrix Testing:
+
 ```yaml
 jobs:
   build:
