@@ -28,6 +28,7 @@ describe('run', () => {
   let getStateSpy: jest.SpyInstance;
   let saveCacheSpy: jest.SpyInstance;
   let getCommandOutputSpy: jest.SpyInstance;
+  let isCacheActionAvailable: jest.SpyInstance;
   let hashFilesSpy: jest.SpyInstance;
   let existsSpy: jest.SpyInstance;
 
@@ -70,6 +71,9 @@ describe('run', () => {
 
     // utils
     getCommandOutputSpy = jest.spyOn(utils, 'getCommandOutput');
+
+    isCacheActionAvailable = jest.spyOn(utils, 'isCacheFeatureAvailable');
+    isCacheActionAvailable.mockImplementation(() => true);
   });
 
   afterEach(() => {

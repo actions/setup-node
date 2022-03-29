@@ -1,36 +1,25 @@
 import * as core from '@actions/core';
+import * as cache from '@actions/cache';
 import path from 'path';
 import * as utils from '../src/cache-utils';
-import {PackageManagerInfo} from '../src/cache-utils';
+import {PackageManagerInfo, isCacheFeatureAvailable} from '../src/cache-utils';
 
 describe('cache-utils', () => {
-  const commonPath = '/some/random/path';
   const versionYarn1 = '1.2.3';
-  const versionYarn2 = '2.3.4';
 
   let debugSpy: jest.SpyInstance;
   let getCommandOutputSpy: jest.SpyInstance;
-
-  function getPackagePath(name: string) {
-    if (name === utils.supportedPackageManagers.npm.getCacheFolderCommand) {
-      return `${commonPath}/npm`;
-    } else if (
-      name === utils.supportedPackageManagers.pnpm.getCacheFolderCommand
-    ) {
-      return `${commonPath}/pnpm`;
-    } else {
-      if (name === utils.supportedPackageManagers.yarn1.getCacheFolderCommand) {
-        return `${commonPath}/yarn1`;
-      } else {
-        return `${commonPath}/yarn2`;
-      }
-    }
-  }
+  let isFeatureAvailable: jest.SpyInstance;
+  let info: jest.SpyInstance;
 
   beforeEach(() => {
     process.env['GITHUB_WORKSPACE'] = path.join(__dirname, 'data');
     debugSpy = jest.spyOn(core, 'debug');
     debugSpy.mockImplementation(msg => {});
+
+    info = jest.spyOn(core, 'info');
+
+    isFeatureAvailable = jest.spyOn(cache, 'isFeatureAvailable');
 
     getCommandOutputSpy = jest.spyOn(utils, 'getCommandOutput');
   });
@@ -51,7 +40,35 @@ describe('cache-utils', () => {
     });
   });
 
+  it('isCacheFeatureAvailable is false', () => {
+    isFeatureAvailable.mockImplementation(() => false);
+    process.env['GITHUB_SERVER_URL'] = 'https://www.test.com';
+
+    expect(isCacheFeatureAvailable()).toBe(false);
+    expect(info).toHaveBeenCalledWith(
+      '[warning]Cache action is only supported on GHES version >= 3.5. If you are on version >=3.5 Please check with GHES admin if Actions cache service is enabled or not.'
+    );
+  });
+
+  it('isCacheFeatureAvailable is false', () => {
+    isFeatureAvailable.mockImplementation(() => false);
+    process.env['GITHUB_SERVER_URL'] = '';
+
+    expect(isCacheFeatureAvailable()).toBe(false);
+    expect(info).toHaveBeenCalledWith(
+      '[warning]An internal error has occurred in cache backend. Please check https://www.githubstatus.com/ for any ongoing issue in actions.'
+    );
+  });
+
+  it('isCacheFeatureAvailable is true', () => {
+    isFeatureAvailable.mockImplementation(() => true);
+
+    expect(isCacheFeatureAvailable()).toBe(true);
+    expect(info).not.toHaveBeenCalled();
+  });
+
   afterEach(() => {
+    process.env['GITHUB_SERVER_URL'] = '';
     jest.resetAllMocks();
     jest.clearAllMocks();
   });
