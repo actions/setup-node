@@ -18,8 +18,8 @@ See [action.yml](action.yml)
 **Basic:**
 ```yaml
 steps:
-- uses: actions/checkout@v2
-- uses: actions/setup-node@v2
+- uses: actions/checkout@v3
+- uses: actions/setup-node@v3
   with:
     node-version: '14'
 - run: npm install
@@ -50,8 +50,8 @@ See the examples of using cache for `yarn` / `pnpm` and  `cache-dependency-path`
 **Caching npm dependencies:**
 ```yaml
 steps:
-- uses: actions/checkout@v2
-- uses: actions/setup-node@v2
+- uses: actions/checkout@v3
+- uses: actions/setup-node@v3
   with:
     node-version: '14'
     cache: 'npm'
@@ -62,8 +62,8 @@ steps:
 **Caching npm dependencies in monorepos:**
 ```yaml
 steps:
-- uses: actions/checkout@v2
-- uses: actions/setup-node@v2
+- uses: actions/checkout@v3
+- uses: actions/setup-node@v3
   with:
     node-version: '14'
     cache: 'npm'
@@ -82,9 +82,9 @@ jobs:
         node: [ '12', '14', '16' ]
     name: Node ${{ matrix.node }} sample
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Setup node
-        uses: actions/setup-node@v2
+        uses: actions/setup-node@v3
         with:
           node-version: ${{ matrix.node }}
       - run: npm install
