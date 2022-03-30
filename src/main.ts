@@ -45,10 +45,7 @@ export async function run() {
       auth.configAuthentication(registryUrl, alwaysAuth);
     }
 
-    if (cache) {
-      if (!isCacheFeatureAvailable()) {
-        throw new Error('Caching is not supported on GHES');
-      }
+    if (cache && isCacheFeatureAvailable()) {
       const cacheDependencyPath = core.getInput('cache-dependency-path');
       await restoreCache(cache, cacheDependencyPath);
     }

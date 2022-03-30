@@ -6617,10 +6617,7 @@ function run() {
             if (registryUrl) {
                 auth.configAuthentication(registryUrl, alwaysAuth);
             }
-            if (cache) {
-                if (!cache_utils_1.isCacheFeatureAvailable()) {
-                    throw new Error('Caching is not supported on GHES');
-                }
+            if (cache && cache_utils_1.isCacheFeatureAvailable()) {
                 const cacheDependencyPath = core.getInput('cache-dependency-path');
                 yield cache_restore_1.restoreCache(cache, cacheDependencyPath);
             }
@@ -46129,10 +46126,6 @@ exports.getCacheDirectoryPath = (packageManagerInfo, packageManager) => __awaite
     core.debug(`${packageManager} path is ${stdOut}`);
     return stdOut;
 });
-function logWarning(message) {
-    const warningPrefix = '[warning]';
-    core.info(`${warningPrefix}${message}`);
-}
 function isGhes() {
     const ghUrl = new URL(process.env['GITHUB_SERVER_URL'] || 'https://github.com');
     return ghUrl.hostname.toUpperCase() !== 'GITHUB.COM';
@@ -46141,12 +46134,11 @@ exports.isGhes = isGhes;
 function isCacheFeatureAvailable() {
     if (!cache.isFeatureAvailable()) {
         if (isGhes()) {
-            logWarning('Cache action is only supported on GHES version >= 3.5. If you are on version >=3.5 Please check with GHES admin if Actions cache service is enabled or not.');
+            throw new Error('Cache action is only supported on GHES version >= 3.5. If you are on version >=3.5 Please check with GHES admin if Actions cache service is enabled or not.');
         }
         else {
-            logWarning('An internal error has occurred in cache backend. Please check https://www.githubstatus.com/ for any ongoing issue in actions.');
+            throw new Error('An internal error has occurred in cache backend. Please check https://www.githubstatus.com/ for any ongoing issue in actions.');
         }
-        return false;
     }
     return true;
 }

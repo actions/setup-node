@@ -2,6 +2,7 @@ import * as core from '@actions/core';
 import * as io from '@actions/io';
 import * as tc from '@actions/tool-cache';
 import * as im from '../src/installer';
+import * as cache from '@actions/cache';
 import fs from 'fs';
 import cp from 'child_process';
 import osm = require('os');
@@ -36,6 +37,7 @@ describe('setup-node', () => {
   let execSpy: jest.SpyInstance;
   let authSpy: jest.SpyInstance;
   let parseNodeVersionSpy: jest.SpyInstance;
+  let isCacheActionAvailable: jest.SpyInstance;
 
   beforeEach(() => {
     // @actions/core
@@ -66,6 +68,9 @@ describe('setup-node', () => {
     whichSpy = jest.spyOn(io, 'which');
     existsSpy = jest.spyOn(fs, 'existsSync');
     mkdirpSpy = jest.spyOn(io, 'mkdirP');
+
+    // @actions/tool-cache
+    isCacheActionAvailable = jest.spyOn(cache, 'isFeatureAvailable');
 
     // disable authentication portion for installer tests
     authSpy = jest.spyOn(auth, 'configAuthentication');
@@ -644,6 +649,49 @@ describe('setup-node', () => {
       );
     });
   });
+
+  describe('cache on GHES', () => {
+    it('Should throw an error, because cache is not supported', async () => {
+      inputs['node-version'] = '12';
+      inputs['cache'] = 'npm';
+
+      inSpy.mockImplementation(name => inputs[name]);
+
+      let toolPath = path.normalize('/cache/node/12.16.1/x64');
+      findSpy.mockImplementation(() => toolPath);
+
+      // expect(logSpy).toHaveBeenCalledWith(`Found in cache @ ${toolPath}`);
+      process.env['GITHUB_SERVER_URL'] = 'https://www.test.com';
+      isCacheActionAvailable.mockImplementation(() => false);
+
+      await main.run();
+
+      expect(cnSpy).toHaveBeenCalledWith(
+        `::error::Cache action is only supported on GHES version >= 3.5. If you are on version >=3.5 Please check with GHES admin if Actions cache service is enabled or not.${osm.EOL}`
+      );
+    });
+
+    it('Should throw an internal error', async () => {
+      inputs['node-version'] = '12';
+      inputs['cache'] = 'npm';
+
+      inSpy.mockImplementation(name => inputs[name]);
+
+      let toolPath = path.normalize('/cache/node/12.16.1/x64');
+      findSpy.mockImplementation(() => toolPath);
+
+      // expect(logSpy).toHaveBeenCalledWith(`Found in cache @ ${toolPath}`);
+      process.env['GITHUB_SERVER_URL'] = '';
+      isCacheActionAvailable.mockImplementation(() => false);
+
+      await main.run();
+
+      expect(cnSpy).toHaveBeenCalledWith(
+        `::error::An internal error has occurred in cache backend. Please check https://www.githubstatus.com/ for any ongoing issue in actions.${osm.EOL}`
+      );
+    });
+  });
+
   describe('LTS version', () => {
     beforeEach(() => {
       os.platform = 'linux';

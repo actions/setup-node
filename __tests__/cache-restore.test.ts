@@ -50,7 +50,6 @@ describe('cache-restore', () => {
   let debugSpy: jest.SpyInstance;
   let setOutputSpy: jest.SpyInstance;
   let getCommandOutputSpy: jest.SpyInstance;
-  let isCacheActionAvailable: jest.SpyInstance;
   let restoreCacheSpy: jest.SpyInstance;
   let hashFilesSpy: jest.SpyInstance;
 
@@ -103,9 +102,6 @@ describe('cache-restore', () => {
 
     // cache-utils
     getCommandOutputSpy = jest.spyOn(utils, 'getCommandOutput');
-
-    isCacheActionAvailable = jest.spyOn(utils, 'isCacheFeatureAvailable');
-    isCacheActionAvailable.mockImplementation(() => true);
   });
 
   describe('Validate provided package manager', () => {

@@ -40,31 +40,28 @@ describe('cache-utils', () => {
     });
   });
 
-  it('isCacheFeatureAvailable is false', () => {
+  it('isCacheFeatureAvailable for GHES is false', () => {
     isFeatureAvailable.mockImplementation(() => false);
     process.env['GITHUB_SERVER_URL'] = 'https://www.test.com';
 
-    expect(isCacheFeatureAvailable()).toBe(false);
-    expect(info).toHaveBeenCalledWith(
-      '[warning]Cache action is only supported on GHES version >= 3.5. If you are on version >=3.5 Please check with GHES admin if Actions cache service is enabled or not.'
+    expect(() => isCacheFeatureAvailable()).toThrowError(
+      'Cache action is only supported on GHES version >= 3.5. If you are on version >=3.5 Please check with GHES admin if Actions cache service is enabled or not.'
     );
   });
 
-  it('isCacheFeatureAvailable is false', () => {
+  it('isCacheFeatureAvailable for GHES has an interhal error', () => {
     isFeatureAvailable.mockImplementation(() => false);
     process.env['GITHUB_SERVER_URL'] = '';
 
-    expect(isCacheFeatureAvailable()).toBe(false);
-    expect(info).toHaveBeenCalledWith(
-      '[warning]An internal error has occurred in cache backend. Please check https://www.githubstatus.com/ for any ongoing issue in actions.'
+    expect(() => isCacheFeatureAvailable()).toThrowError(
+      'An internal error has occurred in cache backend. Please check https://www.githubstatus.com/ for any ongoing issue in actions.'
     );
   });
 
-  it('isCacheFeatureAvailable is true', () => {
+  it('isCacheFeatureAvailable for GHES is available', () => {
     isFeatureAvailable.mockImplementation(() => true);
 
-    expect(isCacheFeatureAvailable()).toBe(true);
-    expect(info).not.toHaveBeenCalled();
+    expect(isCacheFeatureAvailable()).toStrictEqual(true);
   });
 
   afterEach(() => {
