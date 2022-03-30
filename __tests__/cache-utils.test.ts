@@ -11,6 +11,7 @@ describe('cache-utils', () => {
   let getCommandOutputSpy: jest.SpyInstance;
   let isFeatureAvailable: jest.SpyInstance;
   let info: jest.SpyInstance;
+  let warningSpy: jest.SpyInstance;
 
   beforeEach(() => {
     process.env['GITHUB_WORKSPACE'] = path.join(__dirname, 'data');
@@ -18,6 +19,7 @@ describe('cache-utils', () => {
     debugSpy.mockImplementation(msg => {});
 
     info = jest.spyOn(core, 'info');
+    warningSpy = jest.spyOn(core, 'warning');
 
     isFeatureAvailable = jest.spyOn(cache, 'isFeatureAvailable');
 
@@ -52,8 +54,8 @@ describe('cache-utils', () => {
   it('isCacheFeatureAvailable for GHES has an interhal error', () => {
     isFeatureAvailable.mockImplementation(() => false);
     process.env['GITHUB_SERVER_URL'] = '';
-
-    expect(() => isCacheFeatureAvailable()).toThrowError(
+    isCacheFeatureAvailable();
+    expect(warningSpy).toHaveBeenCalledWith(
       'An internal error has occurred in cache backend. Please check https://www.githubstatus.com/ for any ongoing issue in actions.'
     );
   });

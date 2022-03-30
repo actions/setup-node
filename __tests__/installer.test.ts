@@ -686,8 +686,8 @@ describe('setup-node', () => {
 
       await main.run();
 
-      expect(cnSpy).toHaveBeenCalledWith(
-        `::error::An internal error has occurred in cache backend. Please check https://www.githubstatus.com/ for any ongoing issue in actions.${osm.EOL}`
+      expect(warningSpy).toHaveBeenCalledWith(
+        'An internal error has occurred in cache backend. Please check https://www.githubstatus.com/ for any ongoing issue in actions.'
       );
     });
   });

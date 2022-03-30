@@ -3884,8 +3884,9 @@ function isCacheFeatureAvailable() {
             throw new Error('Cache action is only supported on GHES version >= 3.5. If you are on version >=3.5 Please check with GHES admin if Actions cache service is enabled or not.');
         }
         else {
-            throw new Error('An internal error has occurred in cache backend. Please check https://www.githubstatus.com/ for any ongoing issue in actions.');
+            core.warning('An internal error has occurred in cache backend. Please check https://www.githubstatus.com/ for any ongoing issue in actions.');
         }
+        return false;
     }
     return true;
 }
