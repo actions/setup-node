@@ -11,7 +11,7 @@ If `check-latest` is set to `true`, the action first checks if the cached versio
 ```yaml
 steps:
 - uses: actions/checkout@v2
-- uses: actions/setup-node@v2
+- uses: actions/setup-node@v3
   with:
     node-version: '14'
     check-latest: true
@@ -20,15 +20,15 @@ steps:
 ```
 
 ## Node version file
-  
-The `node-version-file` input accepts a path to a file containing the version of Node.js to be used by a project, for example `.nvmrc` or `.node-version`. If both the `node-version` and the `node-version-file` inputs are provided then the `node-version` input is used. 
-See [supported version syntax](https://github.com/actions/setup-node#supported-version-syntax) 
+
+The `node-version-file` input accepts a path to a file containing the version of Node.js to be used by a project, for example `.nvmrc` or `.node-version`. If both the `node-version` and the `node-version-file` inputs are provided then the `node-version` input is used.
+See [supported version syntax](https://github.com/actions/setup-node#supported-version-syntax)
 > The action will search for the node version file relative to the repository root.
 
 ```yaml
 steps:
 - uses: actions/checkout@v2
-- uses: actions/setup-node@v2
+- uses: actions/setup-node@v3
   with:
     node-version-file: '.nvmrc'
 - run: npm install
@@ -47,7 +47,7 @@ jobs:
     name: Node sample
     steps:
       - uses: actions/checkout@v2
-      - uses: actions/setup-node@v2
+      - uses: actions/setup-node@v3
         with:
           node-version: '14'
           architecture: 'x64' # optional, x64 or x86. If not specified, x64 will be used by default
@@ -58,12 +58,12 @@ jobs:
 ## Caching packages dependencies
 The action follows [actions/cache](https://github.com/actions/cache/blob/main/examples.md#node---npm) guidelines, and caches global cache on the machine instead of `node_modules`, so cache can be reused between different Node.js versions.
 
-**Caching yarn dependencies:**  
+**Caching yarn dependencies:**
 Yarn caching handles both yarn versions: 1 or 2.
 ```yaml
 steps:
 - uses: actions/checkout@v2
-- uses: actions/setup-node@v2
+- uses: actions/setup-node@v3
   with:
     node-version: '14'
     cache: 'yarn'
@@ -85,7 +85,7 @@ steps:
 - uses: pnpm/action-setup@646cdf48217256a3d0b80361c5a50727664284f2
   with:
     version: 6.10.0
-- uses: actions/setup-node@v2
+- uses: actions/setup-node@v3
   with:
     node-version: '14'
     cache: 'pnpm'
@@ -97,7 +97,7 @@ steps:
 ```yaml
 steps:
 - uses: actions/checkout@v2
-- uses: actions/setup-node@v2
+- uses: actions/setup-node@v3
   with:
     node-version: '14'
     cache: 'npm'
@@ -110,7 +110,7 @@ steps:
 ```yaml
 steps:
 - uses: actions/checkout@v2
-- uses: actions/setup-node@v2
+- uses: actions/setup-node@v3
   with:
     node-version: '14'
     cache: 'npm'
@@ -148,7 +148,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Setup node
-        uses: actions/setup-node@v2
+        uses: actions/setup-node@v3
         with:
           node-version: ${{ matrix.node_version }}
           architecture: ${{ matrix.architecture }}
@@ -160,7 +160,7 @@ jobs:
 ```yaml
 steps:
 - uses: actions/checkout@v2
-- uses: actions/setup-node@v2
+- uses: actions/setup-node@v3
   with:
     node-version: '14.x'
     registry-url: 'https://registry.npmjs.org'
@@ -168,7 +168,7 @@ steps:
 - run: npm publish
   env:
     NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-- uses: actions/setup-node@v2
+- uses: actions/setup-node@v3
   with:
     registry-url: 'https://npm.pkg.github.com'
 - run: npm publish
@@ -180,7 +180,7 @@ steps:
 ```yaml
 steps:
 - uses: actions/checkout@v2
-- uses: actions/setup-node@v2
+- uses: actions/setup-node@v3
   with:
     node-version: '14.x'
     registry-url: <registry url>
@@ -188,7 +188,7 @@ steps:
 - run: yarn publish
   env:
     NODE_AUTH_TOKEN: ${{ secrets.YARN_TOKEN }}
-- uses: actions/setup-node@v2
+- uses: actions/setup-node@v3
   with:
     registry-url: 'https://npm.pkg.github.com'
 - run: yarn publish
@@ -200,7 +200,7 @@ steps:
 ```yaml
 steps:
 - uses: actions/checkout@v2
-- uses: actions/setup-node@v2
+- uses: actions/setup-node@v3
   with:
     node-version: '14.x'
     registry-url: 'https://registry.npmjs.org'

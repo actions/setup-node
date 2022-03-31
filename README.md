@@ -1,8 +1,8 @@
 # setup-node
 
-<p align="left">
-  <a href="https://github.com/actions/setup-node/actions?query=workflow%3Abuild-test"><img alt="build-test status" src="https://github.com/actions/setup-node/workflows/build-test/badge.svg"></a> <a href="https://github.com/actions/setup-node/actions?query=workflow%3Aversions"><img alt="versions status" src="https://github.com/actions/setup-node/workflows/versions/badge.svg"></a> <a href="https://github.com/actions/setup-node/actions?query=workflow%3Aproxy"><img alt="proxy status" src="https://github.com/actions/setup-node/workflows/proxy/badge.svg"></a> 
-</p>
+[![build-test](https://github.com/actions/setup-node/actions/workflows/build-test.yml/badge.svg)](https://github.com/actions/setup-node/actions/workflows/build-test.yml)
+[![versions](https://github.com/actions/setup-node/actions/workflows/versions.yml/badge.svg)](https://github.com/actions/setup-node/actions/workflows/versions.yml)
+[![proxy](https://github.com/actions/setup-node/actions/workflows/proxy.yml/badge.svg)](https://github.com/actions/setup-node/actions/workflows/proxy.yml)
 
 This action provides the following functionality for GitHub Actions users:
 
@@ -19,25 +19,26 @@ See [action.yml](action.yml)
 ```yaml
 steps:
 - uses: actions/checkout@v2
-- uses: actions/setup-node@v2
+- uses: actions/setup-node@v3
   with:
     node-version: '14'
 - run: npm install
 - run: npm test
 ```
 
-The `node-version` input is optional. If not supplied, the node version from PATH will be used. However, it is recommended to always specify Node.js version and don't rely on the system one.  
+The `node-version` input is optional. If not supplied, the node version from PATH will be used. However, it is recommended to always specify Node.js version and don't rely on the system one.
 
 The action will first check the local cache for a semver match. If unable to find a specific version in the cache, the action will attempt to download a version of Node.js. It will pull LTS versions from [node-versions releases](https://github.com/actions/node-versions/releases) and on miss or failure will fall back to the previous behavior of downloading directly from [node dist](https://nodejs.org/dist/).
 
 For information regarding locally cached versions of Node.js on GitHub hosted runners, check out [GitHub Actions Virtual Environments](https://github.com/actions/virtual-environments).
 
 #### Supported version syntax
+
 The `node-version` input supports the following syntax:
 
-major versions: `12`, `14`, `16`  
-more specific versions: `10.15`, `14.2.0`, `16.3.0`  
-nvm lts syntax: `lts/erbium`, `lts/fermium`, `lts/*`  
+major versions: `12`, `14`, `16`
+more specific versions: `10.15`, `14.2.0`, `16.3.0`
+nvm lts syntax: `lts/erbium`, `lts/fermium`, `lts/*`
 
 ## Caching packages dependencies
 
@@ -51,7 +52,7 @@ See the examples of using cache for `yarn` / `pnpm` and  `cache-dependency-path`
 ```yaml
 steps:
 - uses: actions/checkout@v2
-- uses: actions/setup-node@v2
+- uses: actions/setup-node@v3
   with:
     node-version: '14'
     cache: 'npm'
@@ -63,7 +64,7 @@ steps:
 ```yaml
 steps:
 - uses: actions/checkout@v2
-- uses: actions/setup-node@v2
+- uses: actions/setup-node@v3
   with:
     node-version: '14'
     cache: 'npm'
@@ -73,6 +74,7 @@ steps:
 ```
 
 ## Matrix Testing:
+
 ```yaml
 jobs:
   build:
@@ -84,7 +86,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Setup node
-        uses: actions/setup-node@v2
+        uses: actions/setup-node@v3
         with:
           node-version: ${{ matrix.node }}
       - run: npm install
