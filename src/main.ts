@@ -4,7 +4,7 @@ import fs from 'fs';
 import * as auth from './authutil';
 import * as path from 'path';
 import {restoreCache} from './cache-restore';
-import {URL} from 'url';
+import {isGhes, isCacheFeatureAvailable} from './cache-utils';
 import os = require('os');
 
 export async function run() {
@@ -45,10 +45,7 @@ export async function run() {
       auth.configAuthentication(registryUrl, alwaysAuth);
     }
 
-    if (cache) {
-      if (isGhes()) {
-        throw new Error('Caching is not supported on GHES');
-      }
+    if (cache && isCacheFeatureAvailable()) {
       const cacheDependencyPath = core.getInput('cache-dependency-path');
       await restoreCache(cache, cacheDependencyPath);
     }
@@ -64,13 +61,6 @@ export async function run() {
   } catch (err) {
     core.setFailed(err.message);
   }
-}
-
-function isGhes(): boolean {
-  const ghUrl = new URL(
-    process.env['GITHUB_SERVER_URL'] || 'https://github.com'
-  );
-  return ghUrl.hostname.toUpperCase() !== 'GITHUB.COM';
 }
 
 function resolveVersionInput(): string {

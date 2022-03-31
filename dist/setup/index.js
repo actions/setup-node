@@ -5410,10 +5410,7 @@ const options_1 = __webpack_require__(161);
 const requestUtils_1 = __webpack_require__(246);
 const versionSalt = '1.0';
 function getCacheApiUrl(resource) {
-    // Ideally we just use ACTIONS_CACHE_URL
-    const baseUrl = (process.env['ACTIONS_CACHE_URL'] ||
-        process.env['ACTIONS_RUNTIME_URL'] ||
-        '').replace('pipelines', 'artifactcache');
+    const baseUrl = process.env['ACTIONS_CACHE_URL'] || '';
     if (!baseUrl) {
         throw new Error('Cache Service Url not found, unable to restore cache.');
     }
@@ -6588,7 +6585,7 @@ const fs_1 = __importDefault(__webpack_require__(747));
 const auth = __importStar(__webpack_require__(749));
 const path = __importStar(__webpack_require__(622));
 const cache_restore_1 = __webpack_require__(409);
-const url_1 = __webpack_require__(835);
+const cache_utils_1 = __webpack_require__(570);
 const os = __webpack_require__(87);
 function run() {
     return __awaiter(this, void 0, void 0, function* () {
@@ -6610,7 +6607,7 @@ function run() {
             }
             if (version) {
                 let token = core.getInput('token');
-                let auth = !token || isGhes() ? undefined : `token ${token}`;
+                let auth = !token || cache_utils_1.isGhes() ? undefined : `token ${token}`;
                 let stable = (core.getInput('stable') || 'true').toUpperCase() === 'TRUE';
                 const checkLatest = (core.getInput('check-latest') || 'false').toUpperCase() === 'TRUE';
                 yield installer.getNode(version, stable, checkLatest, auth, arch);
@@ -6620,10 +6617,7 @@ function run() {
             if (registryUrl) {
                 auth.configAuthentication(registryUrl, alwaysAuth);
             }
-            if (cache) {
-                if (isGhes()) {
-                    throw new Error('Caching is not supported on GHES');
-                }
+            if (cache && cache_utils_1.isCacheFeatureAvailable()) {
                 const cacheDependencyPath = core.getInput('cache-dependency-path');
                 yield cache_restore_1.restoreCache(cache, cacheDependencyPath);
             }
@@ -6638,10 +6632,6 @@ function run() {
     });
 }
 exports.run = run;
-function isGhes() {
-    const ghUrl = new url_1.URL(process.env['GITHUB_SERVER_URL'] || 'https://github.com');
-    return ghUrl.hostname.toUpperCase() !== 'GITHUB.COM';
-}
 function resolveVersionInput() {
     let version = core.getInput('node-version');
     const versionFileInput = core.getInput('node-version-file');
@@ -9525,7 +9515,8 @@ function downloadCacheStorageSDK(archiveLocation, archivePath, options) {
             //
             // If the file exceeds the buffer maximum length (~1 GB on 32-bit systems and ~2 GB
             // on 64-bit systems), split the download into multiple segments
-            const maxSegmentSize = buffer.constants.MAX_LENGTH;
+            // ~2 GB = 2147483647, beyond this, we start getting out of range error. So, capping it accordingly.
+            const maxSegmentSize = Math.min(2147483647, buffer.constants.MAX_LENGTH);
             const downloadProgress = new DownloadProgress(contentLength);
             const fd = fs.openSync(archivePath, 'w');
             try {
@@ -46070,6 +46061,7 @@ var __importStar = (this && this.__importStar) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const core = __importStar(__webpack_require__(470));
 const exec = __importStar(__webpack_require__(986));
+const cache = __importStar(__webpack_require__(638));
 exports.supportedPackageManagers = {
     npm: {
         lockFilePatterns: ['package-lock.json', 'yarn.lock'],
@@ -46134,6 +46126,24 @@ exports.getCacheDirectoryPath = (packageManagerInfo, packageManager) => __awaite
     core.debug(`${packageManager} path is ${stdOut}`);
     return stdOut;
 });
+function isGhes() {
+    const ghUrl = new URL(process.env['GITHUB_SERVER_URL'] || 'https://github.com');
+    return ghUrl.hostname.toUpperCase() !== 'GITHUB.COM';
+}
+exports.isGhes = isGhes;
+function isCacheFeatureAvailable() {
+    if (!cache.isFeatureAvailable()) {
+        if (isGhes()) {
+            throw new Error('Cache action is only supported on GHES version >= 3.5. If you are on version >=3.5 Please check with GHES admin if Actions cache service is enabled or not.');
+        }
+        else {
+            core.warning('The runner was not able to contact the cache service. Caching will be skipped');
+        }
+        return false;
+    }
+    return true;
+}
+exports.isCacheFeatureAvailable = isCacheFeatureAvailable;
 
 
 /***/ }),
@@ -47526,6 +47536,15 @@ function checkKey(key) {
         throw new ValidationError(`Key Validation Error: ${key} cannot contain commas.`);
     }
 }
+/**
+ * isFeatureAvailable to check the presence of Actions cache service
+ *
+ * @returns boolean return true if Actions cache service feature is available, otherwise false
+ */
+function isFeatureAvailable() {
+    return !!process.env['ACTIONS_CACHE_URL'];
+}
+exports.isFeatureAvailable = isFeatureAvailable;
 /**
  * Restores cache from keys
  *
