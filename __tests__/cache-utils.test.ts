@@ -56,7 +56,7 @@ describe('cache-utils', () => {
     process.env['GITHUB_SERVER_URL'] = '';
     isCacheFeatureAvailable();
     expect(warningSpy).toHaveBeenCalledWith(
-      'An internal error has occurred in cache backend. Please check https://www.githubstatus.com/ for any ongoing issue in actions.'
+      'The runner was not able to contact the cache service. Caching will be skipped'
     );
   });
 
