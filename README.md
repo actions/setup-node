@@ -16,9 +16,10 @@ This action provides the following functionality for GitHub Actions users:
 See [action.yml](action.yml)
 
 **Basic:**
+
 ```yaml
 steps:
-- uses: actions/checkout@v2
+- uses: actions/checkout@v3
 - uses: actions/setup-node@v3
   with:
     node-version: '14'
@@ -49,9 +50,10 @@ The action defaults to search for the dependency file (`package-lock.json` or `y
 See the examples of using cache for `yarn` / `pnpm` and  `cache-dependency-path` input in the [Advanced usage](docs/advanced-usage.md#caching-packages-dependencies) guide.
 
 **Caching npm dependencies:**
+
 ```yaml
 steps:
-- uses: actions/checkout@v2
+- uses: actions/checkout@v3
 - uses: actions/setup-node@v3
   with:
     node-version: '14'
@@ -61,9 +63,10 @@ steps:
 ```
 
 **Caching npm dependencies in monorepos:**
+
 ```yaml
 steps:
-- uses: actions/checkout@v2
+- uses: actions/checkout@v3
 - uses: actions/setup-node@v3
   with:
     node-version: '14'
@@ -84,7 +87,7 @@ jobs:
         node: [ '12', '14', '16' ]
     name: Node ${{ matrix.node }} sample
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Setup node
         uses: actions/setup-node@v3
         with:
@@ -92,6 +95,7 @@ jobs:
       - run: npm install
       - run: npm test
 ```
+
 ## Advanced usage
 
 1. [Check latest version](docs/advanced-usage.md#check-latest-version)

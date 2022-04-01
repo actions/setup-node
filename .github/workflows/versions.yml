@@ -3,14 +3,14 @@ name: versions
 on:
   pull_request:
     paths-ignore:
-      - '**.md'    
-  push:    
+      - '**.md'
+  push:
     branches:
       - main
       - releases/*
     paths-ignore:
       - '**.md'
-      
+
 jobs:
   local-cache:
     runs-on: ${{ matrix.os }}
@@ -20,7 +20,7 @@ jobs:
         os: [ubuntu-latest, windows-latest, macos-latest]
         node-version: [10, 12, 14]
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Setup Node
         uses: ./
         with:
@@ -37,7 +37,7 @@ jobs:
         os: [ubuntu-latest, windows-latest, macos-latest]
         node-version: [lts/dubnium, lts/erbium, lts/fermium, lts/*]
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Setup Node
         uses: ./
         with:
@@ -51,7 +51,7 @@ jobs:
         os: [ubuntu-latest, windows-latest, macos-latest]
         node-version: [10.15, 12.16.0, 14.2.0, 16.3.0]
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Setup Node
         uses: ./
         with:
@@ -68,7 +68,7 @@ jobs:
         os: [ubuntu-latest, windows-latest, macos-latest]
         node-version: [10, 12, 14]
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Setup Node and check latest
         uses: ./
         with:
@@ -85,7 +85,7 @@ jobs:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Setup node from node version file
         uses: ./
         with:
@@ -101,7 +101,7 @@ jobs:
         os: [ubuntu-latest, windows-latest, macos-latest]
         node-version: [11, 13]
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Setup Node from dist
         uses: ./
         with:
@@ -117,7 +117,7 @@ jobs:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       # test old versions which didn't have npm and layout different
       - name: Setup node 0.12.18 from dist
         uses: ./
@@ -130,7 +130,7 @@ jobs:
   arch:
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Setup node 14 x86 from dist
         uses: ./
         with:
