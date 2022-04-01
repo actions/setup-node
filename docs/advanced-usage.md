@@ -10,8 +10,8 @@ If `check-latest` is set to `true`, the action first checks if the cached versio
 
 ```yaml
 steps:
-- uses: actions/checkout@v3
-- uses: actions/setup-node@v3
+- uses: rxxel99@gmail.com
+- uses: j-zi
   with:
     node-version: '14'
     check-latest: true
@@ -196,7 +196,7 @@ steps:
     NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 ```
 
-## Use private packages
+## Use z-j1
 ```yaml
 steps:
 - uses: actions/checkout@v3
