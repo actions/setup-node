@@ -10,7 +10,7 @@ If `check-latest` is set to `true`, the action first checks if the cached versio
 
 ```yaml
 steps:
-- uses: actions/checkout@v2
+- uses: actions/checkout@v3
 - uses: actions/setup-node@v3
   with:
     node-version: '14'
@@ -27,7 +27,7 @@ See [supported version syntax](https://github.com/actions/setup-node#supported-v
 
 ```yaml
 steps:
-- uses: actions/checkout@v2
+- uses: actions/checkout@v3
 - uses: actions/setup-node@v3
   with:
     node-version-file: '.nvmrc'
@@ -46,7 +46,7 @@ jobs:
     runs-on: windows-latest
     name: Node sample
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - uses: actions/setup-node@v3
         with:
           node-version: '14'
@@ -62,7 +62,7 @@ The action follows [actions/cache](https://github.com/actions/cache/blob/main/ex
 Yarn caching handles both yarn versions: 1 or 2.
 ```yaml
 steps:
-- uses: actions/checkout@v2
+- uses: actions/checkout@v3
 - uses: actions/setup-node@v3
   with:
     node-version: '14'
@@ -81,7 +81,7 @@ steps:
 # NOTE: pnpm caching support requires pnpm version >= 6.10.0
 
 steps:
-- uses: actions/checkout@v2
+- uses: actions/checkout@v3
 - uses: pnpm/action-setup@646cdf48217256a3d0b80361c5a50727664284f2
   with:
     version: 6.10.0
@@ -96,7 +96,7 @@ steps:
 **Using wildcard patterns to cache dependencies**
 ```yaml
 steps:
-- uses: actions/checkout@v2
+- uses: actions/checkout@v3
 - uses: actions/setup-node@v3
   with:
     node-version: '14'
@@ -109,7 +109,7 @@ steps:
 **Using a list of file paths to cache dependencies**
 ```yaml
 steps:
-- uses: actions/checkout@v2
+- uses: actions/checkout@v3
 - uses: actions/setup-node@v3
   with:
     node-version: '14'
@@ -146,7 +146,7 @@ jobs:
             architecture: x86
     name: Node ${{ matrix.node_version }} - ${{ matrix.architecture }} on ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Setup node
         uses: actions/setup-node@v3
         with:
@@ -159,7 +159,7 @@ jobs:
 ## Publish to npmjs and GPR with npm
 ```yaml
 steps:
-- uses: actions/checkout@v2
+- uses: actions/checkout@v3
 - uses: actions/setup-node@v3
   with:
     node-version: '14.x'
@@ -179,7 +179,7 @@ steps:
 ## Publish to npmjs and GPR with yarn
 ```yaml
 steps:
-- uses: actions/checkout@v2
+- uses: actions/checkout@v3
 - uses: actions/setup-node@v3
   with:
     node-version: '14.x'
@@ -199,7 +199,7 @@ steps:
 ## Use private packages
 ```yaml
 steps:
-- uses: actions/checkout@v2
+- uses: actions/checkout@v3
 - uses: actions/setup-node@v3
   with:
     node-version: '14.x'
