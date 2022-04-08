@@ -1,4 +1,6 @@
 import * as core from '@actions/core';
+import * as exec from '@actions/exec';
+import * as io from '@actions/io';
 import * as installer from './installer';
 import fs from 'fs';
 import * as auth from './authutil';
@@ -6,6 +8,13 @@ import * as path from 'path';
 import {restoreCache} from './cache-restore';
 import {isGhes, isCacheFeatureAvailable} from './cache-utils';
 import os = require('os');
+
+async function execIfExists(commandLine: string, args?: string[]) {
+  const path = await io.which(commandLine);
+  if (path) {
+    await exec.exec(commandLine, args);
+  }
+}
 
 export async function run() {
   try {
@@ -58,6 +67,9 @@ export async function run() {
     core.info(
       `##[add-matcher]${path.join(matchersPath, 'eslint-compact.json')}`
     );
+
+    await execIfExists('npm', ['--version']);
+    await execIfExists('yarn', ['--version']);
   } catch (err) {
     core.setFailed(err.message);
   }
