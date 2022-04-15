@@ -41,11 +41,13 @@ major versions: `12`, `14`, `16`
 more specific versions: `10.15`, `14.2.0`, `16.3.0`
 nvm lts syntax: `lts/erbium`, `lts/fermium`, `lts/*`
 
-## Caching packages dependencies
+## Caching global packages data
 
-The action has a built-in functionality for caching and restoring dependencies. It uses [actions/cache](https://github.com/actions/cache) under the hood for caching dependencies but requires less configuration settings. Supported package managers are `npm`, `yarn`, `pnpm` (v6.10+). The `cache` input is optional, and caching is turned off by default.
+The action has a built-in functionality for caching and restoring dependencies. It uses [actions/cache](https://github.com/actions/cache) under the hood for caching global packages data but requires less configuration settings. Supported package managers are `npm`, `yarn`, `pnpm` (v6.10+). The `cache` input is optional, and caching is turned off by default.
 
 The action defaults to search for the dependency file (`package-lock.json` or `yarn.lock`) in the repository root, and uses its hash as a part of the cache key. Use `cache-dependency-path` for cases when multiple dependency files are used, or they are located in different subdirectories.
+
+**Note:** The action does not cache `node_modules`
 
 See the examples of using cache for `yarn` / `pnpm` and  `cache-dependency-path` input in the [Advanced usage](docs/advanced-usage.md#caching-packages-dependencies) guide.
 
@@ -101,7 +103,7 @@ jobs:
 1. [Check latest version](docs/advanced-usage.md#check-latest-version)
 2. [Using a node version file](docs/advanced-usage.md#node-version-file)
 3. [Using different architectures](docs/advanced-usage.md#architecture)
-4. [Caching packages dependencies](docs/advanced-usage.md#caching-packages-dependencies)
+4. [Caching packages data](docs/advanced-usage.md#caching-packages-dependencies)
 5. [Using multiple operating systems and architectures](docs/advanced-usage.md#multiple-operating-systems-and-architectures)
 6. [Publishing to npmjs and GPR with npm](docs/advanced-usage.md#publish-to-npmjs-and-gpr-with-npm)
 7. [Publishing to npmjs and GPR with yarn](docs/advanced-usage.md#publish-to-npmjs-and-gpr-with-yarn)
