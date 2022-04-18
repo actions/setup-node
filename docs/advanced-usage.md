@@ -55,7 +55,7 @@ jobs:
       - run: npm test
 ```
 
-## Caching packages dependencies
+## Caching packages data
 The action follows [actions/cache](https://github.com/actions/cache/blob/main/examples.md#node---npm) guidelines, and caches global cache on the machine instead of `node_modules`, so cache can be reused between different Node.js versions.
 
 **Caching yarn dependencies:**
