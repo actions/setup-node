@@ -139,3 +139,35 @@ jobs:
       - name: Verify node
         run: __tests__/verify-arch.sh "ia32"
         shell: bash
+
+  node-latest-aliases:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        node-version: [current, latest, node, "16.14.2"]
+    steps:
+      - name: Retrieve version before install
+        run: |
+          version=$(echo $(node --version))
+          echo "::set-output name=NODE_VERSION::$version"
+        id: version
+        shell: bash
+      - uses: actions/checkout@v3
+      - name: Setup Node
+        uses: ./
+        with:
+          node-version: ${{ matrix.node-version }}
+      - name: Retrieve version after install
+        run: |
+          updatedVersion=$(echo $(node --version))
+          echo "::set-output name=NODE_VERSION_UPDATED::$updatedVersion"
+        id: updatedVersion
+        shell: bash
+      - name: Compare versions
+        if: ${{ steps.version.outputs.NODE_VERSION == steps.version.outputs.NODE_VERSION_UPDATED}}
+        run: |
+          echo "${{steps.updatedVersion.outputs.NODE_VERSION_UPDATED}}"
+          echo "${{steps.version.outputs.NODE_VERSION}}"
+          exit 1
