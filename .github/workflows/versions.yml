@@ -167,7 +167,7 @@ jobs:
         id: updatedVersion
         shell: bash
       - name: Compare versions
-        if: ${{ steps.version.outputs.NODE_VERSION == steps.version.outputs.NODE_VERSION_UPDATED}}
+        if: ${{ steps.version.outputs.NODE_VERSION == steps.updatedVersion.outputs.NODE_VERSION_UPDATED}}
         run: |
           echo "${{steps.updatedVersion.outputs.NODE_VERSION_UPDATED}}"
           echo "${{steps.version.outputs.NODE_VERSION}}"
