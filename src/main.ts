@@ -72,6 +72,18 @@ function resolveVersionInput(): string {
       'Both node-version and node-version-file inputs are specified, only node-version will be used'
     );
   }
+  
+  if (version === "package") {
+    const packageJson = JSON.parse(
+      fs.readFileSync(
+        path.join(
+          process.env.GITHUB_WORKSPACE!, 
+          "package.json"
+        )
+      )
+    );
+    return packageJson.engines.node;
+  }
 
   if (version) {
     return version;
