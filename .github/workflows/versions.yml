@@ -10,7 +10,6 @@ on:
       - releases/*
     paths-ignore:
       - '**.md'
-  workflow_dispatch:
 
 jobs:
   local-cache:
@@ -147,7 +146,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
-        node-version: [current, latest, node, "16.14.2"]
+        node-version: [current, latest, node]
     steps:
       - name: Retrieve version before install
         run: |
@@ -169,6 +168,4 @@ jobs:
       - name: Compare versions
         if: ${{ steps.version.outputs.NODE_VERSION == steps.updatedVersion.outputs.NODE_VERSION_UPDATED}}
         run: |
-          echo "${{steps.updatedVersion.outputs.NODE_VERSION_UPDATED}}"
-          echo "${{steps.version.outputs.NODE_VERSION}}"
           exit 1
