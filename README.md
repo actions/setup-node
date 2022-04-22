@@ -49,7 +49,7 @@ The action defaults to search for the dependency file (`package-lock.json` or `y
 
 **Note:** The action does not cache `node_modules`
 
-See the examples of using cache for `yarn` / `pnpm` and  `cache-dependency-path` input in the [Advanced usage](docs/advanced-usage.md#caching-packages-dependencies) guide.
+See the examples of using cache for `yarn` / `pnpm` and  `cache-dependency-path` input in the [Advanced usage](docs/advanced-usage.md#caching-packages-data) guide.
 
 **Caching npm dependencies:**
 
@@ -103,7 +103,7 @@ jobs:
 1. [Check latest version](docs/advanced-usage.md#check-latest-version)
 2. [Using a node version file](docs/advanced-usage.md#node-version-file)
 3. [Using different architectures](docs/advanced-usage.md#architecture)
-4. [Caching packages data](docs/advanced-usage.md#caching-packages-dependencies)
+4. [Caching packages data](docs/advanced-usage.md#caching-packages-data)
 5. [Using multiple operating systems and architectures](docs/advanced-usage.md#multiple-operating-systems-and-architectures)
 6. [Publishing to npmjs and GPR with npm](docs/advanced-usage.md#publish-to-npmjs-and-gpr-with-npm)
 7. [Publishing to npmjs and GPR with yarn](docs/advanced-usage.md#publish-to-npmjs-and-gpr-with-yarn)
