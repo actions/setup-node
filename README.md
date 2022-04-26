@@ -115,8 +115,8 @@ The scripts and documentation in this project are released under the [MIT Licens
 
 ## Contributions
 
-Contributions are welcome!  See [Contributor's Guide](docs/contributors.md)
+Contributions are welcome! See [Contributor's Guide](docs/contributors.md)
 
 ## Code of Conduct
 
-:wave: Be nice.  See [our code of conduct](CODE_OF_CONDUCT.md)
+:wave: Be nice. See [our code of conduct](CODE_OF_CONDUCT.md)
