@@ -7,6 +7,7 @@ import * as tc from '@actions/tool-cache';
 import * as path from 'path';
 import * as semver from 'semver';
 import fs = require('fs');
+import * as installer from './installer';
 
 //
 // Node versions interface
@@ -237,7 +238,7 @@ function resolveLtsAliasFromManifest(
   return release.version.split('.')[0];
 }
 
-async function getInfoFromManifest(
+export async function getInfoFromManifest(
   versionSpec: string,
   stable: boolean,
   auth: string | undefined,
@@ -263,7 +264,7 @@ async function getInfoFromManifest(
   return info;
 }
 
-async function getInfoFromDist(
+export async function getInfoFromDist(
   versionSpec: string,
   arch: string = os.arch()
 ): Promise<INodeVersionInfo | null> {
@@ -320,7 +321,7 @@ async function resolveVersionFromManifest(
 }
 
 // TODO - should we just export this from @actions/tool-cache? Lifted directly from there
-function evaluateVersions(versions: string[], versionSpec: string): string {
+export function evaluateVersions(versions: string[], versionSpec: string): string {
   let version = '';
   core.debug(`evaluating ${versions.length} versions`);
   versions = versions.sort((a, b) => {
@@ -347,7 +348,7 @@ function evaluateVersions(versions: string[], versionSpec: string): string {
   return version;
 }
 
-async function queryDistForMatch(
+export async function queryDistForMatch(
   versionSpec: string,
   arch: string = os.arch()
 ): Promise<string> {
@@ -371,10 +372,11 @@ async function queryDistForMatch(
   }
 
   let versions: string[] = [];
-  let nodeVersions = await getVersionsFromDist();
+  let nodeVersions = await installer.getVersionsFromDist();
 
   if (versionSpec === 'current' || versionSpec === 'latest' || versionSpec === 'node') {
-    return nodeVersions[0].version
+    core.info(`getting latest node version...`);
+    return nodeVersions[0].version;
   }
 
   nodeVersions.forEach((nodeVersion: INodeVersion) => {
