@@ -238,7 +238,7 @@ function resolveLtsAliasFromManifest(
   return release.version.split('.')[0];
 }
 
-export async function getInfoFromManifest(
+async function getInfoFromManifest(
   versionSpec: string,
   stable: boolean,
   auth: string | undefined,
@@ -264,7 +264,7 @@ export async function getInfoFromManifest(
   return info;
 }
 
-export async function getInfoFromDist(
+async function getInfoFromDist(
   versionSpec: string,
   arch: string = os.arch()
 ): Promise<INodeVersionInfo | null> {
@@ -321,7 +321,7 @@ async function resolveVersionFromManifest(
 }
 
 // TODO - should we just export this from @actions/tool-cache? Lifted directly from there
-export function evaluateVersions(versions: string[], versionSpec: string): string {
+function evaluateVersions(versions: string[], versionSpec: string): string {
   let version = '';
   core.debug(`evaluating ${versions.length} versions`);
   versions = versions.sort((a, b) => {
@@ -348,7 +348,7 @@ export function evaluateVersions(versions: string[], versionSpec: string): strin
   return version;
 }
 
-export async function queryDistForMatch(
+async function queryDistForMatch(
   versionSpec: string,
   arch: string = os.arch()
 ): Promise<string> {
