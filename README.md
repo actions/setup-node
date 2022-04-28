@@ -40,6 +40,9 @@ The `node-version` input supports the following syntax:
 major versions: `12`, `14`, `16`
 more specific versions: `10.15`, `14.2.0`, `16.3.0`
 nvm lts syntax: `lts/erbium`, `lts/fermium`, `lts/*`
+latest unstable release: `latest`/`current`/`node`
+
+**Note:** Since latest unstable release is not being cached, there is possibility of hitting rate limit when downloading from dist
 
 ## Caching global packages data
 
