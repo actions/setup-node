@@ -6,7 +6,7 @@ import * as path from 'path';
 import {restoreCache} from './cache-restore';
 import {isGhes, isCacheFeatureAvailable, getCommandOutput} from './cache-utils';
 import os = require('os');
-import semver from 'semver';
+import * as semver from 'semver';
 
 export async function run() {
   try {

@@ -6517,10 +6517,9 @@ function run() {
             if (registryUrl) {
                 auth.configAuthentication(registryUrl, alwaysAuth);
             }
-            core.info('here');
             if (cache && cache_utils_1.isCacheFeatureAvailable()) {
+                core.info('here');
                 if (semver_1.default.gte(version, '14.19.0')) {
-                    core.info('here');
                     try {
                         core.info(yield cache_utils_1.getCommandOutput('corepack enable'));
                     }

@@ -911,11 +911,20 @@ describe('setup-node', () => {
   });
 
   describe('corepack', () => {
-    it.only('supports pnpm automatically from Node v14+', async () => {
-      inputs['node-version'] = '14.9.0';
+    it('supports pnpm automatically from Node v14+', async () => {
+      inputs['node-version'] = '14.19.0';
       inputs['cache'] = 'pnpm';
+
+      inSpy.mockImplementation(name => inputs[name]);
+
+      isCacheActionAvailable.mockImplementation(() => true);
+
+      const toolPath = path.normalize('/cache/node/14.19.0/x64');
+      findSpy.mockReturnValue(toolPath);
+
       await main.run();
-      expect(execSpy).toBeCalledWith('corepack enable');
+
+      expect(cnSpy).toHaveBeenNthCalledWith(2, `[command]${process.execPath.substring(0, process.execPath.length - 4)}corepack enable\n`);
     })
   })
 });
