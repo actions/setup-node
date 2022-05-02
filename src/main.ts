@@ -47,8 +47,12 @@ export async function run() {
     }
 
     if (cache && isCacheFeatureAvailable()) {
-      if (semver.gte(version, '14')) {
-        await getCommandOutput('corepack enable');
+      if (semver.gte(version, '14.19.0')) {
+        try {
+          core.info(await getCommandOutput('corepack enable'));
+        } catch (err) {
+          core.warning(`Failed to enable corepack. Error: ${err.message}`)
+        }
       }
       const cacheDependencyPath = core.getInput('cache-dependency-path');
       await restoreCache(cache, cacheDependencyPath);

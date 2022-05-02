@@ -89,19 +89,19 @@ describe('setup-node', () => {
     warningSpy = jest.spyOn(core, 'warning');
     cnSpy.mockImplementation(line => {
       // uncomment to debug
-      // process.stderr.write('write:' + line + '\n');
+      process.stderr.write('write:' + line + '\n');
     });
     logSpy.mockImplementation(line => {
       // uncomment to debug
-      // process.stderr.write('log:' + line + '\n');
+      process.stderr.write('log:' + line + '\n');
     });
     dbgSpy.mockImplementation(msg => {
       // uncomment to see debug output
-      // process.stderr.write(msg + '\n');
+      process.stderr.write(msg + '\n');
     });
     warningSpy.mockImplementation(msg => {
       // uncomment to debug
-      // process.stderr.write('log:' + line + '\n');
+      process.stderr.write('log:' + msg + '\n');
     });
   });
 
@@ -909,4 +909,13 @@ describe('setup-node', () => {
       );
     });
   });
+
+  describe('corepack', () => {
+    it.only('supports pnpm automatically from Node v14+', async () => {
+      inputs['node-version'] = '14.9.0';
+      inputs['cache'] = 'pnpm';
+      await main.run();
+      expect(execSpy).toBeCalledWith('corepack enable');
+    })
+  })
 });
