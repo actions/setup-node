@@ -4,8 +4,9 @@ import fs from 'fs';
 import * as auth from './authutil';
 import * as path from 'path';
 import {restoreCache} from './cache-restore';
-import {isGhes, isCacheFeatureAvailable} from './cache-utils';
+import {isGhes, isCacheFeatureAvailable, getCommandOutput} from './cache-utils';
 import os = require('os');
+import semver from 'semver';
 
 export async function run() {
   try {
@@ -46,6 +47,9 @@ export async function run() {
     }
 
     if (cache && isCacheFeatureAvailable()) {
+      if (semver.gte(version, '14')) {
+        await getCommandOutput('corepack enable');
+      }
       const cacheDependencyPath = core.getInput('cache-dependency-path');
       await restoreCache(cache, cacheDependencyPath);
     }
