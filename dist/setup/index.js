@@ -70626,6 +70626,8 @@ function getNode(versionSpec, stable, checkLatest, auth, arch = os.arch()) {
             core.info('Attempt to resolve LTS alias from manifest...');
             // No try-catch since it's not possible to resolve LTS alias without manifest
             manifest = yield getManifest(auth);
+            // Reverse it so later Object.fromEntries() gets the latest version of each LTS
+            manifest.reverse();
             versionSpec = resolveLtsAliasFromManifest(versionSpec, stable, manifest);
         }
         if (isLatestSyntax(versionSpec)) {
@@ -70756,10 +70758,17 @@ function resolveLtsAliasFromManifest(versionSpec, stable, manifest) {
         throw new Error(`Unable to parse LTS alias for Node version '${versionSpec}'`);
     }
     core.debug(`LTS alias '${alias}' for Node version '${versionSpec}'`);
-    // Supported formats are `lts/<alias>` and `lts/*`. Where asterisk means highest possible LTS.
+    // Supported formats are `lts/<alias>`, `lts/*`, and `lts/-n`. Where asterisk means highest possible LTS and -n means the nth-highest.
+    const n = Number(alias);
+    const aliases = Object.fromEntries(manifest
+        .filter(x => x.stable === stable)
+        .map(x => { var _a; return [(_a = x.lts) === null || _a === void 0 ? void 0 : _a.toLowerCase(), x]; }));
+    const numbered = Object.values(aliases);
     const release = alias === '*'
-        ? manifest.find(x => !!x.lts && x.stable === stable)
-        : manifest.find(x => { var _a; return ((_a = x.lts) === null || _a === void 0 ? void 0 : _a.toLowerCase()) === alias && x.stable === stable; });
+        ? numbered[numbered.length - 1]
+        : n < 0
+            ? numbered[numbered.length - 1 + n]
+            : aliases[alias];
     if (!release) {
         throw new Error(`Unable to find LTS release '${alias}' for Node version '${versionSpec}'.`);
     }

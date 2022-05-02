@@ -46,6 +46,8 @@ export async function getNode(
 
     // No try-catch since it's not possible to resolve LTS alias without manifest
     manifest = await getManifest(auth);
+    // Reverse it so later Object.fromEntries() gets the latest version of each LTS
+    manifest.reverse();
 
     versionSpec = resolveLtsAliasFromManifest(versionSpec, stable, manifest);
   }
@@ -223,13 +225,20 @@ function resolveLtsAliasFromManifest(
 
   core.debug(`LTS alias '${alias}' for Node version '${versionSpec}'`);
 
-  // Supported formats are `lts/<alias>` and `lts/*`. Where asterisk means highest possible LTS.
+  // Supported formats are `lts/<alias>`, `lts/*`, and `lts/-n`. Where asterisk means highest possible LTS and -n means the nth-highest.
+  const n = Number(alias);
+  const aliases = Object.fromEntries(
+    manifest
+      .filter(x => x.stable === stable)
+      .map(x => [x.lts?.toLowerCase(), x])
+  );
+  const numbered = Object.values(aliases);
   const release =
     alias === '*'
-      ? manifest.find(x => !!x.lts && x.stable === stable)
-      : manifest.find(
-          x => x.lts?.toLowerCase() === alias && x.stable === stable
-        );
+      ? numbered[numbered.length - 1]
+      : n < 0
+      ? numbered[numbered.length - 1 + n]
+      : aliases[alias];
 
   if (!release) {
     throw new Error(
