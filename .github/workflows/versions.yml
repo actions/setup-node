@@ -146,7 +146,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
-        node-version: [current, latest, node, "16.14.2"]
+        node-version: [current, latest, node]
     steps:
       - name: Retrieve version before install
         run: |
