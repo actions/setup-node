@@ -911,42 +911,43 @@ describe('setup-node', () => {
   });
 
   describe('latest alias syntax', () => {
-    it.each(['latest', 'current', 'node'])('download the %s version if alias is provided', async (inputVersion) => {
-      // Arrange
-      inputs['node-version'] = inputVersion;
+    it.each(['latest', 'current', 'node'])(
+      'download the %s version if alias is provided',
+      async inputVersion => {
+        // Arrange
+        inputs['node-version'] = inputVersion;
 
-      os.platform = 'darwin';
-      os.arch = 'x64';
+        os.platform = 'darwin';
+        os.arch = 'x64';
 
-      const expectedVersion = nodeTestDist[0];
+        const expectedVersion = nodeTestDist[0];
 
-      let expectedUrl = `https://nodejs.org/dist/${expectedVersion.version}/node-${expectedVersion.version}-${os.platform}-${os.arch}.tar.gz`;
+        let expectedUrl = `https://nodejs.org/dist/${expectedVersion.version}/node-${expectedVersion.version}-${os.platform}-${os.arch}.tar.gz`;
 
-      findSpy.mockImplementation(() => '');
-      getManifestSpy.mockImplementation(() => {
-        throw new Error('Unable to download manifest');
-      });
+        findSpy.mockImplementation(() => '');
+        getManifestSpy.mockImplementation(() => {
+          throw new Error('Unable to download manifest');
+        });
 
-      // Act
-      await main.run();
+        // Act
+        await main.run();
 
-      // Assert
-      expect(logSpy).toHaveBeenCalledWith(
-        `Attempting to download ${inputVersion}...`
-      );
+        // Assert
+        expect(logSpy).toHaveBeenCalledWith(
+          `Attempting to download ${inputVersion}...`
+        );
 
-      expect(logSpy).toHaveBeenCalledWith(
-        'Unable to download manifest'
-      );
+        expect(logSpy).toHaveBeenCalledWith('Unable to download manifest');
 
-      expect(logSpy).toHaveBeenCalledWith(
-        'getting latest node version...'
-      );
+        expect(logSpy).toHaveBeenCalledWith('getting latest node version...');
 
-      expect(logSpy).toHaveBeenCalledWith(
-        `Acquiring ${expectedVersion.version.substring(1, expectedVersion.version.length)} - ${os.arch} from ${expectedUrl}`
-      );
-
-    });
+        expect(logSpy).toHaveBeenCalledWith(
+          `Acquiring ${expectedVersion.version.substring(
+            1,
+            expectedVersion.version.length
+          )} - ${os.arch} from ${expectedUrl}`
+        );
+      }
+    );
   });
 });

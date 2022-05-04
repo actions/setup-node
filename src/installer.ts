@@ -374,7 +374,11 @@ async function queryDistForMatch(
   let versions: string[] = [];
   let nodeVersions = await installer.getVersionsFromDist();
 
-  if (versionSpec === 'current' || versionSpec === 'latest' || versionSpec === 'node') {
+  if (
+    versionSpec === 'current' ||
+    versionSpec === 'latest' ||
+    versionSpec === 'node'
+  ) {
     core.info(`getting latest node version...`);
     return nodeVersions[0].version;
   }
