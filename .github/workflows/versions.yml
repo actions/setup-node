@@ -146,7 +146,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
-        node-version: [current, latest, node]
+        node-version: [current, latest, node, "16.14.2"]
     steps:
       - name: Retrieve version before install
         run: |
@@ -168,4 +168,4 @@ jobs:
       - name: Compare versions
         if: ${{ steps.version.outputs.NODE_VERSION == steps.updatedVersion.outputs.NODE_VERSION_UPDATED}}
         run: |
-          exit 1
+          echo "System node version ${{steps.updatedVersion.outputs.NODE_VERSION_UPDATED}} is same after the installation!"
