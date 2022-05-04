@@ -82,9 +82,9 @@ steps:
 
 steps:
 - uses: actions/checkout@v3
-- uses: pnpm/action-setup@646cdf48217256a3d0b80361c5a50727664284f2
+- uses: pnpm/action-setup@v2
   with:
-    version: 6.10.0
+    version: 6.32.9
 - uses: actions/setup-node@v3
   with:
     node-version: '14'
