@@ -4,8 +4,9 @@ import fs from 'fs';
 import * as auth from './authutil';
 import * as path from 'path';
 import {restoreCache} from './cache-restore';
-import {isGhes, isCacheFeatureAvailable} from './cache-utils';
+import {isGhes, isCacheFeatureAvailable, getCommandOutput} from './cache-utils';
 import os = require('os');
+import * as semver from 'semver';
 
 export async function run() {
   try {
@@ -46,6 +47,26 @@ export async function run() {
     }
 
     if (cache && isCacheFeatureAvailable()) {
+      const pkgJsonPath = path.join(__dirname, '..', 'package.json');
+      try {
+        const stat = await fs.promises.stat(pkgJsonPath);
+        if (stat.isFile()) {
+          const packageJson = JSON.parse(await fs.promises.readFile(pkgJsonPath, 'utf8'))
+          const packageManager = packageJson.packageManager;
+
+          if (packageManager !== undefined && semver.gte(version, '14.19.0')) {
+            try {
+              core.info(await getCommandOutput('corepack enable'));
+            } catch (err) {
+              core.warning(`Failed to enable corepack. Error: ${err.message}`)
+            }
+          }
+        }
+      } catch (err) {
+        if (err instanceof Error && (err as NodeJS.ErrnoException).code === 'ENOENT') {
+          core.warning(`Cannot find package.json at path ${pkgJsonPath}`)
+        }
+      }
       const cacheDependencyPath = core.getInput('cache-dependency-path');
       await restoreCache(cache, cacheDependencyPath);
     }

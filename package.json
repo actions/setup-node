@@ -31,7 +31,7 @@
     "@actions/http-client": "^1.0.11",
     "@actions/io": "^1.0.2",
     "@actions/tool-cache": "^1.5.4",
-    "semver": "^6.1.1"
+    "semver": "^6.3.0"
   },
   "devDependencies": {
     "@types/jest": "^27.0.2",
