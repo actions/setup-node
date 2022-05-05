@@ -1,4 +1,38 @@
-# Advanced usage
+## Working with lockfiles
+
+All supported package managers recommend that you **always** commit the lockfile, although implementations vary doing so generally provides the following benefits:
+
+- Enables faster installation for CI and production environments, due to being able to skip package resolution.
+- Describes a single representation of a dependency tree such that teammates, deployments, and continuous integration are guaranteed to install exactly the same dependencies.
+- Provides a facility for users to "time-travel" to previous states of `node_modules` without having to commit the directory itself.
+- Facilitates greater visibility of tree changes through readable source control diffs.
+
+In order to get the most out of using your lockfile on continuous integration follow the conventions outlined below for your respective package manager.
+
+### NPM
+
+Ensure that `package-lock.json` is always committed, use `npm ci` instead of `npm install` when installing packages.
+
+**See also:**
+- [Documentation of `package-lock.json`](https://docs.npmjs.com/cli/v8/configuring-npm/package-lock-json)
+- [Documentation of `npm ci`](https://docs.npmjs.com/cli/v8/commands/npm-ci)
+
+### Yarn
+
+Ensure that `yarn.lock` is always committed, pass `--frozen-lockfile` to `yarn install` when installing packages.
+
+**See also:**
+- [Documentation of `yarn.lock`](https://classic.yarnpkg.com/en/docs/yarn-lock)
+- [Documentation of `--frozen-lockfile` option](https://classic.yarnpkg.com/en/docs/cli/install#toc-yarn-install-frozen-lockfile)
+- [QA - Should lockfiles be committed to the repoistory?](https://yarnpkg.com/getting-started/qa/#should-lockfiles-be-committed-to-the-repository)
+
+### PNPM
+
+Ensure that `pnpm-lock.yaml` is always committed, when on CI pass `--frozen-lockfile` to `pnpm install` when installing packages.
+
+**See also:**
+- [Working with Git - Lockfiles](https://pnpm.io/git#lockfiles)
+- [Documentation of `--frozen-lockfile` option](https://pnpm.io/cli/install#--frozen-lockfile)
 
 ## Check latest version
 
@@ -15,7 +49,7 @@ steps:
   with:
     node-version: '14'
     check-latest: true
-- run: npm install
+- run: npm ci
 - run: npm test
 ```
 
@@ -31,7 +65,7 @@ steps:
 - uses: actions/setup-node@v3
   with:
     node-version-file: '.nvmrc'
-- run: npm install
+- run: npm ci
 - run: npm test
 ```
 
@@ -51,7 +85,7 @@ jobs:
         with:
           node-version: '14'
           architecture: 'x64' # optional, x64 or x86. If not specified, x64 will be used by default
-      - run: npm install
+      - run: npm ci
       - run: npm test
 ```
 
@@ -67,7 +101,7 @@ steps:
   with:
     node-version: '14'
     cache: 'yarn'
-- run: yarn install
+- run: yarn install --frozen-lockfile
 - run: yarn test
 ```
 
@@ -89,7 +123,7 @@ steps:
   with:
     node-version: '14'
     cache: 'pnpm'
-- run: pnpm install
+- run: pnpm install --frozen-lockfile
 - run: pnpm test
 ```
 
@@ -102,7 +136,7 @@ steps:
     node-version: '14'
     cache: 'npm'
     cache-dependency-path: '**/package-lock.json'
-- run: npm install
+- run: npm ci
 - run: npm test
 ```
 
@@ -117,7 +151,7 @@ steps:
     cache-dependency-path: |
       server/app/package-lock.json
       frontend/app/package-lock.json
-- run: npm install
+- run: npm ci
 - run: npm test
 ```
 
@@ -152,7 +186,7 @@ jobs:
         with:
           node-version: ${{ matrix.node_version }}
           architecture: ${{ matrix.architecture }}
-      - run: npm install
+      - run: npm ci
       - run: npm test
 ```
 
@@ -164,7 +198,7 @@ steps:
   with:
     node-version: '14.x'
     registry-url: 'https://registry.npmjs.org'
-- run: npm install
+- run: npm ci
 - run: npm publish
   env:
     NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
@@ -184,7 +218,7 @@ steps:
   with:
     node-version: '14.x'
     registry-url: <registry url>
-- run: yarn install
+- run: yarn install --frozen-lockfile
 - run: yarn publish
   env:
     NODE_AUTH_TOKEN: ${{ secrets.YARN_TOKEN }}
@@ -206,7 +240,7 @@ steps:
     registry-url: 'https://registry.npmjs.org'
 # Skip post-install scripts here, as a malicious
 # script could steal NODE_AUTH_TOKEN.
-- run: npm install --ignore-scripts
+- run: npm ci --ignore-scripts
   env:
     NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 # `npm rebuild` will run all those post-install scripts for us.
