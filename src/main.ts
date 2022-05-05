@@ -47,11 +47,24 @@ export async function run() {
     }
 
     if (cache && isCacheFeatureAvailable()) {
-      if (semver.gte(version, '14.19.0')) {
-        try {
-          core.info(await getCommandOutput('corepack enable'));
-        } catch (err) {
-          core.warning(`Failed to enable corepack. Error: ${err.message}`)
+      const pkgJsonPath = path.join(__dirname, '..', 'package.json');
+      try {
+        const stat = await fs.promises.stat(pkgJsonPath);
+        if (stat.isFile()) {
+          const packageJson = JSON.parse(await fs.promises.readFile(pkgJsonPath, 'utf8'))
+          const packageManager = packageJson.packageManager;
+
+          if (packageManager !== undefined && semver.gte(version, '14.19.0')) {
+            try {
+              core.info(await getCommandOutput('corepack enable'));
+            } catch (err) {
+              core.warning(`Failed to enable corepack. Error: ${err.message}`)
+            }
+          }
+        }
+      } catch (err) {
+        if (err instanceof Error && (err as NodeJS.ErrnoException).code === 'ENOENT') {
+          core.warning(`Cannot find package.json at path ${pkgJsonPath}`)
         }
       }
       const cacheDependencyPath = core.getInput('cache-dependency-path');

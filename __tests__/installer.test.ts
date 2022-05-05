@@ -89,19 +89,19 @@ describe('setup-node', () => {
     warningSpy = jest.spyOn(core, 'warning');
     cnSpy.mockImplementation(line => {
       // uncomment to debug
-      process.stderr.write('write:' + line + '\n');
+      // process.stderr.write('write:' + line + '\n');
     });
     logSpy.mockImplementation(line => {
       // uncomment to debug
-      process.stderr.write('log:' + line + '\n');
+      // process.stderr.write('log:' + line + '\n');
     });
     dbgSpy.mockImplementation(msg => {
       // uncomment to see debug output
-      process.stderr.write(msg + '\n');
+      // process.stderr.write(msg + '\n');
     });
     warningSpy.mockImplementation(msg => {
       // uncomment to debug
-      process.stderr.write('log:' + msg + '\n');
+      // process.stderr.write('log:' + msg + '\n');
     });
   });
 
