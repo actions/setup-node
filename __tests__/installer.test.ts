@@ -591,6 +591,35 @@ describe('setup-node', () => {
       );
     });
 
+    it('reads package.json as node-version-file if provided', async () => {
+      // Arrange
+      const versionSpec = `{
+  \"engines\": {
+    \"node\": \">=14.0.0\"
+  }
+}
+`;
+      const versionFile = 'package.json';
+      const expectedVersionSpec = '14';
+      process.env['GITHUB_WORKSPACE'] = path.join(__dirname, 'data');
+      inputs['node-version-file'] = versionFile;
+
+      parseNodeVersionSpy.mockImplementation(() => expectedVersionSpec);
+      existsSpy.mockImplementationOnce(
+        input => input === path.join(__dirname, 'data', versionFile)
+      );
+      // Act
+      await main.run();
+
+      // Assert
+      expect(existsSpy).toHaveBeenCalledTimes(1);
+      expect(existsSpy).toHaveReturnedWith(true);
+      expect(parseNodeVersionSpy).toHaveBeenCalledWith(versionSpec);
+      expect(logSpy).toHaveBeenCalledWith(
+        `Resolved ${versionFile} as ${expectedVersionSpec}`
+      );
+    });
+
     it('both node-version-file and node-version are provided', async () => {
       inputs['node-version'] = '12';
       const versionSpec = 'v14';
