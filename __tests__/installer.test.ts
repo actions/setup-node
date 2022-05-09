@@ -920,10 +920,6 @@ describe('setup-node', () => {
         os.platform = 'darwin';
         os.arch = 'x64';
 
-        const expectedVersion = nodeTestDist[0];
-
-        let expectedUrl = `https://nodejs.org/dist/${expectedVersion.version}/node-${expectedVersion.version}-${os.platform}-${os.arch}.tar.gz`;
-
         findSpy.mockImplementation(() => '');
         getManifestSpy.mockImplementation(() => {
           throw new Error('Unable to download manifest');
@@ -932,21 +928,10 @@ describe('setup-node', () => {
         // Act
         await main.run();
 
-        // Assert
-        expect(logSpy).toHaveBeenCalledWith(
-          `Attempting to download ${inputVersion}...`
-        );
-
+        // assert
         expect(logSpy).toHaveBeenCalledWith('Unable to download manifest');
 
         expect(logSpy).toHaveBeenCalledWith('getting latest node version...');
-
-        expect(logSpy).toHaveBeenCalledWith(
-          `Acquiring ${expectedVersion.version.substring(
-            1,
-            expectedVersion.version.length
-          )} - ${os.arch} from ${expectedUrl}`
-        );
       }
     );
   });
