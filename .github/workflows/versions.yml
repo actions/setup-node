@@ -148,10 +148,12 @@ jobs:
         os: [ubuntu-latest, windows-latest, macos-latest]
         node-version: [current, latest, node]
     steps:
-      - name: Retrieve version before install
+      - name: Get node version
         run: |
-          version=$(echo $(node --version))
-          echo "::set-output name=NODE_VERSION::$version"
+          version = $(curl https://nodejs.org/dist/index.json  | jq '.[0] | .version')
+          id: version
+          echo "::set-output name=LATEST_NODE_VERSION::$version"
+          shell: bash
         id: version
         shell: bash
       - uses: actions/checkout@v3
@@ -166,6 +168,7 @@ jobs:
         id: updatedVersion
         shell: bash
       - name: Compare versions
-        if: ${{ steps.version.outputs.NODE_VERSION == steps.updatedVersion.outputs.NODE_VERSION_UPDATED}}
+        if: ${{ steps.version.outputs.LATEST_NODE_VERSION != steps.updatedVersion.outputs.NODE_VERSION_UPDATED}}
         run: |
-          echo "System node version ${{steps.updatedVersion.outputs.NODE_VERSION_UPDATED}} is same after the installation!"
+          echo "Latest node version failed to download."
+          exit 1
