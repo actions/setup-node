@@ -62339,7 +62339,6 @@ const tc = __importStar(__webpack_require__(533));
 const path = __importStar(__webpack_require__(622));
 const semver = __importStar(__webpack_require__(280));
 const fs = __webpack_require__(747);
-const installer = __importStar(__webpack_require__(923));
 function getNode(versionSpec, stable, checkLatest, auth, arch = os.arch()) {
     return __awaiter(this, void 0, void 0, function* () {
         // Store manifest data to avoid multiple calls
@@ -62587,7 +62586,7 @@ function queryDistForMatch(versionSpec, arch = os.arch()) {
                 throw new Error(`Unexpected OS '${osPlat}'`);
         }
         let versions = [];
-        let nodeVersions = yield installer.getVersionsFromDist();
+        let nodeVersions = yield getVersionsFromDist();
         if (versionSpec === 'current' ||
             versionSpec === 'latest' ||
             versionSpec === 'node') {
