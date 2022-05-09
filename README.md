@@ -23,7 +23,7 @@ steps:
 - uses: actions/setup-node@v3
   with:
     node-version: 14
-- run: npm install
+- run: npm ci
 - run: npm test
 ```
 
@@ -44,6 +44,10 @@ latest release: `latest`/`current`/`node`
 
 **Note:** Since the latest release will not be cached always, there is possibility of hitting rate limit when downloading from dist
 
+### Checking in lockfiles
+
+It's **always** recommended to commit the lockfile of your package manager for security and performance reasons. For more information consult the "Working with lockfiles" section of the [Advanced usage](docs/advanced-usage.md#working-with-lockfiles) guide.
+
 ## Caching global packages data
 
 The action has a built-in functionality for caching and restoring dependencies. It uses [actions/cache](https://github.com/actions/cache) under the hood for caching global packages data but requires less configuration settings. Supported package managers are `npm`, `yarn`, `pnpm` (v6.10+). The `cache` input is optional, and caching is turned off by default.
@@ -63,7 +67,7 @@ steps:
   with:
     node-version: 14
     cache: 'npm'
-- run: npm install
+- run: npm ci
 - run: npm test
 ```
 
@@ -77,7 +81,7 @@ steps:
     node-version: 14
     cache: 'npm'
     cache-dependency-path: subdir/package-lock.json
-- run: npm install
+- run: npm ci
 - run: npm test
 ```
 
@@ -97,7 +101,7 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: ${{ matrix.node }}
-      - run: npm install
+      - run: npm ci
       - run: npm test
 ```
 
