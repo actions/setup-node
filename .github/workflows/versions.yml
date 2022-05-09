@@ -150,10 +150,8 @@ jobs:
     steps:
       - name: Get node version
         run: |
-          version = $(curl https://nodejs.org/dist/index.json  | jq '.[0] | .version')
-          id: version
-          echo "::set-output name=LATEST_NODE_VERSION::$version"
-          shell: bash
+          latest_node_version=$(echo $(curl https://nodejs.org/dist/index.json | jq '. [0].version'))
+            echo "::set-output name=LATEST_NODE_VERSION::$latest_node_version"
         id: version
         shell: bash
       - uses: actions/checkout@v3
