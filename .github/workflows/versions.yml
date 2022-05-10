@@ -35,7 +35,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
-        node-version: [lts/dubnium, lts/erbium, lts/fermium, lts/*]
+        node-version: [lts/dubnium, lts/erbium, lts/fermium, lts/*, lts/-1]
     steps:
       - uses: actions/checkout@v3
       - name: Setup Node
