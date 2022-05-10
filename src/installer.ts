@@ -229,8 +229,8 @@ function resolveLtsAliasFromManifest(
   const n = Number(alias);
   const aliases = Object.fromEntries(
     manifest
-      .filter(x => x.stable === stable)
-      .map(x => [x.lts?.toLowerCase(), x])
+      .filter(x => x.lts && x.stable === stable)
+      .map(x => [x.lts!.toLowerCase(), x])
   );
   const numbered = Object.values(aliases);
   const release =

@@ -817,9 +817,9 @@ describe('setup-node', () => {
       );
     });
 
-    it('find latest LTS version and resolve it from local cache (lts/-2)', async () => {
+    it('find latest LTS version and resolve it from local cache (lts/-1)', async () => {
       // arrange
-      inputs['node-version'] = 'lts/-2';
+      inputs['node-version'] = 'lts/-1';
 
       const toolPath = path.normalize('/cache/node/12.16.2/x64');
       findSpy.mockReturnValue(toolPath);
@@ -836,10 +836,10 @@ describe('setup-node', () => {
       );
       expect(dbgSpy).not.toHaveBeenCalledWith('No manifest cached');
       expect(dbgSpy).toHaveBeenCalledWith(
-        `LTS alias '-2' for Node version 'lts/-2'`
+        `LTS alias '-1' for Node version 'lts/-1'`
       );
       expect(dbgSpy).toHaveBeenCalledWith(
-        `Found LTS release '12.16.2' for Node version 'lts/-2'`
+        `Found LTS release '12.16.2' for Node version 'lts/-1'`
       );
       expect(logSpy).toHaveBeenCalledWith(`Found in cache @ ${toolPath}`);
       expect(cnSpy).toHaveBeenCalledWith(
@@ -847,9 +847,9 @@ describe('setup-node', () => {
       );
     });
 
-    it('find latest LTS version and install it from manifest (lts/-2)', async () => {
+    it('find latest LTS version and install it from manifest (lts/-1)', async () => {
       // arrange
-      inputs['node-version'] = 'lts/-2';
+      inputs['node-version'] = 'lts/-1';
 
       const toolPath = path.normalize('/cache/node/12.16.2/x64');
       findSpy.mockImplementation(() => '');
@@ -871,10 +871,10 @@ describe('setup-node', () => {
       );
       expect(dbgSpy).not.toHaveBeenCalledWith('No manifest cached');
       expect(dbgSpy).toHaveBeenCalledWith(
-        `LTS alias '-2' for Node version 'lts/-2'`
+        `LTS alias '-1' for Node version 'lts/-1'`
       );
       expect(dbgSpy).toHaveBeenCalledWith(
-        `Found LTS release '12.16.2' for Node version 'lts/-2'`
+        `Found LTS release '12.16.2' for Node version 'lts/-1'`
       );
       expect(logSpy).toHaveBeenCalledWith('Attempting to download 12...');
       expect(logSpy).toHaveBeenCalledWith(

@@ -70761,8 +70761,8 @@ function resolveLtsAliasFromManifest(versionSpec, stable, manifest) {
     // Supported formats are `lts/<alias>`, `lts/*`, and `lts/-n`. Where asterisk means highest possible LTS and -n means the nth-highest.
     const n = Number(alias);
     const aliases = Object.fromEntries(manifest
-        .filter(x => x.stable === stable)
-        .map(x => { var _a; return [(_a = x.lts) === null || _a === void 0 ? void 0 : _a.toLowerCase(), x]; }));
+        .filter(x => x.lts && x.stable === stable)
+        .map(x => [x.lts.toLowerCase(), x]));
     const numbered = Object.values(aliases);
     const release = alias === '*'
         ? numbered[numbered.length - 1]
