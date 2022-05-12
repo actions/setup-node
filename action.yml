@@ -35,3 +35,10 @@ runs:
   main: 'dist/setup/index.js'
   post: 'dist/cache-save/index.js'
   post-if: success()
+etup a Node.js environment by adding problem matchers and optionally downloading and adding it to the PATH
+
+INSTALLATION
+Copy and paste the following snippet into your .yml file.
+
+- name: Setup Node.js environment
+  uses: actions/setup-node@v3.1.1
