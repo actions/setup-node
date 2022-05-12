@@ -139,3 +139,34 @@ jobs:
       - name: Verify node
         run: __tests__/verify-arch.sh "ia32"
         shell: bash
+
+  node-latest-aliases:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        node-version: [current, latest, node]
+    steps:
+      - name: Get node version
+        run: |
+          latestNodeVersion=$(curl https://nodejs.org/dist/index.json | jq -r '. [0].version')
+          echo "::set-output name=LATEST_NODE_VERSION::$latestNodeVersion"
+        id: version
+        shell: bash
+      - uses: actions/checkout@v3
+      - name: Setup Node
+        uses: ./
+        with:
+          node-version: ${{ matrix.node-version }}
+      - name: Retrieve version after install
+        run: |
+          updatedVersion=$(echo $(node --version))
+          echo "::set-output name=NODE_VERSION_UPDATED::$updatedVersion"
+        id: updatedVersion
+        shell: bash
+      - name: Compare versions
+        if: ${{ steps.version.outputs.LATEST_NODE_VERSION != steps.updatedVersion.outputs.NODE_VERSION_UPDATED}}
+        run: |
+          echo "Latest node version failed to download."
+          exit 1

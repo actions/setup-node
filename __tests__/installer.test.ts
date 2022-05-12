@@ -909,4 +909,30 @@ describe('setup-node', () => {
       );
     });
   });
+
+  describe('latest alias syntax', () => {
+    it.each(['latest', 'current', 'node'])(
+      'download the %s version if alias is provided',
+      async inputVersion => {
+        // Arrange
+        inputs['node-version'] = inputVersion;
+
+        os.platform = 'darwin';
+        os.arch = 'x64';
+
+        findSpy.mockImplementation(() => '');
+        getManifestSpy.mockImplementation(() => {
+          throw new Error('Unable to download manifest');
+        });
+
+        // Act
+        await main.run();
+
+        // assert
+        expect(logSpy).toHaveBeenCalledWith('Unable to download manifest');
+
+        expect(logSpy).toHaveBeenCalledWith('getting latest node version...');
+      }
+    );
+  });
 });
