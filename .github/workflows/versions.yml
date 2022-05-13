@@ -127,6 +127,24 @@ jobs:
         run: __tests__/verify-node.sh 0.12.18 SKIP_NPM
         shell: bash
 
+  latest-version:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v3
+      - name: Setup Node
+        uses: ./
+        with:
+          node-version: '*'
+          check-latest: true
+      - name: Verify node and npm
+        run: |
+          . "$NVM_DIR/nvm.sh"
+          [[ $(nvm version-remote node) =~ ^v([^.]+) ]]
+          __tests__/verify-node.sh "${BASH_REMATCH[1]}"
+        shell: bash
+
   arch:
     runs-on: windows-latest
     steps:
