@@ -593,12 +593,7 @@ describe('setup-node', () => {
 
     it('reads package.json as node-version-file if provided', async () => {
       // Arrange
-      const versionSpec = `{
-  \"engines\": {
-    \"node\": \">=14.0.0\"
-  }
-}
-`;
+      const versionSpec = fs.readFileSync(path.join(__dirname, 'data/package.json'), 'utf-8');
       const versionFile = 'package.json';
       const expectedVersionSpec = '14';
       process.env['GITHUB_WORKSPACE'] = path.join(__dirname, 'data');
