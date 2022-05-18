@@ -35,12 +35,12 @@ For information regarding locally cached versions of Node.js on GitHub hosted ru
 
 ### Supported version syntax
 
-The `node-version` input supports the following syntax:
+The `node-version` input supports the following values:
 
-major versions: `12`, `14`, `16`
-more specific versions: `10.15`, `14.2.0`, `16.3.0`
-nvm lts syntax: `lts/erbium`, `lts/fermium`, `lts/*`
-latest release: `latest`/`current`/`node`
+ - Major versions: `12`, `14`, `16`
+ - More specific versions: `10.15`, `14.2.0`, `16.3.0`
+ - NVM LTS syntax: `lts/erbium`, `lts/fermium`, `lts/*`
+ - Latest release: `latest`/`current`/`node`
 
 **Note:** Since the latest release will not be cached always, there is possibility of hitting rate limit when downloading from dist
 
