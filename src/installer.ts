@@ -40,6 +40,7 @@ export async function getNode(
   let manifest: INodeRelease[] | undefined;
   let osPlat: string = os.platform();
   let osArch: string = translateArchToDistUrl(arch);
+  let latestVersionResolved: boolean = false;
 
   if (isLtsAlias(versionSpec)) {
     core.info('Attempt to resolve LTS alias from manifest...');
@@ -69,6 +70,7 @@ export async function getNode(
 
   if (isLatestSyntax(versionSpec)) {
     versionSpec = await queryDistForMatch(versionSpec, arch);
+    latestVersionResolved = true;
     core.info(`getting latest node version...`);
   }
 
@@ -125,7 +127,7 @@ export async function getNode(
     // Download from nodejs.org
     //
     if (!downloadPath) {
-      info = await getInfoFromDist(versionSpec, arch);
+      info = await getInfoFromDist(versionSpec, arch, latestVersionResolved);
       if (!info) {
         throw new Error(
           `Unable to find Node version '${versionSpec}' for platform ${osPlat} and architecture ${osArch}.`
@@ -271,14 +273,16 @@ async function getInfoFromManifest(
 
 async function getInfoFromDist(
   versionSpec: string,
-  arch: string = os.arch()
+  arch: string = os.arch(),
+  latestVersionResolved?: boolean
 ): Promise<INodeVersionInfo | null> {
   let osPlat: string = os.platform();
   let osArch: string = translateArchToDistUrl(arch);
 
-  let version: string;
+  let version: string = latestVersionResolved
+    ? versionSpec
+    : await queryDistForMatch(versionSpec, arch);
 
-  version = await queryDistForMatch(versionSpec, arch);
   if (!version) {
     return null;
   }

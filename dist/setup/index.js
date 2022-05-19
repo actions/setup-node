@@ -62346,6 +62346,7 @@ function getNode(versionSpec, stable, checkLatest, auth, arch = os.arch()) {
         let manifest;
         let osPlat = os.platform();
         let osArch = translateArchToDistUrl(arch);
+        let latestVersionResolved = false;
         if (isLtsAlias(versionSpec)) {
             core.info('Attempt to resolve LTS alias from manifest...');
             // No try-catch since it's not possible to resolve LTS alias without manifest
@@ -62365,6 +62366,7 @@ function getNode(versionSpec, stable, checkLatest, auth, arch = os.arch()) {
         }
         if (isLatestSyntax(versionSpec)) {
             versionSpec = yield queryDistForMatch(versionSpec, arch);
+            latestVersionResolved = true;
             core.info(`getting latest node version...`);
         }
         // check cache
@@ -62407,7 +62409,7 @@ function getNode(versionSpec, stable, checkLatest, auth, arch = os.arch()) {
             // Download from nodejs.org
             //
             if (!downloadPath) {
-                info = yield getInfoFromDist(versionSpec, arch);
+                info = yield getInfoFromDist(versionSpec, arch, latestVersionResolved);
                 if (!info) {
                     throw new Error(`Unable to find Node version '${versionSpec}' for platform ${osPlat} and architecture ${osArch}.`);
                 }
@@ -62507,12 +62509,13 @@ function getInfoFromManifest(versionSpec, stable, auth, osArch = translateArchTo
         return info;
     });
 }
-function getInfoFromDist(versionSpec, arch = os.arch()) {
+function getInfoFromDist(versionSpec, arch = os.arch(), latestVersionResolved) {
     return __awaiter(this, void 0, void 0, function* () {
         let osPlat = os.platform();
         let osArch = translateArchToDistUrl(arch);
-        let version;
-        version = yield queryDistForMatch(versionSpec, arch);
+        let version = latestVersionResolved
+            ? versionSpec
+            : yield queryDistForMatch(versionSpec, arch);
         if (!version) {
             return null;
         }
