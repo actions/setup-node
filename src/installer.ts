@@ -7,6 +7,7 @@ import * as tc from '@actions/tool-cache';
 import * as path from 'path';
 import * as semver from 'semver';
 import fs = require('fs');
+import * as installer from './installer';
 
 //
 // Node versions interface
@@ -66,8 +67,8 @@ export async function getNode(
     }
   }
 
-  if(['current', 'latest', 'node'].includes(versionSpec)) {
-    versionSpec = await queryDistForMatch(versionSpec, arch); 
+  if (isLatestSyntax(versionSpec)) {
+    versionSpec = await queryDistForMatch(versionSpec, arch);
     core.info(`getting latest node version...`);
   }
 
@@ -376,13 +377,9 @@ async function queryDistForMatch(
   }
 
   let versions: string[] = [];
-  let nodeVersions = await getVersionsFromDist();
+  let nodeVersions = await installer.getVersionsFromDist();
 
-  if (
-    versionSpec === 'current' ||
-    versionSpec === 'latest' ||
-    versionSpec === 'node'
-  ) {
+  if (isLatestSyntax(versionSpec)) {
     core.info(`getting latest node version...`);
     return nodeVersions[0].version;
   }
@@ -486,4 +483,8 @@ export function parseNodeVersionFile(contents: string): string {
     nodeVersion = nodeVersion.substring(1);
   }
   return nodeVersion;
+}
+
+function isLatestSyntax(versionSpec): boolean {
+  return ['current', 'latest', 'node'].includes(versionSpec);
 }

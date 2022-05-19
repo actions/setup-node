@@ -62339,6 +62339,7 @@ const tc = __importStar(__webpack_require__(533));
 const path = __importStar(__webpack_require__(622));
 const semver = __importStar(__webpack_require__(280));
 const fs = __webpack_require__(747);
+const installer = __importStar(__webpack_require__(923));
 function getNode(versionSpec, stable, checkLatest, auth, arch = os.arch()) {
     return __awaiter(this, void 0, void 0, function* () {
         // Store manifest data to avoid multiple calls
@@ -62362,7 +62363,7 @@ function getNode(versionSpec, stable, checkLatest, auth, arch = os.arch()) {
                 core.info(`Failed to resolve version ${versionSpec} from manifest`);
             }
         }
-        if (['current', 'latest', 'node'].includes(versionSpec)) {
+        if (isLatestSyntax(versionSpec)) {
             versionSpec = yield queryDistForMatch(versionSpec, arch);
             core.info(`getting latest node version...`);
         }
@@ -62590,10 +62591,8 @@ function queryDistForMatch(versionSpec, arch = os.arch()) {
                 throw new Error(`Unexpected OS '${osPlat}'`);
         }
         let versions = [];
-        let nodeVersions = yield getVersionsFromDist();
-        if (versionSpec === 'current' ||
-            versionSpec === 'latest' ||
-            versionSpec === 'node') {
+        let nodeVersions = yield installer.getVersionsFromDist();
+        if (isLatestSyntax(versionSpec)) {
             core.info(`getting latest node version...`);
             return nodeVersions[0].version;
         }
@@ -62692,6 +62691,9 @@ function parseNodeVersionFile(contents) {
     return nodeVersion;
 }
 exports.parseNodeVersionFile = parseNodeVersionFile;
+function isLatestSyntax(versionSpec) {
+    return ['current', 'latest', 'node'].includes(versionSpec);
+}
 
 
 /***/ }),
