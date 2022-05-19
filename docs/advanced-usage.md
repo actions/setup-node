@@ -19,7 +19,7 @@ Ensure that `package-lock.json` is always committed, use `npm ci` instead of `np
 
 ### Yarn
 
-Ensure that `yarn.lock` is always committed, pass `--frozen-lockfile` or `--immutable-cache` to `yarn install` when installing packages.
+Ensure that `yarn.lock` is always committed, pass `--frozen-lockfile` or `--immutable` to `yarn install` when installing packages.
 
 **See also:**
 - [Documentation of `yarn.lock`](https://classic.yarnpkg.com/en/docs/yarn-lock)
@@ -102,7 +102,8 @@ steps:
   with:
     node-version: '14'
     cache: 'yarn'
-- run: yarn install --immutable-cache
+- run: yarn install --frozen-lockfile
+# - run: yarn install --immutable
 - run: yarn test
 ```
 
