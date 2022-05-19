@@ -102,8 +102,7 @@ steps:
   with:
     node-version: '14'
     cache: 'yarn'
-- run: yarn install --frozen-lockfile
-# - run: yarn install --immutable
+- run: yarn install --frozen-lockfile # optional, --immutable
 - run: yarn test
 ```
 
