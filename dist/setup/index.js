@@ -62362,6 +62362,10 @@ function getNode(versionSpec, stable, checkLatest, auth, arch = os.arch()) {
                 core.info(`Failed to resolve version ${versionSpec} from manifest`);
             }
         }
+        if (['current', 'latest', 'node'].includes(versionSpec)) {
+            versionSpec = yield queryDistForMatch(versionSpec, arch);
+            core.info(`getting latest node version...`);
+        }
         // check cache
         let toolPath;
         toolPath = tc.find('node', versionSpec, osArch);
@@ -62587,12 +62591,6 @@ function queryDistForMatch(versionSpec, arch = os.arch()) {
         }
         let versions = [];
         let nodeVersions = yield getVersionsFromDist();
-        if (versionSpec === 'current' ||
-            versionSpec === 'latest' ||
-            versionSpec === 'node') {
-            core.info(`getting latest node version...`);
-            return nodeVersions[0].version;
-        }
         nodeVersions.forEach((nodeVersion) => {
             // ensure this version supports your os and platform
             if (nodeVersion.files.indexOf(dataFileName) >= 0) {

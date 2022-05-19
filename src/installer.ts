@@ -66,6 +66,11 @@ export async function getNode(
     }
   }
 
+  if (['current', 'latest', 'node'].includes(versionSpec)) {
+    versionSpec = await queryDistForMatch(versionSpec, arch);
+    core.info(`getting latest node version...`);
+  }
+
   // check cache
   let toolPath: string;
   toolPath = tc.find('node', versionSpec, osArch);
@@ -372,15 +377,6 @@ async function queryDistForMatch(
 
   let versions: string[] = [];
   let nodeVersions = await getVersionsFromDist();
-
-  if (
-    versionSpec === 'current' ||
-    versionSpec === 'latest' ||
-    versionSpec === 'node'
-  ) {
-    core.info(`getting latest node version...`);
-    return nodeVersions[0].version;
-  }
 
   nodeVersions.forEach((nodeVersion: INodeVersion) => {
     // ensure this version supports your os and platform
