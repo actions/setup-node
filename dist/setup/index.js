@@ -62343,7 +62343,7 @@ function getNode(versionSpec, stable, checkLatest, auth, arch = os.arch()) {
     return __awaiter(this, void 0, void 0, function* () {
         // Store manifest data to avoid multiple calls
         let manifest;
-        let distManifest;
+        let nodeVersions;
         let osPlat = os.platform();
         let osArch = translateArchToDistUrl(arch);
         if (isLtsAlias(versionSpec)) {
@@ -62353,8 +62353,8 @@ function getNode(versionSpec, stable, checkLatest, auth, arch = os.arch()) {
             versionSpec = resolveLtsAliasFromManifest(versionSpec, stable, manifest);
         }
         if (isLatestSyntax(versionSpec)) {
-            distManifest = yield getVersionsFromDist();
-            versionSpec = yield queryDistForMatch(versionSpec, arch, distManifest);
+            nodeVersions = yield getVersionsFromDist();
+            versionSpec = yield queryDistForMatch(versionSpec, arch, nodeVersions);
             core.info(`getting latest node version...`);
         }
         if (checkLatest) {
@@ -62408,7 +62408,7 @@ function getNode(versionSpec, stable, checkLatest, auth, arch = os.arch()) {
             // Download from nodejs.org
             //
             if (!downloadPath) {
-                info = yield getInfoFromDist(versionSpec, arch, distManifest);
+                info = yield getInfoFromDist(versionSpec, arch, nodeVersions);
                 if (!info) {
                     throw new Error(`Unable to find Node version '${versionSpec}' for platform ${osPlat} and architecture ${osArch}.`);
                 }
@@ -62508,11 +62508,11 @@ function getInfoFromManifest(versionSpec, stable, auth, osArch = translateArchTo
         return info;
     });
 }
-function getInfoFromDist(versionSpec, arch = os.arch(), distManifest) {
+function getInfoFromDist(versionSpec, arch = os.arch(), nodeVersions) {
     return __awaiter(this, void 0, void 0, function* () {
         let osPlat = os.platform();
         let osArch = translateArchToDistUrl(arch);
-        let version = yield queryDistForMatch(versionSpec, arch, distManifest);
+        let version = yield queryDistForMatch(versionSpec, arch, nodeVersions);
         if (!version) {
             return null;
         }
@@ -62571,7 +62571,7 @@ function evaluateVersions(versions, versionSpec) {
     }
     return version;
 }
-function queryDistForMatch(versionSpec, arch = os.arch(), distManifest) {
+function queryDistForMatch(versionSpec, arch = os.arch(), nodeVersions) {
     return __awaiter(this, void 0, void 0, function* () {
         let osPlat = os.platform();
         let osArch = translateArchToDistUrl(arch);
@@ -62590,16 +62590,16 @@ function queryDistForMatch(versionSpec, arch = os.arch(), distManifest) {
             default:
                 throw new Error(`Unexpected OS '${osPlat}'`);
         }
-        if (!distManifest) {
+        if (!nodeVersions) {
             core.debug('No dist manifest cached');
-            distManifest = yield getVersionsFromDist();
+            nodeVersions = yield getVersionsFromDist();
         }
         let versions = [];
         if (isLatestSyntax(versionSpec)) {
             core.info(`getting latest node version...`);
-            return distManifest[0].version;
+            return nodeVersions[0].version;
         }
-        distManifest.forEach((nodeVersion) => {
+        nodeVersions.forEach((nodeVersion) => {
             // ensure this version supports your os and platform
             if (nodeVersion.files.indexOf(dataFileName) >= 0) {
                 versions.push(nodeVersion.version);

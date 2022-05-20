@@ -38,7 +38,7 @@ export async function getNode(
 ) {
   // Store manifest data to avoid multiple calls
   let manifest: INodeRelease[] | undefined;
-  let distManifest: INodeVersion[] | undefined;
+  let nodeVersions: INodeVersion[] | undefined;
   let osPlat: string = os.platform();
   let osArch: string = translateArchToDistUrl(arch);
 
@@ -52,8 +52,8 @@ export async function getNode(
   }
 
   if (isLatestSyntax(versionSpec)) {
-    distManifest = await getVersionsFromDist();
-    versionSpec = await queryDistForMatch(versionSpec, arch, distManifest);
+    nodeVersions = await getVersionsFromDist();
+    versionSpec = await queryDistForMatch(versionSpec, arch, nodeVersions);
     core.info(`getting latest node version...`);
   }
 
@@ -127,7 +127,7 @@ export async function getNode(
     // Download from nodejs.org
     //
     if (!downloadPath) {
-      info = await getInfoFromDist(versionSpec, arch, distManifest);
+      info = await getInfoFromDist(versionSpec, arch, nodeVersions);
       if (!info) {
         throw new Error(
           `Unable to find Node version '${versionSpec}' for platform ${osPlat} and architecture ${osArch}.`
@@ -274,7 +274,7 @@ async function getInfoFromManifest(
 async function getInfoFromDist(
   versionSpec: string,
   arch: string = os.arch(),
-  distManifest?: INodeVersion[]
+  nodeVersions?: INodeVersion[]
 ): Promise<INodeVersionInfo | null> {
   let osPlat: string = os.platform();
   let osArch: string = translateArchToDistUrl(arch);
@@ -282,7 +282,7 @@ async function getInfoFromDist(
   let version: string = await queryDistForMatch(
     versionSpec,
     arch,
-    distManifest
+    nodeVersions
   );
 
   if (!version) {
@@ -362,7 +362,7 @@ function evaluateVersions(versions: string[], versionSpec: string): string {
 async function queryDistForMatch(
   versionSpec: string,
   arch: string = os.arch(),
-  distManifest?: INodeVersion[]
+  nodeVersions?: INodeVersion[]
 ): Promise<string> {
   let osPlat: string = os.platform();
   let osArch: string = translateArchToDistUrl(arch);
@@ -383,19 +383,19 @@ async function queryDistForMatch(
       throw new Error(`Unexpected OS '${osPlat}'`);
   }
 
-  if (!distManifest) {
+  if (!nodeVersions) {
     core.debug('No dist manifest cached');
-    distManifest = await getVersionsFromDist();
+    nodeVersions = await getVersionsFromDist();
   }
 
   let versions: string[] = [];
 
   if (isLatestSyntax(versionSpec)) {
     core.info(`getting latest node version...`);
-    return distManifest[0].version;
+    return nodeVersions[0].version;
   }
 
-  distManifest.forEach((nodeVersion: INodeVersion) => {
+  nodeVersions.forEach((nodeVersion: INodeVersion) => {
     // ensure this version supports your os and platform
     if (nodeVersion.files.indexOf(dataFileName) >= 0) {
       versions.push(nodeVersion.version);
