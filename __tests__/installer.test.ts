@@ -135,50 +135,28 @@ describe('setup-node', () => {
     expect(versions?.length).toBe(23);
   });
 
-  it('can find 12.16.2 from manifest on osx', async () => {
-    os.platform = 'darwin';
-    os.arch = 'x64';
-    let versions: tc.IToolRelease[] | null = await tc.getManifestFromRepo(
-      'actions',
-      'node-versions',
-      'mocktoken'
-    );
-    expect(versions).toBeDefined();
-    let match = await tc.findFromManifest('12.16.2', true, versions);
-    expect(match).toBeDefined();
-    expect(match?.version).toBe('12.16.2');
-    expect((match as any).lts).toBe('Erbium');
-  });
-
-  it('can find 12 from manifest on linux', async () => {
-    os.platform = 'linux';
-    os.arch = 'x64';
-    let versions: tc.IToolRelease[] | null = await tc.getManifestFromRepo(
-      'actions',
-      'node-versions',
-      'mocktoken'
-    );
-    expect(versions).toBeDefined();
-    let match = await tc.findFromManifest('12.16.2', true, versions);
-    expect(match).toBeDefined();
-    expect(match?.version).toBe('12.16.2');
-    expect((match as any).lts).toBe('Erbium');
-  });
-
-  it('can find 10 from manifest on windows', async () => {
-    os.platform = 'win32';
-    os.arch = 'x64';
-    let versions: tc.IToolRelease[] | null = await tc.getManifestFromRepo(
-      'actions',
-      'node-versions',
-      'mocktoken'
-    );
-    expect(versions).toBeDefined();
-    let match = await tc.findFromManifest('10', true, versions);
-    expect(match).toBeDefined();
-    expect(match?.version).toBe('10.20.1');
-    expect((match as any).lts).toBe('Dubnium');
-  });
+  it.each([
+    ['12.16.2', 'darwin', '12.16.2', 'Erbium'],
+    ['12', 'linux', '12.16.2', 'Erbium'],
+    ['10', 'win32', '10.20.1', 'Dubnium'],
+    ['*', 'linux', '14.0.0', 'Fermium']
+  ])(
+    'can find %s from manifest on %s',
+    async (versionSpec, platform, expectedVersion, expectedLts) => {
+      os.platform = platform;
+      os.arch = 'x64';
+      let versions: tc.IToolRelease[] | null = await tc.getManifestFromRepo(
+        'actions',
+        'node-versions',
+        'mocktoken'
+      );
+      expect(versions).toBeDefined();
+      let match = await tc.findFromManifest(versionSpec, true, versions);
+      expect(match).toBeDefined();
+      expect(match?.version).toBe(expectedVersion);
+      expect((match as any).lts).toBe(expectedLts);
+    }
+  );
 
   //--------------------------------------------------
   // Found in cache tests
@@ -908,5 +886,58 @@ describe('setup-node', () => {
         `::error::Unable to download manifest${osm.EOL}`
       );
     });
+  });
+
+  describe('latest alias syntax', () => {
+    it.each(['latest', 'current', 'node'])(
+      'download the %s version if alias is provided',
+      async inputVersion => {
+        // Arrange
+        inputs['node-version'] = inputVersion;
+
+        os.platform = 'darwin';
+        os.arch = 'x64';
+
+        findSpy.mockImplementation(() => '');
+        getManifestSpy.mockImplementation(() => {
+          throw new Error('Unable to download manifest');
+        });
+
+        // Act
+        await main.run();
+
+        // assert
+        expect(logSpy).toHaveBeenCalledWith('Unable to download manifest');
+
+        expect(logSpy).toHaveBeenCalledWith('getting latest node version...');
+      }
+    );
+  });
+
+  describe('latest alias syntax from cache', () => {
+    it.each(['latest', 'current', 'node'])(
+      'download the %s version if alias is provided',
+      async inputVersion => {
+        // Arrange
+        inputs['node-version'] = inputVersion;
+        const expectedVersion = nodeTestDist[0];
+
+        os.platform = 'darwin';
+        os.arch = 'x64';
+
+        const toolPath = path.normalize(
+          `/cache/node/${expectedVersion.version}/x64`
+        );
+        findSpy.mockReturnValue(toolPath);
+
+        // Act
+        await main.run();
+
+        // assert
+        expect(logSpy).toHaveBeenCalledWith(`Found in cache @ ${toolPath}`);
+
+        expect(logSpy).toHaveBeenCalledWith('getting latest node version...');
+      }
+    );
   });
 });

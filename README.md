@@ -11,7 +11,7 @@ This action provides the following functionality for GitHub Actions users:
 - Registering problem matchers for error output
 - Configuring authentication for GPR or npm
 
-# Usage
+## Usage
 
 See [action.yml](action.yml)
 
@@ -22,8 +22,8 @@ steps:
 - uses: actions/checkout@v3
 - uses: actions/setup-node@v3
   with:
-    node-version: '14'
-- run: npm install
+    node-version: 14
+- run: npm ci
 - run: npm test
 ```
 
@@ -33,13 +33,20 @@ The action will first check the local cache for a semver match. If unable to fin
 
 For information regarding locally cached versions of Node.js on GitHub hosted runners, check out [GitHub Actions Virtual Environments](https://github.com/actions/virtual-environments).
 
-#### Supported version syntax
+### Supported version syntax
 
-The `node-version` input supports the following syntax:
+The `node-version` input supports the following values:
 
-major versions: `12`, `14`, `16`
-more specific versions: `10.15`, `14.2.0`, `16.3.0`
-nvm lts syntax: `lts/erbium`, `lts/fermium`, `lts/*`
+ - Major versions: `12`, `14`, `16`
+ - More specific versions: `10.15`, `14.2.0`, `16.3.0`
+ - NVM LTS syntax: `lts/erbium`, `lts/fermium`, `lts/*`
+ - Latest release: `latest`/`current`/`node`
+
+**Note:** Since the latest release will not be cached always, there is possibility of hitting rate limit when downloading from dist
+
+### Checking in lockfiles
+
+It's **always** recommended to commit the lockfile of your package manager for security and performance reasons. For more information consult the "Working with lockfiles" section of the [Advanced usage](docs/advanced-usage.md#working-with-lockfiles) guide.
 
 ## Caching global packages data
 
@@ -49,7 +56,7 @@ The action defaults to search for the dependency file (`package-lock.json` or `y
 
 **Note:** The action does not cache `node_modules`
 
-See the examples of using cache for `yarn` / `pnpm` and  `cache-dependency-path` input in the [Advanced usage](docs/advanced-usage.md#caching-packages-data) guide.
+See the examples of using cache for `yarn`/`pnpm` and `cache-dependency-path` input in the [Advanced usage](docs/advanced-usage.md#caching-packages-data) guide.
 
 **Caching npm dependencies:**
 
@@ -58,9 +65,9 @@ steps:
 - uses: actions/checkout@v3
 - uses: actions/setup-node@v3
   with:
-    node-version: '14'
+    node-version: 14
     cache: 'npm'
-- run: npm install
+- run: npm ci
 - run: npm test
 ```
 
@@ -71,14 +78,14 @@ steps:
 - uses: actions/checkout@v3
 - uses: actions/setup-node@v3
   with:
-    node-version: '14'
+    node-version: 14
     cache: 'npm'
     cache-dependency-path: subdir/package-lock.json
-- run: npm install
+- run: npm ci
 - run: npm test
 ```
 
-## Matrix Testing:
+## Matrix Testing
 
 ```yaml
 jobs:
@@ -86,7 +93,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        node: [ '12', '14', '16' ]
+        node: [ 12, 14, 16 ]
     name: Node ${{ matrix.node }} sample
     steps:
       - uses: actions/checkout@v3
@@ -94,7 +101,7 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: ${{ matrix.node }}
-      - run: npm install
+      - run: npm ci
       - run: npm test
 ```
 
@@ -109,14 +116,14 @@ jobs:
 7. [Publishing to npmjs and GPR with yarn](docs/advanced-usage.md#publish-to-npmjs-and-gpr-with-yarn)
 8. [Using private packages](docs/advanced-usage.md#use-private-packages)
 
-# License
+## License
 
 The scripts and documentation in this project are released under the [MIT License](LICENSE)
 
-# Contributions
+## Contributions
 
-Contributions are welcome!  See [Contributor's Guide](docs/contributors.md)
+Contributions are welcome! See [Contributor's Guide](docs/contributors.md)
 
 ## Code of Conduct
 
-:wave: Be nice.  See [our code of conduct](CODE_OF_CONDUCT.md)
+:wave: Be nice. See [our code of conduct](CODE_OF_CONDUCT.md)
