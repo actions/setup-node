@@ -40,9 +40,13 @@ The `node-version` input supports the following values:
  - Major versions: `12`, `14`, `16`
  - More specific versions: `10.15`, `14.2.0`, `16.3.0`
  - NVM LTS syntax: `lts/erbium`, `lts/fermium`, `lts/*`, `lts/-n`
- - Latest release: `latest`/`current`/`node`
+ - Latest release: `*` or `latest`/`current`/`node`
 
-**Note:** Since the latest release will not be cached always, there is possibility of hitting rate limit when downloading from dist
+**Note:** Like the other values, `*` will get the latest [locally-cached Node.js version](https://github.com/actions/virtual-environments/blob/main/images/linux/Ubuntu2004-Readme.md#nodejs), or the latest version from [actions/node-versions](https://github.com/actions/node-versions/blob/main/versions-manifest.json), depending on the [`check-latest`](docs/advanced-usage.md#check-latest-version) input.
+
+`current`/`latest`/`node` always resolve to the latest [dist version](https://nodejs.org/dist/index.json).
+That version is then downloaded from actions/node-versions if possible, or directly from Node.js if not.
+Since it will not be cached always, there is possibility of hitting rate limit when downloading from dist
 
 ### Checking in lockfiles
 
