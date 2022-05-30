@@ -70626,8 +70626,6 @@ function getNode(versionSpec, stable, checkLatest, auth, arch = os.arch()) {
             core.info('Attempt to resolve LTS alias from manifest...');
             // No try-catch since it's not possible to resolve LTS alias without manifest
             manifest = yield getManifest(auth);
-            // Reverse it so later Object.fromEntries() gets the latest version of each LTS
-            manifest.reverse();
             versionSpec = resolveLtsAliasFromManifest(versionSpec, stable, manifest);
         }
         if (isLatestSyntax(versionSpec)) {
@@ -70762,7 +70760,8 @@ function resolveLtsAliasFromManifest(versionSpec, stable, manifest) {
     const n = Number(alias);
     const aliases = Object.fromEntries(manifest
         .filter(x => x.lts && x.stable === stable)
-        .map(x => [x.lts.toLowerCase(), x]));
+        .map(x => [x.lts.toLowerCase(), x])
+        .reverse());
     const numbered = Object.values(aliases);
     const release = alias === '*'
         ? numbered[numbered.length - 1]

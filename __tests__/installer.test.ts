@@ -77,9 +77,9 @@ describe('setup-node', () => {
     authSpy.mockImplementation(() => {});
 
     // gets
-    getManifestSpy.mockImplementation(() => [
-      ...(<tc.IToolRelease[]>nodeTestManifest)
-    ]);
+    getManifestSpy.mockImplementation(
+      () => <tc.IToolRelease[]>nodeTestManifest
+    );
     getDistSpy.mockImplementation(() => <im.INodeVersion>nodeTestDist);
 
     // writes
@@ -126,7 +126,7 @@ describe('setup-node', () => {
       'mocktoken'
     );
     expect(versions).toBeDefined();
-    expect(versions?.length).toBe(6);
+    expect(versions?.length).toBe(7);
   });
 
   it('can mock dist versions', async () => {
@@ -228,7 +228,7 @@ describe('setup-node', () => {
     inputs['token'] = 'faketoken';
 
     let expectedUrl =
-      'https://github.com/actions/node-versions/releases/download/12.16.2-20200423.28/node-12.16.2-linux-x64.tar.gz';
+      'https://github.com/actions/node-versions/releases/download/12.16.2-20200507.95/node-12.16.2-linux-x64.tar.gz';
 
     // ... but not in the local cache
     findSpy.mockImplementation(() => '');
@@ -266,7 +266,7 @@ describe('setup-node', () => {
     inputs['token'] = 'faketoken';
 
     let expectedUrl =
-      'https://github.com/actions/node-versions/releases/download/12.16.2-20200423.28/node-12.16.2-linux-x64.tar.gz';
+      'https://github.com/actions/node-versions/releases/download/12.16.2-20200507.95/node-12.16.2-linux-x64.tar.gz';
 
     // ... but not in the local cache
     findSpy.mockImplementation(() => '');
@@ -435,7 +435,7 @@ describe('setup-node', () => {
       exSpy.mockImplementation(async () => '/some/other/temp/path');
       cacheSpy.mockImplementation(async () => toolPath);
       const expectedUrl =
-        'https://github.com/actions/node-versions/releases/download/12.16.2-20200423.28/node-12.16.2-linux-x64.tar.gz';
+        'https://github.com/actions/node-versions/releases/download/12.16.2-20200507.95/node-12.16.2-linux-x64.tar.gz';
 
       await main.run();
 
@@ -718,17 +718,17 @@ describe('setup-node', () => {
       [
         'erbium',
         '12.16.2',
-        'https://github.com/actions/node-versions/releases/download/12.16.2-20200423.28/node-12.16.2-linux-x64.tar.gz'
+        'https://github.com/actions/node-versions/releases/download/12.16.2-20200507.95/node-12.16.2-linux-x64.tar.gz'
       ],
       [
         '*',
         '14.0.0',
-        'https://github.com/actions/node-versions/releases/download/14.0.0-20200423.30/node-14.0.0-linux-x64.tar.gz'
+        'https://github.com/actions/node-versions/releases/download/14.0.0-20200507.99/node-14.0.0-linux-x64.tar.gz'
       ],
       [
         '-1',
         '12.16.2',
-        'https://github.com/actions/node-versions/releases/download/12.16.2-20200423.28/node-12.16.2-linux-x64.tar.gz'
+        'https://github.com/actions/node-versions/releases/download/12.16.2-20200507.95/node-12.16.2-linux-x64.tar.gz'
       ]
     ])(
       'find latest LTS version and install it from manifest (lts/%s)',

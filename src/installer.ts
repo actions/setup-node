@@ -46,8 +46,6 @@ export async function getNode(
 
     // No try-catch since it's not possible to resolve LTS alias without manifest
     manifest = await getManifest(auth);
-    // Reverse it so later Object.fromEntries() gets the latest version of each LTS
-    manifest.reverse();
 
     versionSpec = resolveLtsAliasFromManifest(versionSpec, stable, manifest);
   }
@@ -231,6 +229,7 @@ function resolveLtsAliasFromManifest(
     manifest
       .filter(x => x.lts && x.stable === stable)
       .map(x => [x.lts!.toLowerCase(), x])
+      .reverse()
   );
   const numbered = Object.values(aliases);
   const release =
