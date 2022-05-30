@@ -37,6 +37,7 @@ export async function getNode(
 ) {
   // Store manifest data to avoid multiple calls
   let manifest: INodeRelease[] | undefined;
+  let nodeVersions: INodeVersion[] | undefined;
   let osPlat: string = os.platform();
   let osArch: string = translateArchToDistUrl(arch);
 
@@ -47,6 +48,12 @@ export async function getNode(
     manifest = await getManifest(auth);
 
     versionSpec = resolveLtsAliasFromManifest(versionSpec, stable, manifest);
+  }
+
+  if (isLatestSyntax(versionSpec)) {
+    nodeVersions = await getVersionsFromDist();
+    versionSpec = await queryDistForMatch(versionSpec, arch, nodeVersions);
+    core.info(`getting latest node version...`);
   }
 
   if (checkLatest) {
@@ -119,7 +126,7 @@ export async function getNode(
     // Download from nodejs.org
     //
     if (!downloadPath) {
-      info = await getInfoFromDist(versionSpec, arch);
+      info = await getInfoFromDist(versionSpec, arch, nodeVersions);
       if (!info) {
         throw new Error(
           `Unable to find Node version '${versionSpec}' for platform ${osPlat} and architecture ${osArch}.`
@@ -265,14 +272,18 @@ async function getInfoFromManifest(
 
 async function getInfoFromDist(
   versionSpec: string,
-  arch: string = os.arch()
+  arch: string = os.arch(),
+  nodeVersions?: INodeVersion[]
 ): Promise<INodeVersionInfo | null> {
   let osPlat: string = os.platform();
   let osArch: string = translateArchToDistUrl(arch);
 
-  let version: string;
+  let version: string = await queryDistForMatch(
+    versionSpec,
+    arch,
+    nodeVersions
+  );
 
-  version = await queryDistForMatch(versionSpec, arch);
   if (!version) {
     return null;
   }
@@ -349,7 +360,8 @@ function evaluateVersions(versions: string[], versionSpec: string): string {
 
 async function queryDistForMatch(
   versionSpec: string,
-  arch: string = os.arch()
+  arch: string = os.arch(),
+  nodeVersions?: INodeVersion[]
 ): Promise<string> {
   let osPlat: string = os.platform();
   let osArch: string = translateArchToDistUrl(arch);
@@ -370,14 +382,14 @@ async function queryDistForMatch(
       throw new Error(`Unexpected OS '${osPlat}'`);
   }
 
-  let versions: string[] = [];
-  let nodeVersions = await getVersionsFromDist();
+  if (!nodeVersions) {
+    core.debug('No dist manifest cached');
+    nodeVersions = await getVersionsFromDist();
+  }
 
-  if (
-    versionSpec === 'current' ||
-    versionSpec === 'latest' ||
-    versionSpec === 'node'
-  ) {
+  let versions: string[] = [];
+
+  if (isLatestSyntax(versionSpec)) {
     core.info(`getting latest node version...`);
     return nodeVersions[0].version;
   }
@@ -481,4 +493,8 @@ export function parseNodeVersionFile(contents: string): string {
     nodeVersion = nodeVersion.substring(1);
   }
   return nodeVersion;
+}
+
+function isLatestSyntax(versionSpec): boolean {
+  return ['current', 'latest', 'node'].includes(versionSpec);
 }

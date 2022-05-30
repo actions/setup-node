@@ -913,4 +913,31 @@ describe('setup-node', () => {
       }
     );
   });
+
+  describe('latest alias syntax from cache', () => {
+    it.each(['latest', 'current', 'node'])(
+      'download the %s version if alias is provided',
+      async inputVersion => {
+        // Arrange
+        inputs['node-version'] = inputVersion;
+        const expectedVersion = nodeTestDist[0];
+
+        os.platform = 'darwin';
+        os.arch = 'x64';
+
+        const toolPath = path.normalize(
+          `/cache/node/${expectedVersion.version}/x64`
+        );
+        findSpy.mockReturnValue(toolPath);
+
+        // Act
+        await main.run();
+
+        // assert
+        expect(logSpy).toHaveBeenCalledWith(`Found in cache @ ${toolPath}`);
+
+        expect(logSpy).toHaveBeenCalledWith('getting latest node version...');
+      }
+    );
+  });
 });
