@@ -223,13 +223,21 @@ function resolveLtsAliasFromManifest(
 
   core.debug(`LTS alias '${alias}' for Node version '${versionSpec}'`);
 
-  // Supported formats are `lts/<alias>` and `lts/*`. Where asterisk means highest possible LTS.
+  // Supported formats are `lts/<alias>`, `lts/*`, and `lts/-n`. Where asterisk means highest possible LTS and -n means the nth-highest.
+  const n = Number(alias);
+  const aliases = Object.fromEntries(
+    manifest
+      .filter(x => x.lts && x.stable === stable)
+      .map(x => [x.lts!.toLowerCase(), x])
+      .reverse()
+  );
+  const numbered = Object.values(aliases);
   const release =
     alias === '*'
-      ? manifest.find(x => !!x.lts && x.stable === stable)
-      : manifest.find(
-          x => x.lts?.toLowerCase() === alias && x.stable === stable
-        );
+      ? numbered[numbered.length - 1]
+      : n < 0
+      ? numbered[numbered.length - 1 + n]
+      : aliases[alias];
 
   if (!release) {
     throw new Error(

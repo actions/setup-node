@@ -39,7 +39,7 @@ The `node-version` input supports the following values:
 
  - Major versions: `12`, `14`, `16`
  - More specific versions: `10.15`, `14.2.0`, `16.3.0`
- - NVM LTS syntax: `lts/erbium`, `lts/fermium`, `lts/*`
+ - NVM LTS syntax: `lts/erbium`, `lts/fermium`, `lts/*`, `lts/-n`
  - Latest release: `latest`/`current`/`node`
 
 **Note:** Since the latest release will not be cached always, there is possibility of hitting rate limit when downloading from dist
