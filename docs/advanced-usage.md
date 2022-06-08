@@ -247,3 +247,28 @@ steps:
 # `npm rebuild` will run all those post-install scripts for us.
 - run: npm rebuild && npm run prepare --if-present
 ```
+
+## Resolved Node.js and npm versions
+
+In the context of a command, you can get the resolved Node.js and npm versions directly by using command substitution, e.g.:
+
+```yaml
+- if: always()
+  name: Add summary
+  run: |
+    echo "## Versions
+
+    | Node.js           | npm              |
+    | ----------------- | ---------------- |
+    | $(node --version) | $(npm --version) |" > "$GITHUB_STEP_SUMMARY"
+```
+
+If instead you need them in the context of an [expression](https://docs.github.com/en/actions/learn-github-actions/expressions), you can store them in [output parameters](https://docs.github.com/en/actions/using-workflows/workflow-commands-for-github-actions#setting-an-output-parameter), e.g.:
+
+```yaml
+- id: versions
+  name: Get versions
+  run: |
+    echo "::set-output name=node-version::$(node --version)"
+    echo "::set-output name=npm-version::$(npm --version)"
+```
