@@ -16,7 +16,6 @@ export async function run() {
     let version = resolveVersionInput();
 
     let arch = core.getInput('architecture');
-    const cache = core.getInput('cache');
 
     // if architecture supplied but node-version is not
     // if we don't throw a warning, the already installed x64 node will be used which is not probably what user meant.
@@ -39,6 +38,13 @@ export async function run() {
       await installer.getNode(version, stable, checkLatest, auth, arch);
     }
 
+  } catch (err) {
+    core.setFailed(err.message);
+  }
+
+  try {
+    const cache = core.getInput('cache');
+
     const registryUrl: string = core.getInput('registry-url');
     const alwaysAuth: string = core.getInput('always-auth');
     if (registryUrl) {
@@ -59,7 +65,7 @@ export async function run() {
       `##[add-matcher]${path.join(matchersPath, 'eslint-compact.json')}`
     );
   } catch (err) {
-    core.setFailed(err.message);
+    core.warning(err.message);
   }
 }
 

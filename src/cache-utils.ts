@@ -107,7 +107,7 @@ export function isGhes(): boolean {
 export function isCacheFeatureAvailable(): boolean {
   if (!cache.isFeatureAvailable()) {
     if (isGhes()) {
-      throw new Error(
+      core.warning(
         'Cache action is only supported on GHES version >= 3.5. If you are on version >=3.5 Please check with GHES admin if Actions cache service is enabled or not.'
       );
     } else {
