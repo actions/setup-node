@@ -37,7 +37,6 @@ export async function run() {
         (core.getInput('check-latest') || 'false').toUpperCase() === 'TRUE';
       await installer.getNode(version, stable, checkLatest, auth, arch);
     }
-
   } catch (err) {
     core.setFailed(err.message);
   }
