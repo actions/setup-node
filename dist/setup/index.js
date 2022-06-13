@@ -70545,7 +70545,7 @@ exports.isGhes = isGhes;
 function isCacheFeatureAvailable() {
     if (!cache.isFeatureAvailable()) {
         if (isGhes()) {
-            throw new Error('Cache action is only supported on GHES version >= 3.5. If you are on version >=3.5 Please check with GHES admin if Actions cache service is enabled or not.');
+            core.warning('Cache action is only supported on GHES version >= 3.5. If you are on version >=3.5 Please check with GHES admin if Actions cache service is enabled or not.');
         }
         else {
             core.warning('The runner was not able to contact the cache service. Caching will be skipped');
@@ -71027,7 +71027,6 @@ function run() {
             //
             let version = resolveVersionInput();
             let arch = core.getInput('architecture');
-            const cache = core.getInput('cache');
             // if architecture supplied but node-version is not
             // if we don't throw a warning, the already installed x64 node will be used which is not probably what user meant.
             if (arch && !version) {
@@ -71043,6 +71042,12 @@ function run() {
                 const checkLatest = (core.getInput('check-latest') || 'false').toUpperCase() === 'TRUE';
                 yield installer.getNode(version, stable, checkLatest, auth, arch);
             }
+        }
+        catch (err) {
+            core.setFailed(err.message);
+        }
+        try {
+            const cache = core.getInput('cache');
             const registryUrl = core.getInput('registry-url');
             const alwaysAuth = core.getInput('always-auth');
             if (registryUrl) {
@@ -71058,7 +71063,7 @@ function run() {
             core.info(`##[add-matcher]${path.join(matchersPath, 'eslint-compact.json')}`);
         }
         catch (err) {
-            core.setFailed(err.message);
+            core.warning(err.message);
         }
     });
 }
