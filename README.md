@@ -37,7 +37,7 @@ For information regarding locally cached versions of Node.js on GitHub hosted ru
 
 The `node-version` input supports the following values:
 
- - Major versions: `12`, `14`, `16`
+ - Major versions: `14`, `16`, `18`
  - More specific versions: `10.15`, `14.2.0`, `16.3.0`
  - NVM LTS syntax: `lts/erbium`, `lts/fermium`, `lts/*`, `lts/-n`
  - Latest release: `*` or `latest`/`current`/`node`
