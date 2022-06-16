@@ -35,12 +35,16 @@ For information regarding locally cached versions of Node.js on GitHub hosted ru
 
 ### Supported version syntax
 
-The `node-version` input supports the following values:
+The `node-version` input supports the [Semantic Versioning Specification](https://github.com/npm/node-semver), for example:
 
  - Major versions: `12`, `14`, `16`
  - More specific versions: `10.15`, `14.2.0`, `16.3.0`
+ 
+And also these other syntaxes: 
+
  - NVM LTS syntax: `lts/erbium`, `lts/fermium`, `lts/*`, `lts/-n`
  - Latest release: `*` or `latest`/`current`/`node`
+
 
 **Note:** Like the other values, `*` will get the latest [locally-cached Node.js version](https://github.com/actions/virtual-environments/blob/main/images/linux/Ubuntu2004-Readme.md#nodejs), or the latest version from [actions/node-versions](https://github.com/actions/node-versions/blob/main/versions-manifest.json), depending on the [`check-latest`](docs/advanced-usage.md#check-latest-version) input.
 
