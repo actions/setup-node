@@ -35,7 +35,9 @@ For information regarding locally cached versions of Node.js on GitHub hosted ru
 
 ### Supported version syntax
 
-The `node-version` input supports the following values:
+The `node-version` input supports the Semantic Versioning Specification, for more detailed examples please refer to the [documentation](https://github.com/npm/node-semver).
+
+Examples:
 
  - Major versions: `12`, `14`, `16`
  - More specific versions: `10.15`, `14.2.0`, `16.3.0`
