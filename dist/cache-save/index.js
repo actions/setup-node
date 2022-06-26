@@ -59888,16 +59888,11 @@ const cachePackages = (packageManager) => __awaiter(void 0, void 0, void 0, func
         core.info(`Cache hit occurred on the primary key ${primaryKey}, not saving cache.`);
         return;
     }
-    try {
-        const cacheId = yield cache.saveCache([cachePath], primaryKey);
-        if (cacheId == -1) {
-            return;
-        }
-        core.info(`Cache saved with the key: ${primaryKey}`);
+    const cacheId = yield cache.saveCache([cachePath], primaryKey);
+    if (cacheId == -1) {
+        return;
     }
-    catch (error) {
-        core.warning(`${error.message}`);
-    }
+    core.info(`Cache saved with the key: ${primaryKey}`);
 });
 run();
 

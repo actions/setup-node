@@ -49,16 +49,12 @@ const cachePackages = async (packageManager: string) => {
     return;
   }
 
-  try {
-    const cacheId = await cache.saveCache([cachePath], primaryKey);
-    if (cacheId == -1) {
-      return;
-    }
-
-    core.info(`Cache saved with the key: ${primaryKey}`);
-  } catch (error) {
-    core.warning(`${error.message}`);
+  const cacheId = await cache.saveCache([cachePath], primaryKey);
+  if (cacheId == -1) {
+    return;
   }
+
+  core.info(`Cache saved with the key: ${primaryKey}`);
 };
 
 run();
