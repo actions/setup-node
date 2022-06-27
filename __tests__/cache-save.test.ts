@@ -294,7 +294,7 @@ describe('run', () => {
       );
       expect(setFailedSpy).not.toHaveBeenCalled();
     });
-    
+
     it('save with -1 cacheId , should not fail workflow', async () => {
       inputs['cache'] = 'npm';
       getStateSpy.mockImplementation((name: string) => {
