@@ -8,7 +8,7 @@
     "build": "ncc build -o dist/setup src/setup-node.ts && ncc build -o dist/cache-save src/cache-save.ts",
     "format": "prettier --write **/*.ts",
     "format-check": "prettier --check **/*.ts",
-    "test": "jest",
+    "test": "jest --coverage",
     "pre-checkin": "npm run format && npm run build && npm test"
   },
   "repository": {
@@ -23,7 +23,7 @@
   "author": "GitHub",
   "license": "MIT",
   "dependencies": {
-    "@actions/cache": "^2.0.2",
+    "@actions/cache": "^3.0.0",
     "@actions/core": "^1.6.0",
     "@actions/exec": "^1.1.0",
     "@actions/github": "^1.1.0",
