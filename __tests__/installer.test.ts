@@ -592,7 +592,7 @@ describe('setup-node', () => {
       inputs['node-version-file'] = 'volta';
 
       existsSpy.mockImplementationOnce(
-          input => input === path.join(__dirname, 'data', versionFile)
+        input => input === path.join(__dirname, 'data', versionFile)
       );
       // Act
       await main.run();
@@ -601,7 +601,7 @@ describe('setup-node', () => {
       expect(existsSpy).toHaveBeenCalledTimes(1);
       expect(existsSpy).toHaveReturnedWith(true);
       expect(logSpy).toHaveBeenCalledWith(
-          `Resolved ${versionFile} as ${expectedVersionSpec}`
+        `Resolved ${versionFile} as ${expectedVersionSpec}`
       );
     });
 

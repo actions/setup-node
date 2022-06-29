@@ -95,7 +95,7 @@ function resolveVersionInput(): string {
       version = JSON.parse(fs.readFileSync(versionFilePath, 'utf8')).volta.node;
     } else {
       version = installer.parseNodeVersionFile(
-          fs.readFileSync(versionFilePath, 'utf8')
+        fs.readFileSync(versionFilePath, 'utf8')
       );
     }
 
