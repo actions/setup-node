@@ -65,7 +65,9 @@ export async function run() {
 
 function resolveVersionInput(): string {
   let version = core.getInput('node-version');
-  const versionFileInput = core.getInput('node-version-file');
+  const nodeVersionFile = core.getInput('node-version-file');
+  const versionFileInput =
+    nodeVersionFile === 'volta' ? 'package.json' : nodeVersionFile;
 
   if (version && versionFileInput) {
     core.warning(
@@ -82,14 +84,21 @@ function resolveVersionInput(): string {
       process.env.GITHUB_WORKSPACE!,
       versionFileInput
     );
+
     if (!fs.existsSync(versionFilePath)) {
       throw new Error(
         `The specified node version file at: ${versionFilePath} does not exist`
       );
     }
-    version = installer.parseNodeVersionFile(
-      fs.readFileSync(versionFilePath, 'utf8')
-    );
+
+    if (nodeVersionFile === 'volta') {
+      version = JSON.parse(fs.readFileSync(versionFilePath, 'utf8')).volta.node;
+    } else {
+      version = installer.parseNodeVersionFile(
+          fs.readFileSync(versionFilePath, 'utf8')
+      );
+    }
+
     core.info(`Resolved ${versionFileInput} as ${version}`);
   }
 
