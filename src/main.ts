@@ -65,9 +65,7 @@ export async function run() {
 
 function resolveVersionInput(): string {
   let version = core.getInput('node-version');
-  const nodeVersionFile = core.getInput('node-version-file');
-  const versionFileInput =
-    nodeVersionFile === 'volta' ? 'package.json' : nodeVersionFile;
+  const versionFileInput = core.getInput('node-version-file');
 
   if (version && versionFileInput) {
     core.warning(
@@ -91,13 +89,9 @@ function resolveVersionInput(): string {
       );
     }
 
-    if (nodeVersionFile === 'volta') {
-      version = JSON.parse(fs.readFileSync(versionFilePath, 'utf8')).volta.node;
-    } else {
-      version = installer.parseNodeVersionFile(
-        fs.readFileSync(versionFilePath, 'utf8')
-      );
-    }
+    version = installer.parseNodeVersionFile(
+      fs.readFileSync(versionFilePath, 'utf8')
+    );
 
     core.info(`Resolved ${versionFileInput} as ${version}`);
   }

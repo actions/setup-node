@@ -71768,7 +71768,13 @@ function translateArchToDistUrl(arch) {
     }
 }
 function parseNodeVersionFile(contents) {
-    let nodeVersion = contents.trim();
+    let nodeVersion;
+    if (contents.includes('volta')) {
+        nodeVersion = JSON.parse(contents).volta.node;
+    }
+    else {
+        nodeVersion = contents.trim();
+    }
     if (/^v\d/.test(nodeVersion)) {
         nodeVersion = nodeVersion.substring(1);
     }
@@ -71862,8 +71868,7 @@ function run() {
 exports.run = run;
 function resolveVersionInput() {
     let version = core.getInput('node-version');
-    const nodeVersionFile = core.getInput('node-version-file');
-    const versionFileInput = nodeVersionFile === 'volta' ? 'package.json' : nodeVersionFile;
+    const versionFileInput = core.getInput('node-version-file');
     if (version && versionFileInput) {
         core.warning('Both node-version and node-version-file inputs are specified, only node-version will be used');
     }
@@ -71875,12 +71880,7 @@ function resolveVersionInput() {
         if (!fs_1.default.existsSync(versionFilePath)) {
             throw new Error(`The specified node version file at: ${versionFilePath} does not exist`);
         }
-        if (nodeVersionFile === 'volta') {
-            version = JSON.parse(fs_1.default.readFileSync(versionFilePath, 'utf8')).volta.node;
-        }
-        else {
-            version = installer.parseNodeVersionFile(fs_1.default.readFileSync(versionFilePath, 'utf8'));
-        }
+        version = installer.parseNodeVersionFile(fs_1.default.readFileSync(versionFilePath, 'utf8'));
         core.info(`Resolved ${versionFileInput} as ${version}`);
     }
     return version;

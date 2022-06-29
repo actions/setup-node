@@ -560,7 +560,7 @@ describe('setup-node', () => {
       expect(parseNodeVersionSpy).toHaveBeenCalledTimes(0);
     });
 
-    it('reads node-version-file if provided', async () => {
+    it('reads node-version-file if provided (.nvmrc)', async () => {
       // Arrange
       const versionSpec = 'v14';
       const versionFile = '.nvmrc';
@@ -572,6 +572,7 @@ describe('setup-node', () => {
       existsSpy.mockImplementationOnce(
         input => input === path.join(__dirname, 'data', versionFile)
       );
+
       // Act
       await main.run();
 
@@ -584,22 +585,37 @@ describe('setup-node', () => {
       );
     });
 
-    it('reads node-version-file if provided with volta', async () => {
+    it('reads node-version-file if provided (package.json, volta)', async () => {
       // Arrange
-      const expectedVersionSpec = '16.15.1';
+      const versionSpec = `{
+  "name": "test",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "test": "echo test"
+  },
+  "volta": {
+    "node": "16.15.1"
+  }
+}
+`;
       const versionFile = 'package.json';
+      const expectedVersionSpec = '16.15.1';
       process.env['GITHUB_WORKSPACE'] = path.join(__dirname, 'data');
-      inputs['node-version-file'] = 'volta';
+      inputs['node-version-file'] = versionFile;
 
+      parseNodeVersionSpy.mockImplementation(() => expectedVersionSpec);
       existsSpy.mockImplementationOnce(
         input => input === path.join(__dirname, 'data', versionFile)
       );
+
       // Act
       await main.run();
 
       // Assert
       expect(existsSpy).toHaveBeenCalledTimes(1);
       expect(existsSpy).toHaveReturnedWith(true);
+      expect(parseNodeVersionSpy).toHaveBeenCalledWith(versionSpec);
       expect(logSpy).toHaveBeenCalledWith(
         `Resolved ${versionFile} as ${expectedVersionSpec}`
       );

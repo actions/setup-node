@@ -495,7 +495,13 @@ function translateArchToDistUrl(arch: string): string {
 }
 
 export function parseNodeVersionFile(contents: string): string {
-  let nodeVersion = contents.trim();
+  let nodeVersion;
+
+  if (contents.includes('volta')) {
+    nodeVersion = JSON.parse(contents).volta.node;
+  } else {
+    nodeVersion = contents.trim();
+  }
 
   if (/^v\d/.test(nodeVersion)) {
     nodeVersion = nodeVersion.substring(1);
