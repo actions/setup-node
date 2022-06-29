@@ -56,7 +56,7 @@ steps:
 
 ## Node version file
 
-The `node-version-file` input accepts a path to a file containing the version of Node.js to be used by a project, for example `.nvmrc` or `.node-version`. If both the `node-version` and the `node-version-file` inputs are provided then the `node-version` input is used. In the special case of using `volta`, the action will use `package.json` and look for the `volta.node` key.
+The `node-version-file` input accepts a path to a file containing the version of Node.js to be used by a project, for example `.nvmrc` or `.node-version`. If both the `node-version` and the `node-version-file` inputs are provided then the `node-version` input is used. In the special case of using `package.json`, the action will look for keys like `volta.node` key to receive the version.
 
 See [supported version syntax](https://github.com/actions/setup-node#supported-version-syntax)
 
