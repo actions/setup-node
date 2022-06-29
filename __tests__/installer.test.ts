@@ -584,6 +584,27 @@ describe('setup-node', () => {
       );
     });
 
+    it('reads node-version-file if provided with volta', async () => {
+      // Arrange
+      const expectedVersionSpec = '16.15.1';
+      const versionFile = 'package.json';
+      process.env['GITHUB_WORKSPACE'] = path.join(__dirname, 'data');
+      inputs['node-version-file'] = 'volta';
+
+      existsSpy.mockImplementationOnce(
+          input => input === path.join(__dirname, 'data', versionFile)
+      );
+      // Act
+      await main.run();
+
+      // Assert
+      expect(existsSpy).toHaveBeenCalledTimes(1);
+      expect(existsSpy).toHaveReturnedWith(true);
+      expect(logSpy).toHaveBeenCalledWith(
+          `Resolved ${versionFile} as ${expectedVersionSpec}`
+      );
+    });
+
     it('both node-version-file and node-version are provided', async () => {
       inputs['node-version'] = '12';
       const versionSpec = 'v14';
