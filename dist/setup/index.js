@@ -71768,12 +71768,9 @@ function translateArchToDistUrl(arch) {
     }
 }
 function parseNodeVersionFile(contents) {
-    let nodeVersion;
+    let nodeVersion = contents.trim();
     if (contents.includes('volta')) {
         nodeVersion = JSON.parse(contents).volta.node;
-    }
-    else {
-        nodeVersion = contents.trim();
     }
     if (/^v\d/.test(nodeVersion)) {
         nodeVersion = nodeVersion.substring(1);
