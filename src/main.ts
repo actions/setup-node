@@ -41,14 +41,11 @@ export async function run() {
     }
 
     // Output version of node is being used
-    let installedVersion = '';
-    await exec.exec('node', ['--version'], {
-      listeners: {
-        stdout: data => {
-          installedVersion += data.toString();
-        }
-      }
-    });
+    const {stdout: installedVersion} = await exec.getExecOutput(
+      'node',
+      ['--version'],
+      {ignoreReturnCode: true}
+    );
     core.setOutput('node-version', installedVersion);
 
     const registryUrl: string = core.getInput('registry-url');
