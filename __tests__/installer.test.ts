@@ -1,6 +1,7 @@
 import * as core from '@actions/core';
 import * as io from '@actions/io';
 import * as tc from '@actions/tool-cache';
+import * as exec from '@actions/exec';
 import * as im from '../src/installer';
 import * as cache from '@actions/cache';
 import fs from 'fs';
@@ -38,6 +39,7 @@ describe('setup-node', () => {
   let authSpy: jest.SpyInstance;
   let parseNodeVersionSpy: jest.SpyInstance;
   let isCacheActionAvailable: jest.SpyInstance;
+  let getExecOutputSpy: jest.SpyInstance;
 
   beforeEach(() => {
     // @actions/core
@@ -103,6 +105,10 @@ describe('setup-node', () => {
       // uncomment to debug
       // process.stderr.write('log:' + line + '\n');
     });
+
+    // @actions/exec
+    getExecOutputSpy = jest.spyOn(exec, 'getExecOutput');
+    getExecOutputSpy.mockImplementation(() => '16.15.0');
   });
 
   afterEach(() => {
