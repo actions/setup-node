@@ -588,7 +588,10 @@ describe('setup-node', () => {
     it('reads node-version-file if provided (package.json, volta)', async () => {
       // Arrange
       const versionFile = 'package.json';
-      const versionSpec = fs.readFileSync(path.join(__dirname, 'data', versionFile), 'utf8');
+      const versionSpec = fs.readFileSync(
+        path.join(__dirname, 'data', versionFile),
+        'utf8'
+      );
       const expectedVersionSpec = '16.15.1';
       process.env['GITHUB_WORKSPACE'] = path.join(__dirname, 'data');
       inputs['node-version-file'] = versionFile;
