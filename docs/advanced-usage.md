@@ -247,3 +247,5 @@ steps:
 # `npm rebuild` will run all those post-install scripts for us.
 - run: npm rebuild && npm run prepare --if-present
 ```
+
+NOTE: As per https://github.com/actions/setup-node/issues/49 you cannot use `secrets.GITHUB_TOKEN` to access private GitHub Packages within the same organisation but in a different repository.
