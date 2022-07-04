@@ -71272,7 +71272,7 @@ const exec = __importStar(__nccwpck_require__(1514));
 const cache = __importStar(__nccwpck_require__(7799));
 exports.supportedPackageManagers = {
     npm: {
-        lockFilePatterns: ['package-lock.json', 'yarn.lock'],
+        lockFilePatterns: ['package-lock.json', 'npm-shrinkwrap.json', 'yarn.lock'],
         getCacheFolderCommand: 'npm config get cache'
     },
     pnpm: {
