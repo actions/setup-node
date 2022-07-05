@@ -84,7 +84,7 @@ steps:
 - uses: actions/checkout@v3
 - uses: actions/setup-node@v3
   with:
-    node-version: 18
+    node-version: 16
     cache: 'npm'
     cache-dependency-path: subdir/package-lock.json
 - run: npm ci
