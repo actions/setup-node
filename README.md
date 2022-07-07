@@ -22,7 +22,7 @@ steps:
 - uses: actions/checkout@v3
 - uses: actions/setup-node@v3
   with:
-    node-version: 14
+    node-version: 16
 - run: npm ci
 - run: npm test
 ```
@@ -39,8 +39,8 @@ The `node-version` input supports the Semantic Versioning Specification, for mor
 
 Examples:
 
- - Major versions: `12`, `14`, `16`
- - More specific versions: `10.15`, `14.2.0`, `16.3.0`
+ - Major versions: `14`, `16`, `18`
+ - More specific versions: `10.15`, `16.15.1` , `18.4.0`
  - NVM LTS syntax: `lts/erbium`, `lts/fermium`, `lts/*`, `lts/-n`
  - Latest release: `*` or `latest`/`current`/`node`
 
@@ -71,7 +71,7 @@ steps:
 - uses: actions/checkout@v3
 - uses: actions/setup-node@v3
   with:
-    node-version: 14
+    node-version: 16
     cache: 'npm'
 - run: npm ci
 - run: npm test
@@ -84,7 +84,7 @@ steps:
 - uses: actions/checkout@v3
 - uses: actions/setup-node@v3
   with:
-    node-version: 14
+    node-version: 16
     cache: 'npm'
     cache-dependency-path: subdir/package-lock.json
 - run: npm ci
@@ -99,7 +99,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        node: [ 12, 14, 16 ]
+        node: [ 14, 16, 18 ]
     name: Node ${{ matrix.node }} sample
     steps:
       - uses: actions/checkout@v3
