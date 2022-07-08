@@ -71882,7 +71882,7 @@ const exec = __importStar(__nccwpck_require__(1514));
 const cache = __importStar(__nccwpck_require__(7799));
 exports.supportedPackageManagers = {
     npm: {
-        lockFilePatterns: ['package-lock.json', 'yarn.lock'],
+        lockFilePatterns: ['package-lock.json', 'npm-shrinkwrap.json', 'yarn.lock'],
         getCacheFolderCommand: 'npm config get cache'
     },
     pnpm: {
@@ -72418,6 +72418,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 const core = __importStar(__nccwpck_require__(2186));
+const exec = __importStar(__nccwpck_require__(1514));
 const installer = __importStar(__nccwpck_require__(2574));
 const fs_1 = __importDefault(__nccwpck_require__(7147));
 const auth = __importStar(__nccwpck_require__(7573));
@@ -72450,6 +72451,9 @@ function run() {
                 const checkLatest = (core.getInput('check-latest') || 'false').toUpperCase() === 'TRUE';
                 yield installer.getNode(version, stable, checkLatest, auth, arch);
             }
+            // Output version of node is being used
+            const { stdout: installedVersion } = yield exec.getExecOutput('node', ['--version'], { ignoreReturnCode: true });
+            core.setOutput('node-version', installedVersion);
             const registryUrl = core.getInput('registry-url');
             const alwaysAuth = core.getInput('always-auth');
             if (registryUrl) {
