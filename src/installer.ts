@@ -495,12 +495,16 @@ function translateArchToDistUrl(arch: string): string {
 }
 
 export function parseNodeVersionFile(contents: string): string {
-  let nodeVersion = contents.trim();
+  const found = contents.match(/^(?:nodejs\s+)?v?(?<version>[^\s]+)$/m);
+  const nodeVersion = found?.groups?.version;
 
-  if (/^v\d/.test(nodeVersion)) {
-    nodeVersion = nodeVersion.substring(1);
+  if (nodeVersion) {
+    return nodeVersion;
   }
-  return nodeVersion;
+
+  // In the case of an unknown format,
+  // return as is and evaluate the version separately.
+  return contents.trim();
 }
 
 function isLatestSyntax(versionSpec): boolean {
