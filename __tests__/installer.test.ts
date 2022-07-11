@@ -205,6 +205,27 @@ describe('setup-node', () => {
     expect(cnSpy).toHaveBeenCalledWith(`::add-path::${expPath}${osm.EOL}`);
   });
 
+  it('finds incorrect version in cache and adds it to the path', async () => {
+    let versionSpec = '12.16.2';
+    inputs['node-version'] = versionSpec;
+
+    inSpy.mockImplementation(name => inputs[name]);
+    getExecOutputSpy.mockImplementation(() => 'v12.0.0');
+
+    let toolPath = path.normalize('/cache/node/12.16.1/x64');
+    findSpy.mockImplementation(() => toolPath);
+    await main.run();
+
+    let expPath = path.join(toolPath, 'bin');
+    expect(logSpy).toHaveBeenCalledWith(
+      `Found v12.0.0 in cache @ ${toolPath} but it does not satisfy the requested version (${versionSpec})`
+    );
+    expect(logSpy).toHaveBeenCalledWith(
+      `Attempting to download ${versionSpec}...`
+    );
+    expect(cnSpy).toHaveBeenCalledWith(`::add-path::${expPath}${osm.EOL}`);
+  });
+
   it('handles unhandled find error and reports error', async () => {
     let errMsg = 'unhandled error message';
     inputs['node-version'] = '12';

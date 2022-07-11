@@ -4,6 +4,7 @@ import * as core from '@actions/core';
 import * as hc from '@actions/http-client';
 import * as io from '@actions/io';
 import * as tc from '@actions/tool-cache';
+import * as exec from '@actions/exec';
 import * as path from 'path';
 import * as semver from 'semver';
 import fs = require('fs');
@@ -80,7 +81,22 @@ export async function getNode(
   // If not found in cache, download
   if (toolPath) {
     core.info(`Found in cache @ ${toolPath}`);
-  } else {
+
+    const {stdout: installedVersion} = await exec.getExecOutput(
+      'node',
+      ['--version'],
+      {ignoreReturnCode: true}
+    );
+
+    if (!semver.satisfies(installedVersion, versionSpec)) {
+      core.info(
+        `Found ${installedVersion} in cache @ ${toolPath} but it does not satisfy the requested version (${versionSpec})`
+      );
+      toolPath = '';
+    }
+  }
+
+  if (!toolPath) {
     core.info(`Attempting to download ${versionSpec}...`);
     let downloadPath = '';
     let info: INodeVersionInfo | null = null;
