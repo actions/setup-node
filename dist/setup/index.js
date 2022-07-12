@@ -71847,8 +71847,8 @@ function run() {
             }
             // Output version of node is being used
             try {
-                const { stdout: installedVersion } = yield exec.getExecOutput('node', ['--version'], { ignoreReturnCode: true, silent: false });
-                core.setOutput('node-version', installedVersion);
+                const { stdout: installedVersion } = yield exec.getExecOutput('node', ['--version'], { ignoreReturnCode: true, silent: true });
+                core.setOutput('node-version', installedVersion.trim());
             }
             catch (err) {
                 core.setOutput('node-version', '');

@@ -2,6 +2,7 @@ import * as core from '@actions/core';
 import * as exec from '@actions/exec';
 import * as installer from './installer';
 import fs from 'fs';
+import * as child_process from 'child_process';
 import * as auth from './authutil';
 import * as path from 'path';
 import {restoreCache} from './cache-restore';
@@ -45,9 +46,9 @@ export async function run() {
       const {stdout: installedVersion} = await exec.getExecOutput(
         'node',
         ['--version'],
-        {ignoreReturnCode: true, silent: false}
+        {ignoreReturnCode: true, silent: true}
       );
-      core.setOutput('node-version', installedVersion);
+      core.setOutput('node-version', installedVersion.trim());
     } catch (err) {
       core.setOutput('node-version', '');
     }
