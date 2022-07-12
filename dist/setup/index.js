@@ -71277,7 +71277,7 @@ exports.supportedPackageManagers = {
     },
     pnpm: {
         lockFilePatterns: ['pnpm-lock.yaml'],
-        getCacheFolderCommand: 'pnpm store path'
+        getCacheFolderCommand: 'pnpm store path --silent'
     },
     yarn1: {
         lockFilePatterns: ['yarn.lock'],
@@ -71332,7 +71332,7 @@ exports.getCacheDirectoryPath = (packageManagerInfo, packageManager) => __awaite
         throw new Error(`Could not get cache folder path for ${packageManager}`);
     }
     core.debug(`${packageManager} path is ${stdOut}`);
-    return stdOut;
+    return stdOut.trim();
 });
 function isGhes() {
     const ghUrl = new URL(process.env['GITHUB_SERVER_URL'] || 'https://github.com');
