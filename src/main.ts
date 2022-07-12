@@ -44,7 +44,7 @@ export async function run() {
     const {stdout: installedVersion} = await exec.getExecOutput(
       'node',
       ['--version'],
-      {ignoreReturnCode: true}
+      {ignoreReturnCode: true, silent: false}
     );
     core.setOutput('node-version', installedVersion);
 
