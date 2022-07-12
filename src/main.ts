@@ -41,17 +41,16 @@ export async function run() {
     }
 
     // Output version of node is being used
-    let installedVersion = '';
-    const result = await exec.exec('node', ['--version'], {
-      ignoreReturnCode: true,
-      silent: false,
-      listeners: {
-        stdout: data => {
-          installedVersion = data.toString();
-        }
-      }
-    });
-    core.setOutput('node-version', installedVersion);
+    try {
+      const {stdout: installedVersion} = await exec.getExecOutput(
+        'node',
+        ['--version'],
+        {ignoreReturnCode: true, silent: false}
+      );
+      core.setOutput('node-version', installedVersion);
+    } catch (err) {
+      core.setOutput('node-version', '');
+    }
 
     const registryUrl: string = core.getInput('registry-url');
     const alwaysAuth: string = core.getInput('always-auth');
