@@ -2,7 +2,6 @@ import * as core from '@actions/core';
 import * as exec from '@actions/exec';
 import * as installer from './installer';
 import fs from 'fs';
-import * as child_process from 'child_process';
 import * as auth from './authutil';
 import * as path from 'path';
 import {restoreCache} from './cache-restore';
