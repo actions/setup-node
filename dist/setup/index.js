@@ -71846,7 +71846,16 @@ function run() {
                 yield installer.getNode(version, stable, checkLatest, auth, arch);
             }
             // Output version of node is being used
-            const { stdout: installedVersion } = yield exec.getExecOutput('node', ['--version'], { ignoreReturnCode: true, silent: false });
+            let installedVersion = '';
+            const result = yield exec.exec('node', ['--version'], {
+                ignoreReturnCode: true,
+                silent: false,
+                listeners: {
+                    stdout: data => {
+                        installedVersion = data.toString();
+                    }
+                }
+            });
             core.setOutput('node-version', installedVersion);
             const registryUrl = core.getInput('registry-url');
             const alwaysAuth = core.getInput('always-auth');
