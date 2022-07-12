@@ -109,7 +109,7 @@ describe('setup-node', () => {
 
     // @actions/exec
     getExecOutputSpy = jest.spyOn(exec, 'getExecOutput');
-    getExecOutputSpy.mockImplementation(() => 'v16.15.0');
+    getExecOutputSpy.mockImplementation(() => ({stdout: 'v12.16.1'}));
   });
 
   afterEach(() => {
@@ -205,24 +205,32 @@ describe('setup-node', () => {
     expect(cnSpy).toHaveBeenCalledWith(`::add-path::${expPath}${osm.EOL}`);
   });
 
-  it('finds incorrect version in cache and adds it to the path', async () => {
+  it('finds incorrect version in cache, and adds correct version the path', async () => {
+    os.platform = 'linux';
+    os.arch = 'x64';
+    inputs['token'] = 'faketoken';
+
     let versionSpec = '12.16.2';
     inputs['node-version'] = versionSpec;
 
-    inSpy.mockImplementation(name => inputs[name]);
-    getExecOutputSpy.mockImplementation(() => 'v12.0.0');
+    let toolPath = path.normalize('/cache/node/12.16.2/x64');
+    let expPath = path.join(toolPath, 'bin');
 
-    let toolPath = path.normalize('/cache/node/12.16.1/x64');
-    findSpy.mockImplementation(() => toolPath);
+    inSpy.mockImplementation(name => inputs[name]);
+    cacheSpy.mockImplementation(async () => toolPath);
+    getExecOutputSpy.mockReturnValueOnce({stdout: `v14.0.0`});
+    findSpy.mockImplementationOnce(() => toolPath);
+    findSpy.mockImplementationOnce(() => '');
+
     await main.run();
 
-    let expPath = path.join(toolPath, 'bin');
     expect(logSpy).toHaveBeenCalledWith(
-      `Found v12.0.0 in cache @ ${toolPath} but it does not satisfy the requested version (${versionSpec})`
+      `Found v14.0.0 in cache @ ${toolPath} but it does not satisfy the requested version (12.16.2)`
     );
     expect(logSpy).toHaveBeenCalledWith(
       `Attempting to download ${versionSpec}...`
     );
+    expect(logSpy).toHaveBeenCalledWith(`Adding to the cache ...`);
     expect(cnSpy).toHaveBeenCalledWith(`::add-path::${expPath}${osm.EOL}`);
   });
 
@@ -716,6 +724,7 @@ describe('setup-node', () => {
         inputs['node-version'] = `lts/${lts}`;
 
         const toolPath = path.normalize(`/cache/node/${expectedVersion}/x64`);
+        getExecOutputSpy.mockReturnValueOnce({stdout: `v${expectedVersion}`});
         findSpy.mockReturnValue(toolPath);
 
         // act
