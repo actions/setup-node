@@ -1,12 +1,12 @@
 import * as core from '@actions/core';
 import * as exec from '@actions/exec';
-import * as installer from './installer';
 import fs from 'fs';
-import * as auth from './authutil';
+import os from 'os';
 import * as path from 'path';
+import * as auth from './authutil';
 import {restoreCache} from './cache-restore';
 import {isGhes, isCacheFeatureAvailable} from './cache-utils';
-import os = require('os');
+import * as installer from './installer';
 
 export async function run() {
   try {
@@ -46,6 +46,11 @@ export async function run() {
     const alwaysAuth: string = core.getInput('always-auth');
     if (registryUrl) {
       auth.configAuthentication(registryUrl, alwaysAuth);
+    }
+
+    const enableCorepack = core.getInput('corepack');
+    if (enableCorepack === 'true') {
+      await exec.exec('corepack', ['enable']);
     }
 
     if (cache && isCacheFeatureAvailable()) {

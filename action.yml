@@ -13,7 +13,10 @@ inputs:
     description: 'Target architecture for Node to use. Examples: x86, x64. Will use system architecture by default.'
   check-latest:
     description: 'Set this option if you want the action to check for the latest available version that satisfies the version spec.'
-    default: false
+    default: 'false'
+  corepack:
+    description: 'Set this option if you want to install the core-pack.'
+    default: 'false'
   registry-url:
     description: 'Optional registry to set up for auth. Will set the registry in a project level .npmrc and .yarnrc file, and set up auth to read in from env.NODE_AUTH_TOKEN.'
   scope:
@@ -28,7 +31,7 @@ inputs:
 # TODO: add input to control forcing to pull from cloud or dist. 
 #       escape valve for someone having issues or needing the absolute latest which isn't cached yet
 outputs:
-  cache-hit: 
+  cache-hit:
     description: 'A boolean value to indicate if a cache was hit.'
   node-version:
     description: 'The installed node version.'
