@@ -121,6 +121,7 @@ jobs:
 6. [Publishing to npmjs and GPR with npm](docs/advanced-usage.md#publish-to-npmjs-and-gpr-with-npm)
 7. [Publishing to npmjs and GPR with yarn](docs/advanced-usage.md#publish-to-npmjs-and-gpr-with-yarn)
 8. [Using private packages](docs/advanced-usage.md#use-private-packages)
+9. [Use `corepack` to automatically install package managers](docs/advanced-usage.md#corepack)
 
 ## License
 
