@@ -396,6 +396,15 @@ describe('setup-node', () => {
     }
   }, 100000);
 
+  it('enables corepack if specified', async () => {
+    inputs['corepack'] = 'true';
+
+    await main.run();
+
+    // It seems to call it with the absolute path to corepack, so we easily use `toHaveBeenCalledWith`
+    expect(cnSpy.mock.calls[2][0]).toContain('corepack enable');
+  });
+
   describe('check-latest flag', () => {
     it('use local version and dont check manifest if check-latest is not specified', async () => {
       os.platform = 'linux';
