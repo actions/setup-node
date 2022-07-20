@@ -71277,7 +71277,7 @@ exports.supportedPackageManagers = {
     },
     pnpm: {
         lockFilePatterns: ['pnpm-lock.yaml'],
-        getCacheFolderCommand: 'pnpm store path'
+        getCacheFolderCommand: 'pnpm store path --silent'
     },
     yarn1: {
         lockFilePatterns: ['yarn.lock'],
@@ -71332,7 +71332,7 @@ exports.getCacheDirectoryPath = (packageManagerInfo, packageManager) => __awaite
         throw new Error(`Could not get cache folder path for ${packageManager}`);
     }
     core.debug(`${packageManager} path is ${stdOut}`);
-    return stdOut;
+    return stdOut.trim();
 });
 function isGhes() {
     const ghUrl = new URL(process.env['GITHUB_SERVER_URL'] || 'https://github.com');
@@ -71852,8 +71852,13 @@ function run() {
                 yield installer.getNode(version, stable, checkLatest, auth, arch);
             }
             // Output version of node is being used
-            const { stdout: installedVersion } = yield exec.getExecOutput('node', ['--version'], { ignoreReturnCode: true });
-            core.setOutput('node-version', installedVersion);
+            try {
+                const { stdout: installedVersion } = yield exec.getExecOutput('node', ['--version'], { ignoreReturnCode: true, silent: true });
+                core.setOutput('node-version', installedVersion.trim());
+            }
+            catch (err) {
+                core.setOutput('node-version', '');
+            }
             const registryUrl = core.getInput('registry-url');
             const alwaysAuth = core.getInput('always-auth');
             if (registryUrl) {

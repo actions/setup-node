@@ -18,7 +18,7 @@ export const supportedPackageManagers: SupportedPackageManagers = {
   },
   pnpm: {
     lockFilePatterns: ['pnpm-lock.yaml'],
-    getCacheFolderCommand: 'pnpm store path'
+    getCacheFolderCommand: 'pnpm store path --silent'
   },
   yarn1: {
     lockFilePatterns: ['yarn.lock'],
@@ -94,7 +94,7 @@ export const getCacheDirectoryPath = async (
 
   core.debug(`${packageManager} path is ${stdOut}`);
 
-  return stdOut;
+  return stdOut.trim();
 };
 
 export function isGhes(): boolean {
