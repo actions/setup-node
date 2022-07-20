@@ -225,7 +225,7 @@ describe('setup-node', () => {
     await main.run();
 
     expect(logSpy).toHaveBeenCalledWith(
-      `Found v14.0.0 in cache @ ${toolPath} but it does not satisfy the requested version (12.16.2)`
+      `Found v14.0.0 in cache @ ${expPath} but it does not satisfy the requested version (12.16.2)`
     );
     expect(logSpy).toHaveBeenCalledWith(
       `Attempting to download ${versionSpec}...`

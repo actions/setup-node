@@ -82,18 +82,25 @@ export async function getNode(
   if (toolPath) {
     core.info(`Found in cache @ ${toolPath}`);
 
+    if (osPlat != 'win32') {
+      toolPath = path.join(toolPath, 'bin');
+    }
+
+    core.addPath(toolPath);
+
     const {stdout: installedVersion} = await exec.getExecOutput(
       'node',
       ['--version'],
       {ignoreReturnCode: true}
     );
 
-    if (!semver.satisfies(installedVersion, versionSpec)) {
-      core.info(
-        `Found ${installedVersion} in cache @ ${toolPath} but it does not satisfy the requested version (${versionSpec})`
-      );
-      toolPath = '';
+    if (semver.satisfies(installedVersion, versionSpec)) {
+      return;
     }
+    core.info(
+      `Found ${installedVersion} in cache @ ${toolPath} but it does not satisfy the requested version (${versionSpec})`
+    );
+    toolPath = '';
   }
 
   if (!toolPath) {
