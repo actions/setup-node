@@ -71448,11 +71448,16 @@ function getNode(versionSpec, stable, checkLatest, auth, arch = os.arch()) {
         // If not found in cache, download
         if (toolPath) {
             core.info(`Found in cache @ ${toolPath}`);
-            const { stdout: installedVersion } = yield exec.getExecOutput('node', ['--version'], { ignoreReturnCode: true });
-            if (!semver.satisfies(installedVersion, versionSpec)) {
-                core.info(`Found ${installedVersion} in cache @ ${toolPath} but it does not satisfy the requested version (${versionSpec})`);
-                toolPath = '';
+            if (osPlat != 'win32') {
+                toolPath = path.join(toolPath, 'bin');
             }
+            core.addPath(toolPath);
+            const { stdout: installedVersion } = yield exec.getExecOutput('node', ['--version'], { ignoreReturnCode: true });
+            if (semver.satisfies(installedVersion, versionSpec)) {
+                return;
+            }
+            core.info(`Found ${installedVersion} in cache @ ${toolPath} but it does not satisfy the requested version (${versionSpec})`);
+            toolPath = '';
         }
         if (!toolPath) {
             core.info(`Attempting to download ${versionSpec}...`);
