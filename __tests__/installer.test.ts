@@ -397,6 +397,10 @@ describe('setup-node', () => {
   }, 100000);
 
   it('enables corepack if specified', async () => {
+    os.platform = 'linux';
+    os.arch = 'x64';
+
+    inputs['node-version'] = '12';
     inputs['corepack'] = 'true';
 
     await main.run();
