@@ -122,21 +122,14 @@ steps:
 
 **Caching pnpm (v6.10+) dependencies:**
 ```yaml
-# This workflow uses actions that are not certified by GitHub.
-# They are provided by a third-party and are governed by
-# separate terms of service, privacy policy, and support
-# documentation.
-
-# NOTE: pnpm caching support requires pnpm version >= 6.10.0
+# NOTE: pnpm caching support requires pnpm version >= 14.17
 
 steps:
 - uses: actions/checkout@v3
-- uses: pnpm/action-setup@v2
-  with:
-    version: 6.32.9
 - uses: actions/setup-node@v3
   with:
     node-version: '14'
+    corepack: true
     cache: 'pnpm'
 - run: pnpm install --frozen-lockfile
 - run: pnpm test
