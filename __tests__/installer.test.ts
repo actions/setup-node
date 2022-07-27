@@ -567,7 +567,7 @@ describe('setup-node', () => {
       expect(parseNodeVersionSpy).toHaveBeenCalledTimes(0);
     });
 
-    it('reads node-version-file if provided (.nvmrc)', async () => {
+    it('reads node-version-file if provided', async () => {
       // Arrange
       const versionSpec = 'v14';
       const versionFile = '.nvmrc';
