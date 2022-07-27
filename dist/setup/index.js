@@ -71774,11 +71774,10 @@ function parseNodeVersionFile(contents) {
     nodeVersion = (_a = found === null || found === void 0 ? void 0 : found.groups) === null || _a === void 0 ? void 0 : _a.version;
     if (!nodeVersion) {
         try {
-            // Try parsing the file as an NPM `package.json`
-            // file.
-            nodeVersion = (_b = JSON.parse(contents).engines) === null || _b === void 0 ? void 0 : _b.node;
+            // Try parsing the file as an NPM `package.json` file.
+            nodeVersion = (_b = JSON.parse(contents).volta) === null || _b === void 0 ? void 0 : _b.node;
             if (!nodeVersion)
-                (_c = JSON.parse(contents).volta) === null || _c === void 0 ? void 0 : _c.node;
+                nodeVersion = (_c = JSON.parse(contents).engines) === null || _c === void 0 ? void 0 : _c.node;
             if (!nodeVersion)
                 throw new Error();
         }
