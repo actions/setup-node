@@ -505,7 +505,7 @@ export function parseNodeVersionFile(contents: string): string {
       // Try parsing the file as an NPM `package.json`
       // file.
       nodeVersion = JSON.parse(contents).engines?.node;
-
+      if (!nodeVersion) JSON.parse(contents).volta?.node;
       if (!nodeVersion) throw new Error();
     } catch (err) {
       // In the case of an unknown format,

@@ -592,34 +592,6 @@ describe('setup-node', () => {
       );
     });
 
-    it('reads node-version-file if provided (package.json, volta)', async () => {
-      // Arrange
-      const versionFile = 'package.json';
-      const versionSpec = fs.readFileSync(
-        path.join(__dirname, 'data', versionFile),
-        'utf8'
-      );
-      const expectedVersionSpec = '16.15.1';
-      process.env['GITHUB_WORKSPACE'] = path.join(__dirname, 'data');
-      inputs['node-version-file'] = versionFile;
-
-      parseNodeVersionSpy.mockImplementation(() => expectedVersionSpec);
-      existsSpy.mockImplementationOnce(
-        input => input === path.join(__dirname, 'data', versionFile)
-      );
-
-      // Act
-      await main.run();
-
-      // Assert
-      expect(existsSpy).toHaveBeenCalledTimes(1);
-      expect(existsSpy).toHaveReturnedWith(true);
-      expect(parseNodeVersionSpy).toHaveBeenCalledWith(versionSpec);
-      expect(logSpy).toHaveBeenCalledWith(
-        `Resolved ${versionFile} as ${expectedVersionSpec}`
-      );
-    });
-
     it('reads package.json as node-version-file if provided', async () => {
       // Arrange
       const versionSpec = fs.readFileSync(
