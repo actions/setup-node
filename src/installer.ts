@@ -495,17 +495,26 @@ function translateArchToDistUrl(arch: string): string {
 }
 
 export function parseNodeVersionFile(contents: string): string {
-  let nodeVersion = contents.trim();
+  let nodeVersion: string | undefined;
 
-  if (contents.includes('volta')) {
-    nodeVersion = JSON.parse(contents).volta.node;
+  const found = contents.match(/^(?:nodejs\s+)?v?(?<version>[^\s]+)$/m);
+  nodeVersion = found?.groups?.version;
+
+  if (!nodeVersion) {
+    try {
+      // Try parsing the file as an NPM `package.json`
+      // file.
+      nodeVersion = JSON.parse(contents).engines?.node;
+
+      if (!nodeVersion) throw new Error();
+    } catch (err) {
+      // In the case of an unknown format,
+      // return as is and evaluate the version separately.
+      nodeVersion = contents.trim();
+    }
   }
 
-  if (/^v\d/.test(nodeVersion)) {
-    nodeVersion = nodeVersion.substring(1);
-  }
-
-  return nodeVersion;
+  return nodeVersion as string;
 }
 
 function isLatestSyntax(versionSpec): boolean {

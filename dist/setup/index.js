@@ -71272,12 +71272,12 @@ const exec = __importStar(__nccwpck_require__(1514));
 const cache = __importStar(__nccwpck_require__(7799));
 exports.supportedPackageManagers = {
     npm: {
-        lockFilePatterns: ['package-lock.json', 'yarn.lock'],
+        lockFilePatterns: ['package-lock.json', 'npm-shrinkwrap.json', 'yarn.lock'],
         getCacheFolderCommand: 'npm config get cache'
     },
     pnpm: {
         lockFilePatterns: ['pnpm-lock.yaml'],
-        getCacheFolderCommand: 'pnpm store path'
+        getCacheFolderCommand: 'pnpm store path --silent'
     },
     yarn1: {
         lockFilePatterns: ['yarn.lock'],
@@ -71332,7 +71332,7 @@ exports.getCacheDirectoryPath = (packageManagerInfo, packageManager) => __awaite
         throw new Error(`Could not get cache folder path for ${packageManager}`);
     }
     core.debug(`${packageManager} path is ${stdOut}`);
-    return stdOut;
+    return stdOut.trim();
 });
 function isGhes() {
     const ghUrl = new URL(process.env['GITHUB_SERVER_URL'] || 'https://github.com');
@@ -71768,12 +71768,23 @@ function translateArchToDistUrl(arch) {
     }
 }
 function parseNodeVersionFile(contents) {
-    let nodeVersion = contents.trim();
-    if (contents.includes('volta')) {
-        nodeVersion = JSON.parse(contents).volta.node;
-    }
-    if (/^v\d/.test(nodeVersion)) {
-        nodeVersion = nodeVersion.substring(1);
+    var _a, _b;
+    let nodeVersion;
+    const found = contents.match(/^(?:nodejs\s+)?v?(?<version>[^\s]+)$/m);
+    nodeVersion = (_a = found === null || found === void 0 ? void 0 : found.groups) === null || _a === void 0 ? void 0 : _a.version;
+    if (!nodeVersion) {
+        try {
+            // Try parsing the file as an NPM `package.json`
+            // file.
+            nodeVersion = (_b = JSON.parse(contents).engines) === null || _b === void 0 ? void 0 : _b.node;
+            if (!nodeVersion)
+                throw new Error();
+        }
+        catch (err) {
+            // In the case of an unknown format,
+            // return as is and evaluate the version separately.
+            nodeVersion = contents.trim();
+        }
     }
     return nodeVersion;
 }
@@ -71811,6 +71822,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 const core = __importStar(__nccwpck_require__(2186));
+const exec = __importStar(__nccwpck_require__(1514));
 const installer = __importStar(__nccwpck_require__(2574));
 const fs_1 = __importDefault(__nccwpck_require__(7147));
 const auth = __importStar(__nccwpck_require__(7573));
@@ -71842,6 +71854,14 @@ function run() {
                 let stable = (core.getInput('stable') || 'true').toUpperCase() === 'TRUE';
                 const checkLatest = (core.getInput('check-latest') || 'false').toUpperCase() === 'TRUE';
                 yield installer.getNode(version, stable, checkLatest, auth, arch);
+            }
+            // Output version of node is being used
+            try {
+                const { stdout: installedVersion } = yield exec.getExecOutput('node', ['--version'], { ignoreReturnCode: true, silent: true });
+                core.setOutput('node-version', installedVersion.trim());
+            }
+            catch (err) {
+                core.setOutput('node-version', '');
             }
             const registryUrl = core.getInput('registry-url');
             const alwaysAuth = core.getInput('always-auth');

@@ -56,8 +56,7 @@ steps:
 
 ## Node version file
 
-The `node-version-file` input accepts a path to a file containing the version of Node.js to be used by a project, for example `.nvmrc` or `.node-version`. If both the `node-version` and the `node-version-file` inputs are provided then the `node-version` input is used. In the special case of using `package.json`, the action will look for keys like `volta.node` key to receive the version.
-
+The `node-version-file` input accepts a path to a file containing the version of Node.js to be used by a project, for example `.nvmrc`, `.node-version` or `.tool-versions`. If both the `node-version` and the `node-version-file` inputs are provided then the `node-version` input is used.
 See [supported version syntax](https://github.com/actions/setup-node#supported-version-syntax)
 
 > The action will search for the node version file relative to the repository root.
@@ -249,3 +248,5 @@ steps:
 # `npm rebuild` will run all those post-install scripts for us.
 - run: npm rebuild && npm run prepare --if-present
 ```
+
+NOTE: As per https://github.com/actions/setup-node/issues/49 you cannot use `secrets.GITHUB_TOKEN` to access private GitHub Packages within the same organisation but in a different repository.

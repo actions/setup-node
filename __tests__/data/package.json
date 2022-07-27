@@ -1,11 +1,5 @@
 {
-  "name": "test",
-  "version": "1.0.0",
-  "private": true,
-  "scripts": {
-    "test": "echo test"
-  },
-  "volta": {
-    "node": "16.15.1"
+  "engines": {
+    "node": ">=14.0.0"
   }
 }

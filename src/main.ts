@@ -1,4 +1,5 @@
 import * as core from '@actions/core';
+import * as exec from '@actions/exec';
 import * as installer from './installer';
 import fs from 'fs';
 import * as auth from './authutil';
@@ -37,6 +38,18 @@ export async function run() {
       const checkLatest =
         (core.getInput('check-latest') || 'false').toUpperCase() === 'TRUE';
       await installer.getNode(version, stable, checkLatest, auth, arch);
+    }
+
+    // Output version of node is being used
+    try {
+      const {stdout: installedVersion} = await exec.getExecOutput(
+        'node',
+        ['--version'],
+        {ignoreReturnCode: true, silent: true}
+      );
+      core.setOutput('node-version', installedVersion.trim());
+    } catch (err) {
+      core.setOutput('node-version', '');
     }
 
     const registryUrl: string = core.getInput('registry-url');

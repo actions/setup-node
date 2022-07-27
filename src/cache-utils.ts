@@ -13,12 +13,12 @@ export interface PackageManagerInfo {
 
 export const supportedPackageManagers: SupportedPackageManagers = {
   npm: {
-    lockFilePatterns: ['package-lock.json', 'yarn.lock'],
+    lockFilePatterns: ['package-lock.json', 'npm-shrinkwrap.json', 'yarn.lock'],
     getCacheFolderCommand: 'npm config get cache'
   },
   pnpm: {
     lockFilePatterns: ['pnpm-lock.yaml'],
-    getCacheFolderCommand: 'pnpm store path'
+    getCacheFolderCommand: 'pnpm store path --silent'
   },
   yarn1: {
     lockFilePatterns: ['yarn.lock'],
@@ -94,7 +94,7 @@ export const getCacheDirectoryPath = async (
 
   core.debug(`${packageManager} path is ${stdOut}`);
 
-  return stdOut;
+  return stdOut.trim();
 };
 
 export function isGhes(): boolean {

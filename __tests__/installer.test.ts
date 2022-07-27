@@ -1,12 +1,14 @@
 import * as core from '@actions/core';
 import * as io from '@actions/io';
 import * as tc from '@actions/tool-cache';
+import * as exec from '@actions/exec';
 import * as im from '../src/installer';
 import * as cache from '@actions/cache';
 import fs from 'fs';
 import cp from 'child_process';
 import osm = require('os');
 import path from 'path';
+import each from 'jest-each';
 import * as main from '../src/main';
 import * as auth from '../src/authutil';
 
@@ -38,6 +40,7 @@ describe('setup-node', () => {
   let authSpy: jest.SpyInstance;
   let parseNodeVersionSpy: jest.SpyInstance;
   let isCacheActionAvailable: jest.SpyInstance;
+  let getExecOutputSpy: jest.SpyInstance;
 
   beforeEach(() => {
     // @actions/core
@@ -103,6 +106,10 @@ describe('setup-node', () => {
       // uncomment to debug
       // process.stderr.write('log:' + line + '\n');
     });
+
+    // @actions/exec
+    getExecOutputSpy = jest.spyOn(exec, 'getExecOutput');
+    getExecOutputSpy.mockImplementation(() => 'v16.15.0');
   });
 
   afterEach(() => {
@@ -613,6 +620,33 @@ describe('setup-node', () => {
       );
     });
 
+    it('reads package.json as node-version-file if provided', async () => {
+      // Arrange
+      const versionSpec = fs.readFileSync(
+        path.join(__dirname, 'data/package.json'),
+        'utf-8'
+      );
+      const versionFile = 'package.json';
+      const expectedVersionSpec = '14';
+      process.env['GITHUB_WORKSPACE'] = path.join(__dirname, 'data');
+      inputs['node-version-file'] = versionFile;
+
+      parseNodeVersionSpy.mockImplementation(() => expectedVersionSpec);
+      existsSpy.mockImplementationOnce(
+        input => input === path.join(__dirname, 'data', versionFile)
+      );
+      // Act
+      await main.run();
+
+      // Assert
+      expect(existsSpy).toHaveBeenCalledTimes(1);
+      expect(existsSpy).toHaveReturnedWith(true);
+      expect(parseNodeVersionSpy).toHaveBeenCalledWith(versionSpec);
+      expect(logSpy).toHaveBeenCalledWith(
+        `Resolved ${versionFile} as ${expectedVersionSpec}`
+      );
+    });
+
     it('both node-version-file and node-version are provided', async () => {
       inputs['node-version'] = '12';
       const versionSpec = 'v14';
@@ -925,5 +959,25 @@ describe('setup-node', () => {
         expect(logSpy).toHaveBeenCalledWith('getting latest node version...');
       }
     );
+  });
+});
+
+describe('helper methods', () => {
+  describe('parseNodeVersionFile', () => {
+    each`
+      contents                                     | expected
+      ${'12'}                                      | ${'12'}
+      ${'12.3'}                                    | ${'12.3'}
+      ${'12.3.4'}                                  | ${'12.3.4'}
+      ${'v12.3.4'}                                 | ${'12.3.4'}
+      ${'lts/erbium'}                              | ${'lts/erbium'}
+      ${'lts/*'}                                   | ${'lts/*'}
+      ${'nodejs 12.3.4'}                           | ${'12.3.4'}
+      ${'ruby 2.3.4\nnodejs 12.3.4\npython 3.4.5'} | ${'12.3.4'}
+      ${''}                                        | ${''}
+      ${'unknown format'}                          | ${'unknown format'}
+    `.it('parses "$contents"', ({contents, expected}) => {
+      expect(im.parseNodeVersionFile(contents)).toBe(expected);
+    });
   });
 });
