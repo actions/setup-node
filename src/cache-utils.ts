@@ -47,17 +47,35 @@ export const getCommandOutput = async (toolCommand: string) => {
   return stdout.trim();
 };
 
+const resolvePackageManagerVersionInput = (
+  packageManager: string
+): string | undefined => {
+  let version = core.getInput(`${packageManager}-version`);
+
+  if (version !== '') {
+    core.info(`Using ${packageManager} with version ${version}.`);
+
+    return version;
+  }
+};
+
 const getPackageManagerVersion = async (
   packageManager: string,
   command: string
 ) => {
-  const stdOut = await getCommandOutput(`${packageManager} ${command}`);
+  let packageManagerVersion = resolvePackageManagerVersionInput(packageManager);
 
-  if (!stdOut) {
-    throw new Error(`Could not retrieve version of ${packageManager}`);
+  if (packageManagerVersion) {
+    return packageManagerVersion;
+  } else {
+    const stdOut = await getCommandOutput(`${packageManager} ${command}`);
+
+    if (!stdOut) {
+      throw new Error(`Could not retrieve version of ${packageManager}`);
+    }
+
+    return stdOut;
   }
-
-  return stdOut;
 };
 
 export const getPackageManagerInfo = async (packageManager: string) => {
