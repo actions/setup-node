@@ -6,7 +6,6 @@ import * as auth from './authutil';
 import * as path from 'path';
 import {restoreCache} from './cache-restore';
 import {isGhes, isCacheFeatureAvailable} from './cache-utils';
-import { URL } from 'url';
 import os = require('os');
 
 export async function run() {
@@ -101,9 +100,7 @@ function resolveVersionInput(): string {
 }
 
 async function printEnvDetailsAndSetOutput() {
-  const groupName = "Environment details";
-
-  core.startGroup(groupName);
+  core.startGroup("Environment details");
   // Output version of node is being used
   try {
     const {stdout: installedNodeVersion} = await exec.getExecOutput(
@@ -124,5 +121,5 @@ async function printEnvDetailsAndSetOutput() {
     ignoreReturnCode: true
   });
 
-  core.endGroup(groupName);
+  core.endGroup();
 }

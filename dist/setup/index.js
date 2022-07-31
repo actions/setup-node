@@ -71855,14 +71855,7 @@ function run() {
                 const checkLatest = (core.getInput('check-latest') || 'false').toUpperCase() === 'TRUE';
                 yield installer.getNode(version, stable, checkLatest, auth, arch);
             }
-            // Output version of node is being used
-            try {
-                const { stdout: installedVersion } = yield exec.getExecOutput('node', ['--version'], { ignoreReturnCode: true, silent: true });
-                core.setOutput('node-version', installedVersion.trim());
-            }
-            catch (err) {
-                core.setOutput('node-version', '');
-            }
+            yield printEnvDetailsAndSetOutput();
             const registryUrl = core.getInput('registry-url');
             const alwaysAuth = core.getInput('always-auth');
             if (registryUrl) {
@@ -71901,6 +71894,26 @@ function resolveVersionInput() {
         core.info(`Resolved ${versionFileInput} as ${version}`);
     }
     return version;
+}
+function printEnvDetailsAndSetOutput() {
+    return __awaiter(this, void 0, void 0, function* () {
+        core.startGroup("Environment details");
+        // Output version of node is being used
+        try {
+            const { stdout: installedNodeVersion } = yield exec.getExecOutput('node', ['--version'], { ignoreReturnCode: true });
+            core.setOutput('node-version', installedNodeVersion.trim());
+        }
+        catch (err) {
+            core.setOutput('node-version', '');
+        }
+        yield exec.getExecOutput('npm', ['--version'], {
+            ignoreReturnCode: true
+        });
+        yield exec.getExecOutput('yarn', ['--version'], {
+            ignoreReturnCode: true
+        });
+        core.endGroup();
+    });
 }
 
 
