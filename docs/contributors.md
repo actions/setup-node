@@ -1,4 +1,3 @@
-
 # Contributors
 
 Thank you for contributing!
