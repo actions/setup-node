@@ -100,7 +100,7 @@ function resolveVersionInput(): string {
 }
 
 async function printEnvDetailsAndSetOutput() {
-  core.startGroup("Environment details");
+  core.startGroup('Environment details');
   // Output version of node is being used
   try {
     const {stdout: installedNodeVersion} = await exec.getExecOutput(
@@ -112,14 +112,21 @@ async function printEnvDetailsAndSetOutput() {
   } catch (err) {
     core.setOutput('node-version', '');
   }
+  try {
+    await exec.getExecOutput('npm', ['--version'], {
+      ignoreReturnCode: true
+    });
+  } catch {
+    core.warning('please check if npm is installed');
+  }
 
-  await exec.getExecOutput('npm', ['--version'], {
-    ignoreReturnCode: true
-  });
-
-  await exec.getExecOutput('yarn', ['--version'], {
-    ignoreReturnCode: true
-  });
+  try {
+    await exec.getExecOutput('yarn', ['--version'], {
+      ignoreReturnCode: true
+    });
+  } catch {
+    core.warning('please check if yarn is installed');
+  }
 
   core.endGroup();
 }

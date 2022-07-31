@@ -71897,7 +71897,7 @@ function resolveVersionInput() {
 }
 function printEnvDetailsAndSetOutput() {
     return __awaiter(this, void 0, void 0, function* () {
-        core.startGroup("Environment details");
+        core.startGroup('Environment details');
         // Output version of node is being used
         try {
             const { stdout: installedNodeVersion } = yield exec.getExecOutput('node', ['--version'], { ignoreReturnCode: true });
@@ -71906,12 +71906,22 @@ function printEnvDetailsAndSetOutput() {
         catch (err) {
             core.setOutput('node-version', '');
         }
-        yield exec.getExecOutput('npm', ['--version'], {
-            ignoreReturnCode: true
-        });
-        yield exec.getExecOutput('yarn', ['--version'], {
-            ignoreReturnCode: true
-        });
+        try {
+            yield exec.getExecOutput('npm', ['--version'], {
+                ignoreReturnCode: true
+            });
+        }
+        catch (_a) {
+            core.warning('please check if npm is installed');
+        }
+        try {
+            yield exec.getExecOutput('yarn', ['--version'], {
+                ignoreReturnCode: true
+            });
+        }
+        catch (_b) {
+            core.warning('please check if yarn is installed');
+        }
         core.endGroup();
     });
 }
