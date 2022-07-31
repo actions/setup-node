@@ -6,6 +6,7 @@ import * as auth from './authutil';
 import * as path from 'path';
 import {restoreCache} from './cache-restore';
 import {isGhes, isCacheFeatureAvailable} from './cache-utils';
+import { URL } from 'url';
 import os = require('os');
 
 export async function run() {
@@ -40,17 +41,7 @@ export async function run() {
       await installer.getNode(version, stable, checkLatest, auth, arch);
     }
 
-    // Output version of node is being used
-    try {
-      const {stdout: installedVersion} = await exec.getExecOutput(
-        'node',
-        ['--version'],
-        {ignoreReturnCode: true, silent: true}
-      );
-      core.setOutput('node-version', installedVersion.trim());
-    } catch (err) {
-      core.setOutput('node-version', '');
-    }
+    await printEnvDetailsAndSetOutput();
 
     const registryUrl: string = core.getInput('registry-url');
     const alwaysAuth: string = core.getInput('always-auth');
@@ -107,4 +98,31 @@ function resolveVersionInput(): string {
   }
 
   return version;
+}
+
+async function printEnvDetailsAndSetOutput() {
+  const groupName = "Environment details";
+
+  core.startGroup(groupName);
+  // Output version of node is being used
+  try {
+    const {stdout: installedNodeVersion} = await exec.getExecOutput(
+      'node',
+      ['--version'],
+      {ignoreReturnCode: true}
+    );
+    core.setOutput('node-version', installedNodeVersion.trim());
+  } catch (err) {
+    core.setOutput('node-version', '');
+  }
+
+  await exec.getExecOutput('npm', ['--version'], {
+    ignoreReturnCode: true
+  });
+
+  await exec.getExecOutput('yarn', ['--version'], {
+    ignoreReturnCode: true
+  });
+
+  core.endGroup(groupName);
 }
