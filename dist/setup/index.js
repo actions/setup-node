@@ -71898,35 +71898,30 @@ function resolveVersionInput() {
 function printEnvDetailsAndSetOutput() {
     return __awaiter(this, void 0, void 0, function* () {
         core.startGroup('Environment details');
-        // Output version of node is being used
+        const promises = ['node', 'npm', 'yarn'].map((tool) => __awaiter(this, void 0, void 0, function* () {
+            const output = yield getToolVersion(tool, ['--version']);
+            core.setOutput(`${tool}-version`, output);
+        }));
+        yield Promise.all(promises);
+        core.endGroup();
+    });
+}
+function getToolVersion(tool, options) {
+    return __awaiter(this, void 0, void 0, function* () {
         try {
-            const { stdout: installedNodeVersion } = yield exec.getExecOutput('node', ['--version'], { ignoreReturnCode: true, silent: true });
-            core.setOutput('node-version', installedNodeVersion.trim());
+            const { stdout, stderr, exitCode } = yield exec.getExecOutput(tool, options, {
+                ignoreReturnCode: true,
+                silent: true
+            });
+            if (exitCode > 0) {
+                core.warning(`[warning]${stderr}`);
+                return '';
+            }
+            return stdout;
         }
         catch (err) {
-            core.setOutput('node-version', '');
+            return '';
         }
-        try {
-            const { stdout: installedNpmVersion } = yield exec.getExecOutput('npm', ['--version'], {
-                ignoreReturnCode: true,
-                silent: true
-            });
-            core.setOutput('npm-version', installedNpmVersion.trim());
-        }
-        catch (_a) {
-            core.setOutput('npm-version', '');
-        }
-        try {
-            const { stdout: installedYarnVersion } = yield exec.getExecOutput('yarn', ['--version'], {
-                ignoreReturnCode: true,
-                silent: true
-            });
-            core.setOutput('yarn-version', installedYarnVersion.trim());
-        }
-        catch (_b) {
-            core.setOutput('yarn-version', '');
-        }
-        core.endGroup();
     });
 }
 

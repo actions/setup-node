@@ -101,44 +101,32 @@ function resolveVersionInput(): string {
 
 async function printEnvDetailsAndSetOutput() {
   core.startGroup('Environment details');
-  // Output version of node is being used
-  try {
-    const {stdout: installedNodeVersion} = await exec.getExecOutput(
-      'node',
-      ['--version'],
-      {ignoreReturnCode: true, silent: true}
-    );
-    core.setOutput('node-version', installedNodeVersion.trim());
-  } catch (err) {
-    core.setOutput('node-version', '');
-  }
-  try {
-    const {stdout: installedNpmVersion} = await exec.getExecOutput(
-      'npm',
-      ['--version'],
-      {
-        ignoreReturnCode: true,
-        silent: true
-      }
-    );
-    core.setOutput('npm-version', installedNpmVersion.trim());
-  } catch {
-    core.setOutput('npm-version', '');
-  }
 
-  try {
-    const {stdout: installedYarnVersion} = await exec.getExecOutput(
-      'yarn',
-      ['--version'],
-      {
-        ignoreReturnCode: true,
-        silent: true
-      }
-    );
-    core.setOutput('yarn-version', installedYarnVersion.trim());
-  } catch {
-    core.setOutput('yarn-version', '');
-  }
+  const promises = ['node', 'npm', 'yarn'].map(async tool => {
+    const output = await getToolVersion(tool, ['--version']);
+
+    core.setOutput(`${tool}-version`, output);
+  });
+
+  await Promise.all(promises);
 
   core.endGroup();
+}
+
+async function getToolVersion(tool: string, options: string[]) {
+  try {
+    const {stdout, stderr, exitCode} = await exec.getExecOutput(tool, options, {
+      ignoreReturnCode: true,
+      silent: true
+    });
+
+    if (exitCode > 0) {
+      core.warning(`[warning]${stderr}`);
+      return '';
+    }
+
+    return stdout;
+  } catch (err) {
+    return '';
+  }
 }
