@@ -41,7 +41,6 @@ describe('setup-node', () => {
   let parseNodeVersionSpy: jest.SpyInstance;
   let isCacheActionAvailable: jest.SpyInstance;
   let getExecOutputSpy: jest.SpyInstance;
-  let execExecSpy: jest.SpyInstance;
 
   beforeEach(() => {
     // @actions/core
@@ -58,7 +57,6 @@ describe('setup-node', () => {
     archSpy = jest.spyOn(osm, 'arch');
     archSpy.mockImplementation(() => os['arch']);
     execSpy = jest.spyOn(cp, 'execSync');
-    execExecSpy = jest.spyOn(exec, 'exec');
 
     // @actions/tool-cache
     findSpy = jest.spyOn(tc, 'find');
@@ -251,18 +249,21 @@ describe('setup-node', () => {
 
     let expPath = path.join(toolPath, 'bin');
 
-    expect(execExecSpy).toHaveBeenCalledWith('node', ['--version']);
-    expect(execExecSpy).toHaveBeenCalledWith(
+    expect(getExecOutputSpy).toHaveBeenCalledWith(
+      'node',
+      ['--version'],
+      expect.anything()
+    );
+    expect(getExecOutputSpy).toHaveBeenCalledWith(
       'npm',
       ['--version'],
       expect.anything()
     );
-    expect(execExecSpy).toHaveBeenCalledWith(
+    expect(getExecOutputSpy).toHaveBeenCalledWith(
       'yarn',
       ['--version'],
       expect.anything()
     );
-
     expect(dlSpy).toHaveBeenCalled();
     expect(exSpy).toHaveBeenCalled();
     expect(logSpy).toHaveBeenCalledWith(

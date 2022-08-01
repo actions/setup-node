@@ -99,7 +99,7 @@ function resolveVersionInput(): string {
   return version;
 }
 
-async function printEnvDetailsAndSetOutput() {
+export async function printEnvDetailsAndSetOutput() {
   core.startGroup('Environment details');
 
   const promises = ['node', 'npm', 'yarn'].map(async tool => {

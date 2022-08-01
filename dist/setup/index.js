@@ -71906,6 +71906,7 @@ function printEnvDetailsAndSetOutput() {
         core.endGroup();
     });
 }
+exports.printEnvDetailsAndSetOutput = printEnvDetailsAndSetOutput;
 function getToolVersion(tool, options) {
     return __awaiter(this, void 0, void 0, function* () {
         try {
