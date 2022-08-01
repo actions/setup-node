@@ -403,10 +403,12 @@ describe('setup-node', () => {
     inputs['node-version'] = '12';
     inputs['corepack'] = 'true';
 
+    const toolPath = path.normalize('/cache/node/12.16.1/x64');
+    findSpy.mockReturnValue(toolPath);
     await main.run();
 
     // It seems to call it with the absolute path to corepack, so we easily use `toHaveBeenCalledWith`
-    expect(cnSpy.mock.calls[2][0]).toContain('corepack enable');
+    expect(cnSpy.mock.calls[3][0]).toContain('corepack enable');
   });
 
   describe('check-latest flag', () => {
