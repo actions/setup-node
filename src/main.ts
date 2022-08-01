@@ -106,6 +106,7 @@ export async function printEnvDetailsAndSetOutput() {
     const output = await getToolVersion(tool, ['--version']);
 
     core.setOutput(`${tool}-version`, output);
+    core.info(`${tool} version is ${output}`);
   });
 
   await Promise.all(promises);

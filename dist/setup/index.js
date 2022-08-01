@@ -71901,6 +71901,7 @@ function printEnvDetailsAndSetOutput() {
         const promises = ['node', 'npm', 'yarn'].map((tool) => __awaiter(this, void 0, void 0, function* () {
             const output = yield getToolVersion(tool, ['--version']);
             core.setOutput(`${tool}-version`, output);
+            core.info(`${tool} version is ${output}`);
         }));
         yield Promise.all(promises);
         core.endGroup();
