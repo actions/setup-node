@@ -71900,27 +71900,31 @@ function printEnvDetailsAndSetOutput() {
         core.startGroup('Environment details');
         // Output version of node is being used
         try {
-            const { stdout: installedNodeVersion } = yield exec.getExecOutput('node', ['--version'], { ignoreReturnCode: true });
+            const { stdout: installedNodeVersion } = yield exec.getExecOutput('node', ['--version'], { ignoreReturnCode: true, silent: true });
             core.setOutput('node-version', installedNodeVersion.trim());
         }
         catch (err) {
             core.setOutput('node-version', '');
         }
         try {
-            yield exec.getExecOutput('npm', ['--version'], {
-                ignoreReturnCode: true
+            const { stdout: installedNpmVersion } = yield exec.getExecOutput('npm', ['--version'], {
+                ignoreReturnCode: true,
+                silent: true
             });
+            core.setOutput('npm-version', installedNpmVersion.trim());
         }
         catch (_a) {
-            core.warning('please check if npm is installed');
+            core.setOutput('npm-version', '');
         }
         try {
-            yield exec.getExecOutput('yarn', ['--version'], {
-                ignoreReturnCode: true
+            const { stdout: installedYarnVersion } = yield exec.getExecOutput('yarn', ['--version'], {
+                ignoreReturnCode: true,
+                silent: true
             });
+            core.setOutput('yarn-version', installedYarnVersion.trim());
         }
         catch (_b) {
-            core.warning('please check if yarn is installed');
+            core.setOutput('yarn-version', '');
         }
         core.endGroup();
     });

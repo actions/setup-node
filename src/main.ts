@@ -106,26 +106,38 @@ async function printEnvDetailsAndSetOutput() {
     const {stdout: installedNodeVersion} = await exec.getExecOutput(
       'node',
       ['--version'],
-      {ignoreReturnCode: true}
+      {ignoreReturnCode: true, silent: true}
     );
     core.setOutput('node-version', installedNodeVersion.trim());
   } catch (err) {
     core.setOutput('node-version', '');
   }
   try {
-    await exec.getExecOutput('npm', ['--version'], {
-      ignoreReturnCode: true
-    });
+    const {stdout: installedNpmVersion} = await exec.getExecOutput(
+      'npm',
+      ['--version'],
+      {
+        ignoreReturnCode: true,
+        silent: true
+      }
+    );
+    core.setOutput('npm-version', installedNpmVersion.trim());
   } catch {
-    core.warning('please check if npm is installed');
+    core.setOutput('npm-version', '');
   }
 
   try {
-    await exec.getExecOutput('yarn', ['--version'], {
-      ignoreReturnCode: true
-    });
+    const {stdout: installedYarnVersion} = await exec.getExecOutput(
+      'yarn',
+      ['--version'],
+      {
+        ignoreReturnCode: true,
+        silent: true
+      }
+    );
+    core.setOutput('yarn-version', installedYarnVersion.trim());
   } catch {
-    core.warning('please check if yarn is installed');
+    core.setOutput('yarn-version', '');
   }
 
   core.endGroup();
