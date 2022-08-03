@@ -48,7 +48,7 @@ steps:
 - uses: actions/checkout@v3
 - uses: actions/setup-node@v3
   with:
-    node-version: '14'
+    node-version: '16'
     check-latest: true
 - run: npm ci
 - run: npm test
@@ -56,8 +56,8 @@ steps:
 
 ## Node version file
 
-The `node-version-file` input accepts a path to a file containing the version of Node.js to be used by a project, for example `.nvmrc`, `.node-version` or `.tool-versions`. If both the `node-version` and the `node-version-file` inputs are provided then the `node-version` input is used.
-See [supported version syntax](https://github.com/actions/setup-node#supported-version-syntax)
+The `node-version-file` input accepts a path to a file containing the version of Node.js to be used by a project, for example `.nvmrc`, `.node-version`, `.tool-versions`, or `package.json`. If both the `node-version` and the `node-version-file` inputs are provided then the `node-version` input is used.
+See [supported version syntax](https://github.com/actions/setup-node#supported-version-syntax).
 
 > The action will search for the node version file relative to the repository root.
 
@@ -69,6 +69,19 @@ steps:
     node-version-file: '.nvmrc'
 - run: npm ci
 - run: npm test
+```
+
+When using the `package.json` input, the action will look for `volta.node` first. If `volta.node` isn't defined, then it will look for `engines.node`.
+
+```json
+{
+  "engines": {
+    "node": ">=16.0.0"
+  },
+  "volta": {
+    "node": "16.0.0"
+  }
+}
 ```
 
 ## Architecture
