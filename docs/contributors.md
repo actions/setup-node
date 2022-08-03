@@ -22,11 +22,11 @@ Documentation contributions of any size are welcome! Feel free to contribute eve
 
 **How to contribute:**
 
-Pull requests are the easiest way to contribute changes to git repos at GitHub. They are the preferred contribution method, as they offer a nice way of commenting and amending the proposed changes.
+Pull requests are the easiest way to contribute changes to git repos at GitHub. They are the preferred contribution method, as they offer a convenient way of commenting and amending the proposed changes.
 
-- Please check that no one else has already created a pull request with these changes
+- Please check that no one else has already created a pull request with these or similar changes
 - Use a "feature branch" for your changes. That separates the changes in the pull request from your other changes and makes it easy to edit/amend commits in the pull request 
-- Make sure your changes are formatted correctly and consistently with the rest of the documentation
+- Make sure your changes are formatted properly and consistently with the rest of the documentation
 - Re-read what you wrote, and run a spellchecker on it to make sure you didn't miss anything
 - If your pull request is connected to an open issue, please, leave a link to this issue in the `Related issue:` section
 - If you later need to add new commits to the pull request, you can simply commit the changes to the local branch and then push them. The pull request gets automatically updated
@@ -35,7 +35,7 @@ Pull requests are the easiest way to contribute changes to git repos at GitHub. 
 
 - Maintainers will review your pull request
 - If a maintainer requests changes, first of all, try to think about this request critically and only after that implement and request another review
-- If your PR gets accepted, it will soon be merged into the main branch. But your contribution will take effect only after the release of a new version of the action
+- If your PR gets accepted, it will soon be merged into the main branch. But your contribution will take effect only after the release of a new version of the action and updating the major tag
 > Sometimes maintainers reject pull requests and that's ok! Usually, along with rejection, we supply the reason for it. Nonetheless, we still really appreciate you taking the time to do it, and we don't take that lightly :heart:
 
 ## Contribute code
@@ -48,9 +48,9 @@ The main difference between code contributions and documentation contributions i
 
 **How to contribute:**
 
-Pull requests are the easiest way to contribute changes to git repos at GitHub. They are the preferred contribution method, as they offer a nice way of commenting and amending the proposed changes.
+Pull requests are the easiest way to contribute changes to git repos at GitHub. They are the preferred contribution method, as they offer a convenient way of commenting and amending the proposed changes.
 
-- Please check that no one else has already created a pull request with these changes
+- Please check that no one else has already created a pull request with these or similar changes
 - Use a "feature branch" for your changes. That separates the changes in the pull request from your other changes and makes it easy to edit/amend commits in the pull request
 -  **Run `pre-checkin` script to format, build and test changes**
 - Make sure your changes are well formatted and that all tests are passing
@@ -67,7 +67,7 @@ Pull requests are the easiest way to contribute changes to git repos at GitHub. 
 **Learn more about how to implement tests:**
 
 Adding or changing tests is an integral part of making a change to the code. 
-Unit tests are in the `__tests__` folder, and end-to-end tests are in the `workflows` folder (in particular, in the file [e2e-cache.yml](https://github.com/actions/setup-node/blob/main/.github/workflows/e2e-cache.yml)).
+Unit tests are in the `__tests__` folder, and end-to-end tests are in the `workflows` folder (in the particular file [e2e-cache.yml](https://github.com/actions/setup-node/blob/main/.github/workflows/e2e-cache.yml)).
 
 - The contributor can add various types of tests (like unit tests or end-to-end tests), which, in his opinion, will be necessary and sufficient for testing new or changed functionality
 - Tests should cover a successful execution, as well as some edge cases and possible errors
@@ -78,7 +78,7 @@ Unit tests are in the `__tests__` folder, and end-to-end tests are in the `workf
 - CI will start automatically with some checks. Wait until the end of the execution and make sure that all checks passed successfully. If some checks fail, you can open them one by one, try to find the reason for failing and make changes to your code to resolve the problem
 - Maintainers will review your pull request
 - If a maintainer requests changes, first of all, try to think about his request critically and only after that implement and request another review
-- If your PR gets accepted, it will soon be merged into the main branch. But your contribution will take effect only after the release of a new version of the action
+- If your PR gets accepted, it will soon be merged into the main branch. But your contribution will take effect only after the release of a new version of the action and updating the major tag
 > Sometimes maintainers reject pull requests and that's ok! Usually, along with rejection, we supply the reason for it. Nonetheless, we still really appreciate you taking the time to do it, and we don't take that lightly :heart:
 
 ## Provide support on issues
@@ -104,7 +104,7 @@ Helping out other users with their questions is an awesome way of contributing t
 ## Review pull requests
  
 
-Another great way to contribute is pull request reviews. Please, be extra kind: people who submit code/doc contributions are putting themselves in a pretty vulnerable position, and have put time and care into what they've done (even if that's not obvious to you!) Please, always respond with respect, and be understanding, but don't feel like you need to sacrifice your standards for their sake, either.
+Another great way to contribute is to review pull request. Please, be extra kind: people who submit code/doc contributions are putting themselves in a pretty vulnerable position, and have put time and care into what they've done (even if that's not obvious to you!) Please, always respond with respect, and be understanding, but don't feel like you need to sacrifice your standards for their sake, either.
  
 **How to review:**
 
