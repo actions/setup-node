@@ -502,7 +502,7 @@ export function parseNodeVersionFile(contents: string): string {
   try {
     nodeVersion = JSON.parse(contents).engines?.node;
   } catch {
-    core.warning("Node version file is not JSON file")
+    core.warning('Node version file is not JSON file');
   }
 
   if (!nodeVersion) {

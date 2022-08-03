@@ -71776,7 +71776,7 @@ function parseNodeVersionFile(contents) {
         nodeVersion = (_a = JSON.parse(contents).engines) === null || _a === void 0 ? void 0 : _a.node;
     }
     catch (_c) {
-        core.warning("Node version file is not JSON file");
+        core.warning('Node version file is not JSON file');
     }
     if (!nodeVersion) {
         try {
