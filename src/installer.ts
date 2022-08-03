@@ -497,14 +497,14 @@ function translateArchToDistUrl(arch: string): string {
 export function parseNodeVersionFile(contents: string): string {
   let nodeVersion: string | undefined;
 
-  const found = contents.match(/^(?:nodejs\s+)?v?(?<version>[^\s]+)$/m);
-  nodeVersion = found?.groups?.version;
+  // Try parsing the file as an NPM `package.json`
+  // file.
+  nodeVersion = JSON.parse(contents).engines?.node;
 
   if (!nodeVersion) {
     try {
-      // Try parsing the file as an NPM `package.json`
-      // file.
-      nodeVersion = JSON.parse(contents).engines?.node;
+      const found = contents.match(/^(?:nodejs\s+)?v?(?<version>[^\s]+)$/m);
+      nodeVersion = found?.groups?.version;
 
       if (!nodeVersion) throw new Error();
     } catch (err) {
