@@ -71772,7 +71772,12 @@ function parseNodeVersionFile(contents) {
     let nodeVersion;
     // Try parsing the file as an NPM `package.json`
     // file.
-    nodeVersion = (_a = JSON.parse(contents).engines) === null || _a === void 0 ? void 0 : _a.node;
+    try {
+        nodeVersion = (_a = JSON.parse(contents).engines) === null || _a === void 0 ? void 0 : _a.node;
+    }
+    catch (_c) {
+        core.warning("Node version file is not JSON file");
+    }
     if (!nodeVersion) {
         try {
             const found = contents.match(/^(?:nodejs\s+)?v?(?<version>[^\s]+)$/m);

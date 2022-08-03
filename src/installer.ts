@@ -499,7 +499,11 @@ export function parseNodeVersionFile(contents: string): string {
 
   // Try parsing the file as an NPM `package.json`
   // file.
-  nodeVersion = JSON.parse(contents).engines?.node;
+  try {
+    nodeVersion = JSON.parse(contents).engines?.node;
+  } catch {
+    core.warning("Node version file is not JSON file")
+  }
 
   if (!nodeVersion) {
     try {
