@@ -92,7 +92,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
-        node-version-file: [.nvmrc, .tool-versions]
+        node-version-file: [.nvmrc, .tool-versions, package.json]
     steps:
       - uses: actions/checkout@v3
       - name: Setup node from node version file
