@@ -506,17 +506,13 @@ export function parseNodeVersionFile(contents: string): string {
   }
 
   if (!nodeVersion) {
-    try {
-      const found = contents.match(/^(?:nodejs\s+)?v?(?<version>[^\s]+)$/m);
-      nodeVersion = found?.groups?.version;
-
-      if (!nodeVersion) throw new Error();
-    } catch (err) {
-      // In the case of an unknown format,
-      // return as is and evaluate the version separately.
-      nodeVersion = contents.trim();
-    }
+    const found = contents.match(/^(?:nodejs\s+)?v?(?<version>[^\s]+)$/m);
+    nodeVersion = found?.groups?.version;
   }
+
+  // In the case of an unknown format,
+  // return as is and evaluate the version separately.
+  if (!nodeVersion) nodeVersion = contents.trim();
 
   return nodeVersion as string;
 }
