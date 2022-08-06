@@ -1,4 +1,39 @@
-# Advanced usage
+## Working with lockfiles
+
+All supported package managers recommend that you **always** commit the lockfile, although implementations vary doing so generally provides the following benefits:
+
+- Enables faster installation for CI and production environments, due to being able to skip package resolution.
+- Describes a single representation of a dependency tree such that teammates, deployments, and continuous integration are guaranteed to install exactly the same dependencies.
+- Provides a facility for users to "time-travel" to previous states of `node_modules` without having to commit the directory itself.
+- Facilitates greater visibility of tree changes through readable source control diffs.
+
+In order to get the most out of using your lockfile on continuous integration follow the conventions outlined below for your respective package manager.
+
+### NPM
+
+Ensure that `package-lock.json` is always committed, use `npm ci` instead of `npm install` when installing packages.
+
+**See also:**
+- [Documentation of `package-lock.json`](https://docs.npmjs.com/cli/v8/configuring-npm/package-lock-json)
+- [Documentation of `npm ci`](https://docs.npmjs.com/cli/v8/commands/npm-ci)
+
+### Yarn
+
+To ensure that `yarn.lock` is always committed, use `yarn install --immutable` when installing packages.
+
+**See also:**
+- [Documentation of `yarn.lock`](https://classic.yarnpkg.com/en/docs/yarn-lock)
+- [Documentation of `--frozen-lockfile` option](https://classic.yarnpkg.com/en/docs/cli/install#toc-yarn-install-frozen-lockfile)
+- [QA - Should lockfiles be committed to the repoistory?](https://yarnpkg.com/getting-started/qa/#should-lockfiles-be-committed-to-the-repository)
+- [Documentation of `yarn install`](https://yarnpkg.com/cli/install)
+
+### PNPM
+
+Ensure that `pnpm-lock.yaml` is always committed, when on CI pass `--frozen-lockfile` to `pnpm install` when installing packages.
+
+**See also:**
+- [Working with Git - Lockfiles](https://pnpm.io/git#lockfiles)
+- [Documentation of `--frozen-lockfile` option](https://pnpm.io/cli/install#--frozen-lockfile)
 
 ## Check latest version
 
@@ -10,28 +45,28 @@ If `check-latest` is set to `true`, the action first checks if the cached versio
 
 ```yaml
 steps:
-- uses: actions/checkout@v2
-- uses: actions/setup-node@v2
+- uses: actions/checkout@v3
+- uses: actions/setup-node@v3
   with:
     node-version: '14'
     check-latest: true
-- run: npm install
+- run: npm ci
 - run: npm test
 ```
 
 ## Node version file
-  
-The `node-version-file` input accepts a path to a file containing the version of Node.js to be used by a project, for example `.nvmrc` or `.node-version`. If both the `node-version` and the `node-version-file` inputs are provided then the `node-version` input is used. 
-See [supported version syntax](https://github.com/actions/setup-node#supported-version-syntax) 
+
+The `node-version-file` input accepts a path to a file containing the version of Node.js to be used by a project, for example `.nvmrc`, `.node-version` or `.tool-versions`. If both the `node-version` and the `node-version-file` inputs are provided then the `node-version` input is used.
+See [supported version syntax](https://github.com/actions/setup-node#supported-version-syntax)
 > The action will search for the node version file relative to the repository root.
 
 ```yaml
 steps:
-- uses: actions/checkout@v2
-- uses: actions/setup-node@v2
+- uses: actions/checkout@v3
+- uses: actions/setup-node@v3
   with:
     node-version-file: '.nvmrc'
-- run: npm install
+- run: npm ci
 - run: npm test
 ```
 
@@ -46,28 +81,28 @@ jobs:
     runs-on: windows-latest
     name: Node sample
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-node@v2
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
         with:
           node-version: '14'
           architecture: 'x64' # optional, x64 or x86. If not specified, x64 will be used by default
-      - run: npm install
+      - run: npm ci
       - run: npm test
 ```
 
-## Caching packages dependencies
+## Caching packages data
 The action follows [actions/cache](https://github.com/actions/cache/blob/main/examples.md#node---npm) guidelines, and caches global cache on the machine instead of `node_modules`, so cache can be reused between different Node.js versions.
 
-**Caching yarn dependencies:**  
+**Caching yarn dependencies:**
 Yarn caching handles both yarn versions: 1 or 2.
 ```yaml
 steps:
-- uses: actions/checkout@v2
-- uses: actions/setup-node@v2
+- uses: actions/checkout@v3
+- uses: actions/setup-node@v3
   with:
     node-version: '14'
     cache: 'yarn'
-- run: yarn install
+- run: yarn install --frozen-lockfile # optional, --immutable
 - run: yarn test
 ```
 
@@ -81,43 +116,43 @@ steps:
 # NOTE: pnpm caching support requires pnpm version >= 6.10.0
 
 steps:
-- uses: actions/checkout@v2
-- uses: pnpm/action-setup@646cdf48217256a3d0b80361c5a50727664284f2
+- uses: actions/checkout@v3
+- uses: pnpm/action-setup@v2
   with:
-    version: 6.10.0
-- uses: actions/setup-node@v2
+    version: 6.32.9
+- uses: actions/setup-node@v3
   with:
     node-version: '14'
     cache: 'pnpm'
-- run: pnpm install
+- run: pnpm install --frozen-lockfile
 - run: pnpm test
 ```
 
 **Using wildcard patterns to cache dependencies**
 ```yaml
 steps:
-- uses: actions/checkout@v2
-- uses: actions/setup-node@v2
+- uses: actions/checkout@v3
+- uses: actions/setup-node@v3
   with:
     node-version: '14'
     cache: 'npm'
     cache-dependency-path: '**/package-lock.json'
-- run: npm install
+- run: npm ci
 - run: npm test
 ```
 
 **Using a list of file paths to cache dependencies**
 ```yaml
 steps:
-- uses: actions/checkout@v2
-- uses: actions/setup-node@v2
+- uses: actions/checkout@v3
+- uses: actions/setup-node@v3
   with:
     node-version: '14'
     cache: 'npm'
     cache-dependency-path: |
       server/app/package-lock.json
       frontend/app/package-lock.json
-- run: npm install
+- run: npm ci
 - run: npm test
 ```
 
@@ -146,29 +181,29 @@ jobs:
             architecture: x86
     name: Node ${{ matrix.node_version }} - ${{ matrix.architecture }} on ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Setup node
-        uses: actions/setup-node@v2
+        uses: actions/setup-node@v3
         with:
           node-version: ${{ matrix.node_version }}
           architecture: ${{ matrix.architecture }}
-      - run: npm install
+      - run: npm ci
       - run: npm test
 ```
 
 ## Publish to npmjs and GPR with npm
 ```yaml
 steps:
-- uses: actions/checkout@v2
-- uses: actions/setup-node@v2
+- uses: actions/checkout@v3
+- uses: actions/setup-node@v3
   with:
     node-version: '14.x'
     registry-url: 'https://registry.npmjs.org'
-- run: npm install
+- run: npm ci
 - run: npm publish
   env:
     NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-- uses: actions/setup-node@v2
+- uses: actions/setup-node@v3
   with:
     registry-url: 'https://npm.pkg.github.com'
 - run: npm publish
@@ -179,16 +214,16 @@ steps:
 ## Publish to npmjs and GPR with yarn
 ```yaml
 steps:
-- uses: actions/checkout@v2
-- uses: actions/setup-node@v2
+- uses: actions/checkout@v3
+- uses: actions/setup-node@v3
   with:
     node-version: '14.x'
     registry-url: <registry url>
-- run: yarn install
+- run: yarn install --frozen-lockfile
 - run: yarn publish
   env:
     NODE_AUTH_TOKEN: ${{ secrets.YARN_TOKEN }}
-- uses: actions/setup-node@v2
+- uses: actions/setup-node@v3
   with:
     registry-url: 'https://npm.pkg.github.com'
 - run: yarn publish
@@ -199,16 +234,18 @@ steps:
 ## Use private packages
 ```yaml
 steps:
-- uses: actions/checkout@v2
-- uses: actions/setup-node@v2
+- uses: actions/checkout@v3
+- uses: actions/setup-node@v3
   with:
     node-version: '14.x'
     registry-url: 'https://registry.npmjs.org'
 # Skip post-install scripts here, as a malicious
 # script could steal NODE_AUTH_TOKEN.
-- run: npm install --ignore-scripts
+- run: npm ci --ignore-scripts
   env:
     NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 # `npm rebuild` will run all those post-install scripts for us.
 - run: npm rebuild && npm run prepare --if-present
 ```
+
+NOTE: As per https://github.com/actions/setup-node/issues/49 you cannot use `secrets.GITHUB_TOKEN` to access private GitHub Packages within the same organisation but in a different repository.

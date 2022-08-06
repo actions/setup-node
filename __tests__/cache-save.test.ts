@@ -294,6 +294,63 @@ describe('run', () => {
       );
       expect(setFailedSpy).not.toHaveBeenCalled();
     });
+
+    it('save with -1 cacheId , should not fail workflow', async () => {
+      inputs['cache'] = 'npm';
+      getStateSpy.mockImplementation((name: string) => {
+        if (name === State.CacheMatchedKey) {
+          return npmFileHash;
+        } else {
+          return yarnFileHash;
+        }
+      });
+      getCommandOutputSpy.mockImplementationOnce(() => `${commonPath}/npm`);
+      saveCacheSpy.mockImplementation(() => {
+        return -1;
+      });
+
+      await run();
+
+      expect(getInputSpy).toHaveBeenCalled();
+      expect(getStateSpy).toHaveBeenCalledTimes(2);
+      expect(getCommandOutputSpy).toHaveBeenCalledTimes(1);
+      expect(debugSpy).toHaveBeenCalledWith(`npm path is ${commonPath}/npm`);
+      expect(infoSpy).not.toHaveBeenCalledWith(
+        `Cache hit occurred on the primary key ${npmFileHash}, not saving cache.`
+      );
+      expect(saveCacheSpy).toHaveBeenCalled();
+      expect(infoSpy).not.toHaveBeenLastCalledWith(
+        `Cache saved with the key: ${yarnFileHash}`
+      );
+      expect(setFailedSpy).not.toHaveBeenCalled();
+    });
+
+    it('saves with error from toolkit, should fail workflow', async () => {
+      inputs['cache'] = 'npm';
+      getStateSpy.mockImplementation((name: string) => {
+        if (name === State.CacheMatchedKey) {
+          return npmFileHash;
+        } else {
+          return yarnFileHash;
+        }
+      });
+      getCommandOutputSpy.mockImplementationOnce(() => `${commonPath}/npm`);
+      saveCacheSpy.mockImplementation(() => {
+        throw new cache.ValidationError('Validation failed');
+      });
+
+      await run();
+
+      expect(getInputSpy).toHaveBeenCalled();
+      expect(getStateSpy).toHaveBeenCalledTimes(2);
+      expect(getCommandOutputSpy).toHaveBeenCalledTimes(1);
+      expect(debugSpy).toHaveBeenCalledWith(`npm path is ${commonPath}/npm`);
+      expect(infoSpy).not.toHaveBeenCalledWith(
+        `Cache hit occurred on the primary key ${npmFileHash}, not saving cache.`
+      );
+      expect(saveCacheSpy).toHaveBeenCalled();
+      expect(setFailedSpy).toHaveBeenCalled();
+    });
   });
 
   afterEach(() => {

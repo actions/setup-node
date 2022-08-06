@@ -37,6 +37,7 @@ export async function getNode(
 ) {
   // Store manifest data to avoid multiple calls
   let manifest: INodeRelease[] | undefined;
+  let nodeVersions: INodeVersion[] | undefined;
   let osPlat: string = os.platform();
   let osArch: string = translateArchToDistUrl(arch);
 
@@ -47,6 +48,12 @@ export async function getNode(
     manifest = await getManifest(auth);
 
     versionSpec = resolveLtsAliasFromManifest(versionSpec, stable, manifest);
+  }
+
+  if (isLatestSyntax(versionSpec)) {
+    nodeVersions = await getVersionsFromDist();
+    versionSpec = await queryDistForMatch(versionSpec, arch, nodeVersions);
+    core.info(`getting latest node version...`);
   }
 
   if (checkLatest) {
@@ -119,7 +126,7 @@ export async function getNode(
     // Download from nodejs.org
     //
     if (!downloadPath) {
-      info = await getInfoFromDist(versionSpec, arch);
+      info = await getInfoFromDist(versionSpec, arch, nodeVersions);
       if (!info) {
         throw new Error(
           `Unable to find Node version '${versionSpec}' for platform ${osPlat} and architecture ${osArch}.`
@@ -216,13 +223,21 @@ function resolveLtsAliasFromManifest(
 
   core.debug(`LTS alias '${alias}' for Node version '${versionSpec}'`);
 
-  // Supported formats are `lts/<alias>` and `lts/*`. Where asterisk means highest possible LTS.
+  // Supported formats are `lts/<alias>`, `lts/*`, and `lts/-n`. Where asterisk means highest possible LTS and -n means the nth-highest.
+  const n = Number(alias);
+  const aliases = Object.fromEntries(
+    manifest
+      .filter(x => x.lts && x.stable === stable)
+      .map(x => [x.lts!.toLowerCase(), x])
+      .reverse()
+  );
+  const numbered = Object.values(aliases);
   const release =
     alias === '*'
-      ? manifest.find(x => !!x.lts && x.stable === stable)
-      : manifest.find(
-          x => x.lts?.toLowerCase() === alias && x.stable === stable
-        );
+      ? numbered[numbered.length - 1]
+      : n < 0
+      ? numbered[numbered.length - 1 + n]
+      : aliases[alias];
 
   if (!release) {
     throw new Error(
@@ -265,14 +280,18 @@ async function getInfoFromManifest(
 
 async function getInfoFromDist(
   versionSpec: string,
-  arch: string = os.arch()
+  arch: string = os.arch(),
+  nodeVersions?: INodeVersion[]
 ): Promise<INodeVersionInfo | null> {
   let osPlat: string = os.platform();
   let osArch: string = translateArchToDistUrl(arch);
 
-  let version: string;
+  let version: string = await queryDistForMatch(
+    versionSpec,
+    arch,
+    nodeVersions
+  );
 
-  version = await queryDistForMatch(versionSpec, arch);
   if (!version) {
     return null;
   }
@@ -349,7 +368,8 @@ function evaluateVersions(versions: string[], versionSpec: string): string {
 
 async function queryDistForMatch(
   versionSpec: string,
-  arch: string = os.arch()
+  arch: string = os.arch(),
+  nodeVersions?: INodeVersion[]
 ): Promise<string> {
   let osPlat: string = os.platform();
   let osArch: string = translateArchToDistUrl(arch);
@@ -370,8 +390,17 @@ async function queryDistForMatch(
       throw new Error(`Unexpected OS '${osPlat}'`);
   }
 
+  if (!nodeVersions) {
+    core.debug('No dist manifest cached');
+    nodeVersions = await getVersionsFromDist();
+  }
+
   let versions: string[] = [];
-  let nodeVersions = await getVersionsFromDist();
+
+  if (isLatestSyntax(versionSpec)) {
+    core.info(`getting latest node version...`);
+    return nodeVersions[0].version;
+  }
 
   nodeVersions.forEach((nodeVersion: INodeVersion) => {
     // ensure this version supports your os and platform
@@ -466,10 +495,32 @@ function translateArchToDistUrl(arch: string): string {
 }
 
 export function parseNodeVersionFile(contents: string): string {
-  let nodeVersion = contents.trim();
+  let nodeVersion: string | undefined;
 
-  if (/^v\d/.test(nodeVersion)) {
-    nodeVersion = nodeVersion.substring(1);
+  // Try parsing the file as an NPM `package.json`
+  // file.
+  try {
+    nodeVersion = JSON.parse(contents).engines?.node;
+  } catch {
+    core.warning('Node version file is not JSON file');
   }
-  return nodeVersion;
+
+  if (!nodeVersion) {
+    try {
+      const found = contents.match(/^(?:nodejs\s+)?v?(?<version>[^\s]+)$/m);
+      nodeVersion = found?.groups?.version;
+
+      if (!nodeVersion) throw new Error();
+    } catch (err) {
+      // In the case of an unknown format,
+      // return as is and evaluate the version separately.
+      nodeVersion = contents.trim();
+    }
+  }
+
+  return nodeVersion as string;
+}
+
+function isLatestSyntax(versionSpec): boolean {
+  return ['current', 'latest', 'node'].includes(versionSpec);
 }

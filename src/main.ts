@@ -1,10 +1,11 @@
 import * as core from '@actions/core';
+import * as exec from '@actions/exec';
 import * as installer from './installer';
 import fs from 'fs';
 import * as auth from './authutil';
 import * as path from 'path';
 import {restoreCache} from './cache-restore';
-import {URL} from 'url';
+import {isGhes, isCacheFeatureAvailable} from './cache-utils';
 import os = require('os');
 
 export async function run() {
@@ -39,16 +40,25 @@ export async function run() {
       await installer.getNode(version, stable, checkLatest, auth, arch);
     }
 
+    // Output version of node is being used
+    try {
+      const {stdout: installedVersion} = await exec.getExecOutput(
+        'node',
+        ['--version'],
+        {ignoreReturnCode: true, silent: true}
+      );
+      core.setOutput('node-version', installedVersion.trim());
+    } catch (err) {
+      core.setOutput('node-version', '');
+    }
+
     const registryUrl: string = core.getInput('registry-url');
     const alwaysAuth: string = core.getInput('always-auth');
     if (registryUrl) {
       auth.configAuthentication(registryUrl, alwaysAuth);
     }
 
-    if (cache) {
-      if (isGhes()) {
-        throw new Error('Caching is not supported on GHES');
-      }
+    if (cache && isCacheFeatureAvailable()) {
       const cacheDependencyPath = core.getInput('cache-dependency-path');
       await restoreCache(cache, cacheDependencyPath);
     }
@@ -64,13 +74,6 @@ export async function run() {
   } catch (err) {
     core.setFailed(err.message);
   }
-}
-
-function isGhes(): boolean {
-  const ghUrl = new URL(
-    process.env['GITHUB_SERVER_URL'] || 'https://github.com'
-  );
-  return ghUrl.hostname.toUpperCase() !== 'GITHUB.COM';
 }
 
 function resolveVersionInput(): string {

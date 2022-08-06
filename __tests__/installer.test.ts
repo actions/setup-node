@@ -1,11 +1,14 @@
 import * as core from '@actions/core';
 import * as io from '@actions/io';
 import * as tc from '@actions/tool-cache';
+import * as exec from '@actions/exec';
 import * as im from '../src/installer';
+import * as cache from '@actions/cache';
 import fs from 'fs';
 import cp from 'child_process';
 import osm = require('os');
 import path from 'path';
+import each from 'jest-each';
 import * as main from '../src/main';
 import * as auth from '../src/authutil';
 
@@ -36,6 +39,8 @@ describe('setup-node', () => {
   let execSpy: jest.SpyInstance;
   let authSpy: jest.SpyInstance;
   let parseNodeVersionSpy: jest.SpyInstance;
+  let isCacheActionAvailable: jest.SpyInstance;
+  let getExecOutputSpy: jest.SpyInstance;
 
   beforeEach(() => {
     // @actions/core
@@ -66,6 +71,9 @@ describe('setup-node', () => {
     whichSpy = jest.spyOn(io, 'which');
     existsSpy = jest.spyOn(fs, 'existsSync');
     mkdirpSpy = jest.spyOn(io, 'mkdirP');
+
+    // @actions/tool-cache
+    isCacheActionAvailable = jest.spyOn(cache, 'isFeatureAvailable');
 
     // disable authentication portion for installer tests
     authSpy = jest.spyOn(auth, 'configAuthentication');
@@ -98,6 +106,10 @@ describe('setup-node', () => {
       // uncomment to debug
       // process.stderr.write('log:' + line + '\n');
     });
+
+    // @actions/exec
+    getExecOutputSpy = jest.spyOn(exec, 'getExecOutput');
+    getExecOutputSpy.mockImplementation(() => 'v16.15.0');
   });
 
   afterEach(() => {
@@ -121,7 +133,7 @@ describe('setup-node', () => {
       'mocktoken'
     );
     expect(versions).toBeDefined();
-    expect(versions?.length).toBe(6);
+    expect(versions?.length).toBe(7);
   });
 
   it('can mock dist versions', async () => {
@@ -130,50 +142,28 @@ describe('setup-node', () => {
     expect(versions?.length).toBe(23);
   });
 
-  it('can find 12.16.2 from manifest on osx', async () => {
-    os.platform = 'darwin';
-    os.arch = 'x64';
-    let versions: tc.IToolRelease[] | null = await tc.getManifestFromRepo(
-      'actions',
-      'node-versions',
-      'mocktoken'
-    );
-    expect(versions).toBeDefined();
-    let match = await tc.findFromManifest('12.16.2', true, versions);
-    expect(match).toBeDefined();
-    expect(match?.version).toBe('12.16.2');
-    expect((match as any).lts).toBe('Erbium');
-  });
-
-  it('can find 12 from manifest on linux', async () => {
-    os.platform = 'linux';
-    os.arch = 'x64';
-    let versions: tc.IToolRelease[] | null = await tc.getManifestFromRepo(
-      'actions',
-      'node-versions',
-      'mocktoken'
-    );
-    expect(versions).toBeDefined();
-    let match = await tc.findFromManifest('12.16.2', true, versions);
-    expect(match).toBeDefined();
-    expect(match?.version).toBe('12.16.2');
-    expect((match as any).lts).toBe('Erbium');
-  });
-
-  it('can find 10 from manifest on windows', async () => {
-    os.platform = 'win32';
-    os.arch = 'x64';
-    let versions: tc.IToolRelease[] | null = await tc.getManifestFromRepo(
-      'actions',
-      'node-versions',
-      'mocktoken'
-    );
-    expect(versions).toBeDefined();
-    let match = await tc.findFromManifest('10', true, versions);
-    expect(match).toBeDefined();
-    expect(match?.version).toBe('10.20.1');
-    expect((match as any).lts).toBe('Dubnium');
-  });
+  it.each([
+    ['12.16.2', 'darwin', '12.16.2', 'Erbium'],
+    ['12', 'linux', '12.16.2', 'Erbium'],
+    ['10', 'win32', '10.20.1', 'Dubnium'],
+    ['*', 'linux', '14.0.0', 'Fermium']
+  ])(
+    'can find %s from manifest on %s',
+    async (versionSpec, platform, expectedVersion, expectedLts) => {
+      os.platform = platform;
+      os.arch = 'x64';
+      let versions: tc.IToolRelease[] | null = await tc.getManifestFromRepo(
+        'actions',
+        'node-versions',
+        'mocktoken'
+      );
+      expect(versions).toBeDefined();
+      let match = await tc.findFromManifest(versionSpec, true, versions);
+      expect(match).toBeDefined();
+      expect(match?.version).toBe(expectedVersion);
+      expect((match as any).lts).toBe(expectedLts);
+    }
+  );
 
   //--------------------------------------------------
   // Found in cache tests
@@ -245,7 +235,7 @@ describe('setup-node', () => {
     inputs['token'] = 'faketoken';
 
     let expectedUrl =
-      'https://github.com/actions/node-versions/releases/download/12.16.2-20200423.28/node-12.16.2-linux-x64.tar.gz';
+      'https://github.com/actions/node-versions/releases/download/12.16.2-20200507.95/node-12.16.2-linux-x64.tar.gz';
 
     // ... but not in the local cache
     findSpy.mockImplementation(() => '');
@@ -283,7 +273,7 @@ describe('setup-node', () => {
     inputs['token'] = 'faketoken';
 
     let expectedUrl =
-      'https://github.com/actions/node-versions/releases/download/12.16.2-20200423.28/node-12.16.2-linux-x64.tar.gz';
+      'https://github.com/actions/node-versions/releases/download/12.16.2-20200507.95/node-12.16.2-linux-x64.tar.gz';
 
     // ... but not in the local cache
     findSpy.mockImplementation(() => '');
@@ -452,7 +442,7 @@ describe('setup-node', () => {
       exSpy.mockImplementation(async () => '/some/other/temp/path');
       cacheSpy.mockImplementation(async () => toolPath);
       const expectedUrl =
-        'https://github.com/actions/node-versions/releases/download/12.16.2-20200423.28/node-12.16.2-linux-x64.tar.gz';
+        'https://github.com/actions/node-versions/releases/download/12.16.2-20200507.95/node-12.16.2-linux-x64.tar.gz';
 
       await main.run();
 
@@ -601,6 +591,33 @@ describe('setup-node', () => {
       );
     });
 
+    it('reads package.json as node-version-file if provided', async () => {
+      // Arrange
+      const versionSpec = fs.readFileSync(
+        path.join(__dirname, 'data/package.json'),
+        'utf-8'
+      );
+      const versionFile = 'package.json';
+      const expectedVersionSpec = '14';
+      process.env['GITHUB_WORKSPACE'] = path.join(__dirname, 'data');
+      inputs['node-version-file'] = versionFile;
+
+      parseNodeVersionSpy.mockImplementation(() => expectedVersionSpec);
+      existsSpy.mockImplementationOnce(
+        input => input === path.join(__dirname, 'data', versionFile)
+      );
+      // Act
+      await main.run();
+
+      // Assert
+      expect(existsSpy).toHaveBeenCalledTimes(1);
+      expect(existsSpy).toHaveReturnedWith(true);
+      expect(parseNodeVersionSpy).toHaveBeenCalledWith(versionSpec);
+      expect(logSpy).toHaveBeenCalledWith(
+        `Resolved ${versionFile} as ${expectedVersionSpec}`
+      );
+    });
+
     it('both node-version-file and node-version are provided', async () => {
       inputs['node-version'] = '12';
       const versionSpec = 'v14';
@@ -644,6 +661,49 @@ describe('setup-node', () => {
       );
     });
   });
+
+  describe('cache on GHES', () => {
+    it('Should throw an error, because cache is not supported', async () => {
+      inputs['node-version'] = '12';
+      inputs['cache'] = 'npm';
+
+      inSpy.mockImplementation(name => inputs[name]);
+
+      let toolPath = path.normalize('/cache/node/12.16.1/x64');
+      findSpy.mockImplementation(() => toolPath);
+
+      // expect(logSpy).toHaveBeenCalledWith(`Found in cache @ ${toolPath}`);
+      process.env['GITHUB_SERVER_URL'] = 'https://www.test.com';
+      isCacheActionAvailable.mockImplementation(() => false);
+
+      await main.run();
+
+      expect(cnSpy).toHaveBeenCalledWith(
+        `::error::Cache action is only supported on GHES version >= 3.5. If you are on version >=3.5 Please check with GHES admin if Actions cache service is enabled or not.${osm.EOL}`
+      );
+    });
+
+    it('Should throw an internal error', async () => {
+      inputs['node-version'] = '12';
+      inputs['cache'] = 'npm';
+
+      inSpy.mockImplementation(name => inputs[name]);
+
+      let toolPath = path.normalize('/cache/node/12.16.1/x64');
+      findSpy.mockImplementation(() => toolPath);
+
+      // expect(logSpy).toHaveBeenCalledWith(`Found in cache @ ${toolPath}`);
+      process.env['GITHUB_SERVER_URL'] = '';
+      isCacheActionAvailable.mockImplementation(() => false);
+
+      await main.run();
+
+      expect(warningSpy).toHaveBeenCalledWith(
+        'The runner was not able to contact the cache service. Caching will be skipped'
+      );
+    });
+  });
+
   describe('LTS version', () => {
     beforeEach(() => {
       os.platform = 'linux';
@@ -651,145 +711,102 @@ describe('setup-node', () => {
       inputs.stable = 'true';
     });
 
-    it('find latest LTS version and resolve it from local cache (lts/erbium)', async () => {
-      // arrange
-      inputs['node-version'] = 'lts/erbium';
+    it.each([
+      ['erbium', '12.16.2'],
+      ['*', '14.0.0'],
+      ['-1', '12.16.2']
+    ])(
+      'find latest LTS version and resolve it from local cache (lts/%s)',
+      async (lts, expectedVersion) => {
+        // arrange
+        inputs['node-version'] = `lts/${lts}`;
 
-      const toolPath = path.normalize('/cache/node/12.16.2/x64');
-      findSpy.mockReturnValue(toolPath);
+        const toolPath = path.normalize(`/cache/node/${expectedVersion}/x64`);
+        findSpy.mockReturnValue(toolPath);
 
-      // act
-      await main.run();
+        // act
+        await main.run();
 
-      // assert
-      expect(logSpy).toHaveBeenCalledWith(
-        'Attempt to resolve LTS alias from manifest...'
-      );
-      expect(dbgSpy).toHaveBeenCalledWith(
-        'Getting manifest from actions/node-versions@main'
-      );
-      expect(dbgSpy).not.toHaveBeenCalledWith('No manifest cached');
-      expect(dbgSpy).toHaveBeenCalledWith(
-        `LTS alias 'erbium' for Node version 'lts/erbium'`
-      );
-      expect(dbgSpy).toHaveBeenCalledWith(
-        `Found LTS release '12.16.2' for Node version 'lts/erbium'`
-      );
-      expect(logSpy).toHaveBeenCalledWith(`Found in cache @ ${toolPath}`);
-      expect(cnSpy).toHaveBeenCalledWith(
-        `::add-path::${path.join(toolPath, 'bin')}${osm.EOL}`
-      );
-    });
+        // assert
+        expect(logSpy).toHaveBeenCalledWith(
+          'Attempt to resolve LTS alias from manifest...'
+        );
+        expect(dbgSpy).toHaveBeenCalledWith(
+          'Getting manifest from actions/node-versions@main'
+        );
+        expect(dbgSpy).not.toHaveBeenCalledWith('No manifest cached');
+        expect(dbgSpy).toHaveBeenCalledWith(
+          `LTS alias '${lts}' for Node version 'lts/${lts}'`
+        );
+        expect(dbgSpy).toHaveBeenCalledWith(
+          `Found LTS release '${expectedVersion}' for Node version 'lts/${lts}'`
+        );
+        expect(logSpy).toHaveBeenCalledWith(`Found in cache @ ${toolPath}`);
+        expect(cnSpy).toHaveBeenCalledWith(
+          `::add-path::${path.join(toolPath, 'bin')}${osm.EOL}`
+        );
+      }
+    );
 
-    it('find latest LTS version and install it from manifest (lts/erbium)', async () => {
-      // arrange
-      inputs['node-version'] = 'lts/erbium';
+    it.each([
+      [
+        'erbium',
+        '12.16.2',
+        'https://github.com/actions/node-versions/releases/download/12.16.2-20200507.95/node-12.16.2-linux-x64.tar.gz'
+      ],
+      [
+        '*',
+        '14.0.0',
+        'https://github.com/actions/node-versions/releases/download/14.0.0-20200507.99/node-14.0.0-linux-x64.tar.gz'
+      ],
+      [
+        '-1',
+        '12.16.2',
+        'https://github.com/actions/node-versions/releases/download/12.16.2-20200507.95/node-12.16.2-linux-x64.tar.gz'
+      ]
+    ])(
+      'find latest LTS version and install it from manifest (lts/%s)',
+      async (lts, expectedVersion, expectedUrl) => {
+        // arrange
+        inputs['node-version'] = `lts/${lts}`;
 
-      const toolPath = path.normalize('/cache/node/12.16.2/x64');
-      findSpy.mockImplementation(() => '');
-      dlSpy.mockImplementation(async () => '/some/temp/path');
-      exSpy.mockImplementation(async () => '/some/other/temp/path');
-      cacheSpy.mockImplementation(async () => toolPath);
-      const expectedUrl =
-        'https://github.com/actions/node-versions/releases/download/12.16.2-20200423.28/node-12.16.2-linux-x64.tar.gz';
+        const toolPath = path.normalize(`/cache/node/${expectedVersion}/x64`);
+        findSpy.mockImplementation(() => '');
+        dlSpy.mockImplementation(async () => '/some/temp/path');
+        exSpy.mockImplementation(async () => '/some/other/temp/path');
+        cacheSpy.mockImplementation(async () => toolPath);
+        const expectedMajor = expectedVersion.split('.')[0];
 
-      // act
-      await main.run();
+        // act
+        await main.run();
 
-      // assert
-      expect(logSpy).toHaveBeenCalledWith(
-        'Attempt to resolve LTS alias from manifest...'
-      );
-      expect(dbgSpy).toHaveBeenCalledWith(
-        'Getting manifest from actions/node-versions@main'
-      );
-      expect(dbgSpy).not.toHaveBeenCalledWith('No manifest cached');
-      expect(dbgSpy).toHaveBeenCalledWith(
-        `LTS alias 'erbium' for Node version 'lts/erbium'`
-      );
-      expect(dbgSpy).toHaveBeenCalledWith(
-        `Found LTS release '12.16.2' for Node version 'lts/erbium'`
-      );
-      expect(logSpy).toHaveBeenCalledWith('Attempting to download 12...');
-      expect(logSpy).toHaveBeenCalledWith(
-        `Acquiring 12.16.2 - ${os.arch} from ${expectedUrl}`
-      );
-      expect(logSpy).toHaveBeenCalledWith('Extracting ...');
-      expect(logSpy).toHaveBeenCalledWith('Adding to the cache ...');
-      expect(cnSpy).toHaveBeenCalledWith(
-        `::add-path::${path.join(toolPath, 'bin')}${osm.EOL}`
-      );
-    });
-
-    it('find latest LTS version and resolve it from local cache (lts/*)', async () => {
-      // arrange
-      inputs['node-version'] = 'lts/*';
-
-      const toolPath = path.normalize('/cache/node/14.0.0/x64');
-      findSpy.mockReturnValue(toolPath);
-
-      // act
-      await main.run();
-
-      // assert
-      expect(logSpy).toHaveBeenCalledWith(
-        'Attempt to resolve LTS alias from manifest...'
-      );
-      expect(dbgSpy).toHaveBeenCalledWith(
-        'Getting manifest from actions/node-versions@main'
-      );
-      expect(dbgSpy).not.toHaveBeenCalledWith('No manifest cached');
-      expect(dbgSpy).toHaveBeenCalledWith(
-        `LTS alias '*' for Node version 'lts/*'`
-      );
-      expect(dbgSpy).toHaveBeenCalledWith(
-        `Found LTS release '14.0.0' for Node version 'lts/*'`
-      );
-      expect(logSpy).toHaveBeenCalledWith(`Found in cache @ ${toolPath}`);
-      expect(cnSpy).toHaveBeenCalledWith(
-        `::add-path::${path.join(toolPath, 'bin')}${osm.EOL}`
-      );
-    });
-
-    it('find latest LTS version and install it from manifest (lts/*)', async () => {
-      // arrange
-      inputs['node-version'] = 'lts/*';
-
-      const toolPath = path.normalize('/cache/node/14.0.0/x64');
-      findSpy.mockImplementation(() => '');
-      dlSpy.mockImplementation(async () => '/some/temp/path');
-      exSpy.mockImplementation(async () => '/some/other/temp/path');
-      cacheSpy.mockImplementation(async () => toolPath);
-      const expectedUrl =
-        'https://github.com/actions/node-versions/releases/download/14.0.0-20200423.30/node-14.0.0-linux-x64.tar.gz';
-
-      // act
-      await main.run();
-
-      // assert
-      expect(logSpy).toHaveBeenCalledWith(
-        'Attempt to resolve LTS alias from manifest...'
-      );
-      expect(dbgSpy).toHaveBeenCalledWith(
-        'Getting manifest from actions/node-versions@main'
-      );
-      expect(dbgSpy).not.toHaveBeenCalledWith('No manifest cached');
-      expect(dbgSpy).toHaveBeenCalledWith(
-        `LTS alias '*' for Node version 'lts/*'`
-      );
-      expect(dbgSpy).toHaveBeenCalledWith(
-        `Found LTS release '14.0.0' for Node version 'lts/*'`
-      );
-      expect(logSpy).toHaveBeenCalledWith('Attempting to download 14...');
-      expect(logSpy).toHaveBeenCalledWith(
-        `Acquiring 14.0.0 - ${os.arch} from ${expectedUrl}`
-      );
-      expect(logSpy).toHaveBeenCalledWith('Extracting ...');
-      expect(logSpy).toHaveBeenCalledWith('Adding to the cache ...');
-      expect(cnSpy).toHaveBeenCalledWith(
-        `::add-path::${path.join(toolPath, 'bin')}${osm.EOL}`
-      );
-    });
+        // assert
+        expect(logSpy).toHaveBeenCalledWith(
+          'Attempt to resolve LTS alias from manifest...'
+        );
+        expect(dbgSpy).toHaveBeenCalledWith(
+          'Getting manifest from actions/node-versions@main'
+        );
+        expect(dbgSpy).not.toHaveBeenCalledWith('No manifest cached');
+        expect(dbgSpy).toHaveBeenCalledWith(
+          `LTS alias '${lts}' for Node version 'lts/${lts}'`
+        );
+        expect(dbgSpy).toHaveBeenCalledWith(
+          `Found LTS release '${expectedVersion}' for Node version 'lts/${lts}'`
+        );
+        expect(logSpy).toHaveBeenCalledWith(
+          `Attempting to download ${expectedMajor}...`
+        );
+        expect(logSpy).toHaveBeenCalledWith(
+          `Acquiring ${expectedVersion} - ${os.arch} from ${expectedUrl}`
+        );
+        expect(logSpy).toHaveBeenCalledWith('Extracting ...');
+        expect(logSpy).toHaveBeenCalledWith('Adding to the cache ...');
+        expect(cnSpy).toHaveBeenCalledWith(
+          `::add-path::${path.join(toolPath, 'bin')}${osm.EOL}`
+        );
+      }
+    );
 
     it('fail with unable to parse LTS alias (lts/)', async () => {
       // arrange
@@ -859,6 +876,79 @@ describe('setup-node', () => {
       expect(cnSpy).toHaveBeenCalledWith(
         `::error::Unable to download manifest${osm.EOL}`
       );
+    });
+  });
+
+  describe('latest alias syntax', () => {
+    it.each(['latest', 'current', 'node'])(
+      'download the %s version if alias is provided',
+      async inputVersion => {
+        // Arrange
+        inputs['node-version'] = inputVersion;
+
+        os.platform = 'darwin';
+        os.arch = 'x64';
+
+        findSpy.mockImplementation(() => '');
+        getManifestSpy.mockImplementation(() => {
+          throw new Error('Unable to download manifest');
+        });
+
+        // Act
+        await main.run();
+
+        // assert
+        expect(logSpy).toHaveBeenCalledWith('Unable to download manifest');
+
+        expect(logSpy).toHaveBeenCalledWith('getting latest node version...');
+      }
+    );
+  });
+
+  describe('latest alias syntax from cache', () => {
+    it.each(['latest', 'current', 'node'])(
+      'download the %s version if alias is provided',
+      async inputVersion => {
+        // Arrange
+        inputs['node-version'] = inputVersion;
+        const expectedVersion = nodeTestDist[0];
+
+        os.platform = 'darwin';
+        os.arch = 'x64';
+
+        const toolPath = path.normalize(
+          `/cache/node/${expectedVersion.version}/x64`
+        );
+        findSpy.mockReturnValue(toolPath);
+
+        // Act
+        await main.run();
+
+        // assert
+        expect(logSpy).toHaveBeenCalledWith(`Found in cache @ ${toolPath}`);
+
+        expect(logSpy).toHaveBeenCalledWith('getting latest node version...');
+      }
+    );
+  });
+});
+
+describe('helper methods', () => {
+  describe('parseNodeVersionFile', () => {
+    each`
+      contents                                     | expected
+      ${'12'}                                      | ${'12'}
+      ${'12.3'}                                    | ${'12.3'}
+      ${'12.3.4'}                                  | ${'12.3.4'}
+      ${'v12.3.4'}                                 | ${'12.3.4'}
+      ${'lts/erbium'}                              | ${'lts/erbium'}
+      ${'lts/*'}                                   | ${'lts/*'}
+      ${'nodejs 12.3.4'}                           | ${'12.3.4'}
+      ${'ruby 2.3.4\nnodejs 12.3.4\npython 3.4.5'} | ${'12.3.4'}
+      ${''}                                        | ${''}
+      ${'unknown format'}                          | ${'unknown format'}
+    `.it('parses "$contents"', ({contents, expected}) => {
+      expect(im.parseNodeVersionFile(contents)).toBe(expected);
     });
   });
 });
