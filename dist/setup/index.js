@@ -71770,13 +71770,18 @@ function translateArchToDistUrl(arch) {
 function parseNodeVersionFile(contents) {
     var _a, _b;
     let nodeVersion;
-    const found = contents.match(/^(?:nodejs\s+)?v?(?<version>[^\s]+)$/m);
-    nodeVersion = (_a = found === null || found === void 0 ? void 0 : found.groups) === null || _a === void 0 ? void 0 : _a.version;
+    // Try parsing the file as an NPM `package.json`
+    // file.
+    try {
+        nodeVersion = (_a = JSON.parse(contents).engines) === null || _a === void 0 ? void 0 : _a.node;
+    }
+    catch (_c) {
+        core.warning('Node version file is not JSON file');
+    }
     if (!nodeVersion) {
         try {
-            // Try parsing the file as an NPM `package.json`
-            // file.
-            nodeVersion = (_b = JSON.parse(contents).engines) === null || _b === void 0 ? void 0 : _b.node;
+            const found = contents.match(/^(?:nodejs\s+)?v?(?<version>[^\s]+)$/m);
+            nodeVersion = (_b = found === null || found === void 0 ? void 0 : found.groups) === null || _b === void 0 ? void 0 : _b.version;
             if (!nodeVersion)
                 throw new Error();
         }
