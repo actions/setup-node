@@ -1,70 +1,188 @@
-// Load tempDirectory before it gets wiped by tool-cache
-let tempDirectory = process.env['RUNNER_TEMPDIRECTORY'] || '';
+import os = require('os');
+import * as assert from 'assert';
 import * as core from '@actions/core';
+import * as hc from '@actions/http-client';
 import * as io from '@actions/io';
 import * as tc from '@actions/tool-cache';
-import * as restm from 'typed-rest-client/RestClient';
-import * as os from 'os';
 import * as path from 'path';
 import * as semver from 'semver';
-
-let osPlat: string = os.platform();
-let osArch: string = translateArchToDistUrl(os.arch());
-
-if (!tempDirectory) {
-  let baseLocation;
-  if (process.platform === 'win32') {
-    // On windows use the USERPROFILE env variable
-    baseLocation = process.env['USERPROFILE'] || 'C:\\';
-  } else {
-    if (process.platform === 'darwin') {
-      baseLocation = '/Users';
-    } else {
-      baseLocation = '/home';
-    }
-  }
-  tempDirectory = path.join(baseLocation, 'actions', 'temp');
-}
+import fs = require('fs');
 
 //
 // Node versions interface
 // see https://nodejs.org/dist/index.json
 //
-interface INodeVersion {
+export interface INodeVersion {
   version: string;
   files: string[];
 }
 
-export async function getNode(versionSpec: string) {
+interface INodeVersionInfo {
+  downloadUrl: string;
+  resolvedVersion: string;
+  arch: string;
+  fileName: string;
+}
+
+interface INodeRelease extends tc.IToolRelease {
+  lts?: string;
+}
+
+export async function getNode(
+  versionSpec: string,
+  stable: boolean,
+  checkLatest: boolean,
+  auth: string | undefined,
+  arch: string = os.arch()
+) {
+  // Store manifest data to avoid multiple calls
+  let manifest: INodeRelease[] | undefined;
+  let nodeVersions: INodeVersion[] | undefined;
+  let osPlat: string = os.platform();
+  let osArch: string = translateArchToDistUrl(arch);
+
+  if (isLtsAlias(versionSpec)) {
+    core.info('Attempt to resolve LTS alias from manifest...');
+
+    // No try-catch since it's not possible to resolve LTS alias without manifest
+    manifest = await getManifest(auth);
+
+    versionSpec = resolveLtsAliasFromManifest(versionSpec, stable, manifest);
+  }
+
+  if (isLatestSyntax(versionSpec)) {
+    nodeVersions = await getVersionsFromDist();
+    versionSpec = await queryDistForMatch(versionSpec, arch, nodeVersions);
+    core.info(`getting latest node version...`);
+  }
+
+  if (checkLatest) {
+    core.info('Attempt to resolve the latest version from manifest...');
+    const resolvedVersion = await resolveVersionFromManifest(
+      versionSpec,
+      stable,
+      auth,
+      osArch,
+      manifest
+    );
+    if (resolvedVersion) {
+      versionSpec = resolvedVersion;
+      core.info(`Resolved as '${versionSpec}'`);
+    } else {
+      core.info(`Failed to resolve version ${versionSpec} from manifest`);
+    }
+  }
+
   // check cache
   let toolPath: string;
-  toolPath = tc.find('node', versionSpec);
+  toolPath = tc.find('node', versionSpec, osArch);
 
   // If not found in cache, download
-  if (!toolPath) {
-    let version: string;
-    const c = semver.clean(versionSpec) || '';
-    // If explicit version
-    if (semver.valid(c) != null) {
-      // version to download
-      version = versionSpec;
-    } else {
-      // query nodejs.org for a matching version
-      version = await queryLatestMatch(versionSpec);
-      if (!version) {
+  if (toolPath) {
+    core.info(`Found in cache @ ${toolPath}`);
+  } else {
+    core.info(`Attempting to download ${versionSpec}...`);
+    let downloadPath = '';
+    let info: INodeVersionInfo | null = null;
+
+    //
+    // Try download from internal distribution (popular versions only)
+    //
+    try {
+      info = await getInfoFromManifest(
+        versionSpec,
+        stable,
+        auth,
+        osArch,
+        manifest
+      );
+      if (info) {
+        core.info(
+          `Acquiring ${info.resolvedVersion} - ${info.arch} from ${info.downloadUrl}`
+        );
+        downloadPath = await tc.downloadTool(info.downloadUrl, undefined, auth);
+      } else {
+        core.info(
+          'Not found in manifest.  Falling back to download directly from Node'
+        );
+      }
+    } catch (err) {
+      // Rate limit?
+      if (
+        err instanceof tc.HTTPError &&
+        (err.httpStatusCode === 403 || err.httpStatusCode === 429)
+      ) {
+        core.info(
+          `Received HTTP status code ${err.httpStatusCode}.  This usually indicates the rate limit has been exceeded`
+        );
+      } else {
+        core.info(err.message);
+      }
+      core.debug(err.stack);
+      core.info('Falling back to download directly from Node');
+    }
+
+    //
+    // Download from nodejs.org
+    //
+    if (!downloadPath) {
+      info = await getInfoFromDist(versionSpec, arch, nodeVersions);
+      if (!info) {
         throw new Error(
           `Unable to find Node version '${versionSpec}' for platform ${osPlat} and architecture ${osArch}.`
         );
       }
 
-      // check cache
-      toolPath = tc.find('node', version);
+      core.info(
+        `Acquiring ${info.resolvedVersion} - ${info.arch} from ${info.downloadUrl}`
+      );
+      try {
+        downloadPath = await tc.downloadTool(info.downloadUrl);
+      } catch (err) {
+        if (err instanceof tc.HTTPError && err.httpStatusCode == 404) {
+          return await acquireNodeFromFallbackLocation(
+            info.resolvedVersion,
+            info.arch
+          );
+        }
+
+        throw err;
+      }
     }
 
-    if (!toolPath) {
-      // download, extract, cache
-      toolPath = await acquireNode(version);
+    //
+    // Extract
+    //
+    core.info('Extracting ...');
+    let extPath: string;
+    info = info || ({} as INodeVersionInfo); // satisfy compiler, never null when reaches here
+    if (osPlat == 'win32') {
+      let _7zPath = path.join(__dirname, '../..', 'externals', '7zr.exe');
+      extPath = await tc.extract7z(downloadPath, undefined, _7zPath);
+      // 7z extracts to folder matching file name
+      let nestedPath = path.join(extPath, path.basename(info.fileName, '.7z'));
+      if (fs.existsSync(nestedPath)) {
+        extPath = nestedPath;
+      }
+    } else {
+      extPath = await tc.extractTar(downloadPath, undefined, [
+        'xz',
+        '--strip',
+        '1'
+      ]);
     }
+
+    //
+    // Install into the local tool cache - node extracts with a root folder that matches the fileName downloaded
+    //
+    core.info('Adding to the cache ...');
+    toolPath = await tc.cacheDir(
+      extPath,
+      'node',
+      info.resolvedVersion,
+      info.arch
+    );
+    core.info('Done');
   }
 
   //
@@ -81,38 +199,143 @@ export async function getNode(versionSpec: string) {
   core.addPath(toolPath);
 }
 
-async function queryLatestMatch(versionSpec: string): Promise<string> {
-  // node offers a json list of versions
-  let dataFileName: string;
-  switch (osPlat) {
-    case 'linux':
-      dataFileName = `linux-${osArch}`;
-      break;
-    case 'darwin':
-      dataFileName = `osx-${osArch}-tar`;
-      break;
-    case 'win32':
-      dataFileName = `win-${osArch}-exe`;
-      break;
-    default:
-      throw new Error(`Unexpected OS '${osPlat}'`);
+function isLtsAlias(versionSpec: string): boolean {
+  return versionSpec.startsWith('lts/');
+}
+
+function getManifest(auth: string | undefined): Promise<tc.IToolRelease[]> {
+  core.debug('Getting manifest from actions/node-versions@main');
+  return tc.getManifestFromRepo('actions', 'node-versions', auth, 'main');
+}
+
+function resolveLtsAliasFromManifest(
+  versionSpec: string,
+  stable: boolean,
+  manifest: INodeRelease[]
+): string {
+  const alias = versionSpec.split('lts/')[1]?.toLowerCase();
+
+  if (!alias) {
+    throw new Error(
+      `Unable to parse LTS alias for Node version '${versionSpec}'`
+    );
   }
 
-  let versions: string[] = [];
-  let dataUrl = 'https://nodejs.org/dist/index.json';
-  let rest: restm.RestClient = new restm.RestClient('setup-node');
-  let nodeVersions: INodeVersion[] =
-    (await rest.get<INodeVersion[]>(dataUrl)).result || [];
-  nodeVersions.forEach((nodeVersion: INodeVersion) => {
-    // ensure this version supports your os and platform
-    if (nodeVersion.files.indexOf(dataFileName) >= 0) {
-      versions.push(nodeVersion.version);
-    }
-  });
+  core.debug(`LTS alias '${alias}' for Node version '${versionSpec}'`);
 
-  // get the latest version that matches the version spec
-  let version: string = evaluateVersions(versions, versionSpec);
-  return version;
+  // Supported formats are `lts/<alias>`, `lts/*`, and `lts/-n`. Where asterisk means highest possible LTS and -n means the nth-highest.
+  const n = Number(alias);
+  const aliases = Object.fromEntries(
+    manifest
+      .filter(x => x.lts && x.stable === stable)
+      .map(x => [x.lts!.toLowerCase(), x])
+      .reverse()
+  );
+  const numbered = Object.values(aliases);
+  const release =
+    alias === '*'
+      ? numbered[numbered.length - 1]
+      : n < 0
+      ? numbered[numbered.length - 1 + n]
+      : aliases[alias];
+
+  if (!release) {
+    throw new Error(
+      `Unable to find LTS release '${alias}' for Node version '${versionSpec}'.`
+    );
+  }
+
+  core.debug(
+    `Found LTS release '${release.version}' for Node version '${versionSpec}'`
+  );
+
+  return release.version.split('.')[0];
+}
+
+async function getInfoFromManifest(
+  versionSpec: string,
+  stable: boolean,
+  auth: string | undefined,
+  osArch: string = translateArchToDistUrl(os.arch()),
+  manifest: tc.IToolRelease[] | undefined
+): Promise<INodeVersionInfo | null> {
+  let info: INodeVersionInfo | null = null;
+  if (!manifest) {
+    core.debug('No manifest cached');
+    manifest = await getManifest(auth);
+  }
+
+  const rel = await tc.findFromManifest(versionSpec, stable, manifest, osArch);
+
+  if (rel && rel.files.length > 0) {
+    info = <INodeVersionInfo>{};
+    info.resolvedVersion = rel.version;
+    info.arch = rel.files[0].arch;
+    info.downloadUrl = rel.files[0].download_url;
+    info.fileName = rel.files[0].filename;
+  }
+
+  return info;
+}
+
+async function getInfoFromDist(
+  versionSpec: string,
+  arch: string = os.arch(),
+  nodeVersions?: INodeVersion[]
+): Promise<INodeVersionInfo | null> {
+  let osPlat: string = os.platform();
+  let osArch: string = translateArchToDistUrl(arch);
+
+  let version: string = await queryDistForMatch(
+    versionSpec,
+    arch,
+    nodeVersions
+  );
+
+  if (!version) {
+    return null;
+  }
+
+  //
+  // Download - a tool installer intimately knows how to get the tool (and construct urls)
+  //
+  version = semver.clean(version) || '';
+  let fileName: string =
+    osPlat == 'win32'
+      ? `node-v${version}-win-${osArch}`
+      : `node-v${version}-${osPlat}-${osArch}`;
+  let urlFileName: string =
+    osPlat == 'win32' ? `${fileName}.7z` : `${fileName}.tar.gz`;
+  let url = `https://nodejs.org/dist/v${version}/${urlFileName}`;
+
+  return <INodeVersionInfo>{
+    downloadUrl: url,
+    resolvedVersion: version,
+    arch: arch,
+    fileName: fileName
+  };
+}
+
+async function resolveVersionFromManifest(
+  versionSpec: string,
+  stable: boolean,
+  auth: string | undefined,
+  osArch: string = translateArchToDistUrl(os.arch()),
+  manifest: tc.IToolRelease[] | undefined
+): Promise<string | undefined> {
+  try {
+    const info = await getInfoFromManifest(
+      versionSpec,
+      stable,
+      auth,
+      osArch,
+      manifest
+    );
+    return info?.resolvedVersion;
+  } catch (err) {
+    core.info('Unable to resolve version from manifest...');
+    core.debug(err.message);
+  }
 }
 
 // TODO - should we just export this from @actions/tool-cache? Lifted directly from there
@@ -143,47 +366,62 @@ function evaluateVersions(versions: string[], versionSpec: string): string {
   return version;
 }
 
-async function acquireNode(version: string): Promise<string> {
-  //
-  // Download - a tool installer intimately knows how to get the tool (and construct urls)
-  //
-  version = semver.clean(version) || '';
-  let fileName: string =
-    osPlat == 'win32'
-      ? `node-v${version}-win-${osArch}`
-      : `node-v${version}-${osPlat}-${osArch}`;
-  let urlFileName: string =
-    osPlat == 'win32' ? `${fileName}.7z` : `${fileName}.tar.gz`;
-  let downloadUrl = `https://nodejs.org/dist/v${version}/${urlFileName}`;
+async function queryDistForMatch(
+  versionSpec: string,
+  arch: string = os.arch(),
+  nodeVersions?: INodeVersion[]
+): Promise<string> {
+  let osPlat: string = os.platform();
+  let osArch: string = translateArchToDistUrl(arch);
 
-  let downloadPath: string;
+  // node offers a json list of versions
+  let dataFileName: string;
+  switch (osPlat) {
+    case 'linux':
+      dataFileName = `linux-${osArch}`;
+      break;
+    case 'darwin':
+      dataFileName = `osx-${osArch}-tar`;
+      break;
+    case 'win32':
+      dataFileName = `win-${osArch}-exe`;
+      break;
+    default:
+      throw new Error(`Unexpected OS '${osPlat}'`);
+  }
 
-  try {
-    downloadPath = await tc.downloadTool(downloadUrl);
-  } catch (err) {
-    if (err instanceof tc.HTTPError && err.httpStatusCode == 404) {
-      return await acquireNodeFromFallbackLocation(version);
+  if (!nodeVersions) {
+    core.debug('No dist manifest cached');
+    nodeVersions = await getVersionsFromDist();
+  }
+
+  let versions: string[] = [];
+
+  if (isLatestSyntax(versionSpec)) {
+    core.info(`getting latest node version...`);
+    return nodeVersions[0].version;
+  }
+
+  nodeVersions.forEach((nodeVersion: INodeVersion) => {
+    // ensure this version supports your os and platform
+    if (nodeVersion.files.indexOf(dataFileName) >= 0) {
+      versions.push(nodeVersion.version);
     }
+  });
 
-    throw err;
-  }
+  // get the latest version that matches the version spec
+  let version: string = evaluateVersions(versions, versionSpec);
+  return version;
+}
 
-  //
-  // Extract
-  //
-  let extPath: string;
-  if (osPlat == 'win32') {
-    let _7zPath = path.join(__dirname, '..', 'externals', '7zr.exe');
-    extPath = await tc.extract7z(downloadPath, undefined, _7zPath);
-  } else {
-    extPath = await tc.extractTar(downloadPath);
-  }
-
-  //
-  // Install into the local tool cache - node extracts with a root folder that matches the fileName downloaded
-  //
-  let toolRoot = path.join(extPath, fileName);
-  return await tc.cacheDir(toolRoot, 'node', version);
+export async function getVersionsFromDist(): Promise<INodeVersion[]> {
+  let dataUrl = 'https://nodejs.org/dist/index.json';
+  let httpClient = new hc.HttpClient('setup-node', [], {
+    allowRetries: true,
+    maxRetries: 3
+  });
+  let response = await httpClient.getJson<INodeVersion[]>(dataUrl);
+  return response.result || [];
 }
 
 // For non LTS versions of Node, the files we need (for Windows) are sometimes located
@@ -199,18 +437,26 @@ async function acquireNode(version: string): Promise<string> {
 // Note also that the files are normally zipped but in this case they are just an exe
 // and lib file in a folder, not zipped.
 async function acquireNodeFromFallbackLocation(
-  version: string
+  version: string,
+  arch: string = os.arch()
 ): Promise<string> {
+  let osPlat: string = os.platform();
+  let osArch: string = translateArchToDistUrl(arch);
+
   // Create temporary folder to download in to
-  let tempDownloadFolder: string =
+  const tempDownloadFolder: string =
     'temp_' + Math.floor(Math.random() * 2000000000);
-  let tempDir: string = path.join(tempDirectory, tempDownloadFolder);
+  const tempDirectory = process.env['RUNNER_TEMP'] || '';
+  assert.ok(tempDirectory, 'Expected RUNNER_TEMP to be defined');
+  const tempDir: string = path.join(tempDirectory, tempDownloadFolder);
   await io.mkdirP(tempDir);
   let exeUrl: string;
   let libUrl: string;
   try {
     exeUrl = `https://nodejs.org/dist/v${version}/win-${osArch}/node.exe`;
     libUrl = `https://nodejs.org/dist/v${version}/win-${osArch}/node.lib`;
+
+    core.info(`Downloading only node binary from ${exeUrl}`);
 
     const exePath = await tc.downloadTool(exeUrl);
     await io.cp(exePath, path.join(tempDir, 'node.exe'));
@@ -229,7 +475,9 @@ async function acquireNodeFromFallbackLocation(
       throw err;
     }
   }
-  return await tc.cacheDir(tempDir, 'node', version);
+  let toolPath = await tc.cacheDir(tempDir, 'node', version, arch);
+  core.addPath(toolPath);
+  return toolPath;
 }
 
 // os.arch does not always match the relative download url, e.g.
@@ -244,4 +492,35 @@ function translateArchToDistUrl(arch: string): string {
     default:
       return arch;
   }
+}
+
+export function parseNodeVersionFile(contents: string): string {
+  let nodeVersion: string | undefined;
+
+  // Try parsing the file as an NPM `package.json`
+  // file.
+  try {
+    nodeVersion = JSON.parse(contents).engines?.node;
+  } catch {
+    core.warning('Node version file is not JSON file');
+  }
+
+  if (!nodeVersion) {
+    try {
+      const found = contents.match(/^(?:nodejs\s+)?v?(?<version>[^\s]+)$/m);
+      nodeVersion = found?.groups?.version;
+
+      if (!nodeVersion) throw new Error();
+    } catch (err) {
+      // In the case of an unknown format,
+      // return as is and evaluate the version separately.
+      nodeVersion = contents.trim();
+    }
+  }
+
+  return nodeVersion as string;
+}
+
+function isLatestSyntax(versionSpec): boolean {
+  return ['current', 'latest', 'node'].includes(versionSpec);
 }

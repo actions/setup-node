@@ -1,0 +1,183 @@
+[
+  {
+    "version": "14.0.0",
+    "stable": true,
+    "lts": "Fermium",
+    "release_url": "https://github.com/actions/node-versions/releases/tag/14.0.0-20200507.99",
+    "files": [
+      {
+        "filename": "node-14.0.0-darwin-x64.tar.gz",
+        "arch": "x64",
+        "platform": "darwin",
+        "download_url": "https://github.com/actions/node-versions/releases/download/14.0.0-20200507.99/node-14.0.0-darwin-x64.tar.gz"
+      },
+      {
+        "filename": "node-14.0.0-linux-x64.tar.gz",
+        "arch": "x64",
+        "platform": "linux",
+        "download_url": "https://github.com/actions/node-versions/releases/download/14.0.0-20200507.99/node-14.0.0-linux-x64.tar.gz"
+      },
+      {
+        "filename": "node-14.0.0-win32-x64.7z",
+        "arch": "x64",
+        "platform": "win32",
+        "download_url": "https://github.com/actions/node-versions/releases/download/14.0.0-20200507.99/node-14.0.0-win32-x64.7z"
+      }
+    ]
+  },
+  {
+    "version": "13.13.0",
+    "stable": true,
+    "release_url": "https://github.com/actions/node-versions/releases/tag/13.13.0-20200507.97",
+    "files": [
+      {
+        "filename": "node-13.13.0-darwin-x64.tar.gz",
+        "arch": "x64",
+        "platform": "darwin",
+        "download_url": "https://github.com/actions/node-versions/releases/download/13.13.0-20200507.97/node-13.13.0-darwin-x64.tar.gz"
+      },
+      {
+        "filename": "node-13.13.0-linux-x64.tar.gz",
+        "arch": "x64",
+        "platform": "linux",
+        "download_url": "https://github.com/actions/node-versions/releases/download/13.13.0-20200507.97/node-13.13.0-linux-x64.tar.gz"
+      },
+      {
+        "filename": "node-13.13.0-win32-x64.7z",
+        "arch": "x64",
+        "platform": "win32",
+        "download_url": "https://github.com/actions/node-versions/releases/download/13.13.0-20200507.97/node-13.13.0-win32-x64.7z"
+      }
+    ]
+  },
+  {
+    "version": "12.16.2",
+    "stable": true,
+    "lts": "Erbium",
+    "release_url": "https://github.com/actions/node-versions/releases/tag/12.16.2-20200507.95",
+    "files": [
+      {
+        "filename": "node-12.16.2-darwin-x64.tar.gz",
+        "arch": "x64",
+        "platform": "darwin",
+        "download_url": "https://github.com/actions/node-versions/releases/download/12.16.2-20200507.95/node-12.16.2-darwin-x64.tar.gz"
+      },
+      {
+        "filename": "node-12.16.2-linux-x64.tar.gz",
+        "arch": "x64",
+        "platform": "linux",
+        "download_url": "https://github.com/actions/node-versions/releases/download/12.16.2-20200507.95/node-12.16.2-linux-x64.tar.gz"
+      },
+      {
+        "filename": "node-12.16.2-win32-x64.7z",
+        "arch": "x64",
+        "platform": "win32",
+        "download_url": "https://github.com/actions/node-versions/releases/download/12.16.2-20200507.95/node-12.16.2-win32-x64.7z"
+      }
+    ]
+  },
+  {
+    "version": "12.0.0",
+    "stable": true,
+    "lts": "Erbium",
+    "release_url": "https://github.com/actions/node-versions/releases/tag/12.0.0-20200507.71",
+    "files": [
+      {
+        "filename": "node-12.0.0-darwin-x64.tar.gz",
+        "arch": "x64",
+        "platform": "darwin",
+        "download_url": "https://github.com/actions/node-versions/releases/download/12.0.0-20200507.71/node-12.0.0-darwin-x64.tar.gz"
+      },
+      {
+        "filename": "node-12.0.0-linux-x64.tar.gz",
+        "arch": "x64",
+        "platform": "linux",
+        "download_url": "https://github.com/actions/node-versions/releases/download/12.0.0-20200507.71/node-12.0.0-linux-x64.tar.gz"
+      },
+      {
+        "filename": "node-12.0.0-win32-x64.7z",
+        "arch": "x64",
+        "platform": "win32",
+        "download_url": "https://github.com/actions/node-versions/releases/download/12.0.0-20200507.71/node-12.0.0-win32-x64.7z"
+      }
+    ]
+  },
+  {
+    "version": "10.20.1",
+    "stable": true,
+    "lts": "Dubnium",
+    "release_url": "https://github.com/actions/node-versions/releases/tag/10.20.1-20200507.70",
+    "files": [
+      {
+        "filename": "node-10.20.1-darwin-x64.tar.gz",
+        "arch": "x64",
+        "platform": "darwin",
+        "download_url": "https://github.com/actions/node-versions/releases/download/10.20.1-20200507.70/node-10.20.1-darwin-x64.tar.gz"
+      },
+      {
+        "filename": "node-10.20.1-linux-x64.tar.gz",
+        "arch": "x64",
+        "platform": "linux",
+        "download_url": "https://github.com/actions/node-versions/releases/download/10.20.1-20200507.70/node-10.20.1-linux-x64.tar.gz"
+      },
+      {
+        "filename": "node-10.20.1-win32-x64.7z",
+        "arch": "x64",
+        "platform": "win32",
+        "download_url": "https://github.com/actions/node-versions/releases/download/10.20.1-20200507.70/node-10.20.1-win32-x64.7z"
+      }
+    ]
+  },
+  {
+    "version": "8.17.0",
+    "stable": true,
+    "lts": "Carbon",
+    "release_url": "https://github.com/actions/node-versions/releases/tag/8.17.0-20200507.37",
+    "files": [
+      {
+        "filename": "node-8.17.0-darwin-x64.tar.gz",
+        "arch": "x64",
+        "platform": "darwin",
+        "download_url": "https://github.com/actions/node-versions/releases/download/8.17.0-20200507.37/node-8.17.0-darwin-x64.tar.gz"
+      },
+      {
+        "filename": "node-8.17.0-linux-x64.tar.gz",
+        "arch": "x64",
+        "platform": "linux",
+        "download_url": "https://github.com/actions/node-versions/releases/download/8.17.0-20200507.37/node-8.17.0-linux-x64.tar.gz"
+      },
+      {
+        "filename": "node-8.17.0-win32-x64.7z",
+        "arch": "x64",
+        "platform": "win32",
+        "download_url": "https://github.com/actions/node-versions/releases/download/8.17.0-20200507.37/node-8.17.0-win32-x64.7z"
+      }
+    ]
+  },
+  {
+    "version": "6.17.1",
+    "stable": true,
+    "lts": "Boron",
+    "release_url": "https://github.com/actions/node-versions/releases/tag/6.17.1-20200529.2",
+    "files": [
+      {
+        "filename": "node-6.17.1-darwin-x64.tar.gz",
+        "arch": "x64",
+        "platform": "darwin",
+        "download_url": "https://github.com/actions/node-versions/releases/download/6.17.1-20200529.2/node-6.17.1-darwin-x64.tar.gz"
+      },
+      {
+        "filename": "node-6.17.1-linux-x64.tar.gz",
+        "arch": "x64",
+        "platform": "linux",
+        "download_url": "https://github.com/actions/node-versions/releases/download/6.17.1-20200529.2/node-6.17.1-linux-x64.tar.gz"
+      },
+      {
+        "filename": "node-6.17.1-win32-x64.7z",
+        "arch": "x64",
+        "platform": "win32",
+        "download_url": "https://github.com/actions/node-versions/releases/download/6.17.1-20200529.2/node-6.17.1-win32-x64.7z"
+      }
+    ]
+  }
+]
