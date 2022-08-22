@@ -250,7 +250,7 @@ steps:
 ### Yarn2 configuration
 Yarn2 ignores both .npmrc and .yarnrc files created by the action, so before installing dependencies from the private repo it is necessary either to create or to modify existing yarnrc.yml file with `yarn config set` commands.
 
-Below there's a sample "Setup .yarnrc.yml" step to configure private github registy for `my-org` organisation.
+Below you can find a sample "Setup .yarnrc.yml" step, that is going to allow you to configure a private GitHub registry for 'my-org' organisation.
 
 ```yaml
 steps:
