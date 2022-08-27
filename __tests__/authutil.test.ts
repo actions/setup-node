@@ -15,11 +15,7 @@ describe('authutil tests', () => {
   let dbgSpy: jest.SpyInstance;
 
   beforeAll(async () => {
-    const randPath = path.join(
-      Math.random()
-        .toString(36)
-        .substring(7)
-    );
+    const randPath = path.join(Math.random().toString(36).substring(7));
     console.log('::stop-commands::stoptoken'); // Disable executing of runner commands when running tests in actions
     process.env['GITHUB_ENV'] = ''; // Stub out Environment file functionality so we can verify it writes to standard out (toolkit is backwards compatible)
     const tempDir = path.join(_runnerDir, randPath, 'temp');

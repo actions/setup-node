@@ -1,25 +1,30 @@
 # 0. Caching dependencies
+
 Date: 2021-05-21
 
 Status: Accepted
 
 # Context
+
 `actions/setup-node` is the 2nd most popular action in GitHub Actions. A lot of customers use it in conjunction with [actions/cache](https://github.com/actions/cache) to speed up dependencies installation.  
 See more examples on proper usage in [actions/cache documentation](https://github.com/actions/cache/blob/main/examples.md#node---npm).
 
 # Goals & Anti-Goals
+
 Integration of caching functionality into `actions/setup-node` action will bring the following benefits for action users:
+
 - Decrease the entry threshold for using the cache for Node.js dependencies and simplify initial configuration
 - Simplify YAML pipelines because no need additional steps to enable caching
 - More users will use cache for Node.js so more customers will have fast builds!
 
 We will add support for NPM and Yarn dependencies caching.  
-As the first stage, we won't support custom locations for `package-lock.json`, `yarn.lock` files and action will work only when files are located in repository root. 
+As the first stage, we won't support custom locations for `package-lock.json`, `yarn.lock` files and action will work only when files are located in repository root.
 
 We don't pursue the goal to provide wide customization of caching in scope of `actions/setup-node` action. The purpose of this integration is covering ~90% of basic use-cases. If user needs flexible customization, we should advice them to use `actions/cache` directly.
 
 # Decision
-- Add `cache` input parameter to `actions/setup-node`. For now, input will accept the following values: 
+
+- Add `cache` input parameter to `actions/setup-node`. For now, input will accept the following values:
   - `npm` - enable caching for npm dependencies
   - `yarn` - enable caching for yarn dependencies
   - `''` - disable caching (default value)
@@ -33,24 +38,27 @@ We don't pursue the goal to provide wide customization of caching in scope of `a
   - Yarn 2 (retrieved via `yarn config get cacheFolder`)
 
 # Example of real use-cases
+
 Npm package manager:
+
 ```yml
 steps:
-- uses: actions/checkout@v2
-- uses: actions/setup-node@v2
-  with:
-    node-version: '14'
-    cache: npm
+  - uses: actions/checkout@v2
+  - uses: actions/setup-node@v2
+    with:
+      node-version: '14'
+      cache: npm
 ```
 
 Yarn package manager:
+
 ```yml
 steps:
-- uses: actions/checkout@v2
-- uses: actions/setup-node@v2
-  with:
-    node-version: '14'
-    cache: yarn
+  - uses: actions/checkout@v2
+  - uses: actions/setup-node@v2
+    with:
+      node-version: '14'
+      cache: yarn
 ```
 
 # Release process
