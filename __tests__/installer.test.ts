@@ -400,10 +400,10 @@ describe('setup-node', () => {
     os.platform = 'linux';
     os.arch = 'x64';
 
-    inputs['node-version'] = '12';
+    inputs['node-version'] = '16';
     inputs['corepack'] = 'true';
 
-    const toolPath = path.normalize('/cache/node/12.16.1/x64');
+    const toolPath = path.normalize('/cache/node/16.17.0/x64');
     findSpy.mockReturnValue(toolPath);
     await main.run();
 

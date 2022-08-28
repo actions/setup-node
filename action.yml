@@ -15,7 +15,7 @@ inputs:
     description: 'Set this option if you want the action to check for the latest available version that satisfies the version spec.'
     default: 'false'
   corepack:
-    description: 'Set this option if you want to install the core-pack.'
+    description: 'Automatically enables corepack'
     default: 'false'
   registry-url:
     description: 'Optional registry to set up for auth. Will set the registry in a project level .npmrc and .yarnrc file, and set up auth to read in from env.NODE_AUTH_TOKEN.'
@@ -28,7 +28,7 @@ inputs:
     description: 'Used to specify a package manager for caching in the default directory. Supported values: npm, yarn, pnpm.'
   cache-dependency-path:
     description: 'Used to specify the path to a dependency file: package-lock.json, yarn.lock, etc. Supports wildcards or a list of file names for caching multiple dependencies.'
-# TODO: add input to control forcing to pull from cloud or dist. 
+# TODO: add input to control forcing to pull from cloud or dist.
 #       escape valve for someone having issues or needing the absolute latest which isn't cached yet
 outputs:
   cache-hit:

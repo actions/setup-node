@@ -318,7 +318,7 @@ steps:
 - uses: actions/setup-node@v3
   with:
     node-version: '14.x'
-    corepack: enable
+    corepack: true
 ```
 
 It is recommended to configure `package.json#packageManager` if you want to use it.
@@ -327,7 +327,7 @@ e.g.
 ```json
 {
   "name": "example",
-  "packageManager": "pnpm@7.5.2",
+  "packageManager": "pnpm@7.9.5",
   // ...
 }
 ```
