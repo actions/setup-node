@@ -56,7 +56,6 @@ describe('setup-node', () => {
     platSpy.mockImplementation(() => os['platform']);
     archSpy = jest.spyOn(osm, 'arch');
     archSpy.mockImplementation(() => os['arch']);
-    execSpy = jest.spyOn(cp, 'execSync');
 
     // @actions/tool-cache
     findSpy = jest.spyOn(tc, 'find');
@@ -110,6 +109,7 @@ describe('setup-node', () => {
     // @actions/exec
     getExecOutputSpy = jest.spyOn(exec, 'getExecOutput');
     getExecOutputSpy.mockImplementation(() => 'v16.15.0');
+    execSpy = jest.spyOn(cp, 'execSync');
   });
 
   afterEach(() => {
@@ -397,18 +397,9 @@ describe('setup-node', () => {
   }, 100000);
 
   it('enables corepack if specified', async () => {
-    os.platform = 'linux';
-    os.arch = 'x64';
-
-    inputs['node-version'] = '16';
     inputs['corepack'] = 'true';
-
-    const toolPath = path.normalize('/cache/node/16.17.0/x64');
-    findSpy.mockReturnValue(toolPath);
     await main.run();
-
-    // It seems to call it with the absolute path to corepack, so we easily use `toHaveBeenCalledWith`
-    expect(cnSpy.mock.calls[3][0]).toContain('corepack enable');
+    expect(execSpy).toHaveBeenCalledWith('corepack', ['enable']);
   });
 
   describe('check-latest flag', () => {
