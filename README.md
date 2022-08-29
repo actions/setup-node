@@ -31,7 +31,7 @@ The `node-version` input is optional. If not supplied, the node version from PAT
 
 The action will first check the local cache for a semver match. If unable to find a specific version in the cache, the action will attempt to download a version of Node.js. It will pull LTS versions from [node-versions releases](https://github.com/actions/node-versions/releases) and on miss or failure will fall back to the previous behavior of downloading directly from [node dist](https://nodejs.org/dist/).
 
-For information regarding locally cached versions of Node.js on GitHub hosted runners, check out [GitHub Actions Virtual Environments](https://github.com/actions/virtual-environments).
+For information regarding locally cached versions of Node.js on GitHub hosted runners, check out [GitHub Actions Runner Images](https://github.com/actions/runner-images).
 
 ### Supported version syntax
 
@@ -44,7 +44,7 @@ Examples:
  - NVM LTS syntax: `lts/erbium`, `lts/fermium`, `lts/*`, `lts/-n`
  - Latest release: `*` or `latest`/`current`/`node`
 
-**Note:** Like the other values, `*` will get the latest [locally-cached Node.js version](https://github.com/actions/virtual-environments/blob/main/images/linux/Ubuntu2004-Readme.md#nodejs), or the latest version from [actions/node-versions](https://github.com/actions/node-versions/blob/main/versions-manifest.json), depending on the [`check-latest`](docs/advanced-usage.md#check-latest-version) input.
+**Note:** Like the other values, `*` will get the latest [locally-cached Node.js version](https://github.com/actions/runner-images/blob/main/images/linux/Ubuntu2204-Readme.md#nodejs), or the latest version from [actions/node-versions](https://github.com/actions/node-versions/blob/main/versions-manifest.json), depending on the [`check-latest`](docs/advanced-usage.md#check-latest-version) input.
 
 `current`/`latest`/`node` always resolve to the latest [dist version](https://nodejs.org/dist/index.json).
 That version is then downloaded from actions/node-versions if possible, or directly from Node.js if not.
