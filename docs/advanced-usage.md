@@ -72,7 +72,7 @@ steps:
 
 ## Architecture
 
-You can use any of the [supported operating systems](https://docs.github.com/en/actions/reference/virtual-environments-for-github-hosted-runners), and the compatible `architecture` can be selected using `architecture`. Values are `x86`, `x64`, `arm64`, `armv6l`, `armv7l`, `ppc64le`, `s390x` (not all of the architectures are available on all platforms).
+You can use any of the [supported operating systems](https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners), and the compatible `architecture` can be selected using `architecture`. Values are `x86`, `x64`, `arm64`, `armv6l`, `armv7l`, `ppc64le`, `s390x` (not all of the architectures are available on all platforms).
 
 When using `architecture`, `node-version` must be provided as well.
 ```yaml
