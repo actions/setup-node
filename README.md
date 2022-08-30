@@ -19,12 +19,12 @@ See [action.yml](action.yml)
 
 ```yaml
 steps:
-- uses: actions/checkout@v3
-- uses: actions/setup-node@v3
-  with:
-    node-version: 16
-- run: npm ci
-- run: npm test
+  - uses: actions/checkout@v3
+  - uses: actions/setup-node@v3
+    with:
+      node-version: 16
+  - run: npm ci
+  - run: npm test
 ```
 
 The `node-version` input is optional. If not supplied, the node version from PATH will be used. However, it is recommended to always specify Node.js version and don't rely on the system one.
@@ -39,10 +39,10 @@ The `node-version` input supports the Semantic Versioning Specification, for mor
 
 Examples:
 
- - Major versions: `14`, `16`, `18`
- - More specific versions: `10.15`, `16.15.1` , `18.4.0`
- - NVM LTS syntax: `lts/erbium`, `lts/fermium`, `lts/*`, `lts/-n`
- - Latest release: `*` or `latest`/`current`/`node`
+- Major versions: `14`, `16`, `18`
+- More specific versions: `10.15`, `16.15.1` , `18.4.0`
+- NVM LTS syntax: `lts/erbium`, `lts/fermium`, `lts/*`, `lts/-n`
+- Latest release: `*` or `latest`/`current`/`node`
 
 **Note:** Like the other values, `*` will get the latest [locally-cached Node.js version](https://github.com/actions/runner-images/blob/main/images/linux/Ubuntu2204-Readme.md#nodejs), or the latest version from [actions/node-versions](https://github.com/actions/node-versions/blob/main/versions-manifest.json), depending on the [`check-latest`](docs/advanced-usage.md#check-latest-version) input.
 
@@ -68,27 +68,27 @@ See the examples of using cache for `yarn`/`pnpm` and `cache-dependency-path` in
 
 ```yaml
 steps:
-- uses: actions/checkout@v3
-- uses: actions/setup-node@v3
-  with:
-    node-version: 16
-    cache: 'npm'
-- run: npm ci
-- run: npm test
+  - uses: actions/checkout@v3
+  - uses: actions/setup-node@v3
+    with:
+      node-version: 16
+      cache: 'npm'
+  - run: npm ci
+  - run: npm test
 ```
 
 **Caching npm dependencies in monorepos:**
 
 ```yaml
 steps:
-- uses: actions/checkout@v3
-- uses: actions/setup-node@v3
-  with:
-    node-version: 16
-    cache: 'npm'
-    cache-dependency-path: subdir/package-lock.json
-- run: npm ci
-- run: npm test
+  - uses: actions/checkout@v3
+  - uses: actions/setup-node@v3
+    with:
+      node-version: 16
+      cache: 'npm'
+      cache-dependency-path: subdir/package-lock.json
+  - run: npm ci
+  - run: npm test
 ```
 
 ## Matrix Testing
@@ -99,7 +99,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        node: [ 14, 16, 18 ]
+        node: [14, 16, 18]
     name: Node ${{ matrix.node }} sample
     steps:
       - uses: actions/checkout@v3
