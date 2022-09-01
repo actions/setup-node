@@ -48,8 +48,8 @@ export async function run() {
       auth.configAuthentication(registryUrl, alwaysAuth);
     }
 
-    const enableCorepack = core.getInput('corepack');
-    if (enableCorepack === 'true') {
+    const enableCorepack = core.getBooleanInput('corepack');
+    if (enableCorepack) {
       await exec.exec('corepack', ['enable']);
     }
 
