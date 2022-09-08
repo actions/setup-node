@@ -86,7 +86,7 @@ When using the `package.json` input, the action will look for `volta.node` first
 
 ## Architecture
 
-You can use any of the [supported operating systems](https://docs.github.com/en/actions/reference/virtual-environments-for-github-hosted-runners), and the compatible `architecture` can be selected using `architecture`. Values are `x86`, `x64`, `arm64`, `armv6l`, `armv7l`, `ppc64le`, `s390x` (not all of the architectures are available on all platforms).
+You can use any of the [supported operating systems](https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners), and the compatible `architecture` can be selected using `architecture`. Values are `x86`, `x64`, `arm64`, `armv6l`, `armv7l`, `ppc64le`, `s390x` (not all of the architectures are available on all platforms).
 
 When using `architecture`, `node-version` must be provided as well.
 ```yaml
@@ -261,5 +261,25 @@ steps:
 # `npm rebuild` will run all those post-install scripts for us.
 - run: npm rebuild && npm run prepare --if-present
 ```
+### Yarn2 configuration
+Yarn2 ignores both .npmrc and .yarnrc files created by the action, so before installing dependencies from the private repo it is necessary either to create or to modify existing yarnrc.yml file with `yarn config set` commands.
 
+Below you can find a sample "Setup .yarnrc.yml" step, that is going to allow you to configure a private GitHub registry for 'my-org' organisation.
+
+```yaml
+steps:
+- uses: actions/checkout@v3
+- uses: actions/setup-node@v3
+  with:
+    node-version: '14.x'
+- name: Setup .yarnrc.yml
+  run: |
+    yarn config set npmScopes.my-org.npmRegistryServer "https://npm.pkg.github.com"
+    yarn config set npmScopes.my-org.npmAlwaysAuth true
+    yarn config set npmScopes.my-org.npmAuthToken $NPM_AUTH_TOKEN
+  env:
+    NPM_AUTH_TOKEN: ${{ secrets.YARN_TOKEN }}
+- name: Install dependencies
+  run: yarn install --immutable
+```
 NOTE: As per https://github.com/actions/setup-node/issues/49 you cannot use `secrets.GITHUB_TOKEN` to access private GitHub Packages within the same organisation but in a different repository.
