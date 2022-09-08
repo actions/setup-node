@@ -102,6 +102,25 @@ jobs:
       - name: Verify node
         run: __tests__/verify-node.sh 14
 
+  version-file-volta:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ ubuntu-latest, windows-latest, macos-latest ]
+    steps:
+      - uses: actions/checkout@v3
+      - name: Remove engines from package.json
+        shell: bash
+        run: |
+          jq 'del(.engines)' ./__tests__/data/package.json | sponge ./__tests__/data/package.json
+      - name: Setup node from node version file
+        uses: ./
+        with:
+          node-version-file: '__tests__/data/package.json'
+      - name: Verify node
+        run: __tests__/verify-node.sh 14
+
   node-dist:
     runs-on: ${{ matrix.os }}
     strategy:
