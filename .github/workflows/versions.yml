@@ -112,8 +112,7 @@ jobs:
       - uses: actions/checkout@v3
       - name: Remove engines from package.json
         shell: bash
-        run: |
-          jq 'del(.engines)' ./__tests__/data/package.json | sponge ./__tests__/data/package.json
+        run: cat <<< "$(jq 'del(.engines)' ./__tests__/data/package.json)" > ./__tests__/data/package.json
       - name: Setup node from node version file
         uses: ./
         with:
