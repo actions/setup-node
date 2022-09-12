@@ -73530,29 +73530,25 @@ function translateArchToDistUrl(arch) {
     }
 }
 function parseNodeVersionFile(contents) {
-    var _a, _b;
+    var _a, _b, _c;
     let nodeVersion;
-    // Try parsing the file as an NPM `package.json`
-    // file.
+    // Try parsing the file as an NPM `package.json` file.
     try {
-        nodeVersion = (_a = JSON.parse(contents).engines) === null || _a === void 0 ? void 0 : _a.node;
+        nodeVersion = (_a = JSON.parse(contents).volta) === null || _a === void 0 ? void 0 : _a.node;
+        if (!nodeVersion)
+            nodeVersion = (_b = JSON.parse(contents).engines) === null || _b === void 0 ? void 0 : _b.node;
     }
-    catch (_c) {
+    catch (_d) {
         core.warning('Node version file is not JSON file');
     }
     if (!nodeVersion) {
-        try {
-            const found = contents.match(/^(?:nodejs\s+)?v?(?<version>[^\s]+)$/m);
-            nodeVersion = (_b = found === null || found === void 0 ? void 0 : found.groups) === null || _b === void 0 ? void 0 : _b.version;
-            if (!nodeVersion)
-                throw new Error();
-        }
-        catch (err) {
-            // In the case of an unknown format,
-            // return as is and evaluate the version separately.
-            nodeVersion = contents.trim();
-        }
+        const found = contents.match(/^(?:nodejs\s+)?v?(?<version>[^\s]+)$/m);
+        nodeVersion = (_c = found === null || found === void 0 ? void 0 : found.groups) === null || _c === void 0 ? void 0 : _c.version;
     }
+    // In the case of an unknown format,
+    // return as is and evaluate the version separately.
+    if (!nodeVersion)
+        nodeVersion = contents.trim();
     return nodeVersion;
 }
 exports.parseNodeVersionFile = parseNodeVersionFile;

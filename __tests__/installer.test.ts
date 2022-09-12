@@ -579,6 +579,7 @@ describe('setup-node', () => {
       existsSpy.mockImplementationOnce(
         input => input === path.join(__dirname, 'data', versionFile)
       );
+
       // Act
       await main.run();
 

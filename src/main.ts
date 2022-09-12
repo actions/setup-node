@@ -95,14 +95,17 @@ function resolveVersionInput(): string {
       process.env.GITHUB_WORKSPACE!,
       versionFileInput
     );
+
     if (!fs.existsSync(versionFilePath)) {
       throw new Error(
         `The specified node version file at: ${versionFilePath} does not exist`
       );
     }
+
     version = installer.parseNodeVersionFile(
       fs.readFileSync(versionFilePath, 'utf8')
     );
+
     core.info(`Resolved ${versionFileInput} as ${version}`);
   }
 
