@@ -1,8 +1,11 @@
 import * as core from '@actions/core';
+import * as exec from '@actions/exec';
 import * as installer from './installer';
+import fs from 'fs';
 import * as auth from './authutil';
 import * as path from 'path';
-import {URL} from 'url';
+import {restoreCache} from './cache-restore';
+import {isGhes, isCacheFeatureAvailable} from './cache-utils';
 import os = require('os');
 
 export async function run() {
@@ -11,12 +14,10 @@ export async function run() {
     // Version is optional.  If supplied, install / use from the tool cache
     // If not supplied then task is still used to setup proxy, auth, etc...
     //
-    let version = core.getInput('node-version');
-    if (!version) {
-      version = core.getInput('version');
-    }
+    let version = resolveVersionInput();
 
     let arch = core.getInput('architecture');
+    const cache = core.getInput('cache');
 
     // if architecture supplied but node-version is not
     // if we don't throw a warning, the already installed x64 node will be used which is not probably what user meant.
@@ -39,13 +40,30 @@ export async function run() {
       await installer.getNode(version, stable, checkLatest, auth, arch);
     }
 
+    // Output version of node is being used
+    try {
+      const {stdout: installedVersion} = await exec.getExecOutput(
+        'node',
+        ['--version'],
+        {ignoreReturnCode: true, silent: true}
+      );
+      core.setOutput('node-version', installedVersion.trim());
+    } catch (err) {
+      core.setOutput('node-version', '');
+    }
+
     const registryUrl: string = core.getInput('registry-url');
     const alwaysAuth: string = core.getInput('always-auth');
     if (registryUrl) {
       auth.configAuthentication(registryUrl, alwaysAuth);
     }
 
-    const matchersPath = path.join(__dirname, '..', '.github');
+    if (cache && isCacheFeatureAvailable()) {
+      const cacheDependencyPath = core.getInput('cache-dependency-path');
+      await restoreCache(cache, cacheDependencyPath);
+    }
+
+    const matchersPath = path.join(__dirname, '../..', '.github');
     core.info(`##[add-matcher]${path.join(matchersPath, 'tsc.json')}`);
     core.info(
       `##[add-matcher]${path.join(matchersPath, 'eslint-stylish.json')}`
@@ -53,14 +71,43 @@ export async function run() {
     core.info(
       `##[add-matcher]${path.join(matchersPath, 'eslint-compact.json')}`
     );
-  } catch (error) {
-    core.setFailed(error.message);
+  } catch (err) {
+    core.setFailed(err.message);
   }
 }
 
-function isGhes(): boolean {
-  const ghUrl = new URL(
-    process.env['GITHUB_SERVER_URL'] || 'https://github.com'
-  );
-  return ghUrl.hostname.toUpperCase() !== 'GITHUB.COM';
+function resolveVersionInput(): string {
+  let version = core.getInput('node-version');
+  const versionFileInput = core.getInput('node-version-file');
+
+  if (version && versionFileInput) {
+    core.warning(
+      'Both node-version and node-version-file inputs are specified, only node-version will be used'
+    );
+  }
+
+  if (version) {
+    return version;
+  }
+
+  if (versionFileInput) {
+    const versionFilePath = path.join(
+      process.env.GITHUB_WORKSPACE!,
+      versionFileInput
+    );
+
+    if (!fs.existsSync(versionFilePath)) {
+      throw new Error(
+        `The specified node version file at: ${versionFilePath} does not exist`
+      );
+    }
+
+    version = installer.parseNodeVersionFile(
+      fs.readFileSync(versionFilePath, 'utf8')
+    );
+
+    core.info(`Resolved ${versionFileInput} as ${version}`);
+  }
+
+  return version;
 }

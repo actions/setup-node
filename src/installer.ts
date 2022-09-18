@@ -24,6 +24,10 @@ interface INodeVersionInfo {
   fileName: string;
 }
 
+interface INodeRelease extends tc.IToolRelease {
+  lts?: string;
+}
+
 export async function getNode(
   versionSpec: string,
   stable: boolean,
@@ -31,8 +35,26 @@ export async function getNode(
   auth: string | undefined,
   arch: string = os.arch()
 ) {
+  // Store manifest data to avoid multiple calls
+  let manifest: INodeRelease[] | undefined;
+  let nodeVersions: INodeVersion[] | undefined;
   let osPlat: string = os.platform();
   let osArch: string = translateArchToDistUrl(arch);
+
+  if (isLtsAlias(versionSpec)) {
+    core.info('Attempt to resolve LTS alias from manifest...');
+
+    // No try-catch since it's not possible to resolve LTS alias without manifest
+    manifest = await getManifest(auth);
+
+    versionSpec = resolveLtsAliasFromManifest(versionSpec, stable, manifest);
+  }
+
+  if (isLatestSyntax(versionSpec)) {
+    nodeVersions = await getVersionsFromDist();
+    versionSpec = await queryDistForMatch(versionSpec, arch, nodeVersions);
+    core.info(`getting latest node version...`);
+  }
 
   if (checkLatest) {
     core.info('Attempt to resolve the latest version from manifest...');
@@ -40,7 +62,8 @@ export async function getNode(
       versionSpec,
       stable,
       auth,
-      osArch
+      osArch,
+      manifest
     );
     if (resolvedVersion) {
       versionSpec = resolvedVersion;
@@ -66,7 +89,13 @@ export async function getNode(
     // Try download from internal distribution (popular versions only)
     //
     try {
-      info = await getInfoFromManifest(versionSpec, stable, auth, osArch);
+      info = await getInfoFromManifest(
+        versionSpec,
+        stable,
+        auth,
+        osArch,
+        manifest
+      );
       if (info) {
         core.info(
           `Acquiring ${info.resolvedVersion} - ${info.arch} from ${info.downloadUrl}`
@@ -97,7 +126,7 @@ export async function getNode(
     // Download from nodejs.org
     //
     if (!downloadPath) {
-      info = await getInfoFromDist(versionSpec, arch);
+      info = await getInfoFromDist(versionSpec, arch, nodeVersions);
       if (!info) {
         throw new Error(
           `Unable to find Node version '${versionSpec}' for platform ${osPlat} and architecture ${osArch}.`
@@ -128,7 +157,7 @@ export async function getNode(
     let extPath: string;
     info = info || ({} as INodeVersionInfo); // satisfy compiler, never null when reaches here
     if (osPlat == 'win32') {
-      let _7zPath = path.join(__dirname, '..', 'externals', '7zr.exe');
+      let _7zPath = path.join(__dirname, '../..', 'externals', '7zr.exe');
       extPath = await tc.extract7z(downloadPath, undefined, _7zPath);
       // 7z extracts to folder matching file name
       let nestedPath = path.join(extPath, path.basename(info.fileName, '.7z'));
@@ -170,20 +199,73 @@ export async function getNode(
   core.addPath(toolPath);
 }
 
+function isLtsAlias(versionSpec: string): boolean {
+  return versionSpec.startsWith('lts/');
+}
+
+function getManifest(auth: string | undefined): Promise<tc.IToolRelease[]> {
+  core.debug('Getting manifest from actions/node-versions@main');
+  return tc.getManifestFromRepo('actions', 'node-versions', auth, 'main');
+}
+
+function resolveLtsAliasFromManifest(
+  versionSpec: string,
+  stable: boolean,
+  manifest: INodeRelease[]
+): string {
+  const alias = versionSpec.split('lts/')[1]?.toLowerCase();
+
+  if (!alias) {
+    throw new Error(
+      `Unable to parse LTS alias for Node version '${versionSpec}'`
+    );
+  }
+
+  core.debug(`LTS alias '${alias}' for Node version '${versionSpec}'`);
+
+  // Supported formats are `lts/<alias>`, `lts/*`, and `lts/-n`. Where asterisk means highest possible LTS and -n means the nth-highest.
+  const n = Number(alias);
+  const aliases = Object.fromEntries(
+    manifest
+      .filter(x => x.lts && x.stable === stable)
+      .map(x => [x.lts!.toLowerCase(), x])
+      .reverse()
+  );
+  const numbered = Object.values(aliases);
+  const release =
+    alias === '*'
+      ? numbered[numbered.length - 1]
+      : n < 0
+      ? numbered[numbered.length - 1 + n]
+      : aliases[alias];
+
+  if (!release) {
+    throw new Error(
+      `Unable to find LTS release '${alias}' for Node version '${versionSpec}'.`
+    );
+  }
+
+  core.debug(
+    `Found LTS release '${release.version}' for Node version '${versionSpec}'`
+  );
+
+  return release.version.split('.')[0];
+}
+
 async function getInfoFromManifest(
   versionSpec: string,
   stable: boolean,
   auth: string | undefined,
-  osArch: string = translateArchToDistUrl(os.arch())
+  osArch: string = translateArchToDistUrl(os.arch()),
+  manifest: tc.IToolRelease[] | undefined
 ): Promise<INodeVersionInfo | null> {
   let info: INodeVersionInfo | null = null;
-  const releases = await tc.getManifestFromRepo(
-    'actions',
-    'node-versions',
-    auth,
-    'main'
-  );
-  const rel = await tc.findFromManifest(versionSpec, stable, releases, osArch);
+  if (!manifest) {
+    core.debug('No manifest cached');
+    manifest = await getManifest(auth);
+  }
+
+  const rel = await tc.findFromManifest(versionSpec, stable, manifest, osArch);
 
   if (rel && rel.files.length > 0) {
     info = <INodeVersionInfo>{};
@@ -198,14 +280,18 @@ async function getInfoFromManifest(
 
 async function getInfoFromDist(
   versionSpec: string,
-  arch: string = os.arch()
+  arch: string = os.arch(),
+  nodeVersions?: INodeVersion[]
 ): Promise<INodeVersionInfo | null> {
   let osPlat: string = os.platform();
   let osArch: string = translateArchToDistUrl(arch);
 
-  let version: string;
+  let version: string = await queryDistForMatch(
+    versionSpec,
+    arch,
+    nodeVersions
+  );
 
-  version = await queryDistForMatch(versionSpec, arch);
   if (!version) {
     return null;
   }
@@ -234,10 +320,17 @@ async function resolveVersionFromManifest(
   versionSpec: string,
   stable: boolean,
   auth: string | undefined,
-  osArch: string = translateArchToDistUrl(os.arch())
+  osArch: string = translateArchToDistUrl(os.arch()),
+  manifest: tc.IToolRelease[] | undefined
 ): Promise<string | undefined> {
   try {
-    const info = await getInfoFromManifest(versionSpec, stable, auth, osArch);
+    const info = await getInfoFromManifest(
+      versionSpec,
+      stable,
+      auth,
+      osArch,
+      manifest
+    );
     return info?.resolvedVersion;
   } catch (err) {
     core.info('Unable to resolve version from manifest...');
@@ -275,7 +368,8 @@ function evaluateVersions(versions: string[], versionSpec: string): string {
 
 async function queryDistForMatch(
   versionSpec: string,
-  arch: string = os.arch()
+  arch: string = os.arch(),
+  nodeVersions?: INodeVersion[]
 ): Promise<string> {
   let osPlat: string = os.platform();
   let osArch: string = translateArchToDistUrl(arch);
@@ -296,8 +390,17 @@ async function queryDistForMatch(
       throw new Error(`Unexpected OS '${osPlat}'`);
   }
 
+  if (!nodeVersions) {
+    core.debug('No dist manifest cached');
+    nodeVersions = await getVersionsFromDist();
+  }
+
   let versions: string[] = [];
-  let nodeVersions = await module.exports.getVersionsFromDist();
+
+  if (isLatestSyntax(versionSpec)) {
+    core.info(`getting latest node version...`);
+    return nodeVersions[0].version;
+  }
 
   nodeVersions.forEach((nodeVersion: INodeVersion) => {
     // ensure this version supports your os and platform
@@ -389,4 +492,31 @@ function translateArchToDistUrl(arch: string): string {
     default:
       return arch;
   }
+}
+
+export function parseNodeVersionFile(contents: string): string {
+  let nodeVersion: string | undefined;
+
+  // Try parsing the file as an NPM `package.json` file.
+  try {
+    nodeVersion = JSON.parse(contents).volta?.node;
+    if (!nodeVersion) nodeVersion = JSON.parse(contents).engines?.node;
+  } catch {
+    core.warning('Node version file is not JSON file');
+  }
+
+  if (!nodeVersion) {
+    const found = contents.match(/^(?:nodejs\s+)?v?(?<version>[^\s]+)$/m);
+    nodeVersion = found?.groups?.version;
+  }
+
+  // In the case of an unknown format,
+  // return as is and evaluate the version separately.
+  if (!nodeVersion) nodeVersion = contents.trim();
+
+  return nodeVersion as string;
+}
+
+function isLatestSyntax(versionSpec): boolean {
+  return ['current', 'latest', 'node'].includes(versionSpec);
 }

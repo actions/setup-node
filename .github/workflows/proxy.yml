@@ -3,19 +3,17 @@ name: proxy
 on:
   pull_request:
     paths-ignore:
-      - '**.md'    
-  push:    
+      - '**.md'
+  push:
     branches:
-      - master
+      - main
       - releases/*
     paths-ignore:
       - '**.md'
-      
+
 jobs:
   test-proxy:
     runs-on: ubuntu-latest
-    strategy:    
-      fail-fast: false    
     container:
       image: ubuntu:latest
       options: --dns 127.0.0.1
@@ -27,25 +25,23 @@ jobs:
     env:
       https_proxy: http://squid-proxy:3128
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Clear tool cache
         run: rm -rf $RUNNER_TOOL_CACHE/*
-      - name: Setup node 10
+      - name: Setup node 14
         uses: ./
         with:
-          node-version: 10.x
+          node-version: 14.x
       - name: Verify node and npm
-        run: __tests__/verify-node.sh 10
+        run: __tests__/verify-node.sh 14
 
   test-bypass-proxy:
     runs-on: ubuntu-latest
-    strategy:    
-      fail-fast: false
     env:
       https_proxy: http://no-such-proxy:3128
       no_proxy: api.github.com,github.com,nodejs.org,registry.npmjs.org,*.s3.amazonaws.com,s3.amazonaws.com
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Clear tool cache
         run: rm -rf $RUNNER_TOOL_CACHE/*
       - name: Setup node 11
