@@ -119,7 +119,7 @@ jobs:
         with:
           node-version-file: '__tests__/data/package.json'
       - name: Verify node
-        run: __tests__/verify-node.sh 14
+        run: __tests__/verify-node.sh 16
 
   node-dist:
     runs-on: ${{ matrix.os }}
