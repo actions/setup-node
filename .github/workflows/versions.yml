@@ -96,6 +96,9 @@ jobs:
         node-version-file: [.nvmrc, .tool-versions, package.json]
     steps:
       - uses: actions/checkout@v3
+      - name: Remove volta from package.json
+        shell: bash
+        run: cat <<< "$(jq 'del(.volta)' ./__tests__/data/package.json)" > ./__tests__/data/package.json
       - name: Setup node from node version file
         uses: ./
         with:
@@ -111,9 +114,6 @@ jobs:
         os: [ ubuntu-latest, windows-latest, macos-latest ]
     steps:
       - uses: actions/checkout@v3
-      - name: Remove engines from package.json
-        shell: bash
-        run: cat <<< "$(jq 'del(.engines)' ./__tests__/data/package.json)" > ./__tests__/data/package.json
       - name: Setup node from node version file
         uses: ./
         with:
