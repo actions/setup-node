@@ -7,7 +7,6 @@ on:
   push:
     branches:
       - main
-      - fixtest-volta-priority
       - releases/*
     paths-ignore:
       - '**.md'
