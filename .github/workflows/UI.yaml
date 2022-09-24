@@ -1,0 +1,76 @@
+trigger:
+- none
+
+pool:
+  vmImage: ubuntu-latest
+
+steps:
+- task: Npm@1
+  displayName: 'npm install'
+  inputs:
+    workingDir: ' ./App/code'
+    verbose: false
+
+- task: Npm@1
+  displayName: 'npm build'
+  inputs:
+    command: custom
+    workingDir: ' ./App/code'
+    verbose: false
+    customCommand: 'npm run build'
+
+- task: DotNetCoreCLI@2
+  displayName: 'Setup .NET Core'
+  inputs:
+    command: custom
+    custom: '${{ env.DOTNET_VERSION }'
+  enabled: false
+
+- task: UseDotNet@2
+  displayName: 'Setup .NET Core'
+  inputs:
+    version: '${{ env.DOTNET_VERSION }} '
+
+- task: DotNetCoreCLI@2
+  displayName: 'dotnet restore'
+  inputs:
+    command: custom
+    custom: 'dotnet restore ./App/ADFOperations/ADFOperations.API/ADFOperations.API.csproj'
+
+- task: DotNetCoreCLI@2
+  displayName: 'dotnet build'
+  inputs:
+    command: custom
+    projects: './App/ADFOperations/ADFOperations.API/ADFOperations.API.csproj -c Release -f net6.0'
+    custom: 'dotnet build ./App/ADFOperations/ADFOperations.API/ADFOperations.API.csproj -c Release -f net6.0'
+
+- task: DotNetCoreCLI@2
+  displayName: 'dotnet publish'
+  inputs:
+    command: custom
+    custom: 'dotnet publish ./App/ADFOperations/ADFOperations.API/ADFOperations.API.csproj -o ''${{ env.AZURE_WEBAPP_PACKAGE_PATH }}/dist/Kinisi-UI/adfoperations'' -c Release -f net6.0'
+
+- task: DotNetCoreCLI@2
+  displayName: 'dotnet restore'
+  inputs:
+    command: custom
+    custom: 'dotnet restore ./App/BulkOperations/BulkOperations.API/BulkOperations.API.csproj'
+
+- task: DotNetCoreCLI@2
+  displayName: 'dotnet build'
+  inputs:
+    command: custom
+    custom: 'dotnet build ./App/BulkOperations/BulkOperations.API/BulkOperations.API.csproj -c Release -f net6.0'
+
+- task: DotNetCoreCLI@2
+  displayName: 'dotnet publish'
+  inputs:
+    command: custom
+    custom: 'dotnet publish ./App/BulkOperations/BulkOperations.API/BulkOperations.API.csproj -o ''${{ env.AZURE_WEBAPP_PACKAGE_PATH }}/dist/Kinisi-UI/bulkoperations'' -c Release -f net6.0'
+
+- task: AzureRmWebAppDeployment@4
+  displayName: 'Deploy to Azure Web App'
+  inputs:
+    azureSubscription: 'VSE Data & AI - KINISI DEV(db005cb5-c9a9-4176-9bc3-d5078ef91c7b)'
+    WebAppName: '$(AZURE_WEBAPP_NAME)'
+    PubProfile: '$(AZURE_WEBUI_PUBLISH_PROFILE)'
