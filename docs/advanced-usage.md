@@ -308,7 +308,7 @@ The always-auth input sets `always-auth=true` in .npmrc file. With this option s
 
 ## Automatically enable `corepack`
 
-_Requires Node >=14.x_
+_Requires Node >=14.19.0
 
 `corepack` is a new experimental feature that automatically installs package managers as they are used. [Read more about it here](https://nodejs.org/docs/latest/api/corepack.html)
 
