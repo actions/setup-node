@@ -40,7 +40,7 @@ export async function run() {
       await installer.getNode(version, stable, checkLatest, auth, arch);
     }
 
-    let installedVersion = version
+    let installedVersion = version;
     // Output version of node is being used
     try {
       const {stdout} = await exec.getExecOutput(
