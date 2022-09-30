@@ -72967,7 +72967,7 @@ const path_1 = __importDefault(__nccwpck_require__(1017));
 const fs_1 = __importDefault(__nccwpck_require__(7147));
 const constants_1 = __nccwpck_require__(9042);
 const cache_utils_1 = __nccwpck_require__(1678);
-exports.restoreCache = (packageManager, cacheDependencyPath) => __awaiter(void 0, void 0, void 0, function* () {
+exports.restoreCache = (installedVersion, packageManager, cacheDependencyPath) => __awaiter(void 0, void 0, void 0, function* () {
     const packageManagerInfo = yield cache_utils_1.getPackageManagerInfo(packageManager);
     if (!packageManagerInfo) {
         throw new Error(`Caching for '${packageManager}' is not supported`);
@@ -72981,7 +72981,8 @@ exports.restoreCache = (packageManager, cacheDependencyPath) => __awaiter(void 0
     if (!fileHash) {
         throw new Error('Some specified paths were not resolved, unable to cache dependencies.');
     }
-    const primaryKey = `node-cache-${platform}-${packageManager}-${fileHash}`;
+    const nodeMajor = installedVersion.split('.')[0];
+    const primaryKey = `node-cache-${nodeMajor}-${platform}-${packageManager}-${fileHash}`;
     core.debug(`primary key is ${primaryKey}`);
     core.saveState(constants_1.State.CachePrimaryKey, primaryKey);
     const cacheKey = yield cache.restoreCache([cachePath], primaryKey);
@@ -73618,10 +73619,12 @@ function run() {
                 const checkLatest = (core.getInput('check-latest') || 'false').toUpperCase() === 'TRUE';
                 yield installer.getNode(version, stable, checkLatest, auth, arch);
             }
+            let installedVersion = version;
             // Output version of node is being used
             try {
-                const { stdout: installedVersion } = yield exec.getExecOutput('node', ['--version'], { ignoreReturnCode: true, silent: true });
-                core.setOutput('node-version', installedVersion.trim());
+                const { stdout } = yield exec.getExecOutput('node', ['--version'], { ignoreReturnCode: true, silent: true });
+                installedVersion = stdout.trim();
+                core.setOutput('node-version', installedVersion);
             }
             catch (err) {
                 core.setOutput('node-version', '');
@@ -73633,7 +73636,7 @@ function run() {
             }
             if (cache && cache_utils_1.isCacheFeatureAvailable()) {
                 const cacheDependencyPath = core.getInput('cache-dependency-path');
-                yield cache_restore_1.restoreCache(cache, cacheDependencyPath);
+                yield cache_restore_1.restoreCache(installedVersion, cache, cacheDependencyPath);
             }
             const matchersPath = path.join(__dirname, '../..', '.github');
             core.info(`##[add-matcher]${path.join(matchersPath, 'tsc.json')}`);
