@@ -12,7 +12,7 @@ import {
 } from './cache-utils';
 
 export const restoreCache = async (
-  nodeVersion: string,
+  installedVersion: string,
   packageManager: string,
   cacheDependencyPath?: string
 ) => {
@@ -37,7 +37,7 @@ export const restoreCache = async (
     );
   }
 
-  const nodeMajor = nodeVersion.split('.')[0];
+  const nodeMajor = installedVersion.split('.')[0];
   const primaryKey = `node-cache-${nodeMajor}-${platform}-${packageManager}-${fileHash}`;
   core.debug(`primary key is ${primaryKey}`);
 
