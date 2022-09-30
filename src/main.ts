@@ -40,14 +40,16 @@ export async function run() {
       await installer.getNode(version, stable, checkLatest, auth, arch);
     }
 
+    let installedVersion = version
     // Output version of node is being used
     try {
-      const {stdout: installedVersion} = await exec.getExecOutput(
+      const {stdout} = await exec.getExecOutput(
         'node',
         ['--version'],
         {ignoreReturnCode: true, silent: true}
       );
-      core.setOutput('node-version', installedVersion.trim());
+      installedVersion = stdout.trim();
+      core.setOutput('node-version', installedVersion);
     } catch (err) {
       core.setOutput('node-version', '');
     }
@@ -60,7 +62,7 @@ export async function run() {
 
     if (cache && isCacheFeatureAvailable()) {
       const cacheDependencyPath = core.getInput('cache-dependency-path');
-      await restoreCache(cache, cacheDependencyPath);
+      await restoreCache(cache, cacheDependencyPath, installedVersion);
     }
 
     const matchersPath = path.join(__dirname, '../..', '.github');
