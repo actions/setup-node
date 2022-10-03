@@ -92,15 +92,33 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
-        node-version-file: [.nvmrc, .tool-versions]
+        node-version-file: [.nvmrc, .tool-versions, package.json]
     steps:
       - uses: actions/checkout@v3
+      - name: Remove volta from package.json
+        shell: bash
+        run: cat <<< "$(jq 'del(.volta)' ./__tests__/data/package.json)" > ./__tests__/data/package.json
       - name: Setup node from node version file
         uses: ./
         with:
           node-version-file: '__tests__/data/${{ matrix.node-version-file }}'
       - name: Verify node
         run: __tests__/verify-node.sh 14
+
+  version-file-volta:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ ubuntu-latest, windows-latest, macos-latest ]
+    steps:
+      - uses: actions/checkout@v3
+      - name: Setup node from node version file
+        uses: ./
+        with:
+          node-version-file: '__tests__/data/package.json'
+      - name: Verify node
+        run: __tests__/verify-node.sh 16
 
   node-dist:
     runs-on: ${{ matrix.os }}

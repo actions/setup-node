@@ -497,22 +497,22 @@ function translateArchToDistUrl(arch: string): string {
 export function parseNodeVersionFile(contents: string): string {
   let nodeVersion: string | undefined;
 
-  const found = contents.match(/^(?:nodejs\s+)?v?(?<version>[^\s]+)$/m);
-  nodeVersion = found?.groups?.version;
+  // Try parsing the file as an NPM `package.json` file.
+  try {
+    nodeVersion = JSON.parse(contents).volta?.node;
+    if (!nodeVersion) nodeVersion = JSON.parse(contents).engines?.node;
+  } catch {
+    core.info('Node version file is not JSON file');
+  }
 
   if (!nodeVersion) {
-    try {
-      // Try parsing the file as an NPM `package.json`
-      // file.
-      nodeVersion = JSON.parse(contents).engines?.node;
-
-      if (!nodeVersion) throw new Error();
-    } catch (err) {
-      // In the case of an unknown format,
-      // return as is and evaluate the version separately.
-      nodeVersion = contents.trim();
-    }
+    const found = contents.match(/^(?:nodejs\s+)?v?(?<version>[^\s]+)$/m);
+    nodeVersion = found?.groups?.version;
   }
+
+  // In the case of an unknown format,
+  // return as is and evaluate the version separately.
+  if (!nodeVersion) nodeVersion = contents.trim();
 
   return nodeVersion as string;
 }
