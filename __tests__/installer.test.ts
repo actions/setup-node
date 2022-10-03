@@ -249,6 +249,21 @@ describe('setup-node', () => {
 
     let expPath = path.join(toolPath, 'bin');
 
+    expect(getExecOutputSpy).toHaveBeenCalledWith(
+      'node',
+      ['--version'],
+      expect.anything()
+    );
+    expect(getExecOutputSpy).toHaveBeenCalledWith(
+      'npm',
+      ['--version'],
+      expect.anything()
+    );
+    expect(getExecOutputSpy).toHaveBeenCalledWith(
+      'yarn',
+      ['--version'],
+      expect.anything()
+    );
     expect(dlSpy).toHaveBeenCalled();
     expect(exSpy).toHaveBeenCalled();
     expect(logSpy).toHaveBeenCalledWith(

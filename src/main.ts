@@ -40,17 +40,7 @@ export async function run() {
       await installer.getNode(version, stable, checkLatest, auth, arch);
     }
 
-    // Output version of node is being used
-    try {
-      const {stdout: installedVersion} = await exec.getExecOutput(
-        'node',
-        ['--version'],
-        {ignoreReturnCode: true, silent: true}
-      );
-      core.setOutput('node-version', installedVersion.trim());
-    } catch (err) {
-      core.setOutput('node-version', '');
-    }
+    await printEnvDetailsAndSetOutput();
 
     const registryUrl: string = core.getInput('registry-url');
     const alwaysAuth: string = core.getInput('always-auth');
@@ -110,4 +100,40 @@ function resolveVersionInput(): string {
   }
 
   return version;
+}
+
+export async function printEnvDetailsAndSetOutput() {
+  core.startGroup('Environment details');
+
+  const promises = ['node', 'npm', 'yarn'].map(async tool => {
+    const output = await getToolVersion(tool, ['--version']);
+
+    if (tool === 'node') {
+      core.setOutput(`${tool}-version`, output);
+    }
+
+    core.info(`${tool}: ${output}`);
+  });
+
+  await Promise.all(promises);
+
+  core.endGroup();
+}
+
+async function getToolVersion(tool: string, options: string[]) {
+  try {
+    const {stdout, stderr, exitCode} = await exec.getExecOutput(tool, options, {
+      ignoreReturnCode: true,
+      silent: true
+    });
+
+    if (exitCode > 0) {
+      core.warning(`[warning]${stderr}`);
+      return '';
+    }
+
+    return stdout;
+  } catch (err) {
+    return '';
+  }
 }

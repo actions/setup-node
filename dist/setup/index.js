@@ -73618,14 +73618,7 @@ function run() {
                 const checkLatest = (core.getInput('check-latest') || 'false').toUpperCase() === 'TRUE';
                 yield installer.getNode(version, stable, checkLatest, auth, arch);
             }
-            // Output version of node is being used
-            try {
-                const { stdout: installedVersion } = yield exec.getExecOutput('node', ['--version'], { ignoreReturnCode: true, silent: true });
-                core.setOutput('node-version', installedVersion.trim());
-            }
-            catch (err) {
-                core.setOutput('node-version', '');
-            }
+            yield printEnvDetailsAndSetOutput();
             const registryUrl = core.getInput('registry-url');
             const alwaysAuth = core.getInput('always-auth');
             if (registryUrl) {
@@ -73664,6 +73657,39 @@ function resolveVersionInput() {
         core.info(`Resolved ${versionFileInput} as ${version}`);
     }
     return version;
+}
+function printEnvDetailsAndSetOutput() {
+    return __awaiter(this, void 0, void 0, function* () {
+        core.startGroup('Environment details');
+        const promises = ['node', 'npm', 'yarn'].map((tool) => __awaiter(this, void 0, void 0, function* () {
+            const output = yield getToolVersion(tool, ['--version']);
+            if (tool === 'node') {
+                core.setOutput(`${tool}-version`, output);
+            }
+            core.info(`${tool}: ${output}`);
+        }));
+        yield Promise.all(promises);
+        core.endGroup();
+    });
+}
+exports.printEnvDetailsAndSetOutput = printEnvDetailsAndSetOutput;
+function getToolVersion(tool, options) {
+    return __awaiter(this, void 0, void 0, function* () {
+        try {
+            const { stdout, stderr, exitCode } = yield exec.getExecOutput(tool, options, {
+                ignoreReturnCode: true,
+                silent: true
+            });
+            if (exitCode > 0) {
+                core.warning(`[warning]${stderr}`);
+                return '';
+            }
+            return stdout;
+        }
+        catch (err) {
+            return '';
+        }
+    });
 }
 
 
