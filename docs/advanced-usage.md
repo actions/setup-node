@@ -283,3 +283,6 @@ steps:
   run: yarn install --immutable
 ```
 NOTE: As per https://github.com/actions/setup-node/issues/49 you cannot use `secrets.GITHUB_TOKEN` to access private GitHub Packages within the same organisation but in a different repository.
+
+### always-auth input
+The always-auth input sets `always-auth=true` in .npmrc file. With this option set [npm](https://docs.npmjs.com/cli/v6/using-npm/config#always-auth)/yarn sends the authentication credentials when making a request to the registries.
