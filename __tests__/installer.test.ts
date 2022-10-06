@@ -46,6 +46,7 @@ describe('setup-node', () => {
     // @actions/core
     console.log('::stop-commands::stoptoken'); // Disable executing of runner commands when running tests in actions
     process.env['GITHUB_PATH'] = ''; // Stub out ENV file functionality so we can verify it writes to standard out
+    process.env['GITHUB_OUTPUT'] = ''; // Stub out ENV file functionality so we can verify it writes to standard out
     inputs = {};
     inSpy = jest.spyOn(core, 'getInput');
     inSpy.mockImplementation(name => inputs[name]);
