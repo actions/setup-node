@@ -73586,13 +73586,13 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 const core = __importStar(__nccwpck_require__(2186));
 const exec = __importStar(__nccwpck_require__(1514));
-const installer = __importStar(__nccwpck_require__(2574));
 const fs_1 = __importDefault(__nccwpck_require__(7147));
-const auth = __importStar(__nccwpck_require__(7573));
+const os_1 = __importDefault(__nccwpck_require__(2037));
 const path = __importStar(__nccwpck_require__(1017));
+const auth = __importStar(__nccwpck_require__(7573));
 const cache_restore_1 = __nccwpck_require__(9517);
 const cache_utils_1 = __nccwpck_require__(1678);
-const os = __nccwpck_require__(2037);
+const installer = __importStar(__nccwpck_require__(2574));
 function run() {
     return __awaiter(this, void 0, void 0, function* () {
         try {
@@ -73609,7 +73609,7 @@ function run() {
                 core.warning('`architecture` is provided but `node-version` is missing. In this configuration, the version/architecture of Node will not be changed. To fix this, provide `architecture` in combination with `node-version`');
             }
             if (!arch) {
-                arch = os.arch();
+                arch = os_1.default.arch();
             }
             if (version) {
                 let token = core.getInput('token');
@@ -73623,6 +73623,14 @@ function run() {
             const alwaysAuth = core.getInput('always-auth');
             if (registryUrl) {
                 auth.configAuthentication(registryUrl, alwaysAuth);
+            }
+            const enableCorepack = core.getInput('corepack');
+            if (enableCorepack !== 'false') {
+                const args = ['enable'];
+                if (enableCorepack !== 'true') {
+                    args.push(...enableCorepack.split(' '));
+                }
+                yield exec.exec('corepack', args);
             }
             if (cache && cache_utils_1.isCacheFeatureAvailable()) {
                 const cacheDependencyPath = core.getInput('cache-dependency-path');

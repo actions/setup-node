@@ -48,9 +48,14 @@ export async function run() {
       auth.configAuthentication(registryUrl, alwaysAuth);
     }
 
-    const enableCorepack = core.getBooleanInput('corepack');
-    if (enableCorepack) {
-      await exec.exec('corepack', ['enable']);
+    const enableCorepack = core.getInput('corepack');
+    if (enableCorepack !== 'false') {
+      const args = ['enable'];
+      if (enableCorepack !== 'true') {
+        args.push(...enableCorepack.split(' '));
+      }
+
+      await exec.exec('corepack', args);
     }
 
     if (cache && isCacheFeatureAvailable()) {
