@@ -402,6 +402,12 @@ describe('setup-node', () => {
     expect(execSpy).toHaveBeenCalledWith('corepack', ['enable']);
   });
 
+  it('enables corepack with arguments if they are passed', async () => {
+    inputs['corepack'] = 'npm';
+    await main.run();
+    expect(execSpy).toHaveBeenCalledWith('corepack', ['enable', 'npm']);
+  });
+
   describe('check-latest flag', () => {
     it('use local version and dont check manifest if check-latest is not specified', async () => {
       os.platform = 'linux';
