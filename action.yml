@@ -15,7 +15,7 @@ inputs:
     description: 'Set this option if you want the action to check for the latest available version that satisfies the version spec.'
     default: 'false'
   corepack:
-    description: 'Automatically enables corepack'
+    description: 'Enable corepack. Setting this to anything but `true` will pass the value to `corepack enable`.'
     default: 'false'
   registry-url:
     description: 'Optional registry to set up for auth. Will set the registry in a project level .npmrc and .yarnrc file, and set up auth to read in from env.NODE_AUTH_TOKEN.'
