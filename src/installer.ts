@@ -350,6 +350,8 @@ async function resolveVersionFromManifest(
 function evaluateVersions(versions: string[], versionSpec: string): string {
   let version = '';
   core.debug(`evaluating ${versions.length} versions`);
+  core.debug(`version 1 is ${versions[0]}`);
+  core.debug(`version spec is ${versionSpec}`);
   versions = versions.map(item => item.replace('nightly', 'nightly.')).sort((a, b) => {
     if (semver.gt(a, b)) {
       return 1;
