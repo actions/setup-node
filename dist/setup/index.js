@@ -73416,6 +73416,10 @@ function evaluateVersions(versions, versionSpec) {
     core.debug(`evaluating ${versions.length} versions`);
     core.debug(`version 1 is ${versions[0]}`);
     core.debug(`version spec is ${versionSpec}`);
+    versionSpec =
+        versionSpec.includes('nightly') && !semver.valid(versionSpec.split('-')[0])
+            ? versionSpec.split('-')[0]
+            : versionSpec;
     versions = versions.sort((a, b) => {
         if (semver.gt(a, b)) {
             return 1;
