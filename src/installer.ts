@@ -99,7 +99,7 @@ export async function getNode(
     try {
       info = await getInfoFromManifest(
         versionSpec,
-        stable,
+        !isNightly,
         auth,
         osArch,
         manifest
@@ -353,7 +353,7 @@ function evaluateVersions(versions: string[], versionSpec: string): string {
   core.debug(`evaluating ${versions.length} versions`);
   core.debug(`version 1 is ${versions[0]}`);
   core.debug(`version spec is ${versionSpec}`);
-  versions = versions.map(item => item.replace('-nightly', '+nightly.')).sort((a, b) => {
+  versions = versions.sort((a, b) => {
     if (semver.gt(a, b)) {
       return 1;
     }
@@ -361,7 +361,10 @@ function evaluateVersions(versions: string[], versionSpec: string): string {
   });
   for (let i = versions.length - 1; i >= 0; i--) {
     const potential: string = versions[i];
-    const satisfied: boolean = semver.satisfies(potential, versionSpec.replace('-', '+'));
+    const satisfied: boolean = semver.satisfies(
+      potential.replace('-nightly', '+nightly.'),
+      versionSpec.replace('-nightly', '+nightly.')
+    );
     if (satisfied) {
       version = potential;
       break;
@@ -436,7 +439,9 @@ async function queryDistForMatch(
   return version;
 }
 
-export async function getVersionsFromDist(versionSpec: string): Promise<INodeVersion[]> {
+export async function getVersionsFromDist(
+  versionSpec: string
+): Promise<INodeVersion[]> {
   const initialUrl = getNodejsDistUrl(versionSpec);
   const dataUrl = `${initialUrl}/index.json`;
   let httpClient = new hc.HttpClient('setup-node', [], {

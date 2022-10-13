@@ -73239,7 +73239,7 @@ function getNode(versionSpec, stable, checkLatest, auth, arch = os.arch()) {
             // Try download from internal distribution (popular versions only)
             //
             try {
-                info = yield getInfoFromManifest(versionSpec, stable, auth, osArch, manifest);
+                info = yield getInfoFromManifest(versionSpec, !isNightly, auth, osArch, manifest);
                 if (info) {
                     core.info(`Acquiring ${info.resolvedVersion} - ${info.arch} from ${info.downloadUrl}`);
                     downloadPath = yield tc.downloadTool(info.downloadUrl, undefined, auth);
@@ -73416,7 +73416,7 @@ function evaluateVersions(versions, versionSpec) {
     core.debug(`evaluating ${versions.length} versions`);
     core.debug(`version 1 is ${versions[0]}`);
     core.debug(`version spec is ${versionSpec}`);
-    versions = versions.map(item => item.replace('-nightly', '+nightly.')).sort((a, b) => {
+    versions = versions.sort((a, b) => {
         if (semver.gt(a, b)) {
             return 1;
         }
@@ -73424,7 +73424,7 @@ function evaluateVersions(versions, versionSpec) {
     });
     for (let i = versions.length - 1; i >= 0; i--) {
         const potential = versions[i];
-        const satisfied = semver.satisfies(potential, versionSpec.replace('-', '+'));
+        const satisfied = semver.satisfies(potential.replace('-nightly', '+nightly.'), versionSpec.replace('-nightly', '+nightly.'));
         if (satisfied) {
             version = potential;
             break;
