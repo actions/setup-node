@@ -73224,6 +73224,7 @@ function getNode(versionSpec, stable, checkLatest, auth, arch = os.arch()) {
             }
         }
         // check cache
+        core.debug('check toolcache');
         let toolPath;
         toolPath = tc.find('node', versionSpec, osArch);
         // If not found in cache, download

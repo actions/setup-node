@@ -81,6 +81,7 @@ export async function getNode(
   }
 
   // check cache
+  core.debug('check toolcache');
   let toolPath: string;
   toolPath = tc.find('node', versionSpec, osArch);
 
