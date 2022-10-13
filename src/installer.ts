@@ -363,7 +363,7 @@ function evaluateVersions(versions: string[], versionSpec: string): string {
     const potential: string = versions[i];
     const satisfied: boolean = semver.satisfies(
       potential.replace('-nightly', '+nightly.'),
-      versionSpec.replace('-nightly', '+nightly.')
+      versionSpec.replace('-nightly', '+nightly')
     );
     if (satisfied) {
       version = potential;

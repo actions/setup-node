@@ -73424,7 +73424,7 @@ function evaluateVersions(versions, versionSpec) {
     });
     for (let i = versions.length - 1; i >= 0; i--) {
         const potential = versions[i];
-        const satisfied = semver.satisfies(potential.replace('-nightly', '+nightly.'), versionSpec.replace('-nightly', '+nightly.'));
+        const satisfied = semver.satisfies(potential.replace('-nightly', '+nightly.'), versionSpec.replace('-nightly', '+nightly'));
         if (satisfied) {
             version = potential;
             break;
