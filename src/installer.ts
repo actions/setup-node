@@ -58,12 +58,12 @@ export async function getNode(
     core.info(`getting latest node version...`);
   }
 
-  if (isNightly) {
+  if (isNightly && checkLatest) {
     nodeVersions = await getVersionsFromDist(versionSpec);
     versionSpec = await queryDistForMatch(versionSpec, arch, nodeVersions);
   }
 
-  if (checkLatest) {
+  if (checkLatest && !isNightly) {
     core.info('Attempt to resolve the latest version from manifest...');
     const resolvedVersion = await resolveVersionFromManifest(
       versionSpec,
@@ -353,7 +353,7 @@ function evaluateVersions(versions: string[], versionSpec: string): string {
   core.debug(`evaluating ${versions.length} versions`);
   core.debug(`version 1 is ${versions[0]}`);
   core.debug(`version spec is ${versionSpec}`);
-  versions = versions.map(item => item.replace('nightly', 'nightly.')).sort((a, b) => {
+  versions = versions.map(item => item.replace('-nightly', '+nightly.')).sort((a, b) => {
     if (semver.gt(a, b)) {
       return 1;
     }
@@ -361,7 +361,7 @@ function evaluateVersions(versions: string[], versionSpec: string): string {
   });
   for (let i = versions.length - 1; i >= 0; i--) {
     const potential: string = versions[i];
-    const satisfied: boolean = semver.satisfies(potential, versionSpec);
+    const satisfied: boolean = semver.satisfies(potential, versionSpec.replace('-', '+'));
     if (satisfied) {
       version = potential;
       break;
