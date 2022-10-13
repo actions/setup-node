@@ -11,6 +11,7 @@ import fs = require('fs');
 //
 // Node versions interface
 // see https://nodejs.org/dist/index.json
+// for nightly https://nodejs.org/download/nightly/index.json
 //
 export interface INodeVersion {
   version: string;
@@ -38,6 +39,7 @@ export async function getNode(
   // Store manifest data to avoid multiple calls
   let manifest: INodeRelease[] | undefined;
   let nodeVersions: INodeVersion[] | undefined;
+  let isNightly = versionSpec.includes('nightly');
   let osPlat: string = os.platform();
   let osArch: string = translateArchToDistUrl(arch);
 
@@ -51,9 +53,14 @@ export async function getNode(
   }
 
   if (isLatestSyntax(versionSpec)) {
-    nodeVersions = await getVersionsFromDist();
+    nodeVersions = await getVersionsFromDist(versionSpec);
     versionSpec = await queryDistForMatch(versionSpec, arch, nodeVersions);
     core.info(`getting latest node version...`);
+  }
+
+  if (isNightly) {
+    nodeVersions = await getVersionsFromDist(versionSpec);
+    versionSpec = await queryDistForMatch(versionSpec, arch, nodeVersions);
   }
 
   if (checkLatest) {
@@ -306,7 +313,8 @@ async function getInfoFromDist(
       : `node-v${version}-${osPlat}-${osArch}`;
   let urlFileName: string =
     osPlat == 'win32' ? `${fileName}.7z` : `${fileName}.tar.gz`;
-  let url = `https://nodejs.org/dist/v${version}/${urlFileName}`;
+  const initialUrl = getNodejsDistUrl(versionSpec);
+  let url = `${initialUrl}/v${version}/${urlFileName}`;
 
   return <INodeVersionInfo>{
     downloadUrl: url,
@@ -342,7 +350,7 @@ async function resolveVersionFromManifest(
 function evaluateVersions(versions: string[], versionSpec: string): string {
   let version = '';
   core.debug(`evaluating ${versions.length} versions`);
-  versions = versions.sort((a, b) => {
+  versions = versions.map(item => item.replace('nightly', 'nightly.')).sort((a, b) => {
     if (semver.gt(a, b)) {
       return 1;
     }
@@ -364,6 +372,17 @@ function evaluateVersions(versions: string[], versionSpec: string): string {
   }
 
   return version;
+}
+
+function getNodejsDistUrl(version: string | semver.SemVer) {
+  const prerelease = semver.prerelease(version);
+  if (!prerelease || !prerelease.length) {
+    return 'https://nodejs.org/dist';
+  } else if (prerelease[0] === 'nightly') {
+    return 'https://nodejs.org/download/nightly';
+  } else {
+    return 'https://nodejs.org/download/rc';
+  }
 }
 
 async function queryDistForMatch(
@@ -392,7 +411,7 @@ async function queryDistForMatch(
 
   if (!nodeVersions) {
     core.debug('No dist manifest cached');
-    nodeVersions = await getVersionsFromDist();
+    nodeVersions = await getVersionsFromDist(versionSpec);
   }
 
   let versions: string[] = [];
@@ -414,8 +433,9 @@ async function queryDistForMatch(
   return version;
 }
 
-export async function getVersionsFromDist(): Promise<INodeVersion[]> {
-  let dataUrl = 'https://nodejs.org/dist/index.json';
+export async function getVersionsFromDist(versionSpec: string): Promise<INodeVersion[]> {
+  const initialUrl = getNodejsDistUrl(versionSpec);
+  const dataUrl = `${initialUrl}/index.json`;
   let httpClient = new hc.HttpClient('setup-node', [], {
     allowRetries: true,
     maxRetries: 3
@@ -440,6 +460,7 @@ async function acquireNodeFromFallbackLocation(
   version: string,
   arch: string = os.arch()
 ): Promise<string> {
+  const initialUrl = getNodejsDistUrl(version);
   let osPlat: string = os.platform();
   let osArch: string = translateArchToDistUrl(arch);
 
@@ -453,8 +474,8 @@ async function acquireNodeFromFallbackLocation(
   let exeUrl: string;
   let libUrl: string;
   try {
-    exeUrl = `https://nodejs.org/dist/v${version}/win-${osArch}/node.exe`;
-    libUrl = `https://nodejs.org/dist/v${version}/win-${osArch}/node.lib`;
+    exeUrl = `${initialUrl}/v${version}/win-${osArch}/node.exe`;
+    libUrl = `${initialUrl}/v${version}/win-${osArch}/node.lib`;
 
     core.info(`Downloading only node binary from ${exeUrl}`);
 
@@ -464,8 +485,8 @@ async function acquireNodeFromFallbackLocation(
     await io.cp(libPath, path.join(tempDir, 'node.lib'));
   } catch (err) {
     if (err instanceof tc.HTTPError && err.httpStatusCode == 404) {
-      exeUrl = `https://nodejs.org/dist/v${version}/node.exe`;
-      libUrl = `https://nodejs.org/dist/v${version}/node.lib`;
+      exeUrl = `${initialUrl}/v${version}/node.exe`;
+      libUrl = `${initialUrl}/v${version}/node.lib`;
 
       const exePath = await tc.downloadTool(exeUrl);
       await io.cp(exePath, path.join(tempDir, 'node.exe'));

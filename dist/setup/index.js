@@ -73194,6 +73194,7 @@ function getNode(versionSpec, stable, checkLatest, auth, arch = os.arch()) {
         // Store manifest data to avoid multiple calls
         let manifest;
         let nodeVersions;
+        let isNightly = versionSpec.includes('nightly');
         let osPlat = os.platform();
         let osArch = translateArchToDistUrl(arch);
         if (isLtsAlias(versionSpec)) {
@@ -73203,9 +73204,13 @@ function getNode(versionSpec, stable, checkLatest, auth, arch = os.arch()) {
             versionSpec = resolveLtsAliasFromManifest(versionSpec, stable, manifest);
         }
         if (isLatestSyntax(versionSpec)) {
-            nodeVersions = yield getVersionsFromDist();
+            nodeVersions = yield getVersionsFromDist(versionSpec);
             versionSpec = yield queryDistForMatch(versionSpec, arch, nodeVersions);
             core.info(`getting latest node version...`);
+        }
+        if (isNightly) {
+            nodeVersions = yield getVersionsFromDist(versionSpec);
+            versionSpec = yield queryDistForMatch(versionSpec, arch, nodeVersions);
         }
         if (checkLatest) {
             core.info('Attempt to resolve the latest version from manifest...');
@@ -73382,7 +73387,8 @@ function getInfoFromDist(versionSpec, arch = os.arch(), nodeVersions) {
             ? `node-v${version}-win-${osArch}`
             : `node-v${version}-${osPlat}-${osArch}`;
         let urlFileName = osPlat == 'win32' ? `${fileName}.7z` : `${fileName}.tar.gz`;
-        let url = `https://nodejs.org/dist/v${version}/${urlFileName}`;
+        const initialUrl = getNodejsDistUrl(versionSpec);
+        let url = `${initialUrl}/v${version}/${urlFileName}`;
         return {
             downloadUrl: url,
             resolvedVersion: version,
@@ -73407,7 +73413,7 @@ function resolveVersionFromManifest(versionSpec, stable, auth, osArch = translat
 function evaluateVersions(versions, versionSpec) {
     let version = '';
     core.debug(`evaluating ${versions.length} versions`);
-    versions = versions.sort((a, b) => {
+    versions = versions.map(item => item.replace('nightly', 'nightly.')).sort((a, b) => {
         if (semver.gt(a, b)) {
             return 1;
         }
@@ -73428,6 +73434,18 @@ function evaluateVersions(versions, versionSpec) {
         core.debug('match not found');
     }
     return version;
+}
+function getNodejsDistUrl(version) {
+    const prerelease = semver.prerelease(version);
+    if (!prerelease || !prerelease.length) {
+        return 'https://nodejs.org/dist';
+    }
+    else if (prerelease[0] === 'nightly') {
+        return 'https://nodejs.org/download/nightly';
+    }
+    else {
+        return 'https://nodejs.org/download/rc';
+    }
 }
 function queryDistForMatch(versionSpec, arch = os.arch(), nodeVersions) {
     return __awaiter(this, void 0, void 0, function* () {
@@ -73450,7 +73468,7 @@ function queryDistForMatch(versionSpec, arch = os.arch(), nodeVersions) {
         }
         if (!nodeVersions) {
             core.debug('No dist manifest cached');
-            nodeVersions = yield getVersionsFromDist();
+            nodeVersions = yield getVersionsFromDist(versionSpec);
         }
         let versions = [];
         if (isLatestSyntax(versionSpec)) {
@@ -73468,9 +73486,10 @@ function queryDistForMatch(versionSpec, arch = os.arch(), nodeVersions) {
         return version;
     });
 }
-function getVersionsFromDist() {
+function getVersionsFromDist(versionSpec) {
     return __awaiter(this, void 0, void 0, function* () {
-        let dataUrl = 'https://nodejs.org/dist/index.json';
+        const initialUrl = getNodejsDistUrl(versionSpec);
+        const dataUrl = `${initialUrl}/index.json`;
         let httpClient = new hc.HttpClient('setup-node', [], {
             allowRetries: true,
             maxRetries: 3
@@ -73494,6 +73513,7 @@ exports.getVersionsFromDist = getVersionsFromDist;
 // and lib file in a folder, not zipped.
 function acquireNodeFromFallbackLocation(version, arch = os.arch()) {
     return __awaiter(this, void 0, void 0, function* () {
+        const initialUrl = getNodejsDistUrl(version);
         let osPlat = os.platform();
         let osArch = translateArchToDistUrl(arch);
         // Create temporary folder to download in to
@@ -73505,8 +73525,8 @@ function acquireNodeFromFallbackLocation(version, arch = os.arch()) {
         let exeUrl;
         let libUrl;
         try {
-            exeUrl = `https://nodejs.org/dist/v${version}/win-${osArch}/node.exe`;
-            libUrl = `https://nodejs.org/dist/v${version}/win-${osArch}/node.lib`;
+            exeUrl = `${initialUrl}/v${version}/win-${osArch}/node.exe`;
+            libUrl = `${initialUrl}/v${version}/win-${osArch}/node.lib`;
             core.info(`Downloading only node binary from ${exeUrl}`);
             const exePath = yield tc.downloadTool(exeUrl);
             yield io.cp(exePath, path.join(tempDir, 'node.exe'));
@@ -73515,8 +73535,8 @@ function acquireNodeFromFallbackLocation(version, arch = os.arch()) {
         }
         catch (err) {
             if (err instanceof tc.HTTPError && err.httpStatusCode == 404) {
-                exeUrl = `https://nodejs.org/dist/v${version}/node.exe`;
-                libUrl = `https://nodejs.org/dist/v${version}/node.lib`;
+                exeUrl = `${initialUrl}/v${version}/node.exe`;
+                libUrl = `${initialUrl}/v${version}/node.lib`;
                 const exePath = yield tc.downloadTool(exeUrl);
                 yield io.cp(exePath, path.join(tempDir, 'node.exe'));
                 const libPath = yield tc.downloadTool(libUrl);
