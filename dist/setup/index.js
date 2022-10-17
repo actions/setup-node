@@ -73628,7 +73628,7 @@ function run() {
             }
             if (version) {
                 let token = core.getInput('token');
-                let auth = !token || cache_utils_1.isGhes() ? undefined : `token ${token}`;
+                let auth = !token ? undefined : `token ${token}`;
                 let stable = (core.getInput('stable') || 'true').toUpperCase() === 'TRUE';
                 const checkLatest = (core.getInput('check-latest') || 'false').toUpperCase() === 'TRUE';
                 yield installer.getNode(version, stable, checkLatest, auth, arch);
