@@ -347,16 +347,61 @@ async function resolveVersionFromManifest(
   }
 }
 
+function evaluateNightlyVersions(
+  versions: string[],
+  versionSpec: string
+): string {
+  let version = '';
+  let range: string | null | undefined;
+  const [raw, prerelease] = versionSpec.split('-');
+  const isValidVersion = semver.valid(raw);
+  const rawVersion = isValidVersion ? raw : semver.coerce(raw);
+  if (rawVersion) {
+    if (prerelease !== 'nightly') {
+      range = `${rawVersion}+${prerelease.replace('nightly', 'nightly.')}`;
+    } else {
+      range = semver.validRange(`^${rawVersion}`);
+    }
+  }
+
+  if (range) {
+    versions = versions.sort((a, b) => {
+      if (semver.gt(a, b)) {
+        return 1;
+      }
+      return -1;
+    });
+    for (let i = versions.length - 1; i >= 0; i--) {
+      const potential: string = versions[i];
+      const satisfied: boolean = semver.satisfies(
+        potential.replace('-nightly', '+nightly.'),
+        range
+      );
+      if (satisfied) {
+        version = potential;
+        break;
+      }
+    }
+  }
+
+  if (version) {
+    core.debug(`matched: ${version}`);
+  } else {
+    core.debug('match not found');
+  }
+
+  return version;
+}
+
 // TODO - should we just export this from @actions/tool-cache? Lifted directly from there
 function evaluateVersions(versions: string[], versionSpec: string): string {
   let version = '';
   core.debug(`evaluating ${versions.length} versions`);
-  core.debug(`version 1 is ${versions[0]}`);
-  core.debug(`version spec is ${versionSpec}`);
-  versionSpec =
-    versionSpec.includes('nightly') && !semver.valid(versionSpec.split('-')[0])
-      ? versionSpec.split('-')[0]
-      : versionSpec;
+
+  if(versionSpec.includes('nightly')) {
+    return evaluateNightlyVersions(versions, versionSpec);
+  }
+
   versions = versions.sort((a, b) => {
     if (semver.gt(a, b)) {
       return 1;
@@ -365,10 +410,7 @@ function evaluateVersions(versions: string[], versionSpec: string): string {
   });
   for (let i = versions.length - 1; i >= 0; i--) {
     const potential: string = versions[i];
-    const satisfied: boolean = semver.satisfies(
-      potential.replace('-nightly', '+nightly.'),
-      versionSpec.replace('-nightly', '+nightly')
-    );
+    const satisfied: boolean = semver.satisfies(potential, versionSpec);
     if (satisfied) {
       version = potential;
       break;
@@ -384,11 +426,11 @@ function evaluateVersions(versions: string[], versionSpec: string): string {
   return version;
 }
 
-function getNodejsDistUrl(version: string | semver.SemVer) {
+function getNodejsDistUrl(version: string) {
   const prerelease = semver.prerelease(version);
   if (!prerelease || !prerelease.length) {
     return 'https://nodejs.org/dist';
-  } else if (prerelease[0] === 'nightly') {
+  } else if (version.includes('nightly')) {
     return 'https://nodejs.org/download/nightly';
   } else {
     return 'https://nodejs.org/download/rc';
@@ -439,7 +481,7 @@ async function queryDistForMatch(
   });
 
   // get the latest version that matches the version spec
-  let version: string = evaluateVersions(versions, versionSpec);
+  let version = evaluateVersions(versions, versionSpec);
   return version;
 }
 

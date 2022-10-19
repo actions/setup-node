@@ -73410,16 +73410,51 @@ function resolveVersionFromManifest(versionSpec, stable, auth, osArch = translat
         }
     });
 }
+function evaluateNightlyVersions(versions, versionSpec) {
+    let version = '';
+    let range;
+    const [raw, prerelease] = versionSpec.split('-');
+    const isValidVersion = semver.valid(raw);
+    const rawVersion = isValidVersion ? raw : semver.coerce(raw);
+    if (rawVersion) {
+        if (prerelease !== 'nightly') {
+            range = `${rawVersion}+${prerelease.replace('nightly', 'nightly.')}`;
+        }
+        else {
+            range = semver.validRange(`^${rawVersion}`);
+        }
+    }
+    if (range) {
+        versions = versions.sort((a, b) => {
+            if (semver.gt(a, b)) {
+                return 1;
+            }
+            return -1;
+        });
+        for (let i = versions.length - 1; i >= 0; i--) {
+            const potential = versions[i];
+            const satisfied = semver.satisfies(potential.replace('-nightly', '+nightly.'), range);
+            if (satisfied) {
+                version = potential;
+                break;
+            }
+        }
+    }
+    if (version) {
+        core.debug(`matched: ${version}`);
+    }
+    else {
+        core.debug('match not found');
+    }
+    return version;
+}
 // TODO - should we just export this from @actions/tool-cache? Lifted directly from there
 function evaluateVersions(versions, versionSpec) {
     let version = '';
     core.debug(`evaluating ${versions.length} versions`);
-    core.debug(`version 1 is ${versions[0]}`);
-    core.debug(`version spec is ${versionSpec}`);
-    versionSpec =
-        versionSpec.includes('nightly') && !semver.valid(versionSpec.split('-')[0])
-            ? versionSpec.split('-')[0]
-            : versionSpec;
+    if (versionSpec.includes('nightly')) {
+        return evaluateNightlyVersions(versions, versionSpec);
+    }
     versions = versions.sort((a, b) => {
         if (semver.gt(a, b)) {
             return 1;
@@ -73428,7 +73463,7 @@ function evaluateVersions(versions, versionSpec) {
     });
     for (let i = versions.length - 1; i >= 0; i--) {
         const potential = versions[i];
-        const satisfied = semver.satisfies(potential.replace('-nightly', '+nightly.'), versionSpec.replace('-nightly', '+nightly'));
+        const satisfied = semver.satisfies(potential, versionSpec);
         if (satisfied) {
             version = potential;
             break;
@@ -73447,7 +73482,7 @@ function getNodejsDistUrl(version) {
     if (!prerelease || !prerelease.length) {
         return 'https://nodejs.org/dist';
     }
-    else if (prerelease[0] === 'nightly') {
+    else if (version.includes('nightly')) {
         return 'https://nodejs.org/download/nightly';
     }
     else {
@@ -73642,7 +73677,7 @@ function run() {
             // Version is optional.  If supplied, install / use from the tool cache
             // If not supplied then task is still used to setup proxy, auth, etc...
             //
-            let version = resolveVersionInput();
+            const version = resolveVersionInput();
             let arch = core.getInput('architecture');
             const cache = core.getInput('cache');
             // if architecture supplied but node-version is not
@@ -73654,9 +73689,9 @@ function run() {
                 arch = os.arch();
             }
             if (version) {
-                let token = core.getInput('token');
-                let auth = !token || cache_utils_1.isGhes() ? undefined : `token ${token}`;
-                let stable = (core.getInput('stable') || 'true').toUpperCase() === 'TRUE';
+                const token = core.getInput('token');
+                const auth = !token || cache_utils_1.isGhes() ? undefined : `token ${token}`;
+                const stable = (core.getInput('stable') || 'true').toUpperCase() === 'TRUE';
                 const checkLatest = (core.getInput('check-latest') || 'false').toUpperCase() === 'TRUE';
                 yield installer.getNode(version, stable, checkLatest, auth, arch);
             }

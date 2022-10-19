@@ -14,7 +14,7 @@ export async function run() {
     // Version is optional.  If supplied, install / use from the tool cache
     // If not supplied then task is still used to setup proxy, auth, etc...
     //
-    let version = resolveVersionInput();
+    const version = resolveVersionInput();
 
     let arch = core.getInput('architecture');
     const cache = core.getInput('cache');
@@ -32,9 +32,9 @@ export async function run() {
     }
 
     if (version) {
-      let token = core.getInput('token');
-      let auth = !token || isGhes() ? undefined : `token ${token}`;
-      let stable = (core.getInput('stable') || 'true').toUpperCase() === 'TRUE';
+      const token = core.getInput('token');
+      const auth = !token || isGhes() ? undefined : `token ${token}`;
+      const stable = (core.getInput('stable') || 'true').toUpperCase() === 'TRUE';
       const checkLatest =
         (core.getInput('check-latest') || 'false').toUpperCase() === 'TRUE';
       await installer.getNode(version, stable, checkLatest, auth, arch);

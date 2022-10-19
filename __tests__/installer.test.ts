@@ -6,7 +6,7 @@ import * as im from '../src/installer';
 import * as cache from '@actions/cache';
 import fs from 'fs';
 import cp from 'child_process';
-import osm = require('os');
+import osm from 'os';
 import path from 'path';
 import each from 'jest-each';
 import * as main from '../src/main';
@@ -138,7 +138,8 @@ describe('setup-node', () => {
   });
 
   it('can mock dist versions', async () => {
-    let versions: im.INodeVersion[] = await im.getVersionsFromDist();
+    const versionSpec = '1.2.3';
+    let versions: im.INodeVersion[] = await im.getVersionsFromDist(versionSpec);
     expect(versions).toBeDefined();
     expect(versions?.length).toBe(23);
   });
