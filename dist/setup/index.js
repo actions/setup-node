@@ -73479,11 +73479,11 @@ function evaluateVersions(versions, versionSpec) {
 }
 function getNodejsDistUrl(version) {
     const prerelease = semver.prerelease(version);
-    if (!prerelease || !prerelease.length) {
-        return 'https://nodejs.org/dist';
-    }
-    else if (version.includes('nightly')) {
+    if (version.includes('nightly')) {
         return 'https://nodejs.org/download/nightly';
+    }
+    else if (!prerelease) {
+        return 'https://nodejs.org/dist';
     }
     else {
         return 'https://nodejs.org/download/rc';
