@@ -34,7 +34,8 @@ export async function run() {
     if (version) {
       const token = core.getInput('token');
       const auth = !token || isGhes() ? undefined : `token ${token}`;
-      const stable = (core.getInput('stable') || 'true').toUpperCase() === 'TRUE';
+      const stable =
+        (core.getInput('stable') || 'true').toUpperCase() === 'TRUE';
       const checkLatest =
         (core.getInput('check-latest') || 'false').toUpperCase() === 'TRUE';
       await installer.getNode(version, stable, checkLatest, auth, arch);

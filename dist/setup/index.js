@@ -73226,7 +73226,13 @@ function getNode(versionSpec, stable, checkLatest, auth, arch = os.arch()) {
         // check cache
         core.debug('check toolcache');
         let toolPath;
-        toolPath = tc.find('node', versionSpec, osArch);
+        if (isNightly) {
+            const nightlyVersion = findNightlyVersionInHostedToolcache(versionSpec, osArch);
+            toolPath = tc.find('node', nightlyVersion, osArch);
+        }
+        else {
+            toolPath = tc.find('node', versionSpec, osArch);
+        }
         // If not found in cache, download
         if (toolPath) {
             core.info(`Found in cache @ ${toolPath}`);
@@ -73322,6 +73328,11 @@ function getNode(versionSpec, stable, checkLatest, auth, arch = os.arch()) {
     });
 }
 exports.getNode = getNode;
+function findNightlyVersionInHostedToolcache(versionsSpec, osArch) {
+    const foundAllVersions = tc.findAllVersions('node', osArch);
+    const version = evaluateVersions(foundAllVersions, versionsSpec);
+    return version;
+}
 function isLtsAlias(versionSpec) {
     return versionSpec.startsWith('lts/');
 }

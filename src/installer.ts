@@ -83,7 +83,15 @@ export async function getNode(
   // check cache
   core.debug('check toolcache');
   let toolPath: string;
-  toolPath = tc.find('node', versionSpec, osArch);
+  if (isNightly) {
+    const nightlyVersion = findNightlyVersionInHostedToolcache(
+      versionSpec,
+      osArch
+    );
+    toolPath = tc.find('node', nightlyVersion, osArch);
+  } else {
+    toolPath = tc.find('node', versionSpec, osArch);
+  }
 
   // If not found in cache, download
   if (toolPath) {
@@ -205,6 +213,16 @@ export async function getNode(
   //
   // prepend the tools path. instructs the agent to prepend for future tasks
   core.addPath(toolPath);
+}
+
+function findNightlyVersionInHostedToolcache(
+  versionsSpec: string,
+  osArch: string
+) {
+  const foundAllVersions = tc.findAllVersions('node', osArch);
+  const version = evaluateVersions(foundAllVersions, versionsSpec);
+
+  return version;
 }
 
 function isLtsAlias(versionSpec: string): boolean {
@@ -398,7 +416,7 @@ function evaluateVersions(versions: string[], versionSpec: string): string {
   let version = '';
   core.debug(`evaluating ${versions.length} versions`);
 
-  if(versionSpec.includes('nightly')) {
+  if (versionSpec.includes('nightly')) {
     return evaluateNightlyVersions(versions, versionSpec);
   }
 
