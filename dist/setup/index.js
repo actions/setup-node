@@ -73330,6 +73330,7 @@ function getNode(versionSpec, stable, checkLatest, auth, arch = os.arch()) {
 exports.getNode = getNode;
 function findNightlyVersionInHostedToolcache(versionsSpec, osArch) {
     const foundAllVersions = tc.findAllVersions('node', osArch);
+    core.debug(foundAllVersions.join('\n'));
     const version = evaluateVersions(foundAllVersions, versionsSpec);
     return version;
 }

@@ -220,6 +220,7 @@ function findNightlyVersionInHostedToolcache(
   osArch: string
 ) {
   const foundAllVersions = tc.findAllVersions('node', osArch);
+  core.debug(foundAllVersions.join('\n'));
   const version = evaluateVersions(foundAllVersions, versionsSpec);
 
   return version;
