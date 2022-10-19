@@ -73228,7 +73228,7 @@ function getNode(versionSpec, stable, checkLatest, auth, arch = os.arch()) {
         let toolPath;
         if (isNightly) {
             const nightlyVersion = findNightlyVersionInHostedToolcache(versionSpec, osArch);
-            toolPath = tc.find('node', nightlyVersion, osArch);
+            toolPath = nightlyVersion && tc.find('node', nightlyVersion, osArch);
         }
         else {
             toolPath = tc.find('node', versionSpec, osArch);

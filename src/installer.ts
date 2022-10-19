@@ -88,7 +88,7 @@ export async function getNode(
       versionSpec,
       osArch
     );
-    toolPath = tc.find('node', nightlyVersion, osArch);
+    toolPath = nightlyVersion && tc.find('node', nightlyVersion, osArch);
   } else {
     toolPath = tc.find('node', versionSpec, osArch);
   }
