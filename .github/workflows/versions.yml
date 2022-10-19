@@ -68,7 +68,7 @@ jobs:
         run: |
           nightlyVersion="${{ matrix.node-version }}"
           majorVersion=$(echo $nightlyVersion | cut -d- -f1)
-          __tests__/verify-node.sh "${BASH_REMATCH[1]}"
+          __tests__/verify-node.sh "$majorVersion"
         shell: bash
 
   manifest:
