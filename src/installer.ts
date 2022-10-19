@@ -416,6 +416,7 @@ function evaluateNightlyVersions(
 function evaluateVersions(versions: string[], versionSpec: string): string {
   let version = '';
   core.debug(`evaluating ${versions.length} versions`);
+  core.debug(versions[1])
 
   if (versionSpec.includes('nightly')) {
     return evaluateNightlyVersions(versions, versionSpec);
