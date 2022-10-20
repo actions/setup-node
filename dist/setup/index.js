@@ -73428,10 +73428,10 @@ function evaluateNightlyVersions(versions, versionSpec) {
     const rawVersion = isValidVersion ? raw : semver.coerce(raw);
     if (rawVersion) {
         if (prerelease !== 'nightly') {
-            range = `${rawVersion}+${prerelease.replace('nightly', 'nightly.')}`;
+            range = `${rawVersion}-${prerelease.replace('nightly', 'nightly.')}`;
         }
         else {
-            range = semver.validRange(`^${rawVersion}`);
+            range = `${semver.validRange(`^${rawVersion}-0`)}-0`;
         }
     }
     if (range) {
@@ -73443,7 +73443,7 @@ function evaluateNightlyVersions(versions, versionSpec) {
         });
         for (let i = versions.length - 1; i >= 0; i--) {
             const potential = versions[i];
-            const satisfied = semver.satisfies(potential.replace('-nightly', '+nightly.'), range);
+            const satisfied = semver.satisfies(potential.replace('-nightly', '-nightly.'), range, { includePrerelease: true });
             if (satisfied) {
                 version = potential;
                 break;
@@ -73499,6 +73499,7 @@ function getNodejsDistUrl(version) {
         return 'https://nodejs.org/download/rc';
     }
 }
+exports.getNodejsDistUrl = getNodejsDistUrl;
 function queryDistForMatch(versionSpec, arch = os.arch(), nodeVersions) {
     return __awaiter(this, void 0, void 0, function* () {
         let osPlat = os.platform();

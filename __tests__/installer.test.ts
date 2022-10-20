@@ -4,6 +4,7 @@ import * as tc from '@actions/tool-cache';
 import * as exec from '@actions/exec';
 import * as im from '../src/installer';
 import * as cache from '@actions/cache';
+import * as httpm from '@actions/http-client';
 import fs from 'fs';
 import cp from 'child_process';
 import osm from 'os';
@@ -12,8 +13,10 @@ import each from 'jest-each';
 import * as main from '../src/main';
 import * as auth from '../src/authutil';
 
-let nodeTestManifest = require('./data/versions-manifest.json');
-let nodeTestDist = require('./data/node-dist-index.json');
+const nodeTestManifest = require('./data/versions-manifest.json');
+const nodeTestDist = require('./data/node-dist-index.json');
+const nodeTestDistNightly = require('./data/node-nightly-index.json');
+const nodeTestDistRc = require('./data/node-rc-index.json');
 
 describe('setup-node', () => {
   let inputs = {} as any;
@@ -21,6 +24,7 @@ describe('setup-node', () => {
 
   let inSpy: jest.SpyInstance;
   let findSpy: jest.SpyInstance;
+  let findAllVersionsSpy: jest.SpyInstance;
   let cnSpy: jest.SpyInstance;
   let logSpy: jest.SpyInstance;
   let warningSpy: jest.SpyInstance;
@@ -41,6 +45,7 @@ describe('setup-node', () => {
   let parseNodeVersionSpy: jest.SpyInstance;
   let isCacheActionAvailable: jest.SpyInstance;
   let getExecOutputSpy: jest.SpyInstance;
+  let getJsonSpy: jest.SpyInstance;
 
   beforeEach(() => {
     // @actions/core
@@ -61,12 +66,16 @@ describe('setup-node', () => {
 
     // @actions/tool-cache
     findSpy = jest.spyOn(tc, 'find');
+    findAllVersionsSpy = jest.spyOn(tc, 'findAllVersions');
     dlSpy = jest.spyOn(tc, 'downloadTool');
     exSpy = jest.spyOn(tc, 'extractTar');
     cacheSpy = jest.spyOn(tc, 'cacheDir');
     getManifestSpy = jest.spyOn(tc, 'getManifestFromRepo');
     getDistSpy = jest.spyOn(im, 'getVersionsFromDist');
     parseNodeVersionSpy = jest.spyOn(im, 'parseNodeVersionFile');
+
+    // http-client
+    getJsonSpy = jest.spyOn(httpm.HttpClient.prototype, 'getJson');
 
     // io
     whichSpy = jest.spyOn(io, 'which');
@@ -84,7 +93,30 @@ describe('setup-node', () => {
     getManifestSpy.mockImplementation(
       () => <tc.IToolRelease[]>nodeTestManifest
     );
-    getDistSpy.mockImplementation(() => <im.INodeVersion>nodeTestDist);
+
+    getDistSpy.mockImplementation(version => {
+      const initialUrl = im.getNodejsDistUrl(version);
+      if (initialUrl.endsWith('/rc')) {
+        return <im.INodeVersion>nodeTestDistRc;
+      } else if (initialUrl.endsWith('/nightly')) {
+        return <im.INodeVersion>nodeTestDistNightly;
+      } else {
+        return <im.INodeVersion>nodeTestDist;
+      }
+    });
+
+    getJsonSpy.mockImplementation(url => {
+      let res: any;
+      if (url.includes('/rc')) {
+        res = <im.INodeVersion>nodeTestDistRc;
+      } else if (url.includes('/nightly')) {
+        res = <im.INodeVersion>nodeTestDistNightly;
+      } else {
+        res = <im.INodeVersion>nodeTestDist;
+      }
+
+      return {result: res};
+    });
 
     // writes
     cnSpy = jest.spyOn(process.stdout, 'write');
@@ -359,6 +391,18 @@ describe('setup-node', () => {
   });
 
   it('acquires specified architecture of node', async () => {
+    getJsonSpy.mockImplementation(url => {
+      let res: any;
+      if (url.includes('/rc')) {
+        res = <im.INodeVersion>nodeTestDistRc;
+      } else if (url.includes('/nightly')) {
+        res = <im.INodeVersion>nodeTestDistNightly;
+      } else {
+        res = <im.INodeVersion>nodeTestDist;
+      }
+
+      return {result: res};
+    });
     for (const {arch, version, osSpec} of [
       {arch: 'x86', version: '12.16.2', osSpec: 'win32'},
       {arch: 'x86', version: '14.0.0', osSpec: 'win32'}
@@ -399,6 +443,20 @@ describe('setup-node', () => {
   }, 100000);
 
   describe('check-latest flag', () => {
+    beforeEach(() => {
+      getJsonSpy.mockImplementation(url => {
+        let res: any;
+        if (url.includes('/rc')) {
+          res = <im.INodeVersion>nodeTestDistRc;
+        } else if (url.includes('/nightly')) {
+          res = <im.INodeVersion>nodeTestDistNightly;
+        } else {
+          res = <im.INodeVersion>nodeTestDist;
+        }
+
+        return {result: res};
+      });
+    });
     it('use local version and dont check manifest if check-latest is not specified', async () => {
       os.platform = 'linux';
       os.arch = 'x64';
@@ -897,10 +955,323 @@ describe('setup-node', () => {
     });
   });
 
+  describe('rc versions', () => {
+    beforeEach(() => {
+      getJsonSpy.mockImplementation(url => {
+        let res: any;
+        if (url.includes('/rc')) {
+          res = <im.INodeVersion>nodeTestDistRc;
+        } else if (url.includes('/nightly')) {
+          res = <im.INodeVersion>nodeTestDistNightly;
+        } else {
+          res = <im.INodeVersion>nodeTestDist;
+        }
+
+        return {result: res};
+      });
+    });
+
+    it.each([
+      [
+        '13.10.1-rc.0',
+        '13.10.1-rc.0',
+        'https://nodejs.org/download/rc/v13.10.1-rc.0/node-v13.10.1-rc.0-linux-x64.tar.gz'
+      ],
+      [
+        '14.15.5-rc.1',
+        '14.15.5-rc.1',
+        'https://nodejs.org/download/rc/v14.15.5-rc.1/node-v14.15.5-rc.1-linux-x64.tar.gz'
+      ],
+      [
+        '16.17.0-rc.1',
+        '16.17.0-rc.1',
+        'https://nodejs.org/download/rc/v16.17.0-rc.1/node-v16.17.0-rc.1-linux-x64.tar.gz'
+      ],
+      [
+        '17.0.0-rc.1',
+        '17.0.0-rc.1',
+        'https://nodejs.org/download/rc/v17.0.0-rc.1/node-v17.0.0-rc.1-linux-x64.tar.gz'
+      ],
+      [
+        '19.0.0-rc.2',
+        '19.0.0-rc.2',
+        'https://nodejs.org/download/rc/v19.0.0-rc.2/node-v19.0.0-rc.2-linux-x64.tar.gz'
+      ]
+    ])(
+      'finds the versions in the index.json and installs it',
+      async (input, expectedVersion, expectedUrl) => {
+        const toolPath = path.normalize(`/cache/node/${expectedVersion}/x64`);
+
+        findSpy.mockImplementation(() => '');
+        findAllVersionsSpy.mockImplementation(() => []);
+        dlSpy.mockImplementation(async () => '/some/temp/path');
+        exSpy.mockImplementation(async () => '/some/other/temp/path');
+        cacheSpy.mockImplementation(async () => toolPath);
+
+        inputs['node-version'] = input;
+        os['arch'] = 'x64';
+        os['platform'] = 'linux';
+        // act
+        await main.run();
+
+        // assert
+        expect(logSpy).toHaveBeenCalledWith(
+          `Attempting to download ${input}...`
+        );
+
+        expect(logSpy).toHaveBeenCalledWith(
+          `Acquiring ${expectedVersion} - ${os.arch} from ${expectedUrl}`
+        );
+        expect(logSpy).toHaveBeenCalledWith('Extracting ...');
+        expect(logSpy).toHaveBeenCalledWith('Adding to the cache ...');
+        expect(cnSpy).toHaveBeenCalledWith(
+          `::add-path::${path.join(toolPath, 'bin')}${osm.EOL}`
+        );
+      }
+    );
+
+    it.each([
+      ['13.10.1-rc.0', '13.10.1-rc.0'],
+      ['14.15.5-rc.1', '14.15.5-rc.1'],
+      ['16.17.0-rc.1', '16.17.0-rc.1'],
+      ['17.0.0-rc.1', '17.0.0-rc.1']
+    ])(
+      'finds the %s version in the hostedToolcache',
+      async (input, expectedVersion) => {
+        const toolPath = path.normalize(`/cache/node/${expectedVersion}/x64`);
+        findSpy.mockReturnValue(toolPath);
+
+        inputs['node-version'] = input;
+        os['arch'] = 'x64';
+        os['platform'] = 'linux';
+
+        // act
+        await main.run();
+
+        // assert
+        expect(logSpy).toHaveBeenCalledWith(`Found in cache @ ${toolPath}`);
+        expect(cnSpy).toHaveBeenCalledWith(
+          `::add-path::${path.join(toolPath, 'bin')}${osm.EOL}`
+        );
+      }
+    );
+
+    it('throws an error if version is not found', async () => {
+      const versionSpec = '19.0.0-rc.3';
+
+      findSpy.mockImplementation(() => '');
+      findAllVersionsSpy.mockImplementation(() => []);
+      dlSpy.mockImplementation(async () => '/some/temp/path');
+      exSpy.mockImplementation(async () => '/some/other/temp/path');
+
+      inputs['node-version'] = versionSpec;
+      os['arch'] = 'x64';
+      os['platform'] = 'linux';
+      // act
+      await main.run();
+
+      // assert
+      expect(logSpy).toHaveBeenCalledWith(
+        `Attempting to download ${versionSpec}...`
+      );
+      expect(cnSpy).toHaveBeenCalledWith(
+        `::error::Unable to find Node version '${versionSpec}' for platform ${os.platform} and architecture ${os.arch}.${osm.EOL}`
+      );
+    });
+  });
+
+  describe('nightly versions', () => {
+    beforeEach(() => {
+      getJsonSpy.mockImplementation(url => {
+        let res: any;
+        if (url.includes('/rc')) {
+          res = <im.INodeVersion>nodeTestDistRc;
+        } else if (url.includes('/nightly')) {
+          res = <im.INodeVersion>nodeTestDistNightly;
+        } else {
+          res = <im.INodeVersion>nodeTestDist;
+        }
+
+        return {result: res};
+      });
+    });
+
+    it.each([
+      [
+        '17.5.0-nightly',
+        '17.5.0-nightly20220209e43808936a',
+        'https://nodejs.org/download/nightly/v17.5.0-nightly20220209e43808936a/node-v17.5.0-nightly20220209e43808936a-linux-x64.tar.gz'
+      ],
+      [
+        '17-nightly',
+        '17.5.0-nightly20220209e43808936a',
+        'https://nodejs.org/download/nightly/v17.5.0-nightly20220209e43808936a/node-v17.5.0-nightly20220209e43808936a-linux-x64.tar.gz'
+      ],
+      [
+        '18.0.0-nightly',
+        '18.0.0-nightly20220419bde889bd4e',
+        'https://nodejs.org/download/nightly/v18.0.0-nightly20220419bde889bd4e/node-v18.0.0-nightly20220419bde889bd4e-linux-x64.tar.gz'
+      ],
+      [
+        '18-nightly',
+        '18.0.0-nightly20220419bde889bd4e',
+        'https://nodejs.org/download/nightly/v18.0.0-nightly20220419bde889bd4e/node-v18.0.0-nightly20220419bde889bd4e-linux-x64.tar.gz'
+      ],
+      [
+        '20.0.0-nightly',
+        '20.0.0-nightly2022101987cdf7d412',
+        'https://nodejs.org/download/nightly/v20.0.0-nightly2022101987cdf7d412/node-v20.0.0-nightly2022101987cdf7d412-linux-x64.tar.gz'
+      ]
+    ])(
+      'finds the versions in the index.json and installs it',
+      async (input, expectedVersion, expectedUrl) => {
+        const toolPath = path.normalize(`/cache/node/${expectedVersion}/x64`);
+
+        findSpy.mockImplementation(() => '');
+        findAllVersionsSpy.mockImplementation(() => []);
+        dlSpy.mockImplementation(async () => '/some/temp/path');
+        exSpy.mockImplementation(async () => '/some/other/temp/path');
+        cacheSpy.mockImplementation(async () => toolPath);
+
+        inputs['node-version'] = input;
+        os['arch'] = 'x64';
+        os['platform'] = 'linux';
+        // act
+        await main.run();
+
+        // assert
+        expect(logSpy).toHaveBeenCalledWith(
+          `Attempting to download ${input}...`
+        );
+
+        expect(logSpy).toHaveBeenCalledWith(
+          `Acquiring ${expectedVersion} - ${os.arch} from ${expectedUrl}`
+        );
+        expect(logSpy).toHaveBeenCalledWith('Extracting ...');
+        expect(logSpy).toHaveBeenCalledWith('Adding to the cache ...');
+        expect(cnSpy).toHaveBeenCalledWith(
+          `::add-path::${path.join(toolPath, 'bin')}${osm.EOL}`
+        );
+      }
+    );
+
+    it.each([
+      ['17.5.0-nightly', '17.5.0-nightly20220209e43808936a'],
+      ['17-nightly', '17.5.0-nightly20220209e43808936a'],
+      ['20.0.0-nightly', '20.0.0-nightly2022101987cdf7d412']
+    ])(
+      'finds the %s version in the hostedToolcache',
+      async (input, expectedVersion) => {
+        const toolPath = path.normalize(`/cache/node/${expectedVersion}/x64`);
+        findSpy.mockReturnValue(toolPath);
+        findAllVersionsSpy.mockReturnValue([
+          '17.5.0-nightly20220209e43808936a',
+          '17.5.0-nightly20220209e43808935a',
+          '20.0.0-nightly2022101987cdf7d412',
+          '20.0.0-nightly2022101987cdf7d411'
+        ]);
+
+        inputs['node-version'] = input;
+        os['arch'] = 'x64';
+        os['platform'] = 'linux';
+
+        // act
+        await main.run();
+
+        // assert
+        expect(findAllVersionsSpy).toHaveBeenCalled();
+        expect(logSpy).toHaveBeenCalledWith(`Found in cache @ ${toolPath}`);
+        expect(cnSpy).toHaveBeenCalledWith(
+          `::add-path::${path.join(toolPath, 'bin')}${osm.EOL}`
+        );
+      }
+    );
+
+    it.each([
+      [
+        '17.5.0-nightly',
+        '17.5.0-nightly20220209e43808936a',
+        '17.0.0-nightly202110193f11666dc7',
+        'https://nodejs.org/download/nightly/v17.5.0-nightly20220209e43808936a/node-v17.5.0-nightly20220209e43808936a-linux-x64.tar.gz'
+      ],
+      [
+        '17-nightly',
+        '17.5.0-nightly20220209e43808936a',
+        '17.0.0-nightly202110193f11666dc7',
+        'https://nodejs.org/download/nightly/v17.5.0-nightly20220209e43808936a/node-v17.5.0-nightly20220209e43808936a-linux-x64.tar.gz'
+      ],
+      [
+        '18.0.0-nightly',
+        '18.0.0-nightly20220419bde889bd4e',
+        '18.0.0-nightly202204180699150267',
+        'https://nodejs.org/download/nightly/v18.0.0-nightly20220419bde889bd4e/node-v18.0.0-nightly20220419bde889bd4e-linux-x64.tar.gz'
+      ],
+      [
+        '18-nightly',
+        '18.0.0-nightly20220419bde889bd4e',
+        '18.0.0-nightly202204180699150267',
+        'https://nodejs.org/download/nightly/v18.0.0-nightly20220419bde889bd4e/node-v18.0.0-nightly20220419bde889bd4e-linux-x64.tar.gz'
+      ],
+      [
+        '20.0.0-nightly',
+        '20.0.0-nightly2022101987cdf7d412',
+        '20.0.0-nightly2022101987cdf7d411',
+        'https://nodejs.org/download/nightly/v20.0.0-nightly2022101987cdf7d412/node-v20.0.0-nightly2022101987cdf7d412-linux-x64.tar.gz'
+      ]
+    ])(
+      'get %s version from dist if check-latest is true',
+      async (input, expectedVersion, foundVersion, expectedUrl) => {
+        const foundToolPath = path.normalize(`/cache/node/${foundVersion}/x64`);
+        const toolPath = path.normalize(`/cache/node/${expectedVersion}/x64`);
+
+        inputs['node-version'] = input;
+        inputs['check-latest'] = 'true';
+        os['arch'] = 'x64';
+        os['platform'] = 'linux';
+
+        findSpy.mockReturnValue(foundToolPath);
+        findAllVersionsSpy.mockReturnValue([
+          '17.0.0-nightly202110193f11666dc7',
+          '18.0.0-nightly202204180699150267',
+          '20.0.0-nightly2022101987cdf7d411'
+        ]);
+        dlSpy.mockImplementation(async () => '/some/temp/path');
+        exSpy.mockImplementation(async () => '/some/other/temp/path');
+        cacheSpy.mockImplementation(async () => toolPath);
+
+        // act
+        await main.run();
+
+        // assert
+        expect(findAllVersionsSpy).toHaveBeenCalled();
+        expect(logSpy).toHaveBeenCalledWith(
+          `Acquiring ${expectedVersion} - ${os.arch} from ${expectedUrl}`
+        );
+        expect(logSpy).toHaveBeenCalledWith('Extracting ...');
+        expect(logSpy).toHaveBeenCalledWith('Adding to the cache ...');
+        expect(cnSpy).toHaveBeenCalledWith(
+          `::add-path::${path.join(toolPath, 'bin')}${osm.EOL}`
+        );
+      }
+    );
+  });
+
   describe('latest alias syntax', () => {
     it.each(['latest', 'current', 'node'])(
       'download the %s version if alias is provided',
       async inputVersion => {
+        getJsonSpy.mockImplementation(url => {
+          let res: any;
+          if (url.includes('/rc')) {
+            res = <im.INodeVersion>nodeTestDistRc;
+          } else if (url.includes('/nightly')) {
+            res = <im.INodeVersion>nodeTestDistNightly;
+          } else {
+            res = <im.INodeVersion>nodeTestDist;
+          }
+
+          return {result: res};
+        });
         // Arrange
         inputs['node-version'] = inputVersion;
 
@@ -927,6 +1298,18 @@ describe('setup-node', () => {
     it.each(['latest', 'current', 'node'])(
       'download the %s version if alias is provided',
       async inputVersion => {
+        getJsonSpy.mockImplementation(url => {
+          let res: any;
+          if (url.includes('/rc')) {
+            res = <im.INodeVersion>nodeTestDistRc;
+          } else if (url.includes('/nightly')) {
+            res = <im.INodeVersion>nodeTestDistNightly;
+          } else {
+            res = <im.INodeVersion>nodeTestDist;
+          }
+
+          return {result: res};
+        });
         // Arrange
         inputs['node-version'] = inputVersion;
         const expectedVersion = nodeTestDist[0];

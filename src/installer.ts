@@ -376,9 +376,9 @@ function evaluateNightlyVersions(
   const rawVersion = isValidVersion ? raw : semver.coerce(raw);
   if (rawVersion) {
     if (prerelease !== 'nightly') {
-      range = `${rawVersion}+${prerelease.replace('nightly', 'nightly.')}`;
+      range = `${rawVersion}-${prerelease.replace('nightly', 'nightly.')}`;
     } else {
-      range = semver.validRange(`^${rawVersion}`);
+      range = `${semver.validRange(`^${rawVersion}-0`)}-0`;
     }
   }
 
@@ -392,8 +392,9 @@ function evaluateNightlyVersions(
     for (let i = versions.length - 1; i >= 0; i--) {
       const potential: string = versions[i];
       const satisfied: boolean = semver.satisfies(
-        potential.replace('-nightly', '+nightly.'),
-        range
+        potential.replace('-nightly', '-nightly.'),
+        range,
+        {includePrerelease: true}
       );
       if (satisfied) {
         version = potential;
@@ -444,7 +445,7 @@ function evaluateVersions(versions: string[], versionSpec: string): string {
   return version;
 }
 
-function getNodejsDistUrl(version: string) {
+export function getNodejsDistUrl(version: string) {
   const prerelease = semver.prerelease(version);
   if (version.includes('nightly')) {
     return 'https://nodejs.org/download/nightly';
