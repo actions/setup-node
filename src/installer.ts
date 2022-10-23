@@ -1,4 +1,4 @@
-import os = require('os');
+import os from 'os';
 import * as assert from 'assert';
 import * as core from '@actions/core';
 import * as hc from '@actions/http-client';
@@ -6,7 +6,7 @@ import * as io from '@actions/io';
 import * as tc from '@actions/tool-cache';
 import * as path from 'path';
 import * as semver from 'semver';
-import fs = require('fs');
+import fs from 'fs';
 
 //
 // Node versions interface
@@ -383,21 +383,15 @@ function evaluateNightlyVersions(
   }
 
   if (range) {
-    versions = versions.sort((a, b) => {
-      if (semver.gt(a, b)) {
-        return 1;
-      }
-      return -1;
-    });
-    for (let i = versions.length - 1; i >= 0; i--) {
-      const potential: string = versions[i];
+    versions.sort((a, b) => +semver.lt(a, b) * 1 - 0.5);
+    for (const currentVersion of versions) {
       const satisfied: boolean = semver.satisfies(
-        potential.replace('-nightly', '-nightly.'),
+        currentVersion.replace('-nightly', '-nightly.'),
         range,
         {includePrerelease: true}
       );
       if (satisfied) {
-        version = potential;
+        version = currentVersion;
         break;
       }
     }
@@ -451,9 +445,8 @@ export function getNodejsDistUrl(version: string) {
     return 'https://nodejs.org/download/nightly';
   } else if (!prerelease) {
     return 'https://nodejs.org/dist';
-  } else {
-    return 'https://nodejs.org/download/rc';
   }
+  return 'https://nodejs.org/download/rc';
 }
 
 async function queryDistForMatch(

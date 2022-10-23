@@ -73172,6 +73172,9 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 var __importStar = (this && this.__importStar) || function (mod) {
     if (mod && mod.__esModule) return mod;
     var result = {};
@@ -73180,7 +73183,7 @@ var __importStar = (this && this.__importStar) || function (mod) {
     return result;
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-const os = __nccwpck_require__(2037);
+const os_1 = __importDefault(__nccwpck_require__(2037));
 const assert = __importStar(__nccwpck_require__(9491));
 const core = __importStar(__nccwpck_require__(2186));
 const hc = __importStar(__nccwpck_require__(9925));
@@ -73188,14 +73191,14 @@ const io = __importStar(__nccwpck_require__(7436));
 const tc = __importStar(__nccwpck_require__(7784));
 const path = __importStar(__nccwpck_require__(1017));
 const semver = __importStar(__nccwpck_require__(5911));
-const fs = __nccwpck_require__(7147);
-function getNode(versionSpec, stable, checkLatest, auth, arch = os.arch()) {
+const fs_1 = __importDefault(__nccwpck_require__(7147));
+function getNode(versionSpec, stable, checkLatest, auth, arch = os_1.default.arch()) {
     return __awaiter(this, void 0, void 0, function* () {
         // Store manifest data to avoid multiple calls
         let manifest;
         let nodeVersions;
         let isNightly = versionSpec.includes('nightly');
-        let osPlat = os.platform();
+        let osPlat = os_1.default.platform();
         let osArch = translateArchToDistUrl(arch);
         if (isLtsAlias(versionSpec)) {
             core.info('Attempt to resolve LTS alias from manifest...');
@@ -73295,7 +73298,7 @@ function getNode(versionSpec, stable, checkLatest, auth, arch = os.arch()) {
                 extPath = yield tc.extract7z(downloadPath, undefined, _7zPath);
                 // 7z extracts to folder matching file name
                 let nestedPath = path.join(extPath, path.basename(info.fileName, '.7z'));
-                if (fs.existsSync(nestedPath)) {
+                if (fs_1.default.existsSync(nestedPath)) {
                     extPath = nestedPath;
                 }
             }
@@ -73364,7 +73367,7 @@ function resolveLtsAliasFromManifest(versionSpec, stable, manifest) {
     core.debug(`Found LTS release '${release.version}' for Node version '${versionSpec}'`);
     return release.version.split('.')[0];
 }
-function getInfoFromManifest(versionSpec, stable, auth, osArch = translateArchToDistUrl(os.arch()), manifest) {
+function getInfoFromManifest(versionSpec, stable, auth, osArch = translateArchToDistUrl(os_1.default.arch()), manifest) {
     return __awaiter(this, void 0, void 0, function* () {
         let info = null;
         if (!manifest) {
@@ -73382,9 +73385,9 @@ function getInfoFromManifest(versionSpec, stable, auth, osArch = translateArchTo
         return info;
     });
 }
-function getInfoFromDist(versionSpec, arch = os.arch(), nodeVersions) {
+function getInfoFromDist(versionSpec, arch = os_1.default.arch(), nodeVersions) {
     return __awaiter(this, void 0, void 0, function* () {
-        let osPlat = os.platform();
+        let osPlat = os_1.default.platform();
         let osArch = translateArchToDistUrl(arch);
         let version = yield queryDistForMatch(versionSpec, arch, nodeVersions);
         if (!version) {
@@ -73408,7 +73411,7 @@ function getInfoFromDist(versionSpec, arch = os.arch(), nodeVersions) {
         };
     });
 }
-function resolveVersionFromManifest(versionSpec, stable, auth, osArch = translateArchToDistUrl(os.arch()), manifest) {
+function resolveVersionFromManifest(versionSpec, stable, auth, osArch = translateArchToDistUrl(os_1.default.arch()), manifest) {
     return __awaiter(this, void 0, void 0, function* () {
         try {
             const info = yield getInfoFromManifest(versionSpec, stable, auth, osArch, manifest);
@@ -73435,17 +73438,11 @@ function evaluateNightlyVersions(versions, versionSpec) {
         }
     }
     if (range) {
-        versions = versions.sort((a, b) => {
-            if (semver.gt(a, b)) {
-                return 1;
-            }
-            return -1;
-        });
-        for (let i = versions.length - 1; i >= 0; i--) {
-            const potential = versions[i];
-            const satisfied = semver.satisfies(potential.replace('-nightly', '-nightly.'), range, { includePrerelease: true });
+        versions.sort((a, b) => +semver.lt(a, b) * 1 - 0.5);
+        for (const currentVersion of versions) {
+            const satisfied = semver.satisfies(currentVersion.replace('-nightly', '-nightly.'), range, { includePrerelease: true });
             if (satisfied) {
-                version = potential;
+                version = currentVersion;
                 break;
             }
         }
@@ -73495,14 +73492,12 @@ function getNodejsDistUrl(version) {
     else if (!prerelease) {
         return 'https://nodejs.org/dist';
     }
-    else {
-        return 'https://nodejs.org/download/rc';
-    }
+    return 'https://nodejs.org/download/rc';
 }
 exports.getNodejsDistUrl = getNodejsDistUrl;
-function queryDistForMatch(versionSpec, arch = os.arch(), nodeVersions) {
+function queryDistForMatch(versionSpec, arch = os_1.default.arch(), nodeVersions) {
     return __awaiter(this, void 0, void 0, function* () {
-        let osPlat = os.platform();
+        let osPlat = os_1.default.platform();
         let osArch = translateArchToDistUrl(arch);
         // node offers a json list of versions
         let dataFileName;
@@ -73564,10 +73559,10 @@ exports.getVersionsFromDist = getVersionsFromDist;
 // This method attempts to download and cache the resources from these alternative locations.
 // Note also that the files are normally zipped but in this case they are just an exe
 // and lib file in a folder, not zipped.
-function acquireNodeFromFallbackLocation(version, arch = os.arch()) {
+function acquireNodeFromFallbackLocation(version, arch = os_1.default.arch()) {
     return __awaiter(this, void 0, void 0, function* () {
         const initialUrl = getNodejsDistUrl(version);
-        let osPlat = os.platform();
+        let osPlat = os_1.default.platform();
         let osArch = translateArchToDistUrl(arch);
         // Create temporary folder to download in to
         const tempDownloadFolder = 'temp_' + Math.floor(Math.random() * 2000000000);
