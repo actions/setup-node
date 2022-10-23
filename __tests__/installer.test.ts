@@ -391,18 +391,6 @@ describe('setup-node', () => {
   });
 
   it('acquires specified architecture of node', async () => {
-    getJsonSpy.mockImplementation(url => {
-      let res: any;
-      if (url.includes('/rc')) {
-        res = <im.INodeVersion>nodeTestDistRc;
-      } else if (url.includes('/nightly')) {
-        res = <im.INodeVersion>nodeTestDistNightly;
-      } else {
-        res = <im.INodeVersion>nodeTestDist;
-      }
-
-      return {result: res};
-    });
     for (const {arch, version, osSpec} of [
       {arch: 'x86', version: '12.16.2', osSpec: 'win32'},
       {arch: 'x86', version: '14.0.0', osSpec: 'win32'}
@@ -443,20 +431,6 @@ describe('setup-node', () => {
   }, 100000);
 
   describe('check-latest flag', () => {
-    beforeEach(() => {
-      getJsonSpy.mockImplementation(url => {
-        let res: any;
-        if (url.includes('/rc')) {
-          res = <im.INodeVersion>nodeTestDistRc;
-        } else if (url.includes('/nightly')) {
-          res = <im.INodeVersion>nodeTestDistNightly;
-        } else {
-          res = <im.INodeVersion>nodeTestDist;
-        }
-
-        return {result: res};
-      });
-    });
     it('use local version and dont check manifest if check-latest is not specified', async () => {
       os.platform = 'linux';
       os.arch = 'x64';
@@ -956,21 +930,6 @@ describe('setup-node', () => {
   });
 
   describe('rc versions', () => {
-    beforeEach(() => {
-      getJsonSpy.mockImplementation(url => {
-        let res: any;
-        if (url.includes('/rc')) {
-          res = <im.INodeVersion>nodeTestDistRc;
-        } else if (url.includes('/nightly')) {
-          res = <im.INodeVersion>nodeTestDistNightly;
-        } else {
-          res = <im.INodeVersion>nodeTestDist;
-        }
-
-        return {result: res};
-      });
-    });
-
     it.each([
       [
         '13.10.1-rc.0',
@@ -1081,21 +1040,6 @@ describe('setup-node', () => {
   });
 
   describe('nightly versions', () => {
-    beforeEach(() => {
-      getJsonSpy.mockImplementation(url => {
-        let res: any;
-        if (url.includes('/rc')) {
-          res = <im.INodeVersion>nodeTestDistRc;
-        } else if (url.includes('/nightly')) {
-          res = <im.INodeVersion>nodeTestDistNightly;
-        } else {
-          res = <im.INodeVersion>nodeTestDist;
-        }
-
-        return {result: res};
-      });
-    });
-
     it.each([
       [
         '17.5.0-nightly',
@@ -1260,18 +1204,6 @@ describe('setup-node', () => {
     it.each(['latest', 'current', 'node'])(
       'download the %s version if alias is provided',
       async inputVersion => {
-        getJsonSpy.mockImplementation(url => {
-          let res: any;
-          if (url.includes('/rc')) {
-            res = <im.INodeVersion>nodeTestDistRc;
-          } else if (url.includes('/nightly')) {
-            res = <im.INodeVersion>nodeTestDistNightly;
-          } else {
-            res = <im.INodeVersion>nodeTestDist;
-          }
-
-          return {result: res};
-        });
         // Arrange
         inputs['node-version'] = inputVersion;
 
@@ -1298,18 +1230,6 @@ describe('setup-node', () => {
     it.each(['latest', 'current', 'node'])(
       'download the %s version if alias is provided',
       async inputVersion => {
-        getJsonSpy.mockImplementation(url => {
-          let res: any;
-          if (url.includes('/rc')) {
-            res = <im.INodeVersion>nodeTestDistRc;
-          } else if (url.includes('/nightly')) {
-            res = <im.INodeVersion>nodeTestDistNightly;
-          } else {
-            res = <im.INodeVersion>nodeTestDist;
-          }
-
-          return {result: res};
-        });
         // Arrange
         inputs['node-version'] = inputVersion;
         const expectedVersion = nodeTestDist[0];

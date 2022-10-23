@@ -443,10 +443,11 @@ export function getNodejsDistUrl(version: string) {
   const prerelease = semver.prerelease(version);
   if (version.includes('nightly')) {
     return 'https://nodejs.org/download/nightly';
-  } else if (!prerelease) {
-    return 'https://nodejs.org/dist';
+  } else if (prerelease) {
+    return 'https://nodejs.org/download/rc';
   }
-  return 'https://nodejs.org/download/rc';
+
+  return 'https://nodejs.org/dist';
 }
 
 async function queryDistForMatch(

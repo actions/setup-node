@@ -104,6 +104,42 @@ jobs:
       - run: npm test
 ```
 
+## Nightly versions
+
+You can specify a nightly version to download it from https://nodejs.org/download/nightly.
+
+```yaml
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    name: Node sample
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: '16.0.0-nightly' # or 16-nightly
+      - run: npm ci
+      - run: npm test
+```
+
+## RC versions
+
+You can use specify a rc version to download it from https://nodejs.org/download/rc.
+
+```yaml
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    name: Node sample
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: '16.0.0-rc.1'
+      - run: npm ci
+      - run: npm test
+```
+
 ## Caching packages data
 The action follows [actions/cache](https://github.com/actions/cache/blob/main/examples.md#node---npm) guidelines, and caches global cache on the machine instead of `node_modules`, so cache can be reused between different Node.js versions.
 
