@@ -1,4 +1,5 @@
 import os = require('os');
+import fs = require('fs');
 import * as assert from 'assert';
 import * as core from '@actions/core';
 import * as hc from '@actions/http-client';
@@ -6,13 +7,13 @@ import * as io from '@actions/io';
 import * as tc from '@actions/tool-cache';
 import * as path from 'path';
 import * as semver from 'semver';
-import fs = require('fs');
 
 //
 // Node versions interface
 // see https://nodejs.org/dist/index.json
 // for nightly https://nodejs.org/download/nightly/index.json
-//
+// for canary https://nodejs.org/download/v8-canary/index.json
+
 export interface INodeVersion {
   version: string;
   files: string[];
@@ -29,6 +30,10 @@ interface INodeRelease extends tc.IToolRelease {
   lts?: string;
 }
 
+// TODO: unify with other isNnn?
+const V8_CANARY = 'v8-canary';
+const isVersionCanary = (versionSpec: string):boolean => versionSpec.includes(`-${V8_CANARY}`);
+
 export async function getNode(
   versionSpec: string,
   stable: boolean,
@@ -39,9 +44,12 @@ export async function getNode(
   // Store manifest data to avoid multiple calls
   let manifest: INodeRelease[] | undefined;
   let nodeVersions: INodeVersion[] | undefined;
-  let isNightly = versionSpec.includes('nightly');
+  let isCanary = isVersionCanary(versionSpec);
+  let isNightly = versionSpec.includes('nightly') && !isCanary; // avoid both set by preceding isCanary
   let osPlat: string = os.platform();
   let osArch: string = translateArchToDistUrl(arch);
+
+  core.debug(`get node isLtsAlias=${isLtsAlias(versionSpec)} isCanary=${isCanary} isNightly=${isNightly}`);
 
   if (isLtsAlias(versionSpec)) {
     core.info('Attempt to resolve LTS alias from manifest...');
@@ -53,17 +61,22 @@ export async function getNode(
   }
 
   if (isLatestSyntax(versionSpec)) {
+    core.debug('will use latest node version from node repository because of latest syntax ...');
     nodeVersions = await getVersionsFromDist(versionSpec);
     versionSpec = await queryDistForMatch(versionSpec, arch, nodeVersions);
-    core.info(`getting latest node version...`);
+    core.info(`getting latest node version ${versionSpec}...`);
   }
 
-  if (isNightly && checkLatest) {
+  if (isNightly && checkLatest || isCanary && checkLatest) {
+    core.debug(
+      `will check latest node version from node repository because of check latest input with ${isNightly ? 'nightly' : 'canary'} set...`
+    );
     nodeVersions = await getVersionsFromDist(versionSpec);
     versionSpec = await queryDistForMatch(versionSpec, arch, nodeVersions);
+    core.info(`getting node version ${versionSpec}...`);
   }
 
-  if (checkLatest && !isNightly) {
+  if (checkLatest && !isNightly && !isCanary) {
     core.info('Attempt to resolve the latest version from manifest...');
     const resolvedVersion = await resolveVersionFromManifest(
       versionSpec,
@@ -83,12 +96,12 @@ export async function getNode(
   // check cache
   core.debug('check toolcache');
   let toolPath: string;
-  if (isNightly) {
-    const nightlyVersion = findNightlyVersionInHostedToolcache(
+  if (isNightly || isCanary) {
+    const nightlyOrCanaryVersion = findNightlyOrCanaryVersionInHostedToolcache(
       versionSpec,
       osArch
     );
-    toolPath = nightlyVersion && tc.find('node', nightlyVersion, osArch);
+    toolPath = nightlyOrCanaryVersion && tc.find('node', nightlyOrCanaryVersion, osArch);
   } else {
     toolPath = tc.find('node', versionSpec, osArch);
   }
@@ -107,7 +120,7 @@ export async function getNode(
     try {
       info = await getInfoFromManifest(
         versionSpec,
-        !isNightly,
+        !isNightly && !isVersionCanary,
         auth,
         osArch,
         manifest
@@ -215,15 +228,13 @@ export async function getNode(
   core.addPath(toolPath);
 }
 
-function findNightlyVersionInHostedToolcache(
+function findNightlyOrCanaryVersionInHostedToolcache(
   versionsSpec: string,
   osArch: string
 ) {
   const foundAllVersions = tc.findAllVersions('node', osArch);
   core.debug(foundAllVersions.join('\n'));
-  const version = evaluateVersions(foundAllVersions, versionsSpec);
-
-  return version;
+  return evaluateVersions(foundAllVersions, versionsSpec);
 }
 
 function isLtsAlias(versionSpec: string): boolean {
@@ -313,11 +324,17 @@ async function getInfoFromDist(
   let osPlat: string = os.platform();
   let osArch: string = translateArchToDistUrl(arch);
 
+  core.debug(`getting the release version from index.json in node repository`);
   let version: string = await queryDistForMatch(
     versionSpec,
     arch,
     nodeVersions
   );
+  if (version) {
+    core.debug(`got "${version}" release version from index.json in node repository`);
+  } else {
+    core.debug(`release version from index.json in node repository not found`);
+  }
 
   if (!version) {
     return null;
@@ -412,6 +429,53 @@ function evaluateNightlyVersions(
   return version;
 }
 
+function evaluateCanaryVersions(
+  versions: string[],
+  versionSpec: string
+): string {
+  let version = '';
+  let range: string | null | undefined;
+  const [raw, prerelease] = versionSpec.split(/-(.*)/s);
+  const isValidVersion = semver.valid(raw);
+  const rawVersion = isValidVersion ? raw : semver.coerce(raw)?.version;
+  if (rawVersion) {
+    if (prerelease === V8_CANARY) {
+      range = semver.validRange(`^${rawVersion}`);
+    } else {
+      range = `${rawVersion}+${prerelease.replace(V8_CANARY, V8_CANARY + '.')}`;
+    }
+  }
+  core.debug(`evaluate canary versions rawVersion="${rawVersion}" range="${range}"`)
+
+  if (range) {
+    const versionsReversed = versions.sort((a, b) => {
+      if (semver.gt(a, b)) {
+        return -1;
+      } else if (semver.lt(a, b)) {
+        return 1;
+      }
+      return 0;
+    });
+    for (const potential of versionsReversed) {
+      const satisfied: boolean = semver.satisfies(
+        potential.replace('-' + V8_CANARY, '+' + V8_CANARY + '.'),
+        range);
+      if (satisfied) {
+        version = potential;
+        break;
+      }
+    }
+  }
+
+  if (version) {
+    core.debug(`matched: ${version}`);
+  } else {
+    core.debug('match not found');
+  }
+
+  return version;
+}
+
 // TODO - should we just export this from @actions/tool-cache? Lifted directly from there
 function evaluateVersions(versions: string[], versionSpec: string): string {
   let version = '';
@@ -420,6 +484,8 @@ function evaluateVersions(versions: string[], versionSpec: string): string {
 
   if (versionSpec.includes('nightly')) {
     return evaluateNightlyVersions(versions, versionSpec);
+  } else if (isVersionCanary(versionSpec)) {
+    return evaluateCanaryVersions(versions, versionSpec);
   }
 
   versions = versions.sort((a, b) => {
@@ -449,10 +515,15 @@ function evaluateVersions(versions: string[], versionSpec: string): string {
 function getNodejsDistUrl(version: string) {
   const prerelease = semver.prerelease(version);
   if (version.includes('nightly')) {
+    core.debug('requested nightly build');
     return 'https://nodejs.org/download/nightly';
+  } else if (isVersionCanary(version)) {
+    core.debug('requested v8 canary build');
+    return 'https://nodejs.org/download/v8-canary';
   } else if (!prerelease) {
     return 'https://nodejs.org/dist';
   } else {
+    core.debug('requested RC build');
     return 'https://nodejs.org/download/rc';
   }
 }
@@ -510,6 +581,7 @@ export async function getVersionsFromDist(
 ): Promise<INodeVersion[]> {
   const initialUrl = getNodejsDistUrl(versionSpec);
   const dataUrl = `${initialUrl}/index.json`;
+  core.debug(`download ${dataUrl}`);
   let httpClient = new hc.HttpClient('setup-node', [], {
     allowRetries: true,
     maxRetries: 3
