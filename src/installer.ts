@@ -383,7 +383,7 @@ function evaluateNightlyVersions(
   }
 
   if (range) {
-    versions.sort((a, b) => +semver.lt(a, b) * 1 - 0.5);
+    versions.sort((a, b) => +semver.lt(a, b) - 0.5);
     for (const currentVersion of versions) {
       const satisfied: boolean = semver.satisfies(
         currentVersion.replace('-nightly', '-nightly.'),
