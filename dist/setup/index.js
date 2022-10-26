@@ -73683,6 +73683,9 @@ function printEnvDetailsAndSetOutput() {
             }
             core.info(`${tool}: ${output}`);
         }));
+        promises.push(getLtsCodename().then(codename => {
+            core.setOutput('node-lts-codename', codename);
+        }));
         yield Promise.all(promises);
         core.endGroup();
     });
@@ -73692,6 +73695,24 @@ function getToolVersion(tool, options) {
     return __awaiter(this, void 0, void 0, function* () {
         try {
             const { stdout, stderr, exitCode } = yield exec.getExecOutput(tool, options, {
+                ignoreReturnCode: true,
+                silent: true
+            });
+            if (exitCode > 0) {
+                core.warning(`[warning]${stderr}`);
+                return '';
+            }
+            return stdout;
+        }
+        catch (err) {
+            return '';
+        }
+    });
+}
+function getLtsCodename() {
+    return __awaiter(this, void 0, void 0, function* () {
+        try {
+            const { stdout, stderr, exitCode } = yield exec.getExecOutput('node', ["-p 'process.release.lts || process.exit(0)'"], {
                 ignoreReturnCode: true,
                 silent: true
             });

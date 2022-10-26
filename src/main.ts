@@ -115,6 +115,12 @@ export async function printEnvDetailsAndSetOutput() {
     core.info(`${tool}: ${output}`);
   });
 
+  promises.push(
+    getLtsCodename().then(codename => {
+      core.setOutput('node-lts-codename', codename);
+    })
+  );
+
   await Promise.all(promises);
 
   core.endGroup();
@@ -126,6 +132,28 @@ async function getToolVersion(tool: string, options: string[]) {
       ignoreReturnCode: true,
       silent: true
     });
+
+    if (exitCode > 0) {
+      core.warning(`[warning]${stderr}`);
+      return '';
+    }
+
+    return stdout;
+  } catch (err) {
+    return '';
+  }
+}
+
+async function getLtsCodename() {
+  try {
+    const {stdout, stderr, exitCode} = await exec.getExecOutput(
+      'node',
+      ["-p 'process.release.lts || process.exit(0)'"],
+      {
+        ignoreReturnCode: true,
+        silent: true
+      }
+    );
 
     if (exitCode > 0) {
       core.warning(`[warning]${stderr}`);

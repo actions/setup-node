@@ -32,6 +32,8 @@ outputs:
     description: 'A boolean value to indicate if a cache was hit.'
   node-version:
     description: 'The installed node version.'
+  node-lts-codename:
+    description: "The installed node version's LTS Codename. Empty if the installed node release is not an LTS release."
 runs:
   using: 'node16'
   main: 'dist/setup/index.js'
