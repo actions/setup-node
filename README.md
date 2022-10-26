@@ -111,6 +111,19 @@ jobs:
       - run: npm test
 ```
 
+## Using `setup-node` on GHES
+
+`setup-node` comes pre-installed on the appliance with GHES if Actions is enabled. When dynamically downloading Nodejs distributions, `setup-node` downloads distributions from [`actions/node-versions`](https://github.com/actions/node-versions) on github.com (outside of the appliance). These calls to `actions/node-versions` are made via unauthenticated requests, which are limited to [60 requests per hour per IP](https://docs.github.com/en/rest/overview/resources-in-the-rest-api#rate-limiting). If more requests are made within the time frame, then you will start to see rate-limit errors during downloading that looks like: `##[error]API rate limit exceeded for...`. After that error the action will try to download versions directly from the official site, but it also can have rate limit so it's better to put token.
+
+To get a higher rate limit, you can [generate a personal access token on github.com](https://github.com/settings/tokens/new) and pass it as the `token` input for the action:
+
+```yaml
+uses: actions/setup-node@v3
+with:
+  token: ${{ secrets.GH_DOTCOM_TOKEN }}
+  node-version: 16
+```
+
 ## Advanced usage
 
 1. [Check latest version](docs/advanced-usage.md#check-latest-version)
