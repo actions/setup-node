@@ -72,7 +72,13 @@ describe('authutil tests', () => {
     for (const line of contents.split(os.EOL)) {
       let parts = line.split('=');
       if (parts.length == 2) {
-        rc[parts[0].trim()] = parts[1].trim();
+        let key = parts[0].trim();
+
+        if (rc[key]) {
+          throw new Error(`Duplicate key ${key} in ${rcFile}`);
+        }
+
+        rc[key] = parts[1].trim();
       }
     }
     return rc;
@@ -131,5 +137,59 @@ describe('authutil tests', () => {
     expect(rc['@ownername:registry']).toBe('npm.pkg.github.com/');
     expect(rc['always-auth']).toBe('false');
     expect(process.env.NODE_AUTH_TOKEN).toEqual('foobar');
+  });
+
+  describe('Existing .npmrc', () => {
+    it('should overwrite registry', async () => {
+      fs.copyFileSync(path.join(__dirname, 'data/.npmrc'), rcFile);
+      expect(fs.statSync(rcFile)).toBeDefined();
+
+      let rc = readRcFile(rcFile);
+      expect(rc['registry']).toBe('http://example.com');
+      await auth.configAuthentication('https://registry.npmjs.org/', 'true');
+      let updatedRc = readRcFile(rcFile);
+      expect(updatedRc['registry']).toBe('https://registry.npmjs.org/');
+      expect(updatedRc['always-auth']).toBe('true');
+    });
+
+    it('should overwrite scoped registry', async () => {
+      process.env['INPUT_SCOPE'] = 'myScope';
+
+      fs.copyFileSync(path.join(__dirname, 'data/.npmrc-scoped'), rcFile);
+      expect(fs.statSync(rcFile)).toBeDefined();
+
+      let rc = readRcFile(rcFile);
+      expect(rc['@myscope:registry']).toBe('http://example.com');
+
+      await auth.configAuthentication('https://registry.npmjs.org/', 'true');
+
+      let updatedRc = readRcFile(rcFile);
+      expect(updatedRc['@myscope:registry']).toBe(
+        'https://registry.npmjs.org/'
+      );
+      expect(updatedRc['always-auth']).toBe('true');
+    });
+
+    it('should not delete registry when scoped', async () => {
+      process.env['INPUT_SCOPE'] = 'myScope';
+
+      fs.copyFileSync(
+        path.join(__dirname, 'data/.npmrc-scoped-with-registry'),
+        rcFile
+      );
+      expect(fs.statSync(rcFile)).toBeDefined();
+
+      let rc = readRcFile(rcFile);
+      expect(rc['@myscope:registry']).toBe('http://example.com');
+
+      await auth.configAuthentication('https://registry.npmjs.org/', 'true');
+
+      let updatedRc = readRcFile(rcFile);
+      expect(updatedRc['registry']).toBe('http://base.com');
+      expect(updatedRc['@myscope:registry']).toBe(
+        'https://registry.npmjs.org/'
+      );
+      expect(updatedRc['always-auth']).toBe('true');
+    });
   });
 });

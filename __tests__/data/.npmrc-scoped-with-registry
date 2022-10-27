@@ -1,0 +1,2 @@
+registry=http://base.com
+@myscope:registry=http://example.com

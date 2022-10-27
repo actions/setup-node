@@ -32,13 +32,15 @@ function writeRegistryToFile(
     scope = scope.toLowerCase();
   }
 
+  const registryKey: string = scope ? `${scope}:registry` : 'registry';
+
   core.debug(`Setting auth in ${fileLocation}`);
   let newContents: string = '';
   if (fs.existsSync(fileLocation)) {
     const curContents: string = fs.readFileSync(fileLocation, 'utf8');
     curContents.split(os.EOL).forEach((line: string) => {
       // Add current contents unless they are setting the registry
-      if (!line.toLowerCase().startsWith('registry')) {
+      if (!line.startsWith(registryKey)) {
         newContents += line + os.EOL;
       }
     });
@@ -46,9 +48,7 @@ function writeRegistryToFile(
   // Remove http: or https: from front of registry.
   const authString: string =
     registryUrl.replace(/(^\w+:|^)/, '') + ':_authToken=${NODE_AUTH_TOKEN}';
-  const registryString: string = scope
-    ? `${scope}:registry=${registryUrl}`
-    : `registry=${registryUrl}`;
+  const registryString: string = `${registryKey}=${registryUrl}`;
   const alwaysAuthString: string = `always-auth=${alwaysAuth}`;
   newContents += `${authString}${os.EOL}${registryString}${os.EOL}${alwaysAuthString}`;
   fs.writeFileSync(fileLocation, newContents);
