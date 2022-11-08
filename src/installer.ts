@@ -370,7 +370,7 @@ function evaluateNightlyVersions(
   versionSpec: string
 ): string {
   let version = '';
-  let range: string | null | undefined;
+  let range: string | undefined;
   const [raw, prerelease] = versionSpec.split('-');
   const isValidVersion = semver.valid(raw);
   const rawVersion = isValidVersion ? raw : semver.coerce(raw);
@@ -383,7 +383,7 @@ function evaluateNightlyVersions(
   }
 
   if (range) {
-    versions.sort((a, b) => +semver.lt(a, b) - 0.5);
+    versions.sort(semver.rcompare);
     for (const currentVersion of versions) {
       const satisfied: boolean =
         semver.satisfies(
@@ -416,12 +416,7 @@ function evaluateVersions(versions: string[], versionSpec: string): string {
     return evaluateNightlyVersions(versions, versionSpec);
   }
 
-  versions = versions.sort((a, b) => {
-    if (semver.gt(a, b)) {
-      return 1;
-    }
-    return -1;
-  });
+  versions = versions.sort(semver.rcompare);
   for (let i = versions.length - 1; i >= 0; i--) {
     const potential: string = versions[i];
     const satisfied: boolean = semver.satisfies(potential, versionSpec);

@@ -57,7 +57,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
-        node-version: [17-nightly, 18-nightly, 19-nightly]
+        node-version: [16.0.0-nightly20210420a0261d231c, 17-nightly, 18.0.0-nightly]
     steps:
       - uses: actions/checkout@v3
       - name: Setup Node

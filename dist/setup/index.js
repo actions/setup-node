@@ -73438,7 +73438,7 @@ function evaluateNightlyVersions(versions, versionSpec) {
         }
     }
     if (range) {
-        versions.sort((a, b) => +semver.lt(a, b) - 0.5);
+        versions.sort(semver.rcompare);
         for (const currentVersion of versions) {
             const satisfied = semver.satisfies(currentVersion.replace('-nightly', '-nightly.'), range, { includePrerelease: true }) && currentVersion.includes('nightly');
             if (satisfied) {
@@ -73462,12 +73462,7 @@ function evaluateVersions(versions, versionSpec) {
     if (versionSpec.includes('nightly')) {
         return evaluateNightlyVersions(versions, versionSpec);
     }
-    versions = versions.sort((a, b) => {
-        if (semver.gt(a, b)) {
-            return 1;
-        }
-        return -1;
-    });
+    versions = versions.sort(semver.rcompare);
     for (let i = versions.length - 1; i >= 0; i--) {
         const potential = versions[i];
         const satisfied = semver.satisfies(potential, versionSpec);
