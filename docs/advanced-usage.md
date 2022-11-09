@@ -108,7 +108,7 @@ jobs:
 
 You can specify a nightly version to download it from https://nodejs.org/download/nightly. 
 
-### Install nightly build for specific node version
+### Install the nightly build for a major version
 
 ```yaml
 jobs:
@@ -119,12 +119,12 @@ jobs:
       - uses: actions/checkout@v3
       - uses: actions/setup-node@v3
         with:
-          node-version: '16.0.0-nightly' # it will install the latest nigthly release for node 16.0.0
+          node-version: '16-nightly' # it will install the latest nightly release for node 16
       - run: npm ci
       - run: npm test
 ```
 
-### Install nightly build for major node version
+### Install the nightly build for a specific version
 
 ```yaml
 jobs:
@@ -135,12 +135,12 @@ jobs:
       - uses: actions/checkout@v3
       - uses: actions/setup-node@v3
         with:
-          node-version: '16-nightly' # it will install the latest nigthly release for node 16
+          node-version: '16.0.0-nightly' # it will install the latest nightly release for node 16.0.0
       - run: npm ci
       - run: npm test
 ```
 
-### Install the exact nightly version
+### Install an exact nightly version
 
 ```yaml
 jobs:
@@ -174,7 +174,7 @@ jobs:
       - run: npm test
 ```
 
-**Note:** You should specify the exact version for rc: `16.0.0-rc.1`.
+**Note:** Unlike nightly versions, which support version range specifiers, you must specify the exact version for a release candidate: `16.0.0-rc.1`.
 
 ## Caching packages data
 The action follows [actions/cache](https://github.com/actions/cache/blob/main/examples.md#node---npm) guidelines, and caches global cache on the machine instead of `node_modules`, so cache can be reused between different Node.js versions.
