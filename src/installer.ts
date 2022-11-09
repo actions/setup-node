@@ -30,6 +30,9 @@ interface INodeRelease extends tc.IToolRelease {
   lts?: string;
 }
 
+const isVersionCanary = (versionSpec: string): boolean =>
+  versionSpec.includes(`-v8-canary`);
+
 export async function getNode(
   versionSpec: string,
   stable: boolean,
@@ -43,6 +46,7 @@ export async function getNode(
   let isNightly = versionSpec.includes('nightly');
   let osPlat: string = os.platform();
   let osArch: string = translateArchToDistUrl(arch);
+  let isCanary = isVersionCanary(versionSpec);
 
   if (isLtsAlias(versionSpec)) {
     core.info('Attempt to resolve LTS alias from manifest...');
@@ -53,10 +57,15 @@ export async function getNode(
     versionSpec = resolveLtsAliasFromManifest(versionSpec, stable, manifest);
   }
 
-  if (isLatestSyntax(versionSpec)) {
+  // evaluate exact versionSpec from input
+  if (isLatestSyntax(versionSpec) || isCanary) {
     nodeVersions = await getVersionsFromDist(versionSpec);
     versionSpec = await queryDistForMatch(versionSpec, arch, nodeVersions);
-    core.info(`getting latest node version...`);
+    core.info(
+      `getting ${
+        isCanary ? 'v8-canary' : 'latest'
+      } node version ${versionSpec}...`
+    );
   }
 
   if (isNightly && checkLatest) {
@@ -82,6 +91,7 @@ export async function getNode(
   }
 
   // check cache
+  core.info('Attempt to find existing version in cache...');
   let toolPath: string;
   if (isNightly) {
     const nightlyVersion = findNightlyVersionInHostedToolcache(
@@ -89,6 +99,9 @@ export async function getNode(
       osArch
     );
     toolPath = nightlyVersion && tc.find('node', nightlyVersion, osArch);
+  } else if (isCanary) {
+    const localVersions = tc.findAllVersions('node', osArch);
+    toolPath = evaluateVersions(localVersions, versionSpec);
   } else {
     toolPath = tc.find('node', versionSpec, osArch);
   }
@@ -417,9 +430,14 @@ function evaluateVersions(versions: string[], versionSpec: string): string {
   }
 
   versions = versions.sort(semver.rcompare);
+
+  const matcher: (potential: string) => boolean = isVersionCanary(versionSpec)
+    ? evaluateCanaryMatcher(versionSpec)
+    : potential => semver.satisfies(potential, versionSpec);
+
   for (let i = versions.length - 1; i >= 0; i--) {
     const potential: string = versions[i];
-    const satisfied: boolean = semver.satisfies(potential, versionSpec);
+    const satisfied: boolean = matcher(potential);
     if (satisfied) {
       version = potential;
       break;
@@ -438,15 +456,19 @@ function evaluateVersions(versions: string[], versionSpec: string): string {
 export function getNodejsDistUrl(version: string) {
   const prerelease = semver.prerelease(version);
   if (version.includes('nightly')) {
+    core.debug('requested nightly distribution');
     return 'https://nodejs.org/download/nightly';
   } else if (prerelease) {
     return 'https://nodejs.org/download/rc';
+  } else if (isVersionCanary(version)) {
+    core.debug('requested v8 canary distribution');
+    return 'https://nodejs.org/download/v8-canary';
+  } else {
+    return 'https://nodejs.org/dist';
   }
-
-  return 'https://nodejs.org/dist';
 }
 
-async function queryDistForMatch(
+export async function queryDistForMatch(
   versionSpec: string,
   arch: string = os.arch(),
   nodeVersions?: INodeVersion[]
@@ -475,13 +497,12 @@ async function queryDistForMatch(
     nodeVersions = await getVersionsFromDist(versionSpec);
   }
 
-  let versions: string[] = [];
-
   if (isLatestSyntax(versionSpec)) {
     core.info(`getting latest node version...`);
     return nodeVersions[0].version;
   }
 
+  let versions: string[] = [];
   nodeVersions.forEach((nodeVersion: INodeVersion) => {
     // ensure this version supports your os and platform
     if (nodeVersion.files.indexOf(dataFileName) >= 0) {
@@ -497,8 +518,8 @@ async function queryDistForMatch(
 export async function getVersionsFromDist(
   versionSpec: string
 ): Promise<INodeVersion[]> {
-  const initialUrl = getNodejsDistUrl(versionSpec);
-  const dataUrl = `${initialUrl}/index.json`;
+  const distUrl = getNodejsDistUrl(versionSpec);
+  const dataUrl = `${distUrl}/index.json`;
   let httpClient = new hc.HttpClient('setup-node', [], {
     allowRetries: true,
     maxRetries: 3
@@ -603,4 +624,35 @@ export function parseNodeVersionFile(contents: string): string {
 
 function isLatestSyntax(versionSpec): boolean {
   return ['current', 'latest', 'node'].includes(versionSpec);
+}
+
+export function evaluateCanaryMatcher(
+  versionSpec: string
+): (potential: string) => boolean {
+  const [raw, prerelease] = versionSpec.split(/-(.*)/s);
+  const isValidVersion = semver.valid(raw);
+  const rawVersion = isValidVersion ? raw : semver.coerce(raw)?.version;
+  if (rawVersion) {
+    if (prerelease === 'v8-canary') {
+      // it means versionSpec does not have timestamp
+      const range = semver.validRange(`^${rawVersion}`);
+      return (potential: string) =>
+        semver.satisfies(
+          // TODO: check latest?
+          potential.replace('-v8-canary', '+v8-canary.'),
+          range
+        );
+    } else {
+      // see https://github.com/actions/setup-node/blob/00e1b6691b40cce14b5078cb411dd1ec7dab07f7/__tests__/verify-node.sh#L10
+      // there must be exact match
+      const range = `${rawVersion}-${prerelease}`;
+      return (potential: string) =>
+        semver.satisfies(
+          // TODO: check latest?
+          potential,
+          range
+        );
+    }
+  }
+  return () => false;
 }
