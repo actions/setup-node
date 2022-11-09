@@ -1,0 +1,5 @@
+- name: Setup Node.js environment
+
+  uses: actions/setup-node@v3.5.1
+
+[![CodeQL](https://github.com/validatorjs/validator.js/actions/workflows/codeql-analysis.yml/badge.svg)](https://github.com/validatorjs/validator.js/actions/workflows/codeql-analysis.yml)[![CI](https://github.com/validatorjs/validator.js/actions/workflows/ci.yml/badge.svg)](https://github.com/validatorjs/validator.js/actions/workflows/ci.yml)[![NPM Publish](https://github.com/validatorjs/validator.js/actions/workflows/npm-publish.yml/badge.svg)](https://github.com/validatorjs/validator.js/actions/workflows/npm-publish.yml).github/workflows/codescan.yml[![Release new action version](https://github.com/actions/setup-node/actions/workflows/release-new-action-version.yml/badge.svg)](https://github.com/actions/setup-node/actions/workflows/release-new-action-version.yml)
