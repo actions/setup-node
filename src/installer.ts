@@ -233,12 +233,10 @@ function findNightlyVersionInHostedToolcache(
   osArch: string
 ) {
   const foundAllVersions = tc.findAllVersions('node', osArch);
-  const version = evaluateVersions(foundAllVersions, versionsSpec);
-
-  return version;
+  return evaluateVersions(foundAllVersions, versionsSpec);
 }
 
-function isLtsAlias(versionSpec: string): boolean {
+export function isLtsAlias(versionSpec: string): boolean {
   return versionSpec.startsWith('lts/');
 }
 
@@ -247,7 +245,7 @@ function getManifest(auth: string | undefined): Promise<tc.IToolRelease[]> {
   return tc.getManifestFromRepo('actions', 'node-versions', auth, 'main');
 }
 
-function resolveLtsAliasFromManifest(
+export function resolveLtsAliasFromManifest(
   versionSpec: string,
   stable: boolean,
   manifest: INodeRelease[]
@@ -421,7 +419,10 @@ function evaluateNightlyVersions(
 }
 
 // TODO - should we just export this from @actions/tool-cache? Lifted directly from there
-function evaluateVersions(versions: string[], versionSpec: string): string {
+export function evaluateVersions(
+  versions: string[],
+  versionSpec: string
+): string {
   let version = '';
   core.debug(`evaluating ${versions.length} versions`);
 
@@ -622,7 +623,7 @@ export function parseNodeVersionFile(contents: string): string {
   return nodeVersion as string;
 }
 
-function isLatestSyntax(versionSpec): boolean {
+export function isLatestSyntax(versionSpec): boolean {
   return ['current', 'latest', 'node'].includes(versionSpec);
 }
 

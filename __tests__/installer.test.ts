@@ -1,10 +1,10 @@
 import * as core from '@actions/core';
 import * as io from '@actions/io';
 import * as tc from '@actions/tool-cache';
+import * as httpm from '@actions/http-client';
 import * as exec from '@actions/exec';
 import * as im from '../src/installer';
 import * as cache from '@actions/cache';
-import * as httpm from '@actions/http-client';
 import fs from 'fs';
 import cp from 'child_process';
 import osm from 'os';
@@ -17,6 +17,7 @@ const nodeTestManifest = require('./data/versions-manifest.json');
 const nodeTestDist = require('./data/node-dist-index.json');
 const nodeTestDistNightly = require('./data/node-nightly-index.json');
 const nodeTestDistRc = require('./data/node-rc-index.json');
+const nodeV8CanaryTestDist = require('./data/v8-canary-dist-index.json');
 
 describe('setup-node', () => {
   let inputs = {} as any;
@@ -71,6 +72,7 @@ describe('setup-node', () => {
     exSpy = jest.spyOn(tc, 'extractTar');
     cacheSpy = jest.spyOn(tc, 'cacheDir');
     getManifestSpy = jest.spyOn(tc, 'getManifestFromRepo');
+    // @ts-ignore
     getDistSpy = jest.spyOn(im, 'getVersionsFromDist');
     parseNodeVersionSpy = jest.spyOn(im, 'parseNodeVersionFile');
 
@@ -137,7 +139,7 @@ describe('setup-node', () => {
     });
     warningSpy.mockImplementation(msg => {
       // uncomment to debug
-      // process.stderr.write('log:' + line + '\n');
+      // process.stderr.write('log:' + msg + '\n');
     });
 
     // @actions/exec
@@ -1251,6 +1253,268 @@ describe('setup-node', () => {
         expect(logSpy).toHaveBeenCalledWith('getting latest node version...');
       }
     );
+  });
+
+  describe('setup-node v8 canary unit tests', () => {
+    it('is not LTS alias', async () => {
+      const versionSpec = 'v99.0.0-v8-canary';
+      // @ts-ignore
+      const isLtsAlias = im.isLtsAlias(versionSpec);
+      expect(isLtsAlias).toBeFalsy();
+    });
+
+    it('is not isLatestSyntax', async () => {
+      const versionSpec = 'v99.0.0-v8-canary';
+      // @ts-ignore
+      const isLatestSyntax = im.isLatestSyntax(versionSpec);
+      expect(isLatestSyntax).toBeFalsy();
+    });
+
+    it('dist url to be https://nodejs.org/download/v8-canary for input versionSpec', () => {
+      const versionSpec = 'v99.0.0-v8-canary';
+      // @ts-ignore
+      const url = im.getNodejsDistUrl(versionSpec);
+      expect(url).toBe('https://nodejs.org/download/v8-canary');
+    });
+
+    it('dist url to be https://nodejs.org/download/v8-canary for full versionSpec', () => {
+      const versionSpec = 'v20.0.0-v8-canary20221103f7e2421e91';
+      // @ts-ignore
+      const url = im.getNodejsDistUrl(versionSpec);
+      expect(url).toBe('https://nodejs.org/download/v8-canary');
+    });
+
+    it('v20-v8-canary should match any minor and patch version', () => {
+      // @ts-ignore
+      const matcher = im.evaluateCanaryMatcher('v20-v8-canary');
+      expect(matcher('v20.0.0-v8-canary20221103f7e2421e91')).toBeTruthy();
+      expect(matcher('v20.0.1-v8-canary20221103f7e2421e91')).toBeTruthy();
+      expect(matcher('v20.1.0-v8-canary20221103f7e2421e91')).toBeTruthy();
+      expect(matcher('v20.1.1-v8-canary20221103f7e2421e91')).toBeTruthy();
+      expect(matcher('v20.0.0-v8-canary202211026bf85d0fb4')).toBeTruthy();
+    });
+
+    it('v20-v8-canary should not match v21.x & v19.x', () => {
+      // @ts-ignore
+      const matcher = im.evaluateCanaryMatcher('v20-v8-canary');
+      expect(matcher('v21.0.0-v8-canary20221103f7e2421e91')).toBeFalsy();
+      expect(matcher('v21.1.0-v8-canary20221103f7e2421e91')).toBeFalsy();
+      expect(matcher('v21.1.1-v8-canary20221103f7e2421e91')).toBeFalsy();
+      expect(matcher('v19.0.0-v8-canary20221103f7e2421e91')).toBeFalsy();
+      expect(matcher('v19.1.0-v8-canary20221103f7e2421e91')).toBeFalsy();
+      expect(matcher('v19.1.-v8-canary20221103f7e2421e91')).toBeFalsy();
+    });
+
+    it('v20.1-v8-canary should match any v20.1 patch version and minor above or eq v20.1', () => {
+      // @ts-ignore
+      const matcher = im.evaluateCanaryMatcher('v20.1-v8-canary');
+      expect(matcher('v20.1.0-v8-canary20221103f7e2421e91')).toBeTruthy();
+      expect(matcher('v20.1.1-v8-canary20221103f7e2421e91')).toBeTruthy();
+      expect(matcher('v20.1.0-v8-canary202211026bf85d0fb4')).toBeTruthy();
+      expect(matcher('v20.2.0-v8-canary20221103f7e2421e91')).toBeTruthy();
+    });
+
+    it('v20.2-v8-canary should not match v21.x, v19.x, and v20 minor less v20.2', () => {
+      // @ts-ignore
+      const matcher = im.evaluateCanaryMatcher('v20.2-v8-canary');
+      expect(matcher('v20.1.0-v8-canary20221103f7e2421e91')).toBeFalsy();
+      expect(matcher('v21.0.0-v8-canary20221103f7e2421e91')).toBeFalsy();
+      expect(matcher('v19.0.0-v8-canary20221103f7e2421e91')).toBeFalsy();
+    });
+
+    it('v20.1.1-v8-canary should match v20.1.x patch versions above or eq v20.1.1', () => {
+      // @ts-ignore
+      const matcher = im.evaluateCanaryMatcher('v20.1.1-v8-canary');
+      expect(matcher('v20.1.1-v8-canary20221103f7e2421e91')).toBeTruthy();
+      expect(matcher('v20.1.2-v8-canary20221103f7e2421e91')).toBeTruthy();
+      expect(matcher('v20.2.0-v8-canary20221103f7e2421e91')).toBeTruthy();
+    });
+
+    it('v20.1.1-v8-canary should match patch versions with any canary timestamp', () => {
+      // @ts-ignore
+      const matcher = im.evaluateCanaryMatcher('v20.1.1-v8-canary');
+      expect(matcher('v20.1.1-v8-canary20221103f7e2421e91')).toBeTruthy();
+      expect(matcher('v20.1.1-v8-canary202211026bf85d0fb4')).toBeTruthy();
+    });
+
+    it('v20.1.1-v8-canary should not match any other minor versions and patch versions below v20.1.1', () => {
+      // @ts-ignore
+      const matcher = im.evaluateCanaryMatcher('v20.1.1-v8-canary');
+      expect(matcher('v20.1.0-v8-canary20221103f7e2421e91')).toBeFalsy();
+      expect(matcher('v21.0.0-v8-canary20221103f7e2421e91')).toBeFalsy();
+      expect(matcher('v19.0.0-v8-canary20221103f7e2421e91')).toBeFalsy();
+    });
+
+    it('v20.0.0-v8-canary20221103f7e2421e91 should match only v20.0.0-v8-canary20221103f7e2421e91', () => {
+      // @ts-ignore
+      const matcher = im.evaluateCanaryMatcher(
+        'v20.0.0-v8-canary20221103f7e2421e91'
+      );
+      expect(matcher('v20.0.0-v8-canary20221103f7e2421e91')).toBeTruthy();
+      // see  https://github.com/actions/setup-node/blob/00e1b6691b40cce14b5078cb411dd1ec7dab07f7/__tests__/verify-node.sh#L10
+      expect(matcher('v20.0.0-v8-canary202211026bf85d0fb4')).toBeFalsy();
+    });
+
+    it('v8 canary evaluateVersions without timestamp', () => {
+      const versions = [
+        'v20.0.0-v8-canary20221103f7e2421e91',
+        'v20.0.1-v8-canary20221103f7e2421e91',
+        'v20.1.0-v8-canary20221103f7e2421e91',
+        'v20.1.1-v8-canary20221103f7e2421e91',
+        'v21.1.0-v8-canary20221103f7e2421e91',
+        'v19.1.0-v8-canary20221103f7e2421e91'
+      ];
+      // @ts-ignore
+      const version = im.evaluateVersions(versions, 'v20-v8-canary');
+      expect(version).toBe('v20.1.1-v8-canary20221103f7e2421e91');
+    });
+
+    it('v8 canary evaluateVersions with timestamp', () => {
+      const versions = [
+        'v20.0.0-v8-canary20221103f7e2421e91',
+        'v20.0.1-v8-canary20221103f7e2421e91',
+        'v20.0.1-v8-canary20221103f7e2421e92',
+        'v20.0.1-v8-canary20221103f7e2421e93',
+        'v20.0.2-v8-canary20221103f7e2421e91'
+      ];
+      // @ts-ignore
+      const version = im.evaluateVersions(
+        versions,
+        'v20.0.1-v8-canary20221103f7e2421e92'
+      );
+      expect(version).toBe('v20.0.1-v8-canary20221103f7e2421e92');
+    });
+
+    it('v8 canary queryDistForMatch', async () => {
+      jest.spyOn(osm, 'platform').mockImplementationOnce(() => 'linux');
+      // @ts-ignore
+      const version = await im.queryDistForMatch(
+        'v20-v8-canary',
+        'x64',
+        nodeV8CanaryTestDist
+      );
+      expect(version).toBe('v20.0.0-v8-canary20221103f7e2421e91');
+    });
+  });
+
+  describe('setup-node v8 canary e2e tests', () => {
+    // @actions/http-client
+    let getDistIndexJsonSpy: jest.SpyInstance;
+    let findAllVersionSpy: jest.SpyInstance;
+
+    beforeEach(() => {
+      // @actions/http-client
+      getDistIndexJsonSpy = jest.spyOn(httpm.HttpClient.prototype, 'getJson');
+      getDistIndexJsonSpy.mockImplementation(() => ({
+        result: nodeV8CanaryTestDist
+      }));
+
+      // @actions/tool-cache
+      findAllVersionSpy = jest.spyOn(tc, 'findAllVersions');
+    });
+
+    it('v8 canary setup node flow without cached', async () => {
+      let versionSpec = 'v20-v8-canary';
+
+      inputs['node-version'] = versionSpec;
+      inputs['always-auth'] = false;
+      inputs['token'] = 'faketoken';
+
+      os.platform = 'linux';
+      os.arch = 'x64';
+
+      findAllVersionSpy.mockImplementation(() => []);
+
+      findSpy.mockImplementation(() => '');
+
+      dlSpy.mockImplementation(async () => '/some/temp/path');
+      let toolPath = path.normalize('/cache/node/12.16.2/x64');
+      exSpy.mockImplementation(async () => '/some/other/temp/path');
+      cacheSpy.mockImplementation(async () => toolPath);
+
+      await main.run();
+
+      expect(dbgSpy.mock.calls[0][0]).toBe('requested v8 canary distribution');
+      expect(dbgSpy.mock.calls[1][0]).toBe('evaluating 17 versions');
+      expect(dbgSpy.mock.calls[2][0]).toBe(
+        'matched: v20.0.0-v8-canary20221103f7e2421e91'
+      );
+      expect(logSpy.mock.calls[0][0]).toBe(
+        'getting v8-canary node version v20.0.0-v8-canary20221103f7e2421e91...'
+      );
+      expect(logSpy.mock.calls[1][0]).toBe(
+        'Attempt to find existing version in cache...'
+      );
+      expect(dbgSpy.mock.calls[3][0]).toBe('evaluating 0 versions');
+      expect(dbgSpy.mock.calls[4][0]).toBe('match not found');
+      expect(logSpy.mock.calls[2][0]).toBe(
+        'Attempting to download v20.0.0-v8-canary20221103f7e2421e91...'
+      );
+      expect(dbgSpy.mock.calls[5][0]).toBe('No manifest cached');
+      expect(dbgSpy.mock.calls[6][0]).toBe(
+        'Getting manifest from actions/node-versions@main'
+      );
+      expect(dbgSpy.mock.calls[7][0].slice(0, 6)).toBe('check ');
+      expect(dbgSpy.mock.calls[13][0].slice(0, 6)).toBe('check ');
+      expect(logSpy.mock.calls[3][0]).toBe(
+        'Not found in manifest.  Falling back to download directly from Node'
+      );
+      expect(dbgSpy.mock.calls[14][0]).toBe('evaluating 17 versions');
+      expect(dbgSpy.mock.calls[15][0]).toBe(
+        'matched: v20.0.0-v8-canary20221103f7e2421e91'
+      );
+      expect(dbgSpy.mock.calls[16][0]).toBe('requested v8 canary distribution');
+      expect(logSpy.mock.calls[4][0]).toBe(
+        'Acquiring 20.0.0-v8-canary20221103f7e2421e91 - x64 from https://nodejs.org/download/v8-canary/v20.0.0-v8-canary20221103f7e2421e91/node-v20.0.0-v8-canary20221103f7e2421e91-linux-x64.tar.gz'
+      );
+
+      expect(dlSpy).toHaveBeenCalledTimes(1);
+      expect(exSpy).toHaveBeenCalledTimes(1);
+      expect(cacheSpy).toHaveBeenCalledTimes(1);
+    });
+
+    it('v8 canary setup node flow with cached', async () => {
+      let versionSpec = 'v20-v8-canary';
+
+      inputs['node-version'] = versionSpec;
+      inputs['always-auth'] = false;
+      inputs['token'] = 'faketoken';
+
+      os.platform = 'linux';
+      os.arch = 'x64';
+
+      findAllVersionSpy.mockImplementation(() => [
+        'v20.0.0-v8-canary20221103f7e2421e91'
+      ]);
+
+      await main.run();
+
+      expect(dbgSpy.mock.calls[0][0]).toBe('requested v8 canary distribution');
+      expect(dbgSpy.mock.calls[1][0]).toBe('evaluating 17 versions');
+      expect(dbgSpy.mock.calls[2][0]).toBe(
+        'matched: v20.0.0-v8-canary20221103f7e2421e91'
+      );
+      expect(logSpy.mock.calls[0][0]).toBe(
+        'getting v8-canary node version v20.0.0-v8-canary20221103f7e2421e91...'
+      );
+      expect(logSpy.mock.calls[1][0]).toBe(
+        'Attempt to find existing version in cache...'
+      );
+      expect(dbgSpy.mock.calls[3][0]).toBe('evaluating 1 versions');
+      expect(dbgSpy.mock.calls[4][0]).toBe(
+        'matched: v20.0.0-v8-canary20221103f7e2421e91'
+      );
+      expect(logSpy.mock.calls[2][0]).toBe(
+        'Found in cache @ v20.0.0-v8-canary20221103f7e2421e91'
+      );
+      expect(cnSpy.mock.calls[1][0].trim()).toBe(
+        `::add-path::v20.0.0-v8-canary20221103f7e2421e91${path.sep}bin`
+      );
+
+      expect(dlSpy).not.toHaveBeenCalled();
+      expect(exSpy).not.toHaveBeenCalled();
+      expect(cacheSpy).not.toHaveBeenCalled();
+    });
   });
 });
 
