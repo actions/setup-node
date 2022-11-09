@@ -218,7 +218,7 @@ jobs:
       - name: Get node version
         run: |
           latestNodeVersion=$(curl https://nodejs.org/dist/index.json | jq -r '. [0].version')
-          echo "::set-output name=LATEST_NODE_VERSION::$latestNodeVersion"
+          echo "LATEST_NODE_VERSION=$latestNodeVersion" >> $GITHUB_OUTPUT
         id: version
         shell: bash
       - uses: actions/checkout@v3
@@ -229,7 +229,7 @@ jobs:
       - name: Retrieve version after install
         run: |
           updatedVersion=$(echo $(node --version))
-          echo "::set-output name=NODE_VERSION_UPDATED::$updatedVersion"
+          echo "NODE_VERSION_UPDATED=$updatedVersion" >> $GITHUB_OUTPUT
         id: updatedVersion
         shell: bash
       - name: Compare versions

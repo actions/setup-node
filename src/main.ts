@@ -33,7 +33,7 @@ export async function run() {
 
     if (version) {
       const token = core.getInput('token');
-      const auth = !token || isGhes() ? undefined : `token ${token}`;
+      const auth = !token ? undefined : `token ${token}`;
       const stable =
         (core.getInput('stable') || 'true').toUpperCase() === 'TRUE';
       const checkLatest =
