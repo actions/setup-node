@@ -73569,8 +73569,7 @@ function queryDistForMatch(versionSpec, arch = os_1.default.arch(), nodeVersions
             }
         });
         // get the latest version that matches the version spec
-        let version = evaluateVersions(versions, versionSpec);
-        return version;
+        return evaluateVersions(versions, versionSpec);
     });
 }
 exports.queryDistForMatch = queryDistForMatch;

@@ -512,8 +512,7 @@ export async function queryDistForMatch(
   });
 
   // get the latest version that matches the version spec
-  let version = evaluateVersions(versions, versionSpec);
-  return version;
+  return evaluateVersions(versions, versionSpec);
 }
 
 export async function getVersionsFromDist(
