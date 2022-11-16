@@ -132,7 +132,7 @@ async function getToolVersion(tool: string, options: string[]) {
       return '';
     }
 
-    return stdout;
+    return stdout.trim();
   } catch (err) {
     return '';
   }
