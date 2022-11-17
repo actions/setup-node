@@ -4,7 +4,7 @@ import * as glob from '@actions/glob';
 import path from 'path';
 import fs from 'fs';
 
-import {State, Outputs} from './constants';
+import {State} from './constants';
 import {
   getCacheDirectoryPath,
   getPackageManagerInfo,

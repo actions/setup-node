@@ -1,4 +1,4 @@
-import os = require('os');
+import os from 'os';
 import * as assert from 'assert';
 import * as core from '@actions/core';
 import * as hc from '@actions/http-client';
@@ -6,11 +6,13 @@ import * as io from '@actions/io';
 import * as tc from '@actions/tool-cache';
 import * as path from 'path';
 import * as semver from 'semver';
-import fs = require('fs');
+import fs from 'fs';
 
 //
 // Node versions interface
 // see https://nodejs.org/dist/index.json
+// for nightly https://nodejs.org/download/nightly/index.json
+// for rc https://nodejs.org/download/rc/index.json
 //
 export interface INodeVersion {
   version: string;
@@ -38,6 +40,7 @@ export async function getNode(
   // Store manifest data to avoid multiple calls
   let manifest: INodeRelease[] | undefined;
   let nodeVersions: INodeVersion[] | undefined;
+  let isNightly = versionSpec.includes('nightly');
   let osPlat: string = os.platform();
   let osArch: string = translateArchToDistUrl(arch);
 
@@ -51,12 +54,17 @@ export async function getNode(
   }
 
   if (isLatestSyntax(versionSpec)) {
-    nodeVersions = await getVersionsFromDist();
+    nodeVersions = await getVersionsFromDist(versionSpec);
     versionSpec = await queryDistForMatch(versionSpec, arch, nodeVersions);
     core.info(`getting latest node version...`);
   }
 
-  if (checkLatest) {
+  if (isNightly && checkLatest) {
+    nodeVersions = await getVersionsFromDist(versionSpec);
+    versionSpec = await queryDistForMatch(versionSpec, arch, nodeVersions);
+  }
+
+  if (checkLatest && !isNightly) {
     core.info('Attempt to resolve the latest version from manifest...');
     const resolvedVersion = await resolveVersionFromManifest(
       versionSpec,
@@ -75,7 +83,15 @@ export async function getNode(
 
   // check cache
   let toolPath: string;
-  toolPath = tc.find('node', versionSpec, osArch);
+  if (isNightly) {
+    const nightlyVersion = findNightlyVersionInHostedToolcache(
+      versionSpec,
+      osArch
+    );
+    toolPath = nightlyVersion && tc.find('node', nightlyVersion, osArch);
+  } else {
+    toolPath = tc.find('node', versionSpec, osArch);
+  }
 
   // If not found in cache, download
   if (toolPath) {
@@ -199,6 +215,16 @@ export async function getNode(
   core.addPath(toolPath);
 }
 
+function findNightlyVersionInHostedToolcache(
+  versionsSpec: string,
+  osArch: string
+) {
+  const foundAllVersions = tc.findAllVersions('node', osArch);
+  const version = evaluateVersions(foundAllVersions, versionsSpec);
+
+  return version;
+}
+
 function isLtsAlias(versionSpec: string): boolean {
   return versionSpec.startsWith('lts/');
 }
@@ -306,7 +332,8 @@ async function getInfoFromDist(
       : `node-v${version}-${osPlat}-${osArch}`;
   let urlFileName: string =
     osPlat == 'win32' ? `${fileName}.7z` : `${fileName}.tar.gz`;
-  let url = `https://nodejs.org/dist/v${version}/${urlFileName}`;
+  const initialUrl = getNodejsDistUrl(versionSpec);
+  const url = `${initialUrl}/v${version}/${urlFileName}`;
 
   return <INodeVersionInfo>{
     downloadUrl: url,
@@ -338,16 +365,58 @@ async function resolveVersionFromManifest(
   }
 }
 
+function evaluateNightlyVersions(
+  versions: string[],
+  versionSpec: string
+): string {
+  let version = '';
+  let range: string | undefined;
+  const [raw, prerelease] = versionSpec.split('-');
+  const isValidVersion = semver.valid(raw);
+  const rawVersion = isValidVersion ? raw : semver.coerce(raw);
+  if (rawVersion) {
+    if (prerelease !== 'nightly') {
+      range = `${rawVersion}-${prerelease.replace('nightly', 'nightly.')}`;
+    } else {
+      range = `${semver.validRange(`^${rawVersion}-0`)}-0`;
+    }
+  }
+
+  if (range) {
+    versions.sort(semver.rcompare);
+    for (const currentVersion of versions) {
+      const satisfied: boolean =
+        semver.satisfies(
+          currentVersion.replace('-nightly', '-nightly.'),
+          range,
+          {includePrerelease: true}
+        ) && currentVersion.includes('nightly');
+      if (satisfied) {
+        version = currentVersion;
+        break;
+      }
+    }
+  }
+
+  if (version) {
+    core.debug(`matched: ${version}`);
+  } else {
+    core.debug('match not found');
+  }
+
+  return version;
+}
+
 // TODO - should we just export this from @actions/tool-cache? Lifted directly from there
 function evaluateVersions(versions: string[], versionSpec: string): string {
   let version = '';
   core.debug(`evaluating ${versions.length} versions`);
-  versions = versions.sort((a, b) => {
-    if (semver.gt(a, b)) {
-      return 1;
-    }
-    return -1;
-  });
+
+  if (versionSpec.includes('nightly')) {
+    return evaluateNightlyVersions(versions, versionSpec);
+  }
+
+  versions = versions.sort(semver.rcompare);
   for (let i = versions.length - 1; i >= 0; i--) {
     const potential: string = versions[i];
     const satisfied: boolean = semver.satisfies(potential, versionSpec);
@@ -364,6 +433,17 @@ function evaluateVersions(versions: string[], versionSpec: string): string {
   }
 
   return version;
+}
+
+export function getNodejsDistUrl(version: string) {
+  const prerelease = semver.prerelease(version);
+  if (version.includes('nightly')) {
+    return 'https://nodejs.org/download/nightly';
+  } else if (prerelease) {
+    return 'https://nodejs.org/download/rc';
+  }
+
+  return 'https://nodejs.org/dist';
 }
 
 async function queryDistForMatch(
@@ -392,7 +472,7 @@ async function queryDistForMatch(
 
   if (!nodeVersions) {
     core.debug('No dist manifest cached');
-    nodeVersions = await getVersionsFromDist();
+    nodeVersions = await getVersionsFromDist(versionSpec);
   }
 
   let versions: string[] = [];
@@ -410,12 +490,15 @@ async function queryDistForMatch(
   });
 
   // get the latest version that matches the version spec
-  let version: string = evaluateVersions(versions, versionSpec);
+  let version = evaluateVersions(versions, versionSpec);
   return version;
 }
 
-export async function getVersionsFromDist(): Promise<INodeVersion[]> {
-  let dataUrl = 'https://nodejs.org/dist/index.json';
+export async function getVersionsFromDist(
+  versionSpec: string
+): Promise<INodeVersion[]> {
+  const initialUrl = getNodejsDistUrl(versionSpec);
+  const dataUrl = `${initialUrl}/index.json`;
   let httpClient = new hc.HttpClient('setup-node', [], {
     allowRetries: true,
     maxRetries: 3
@@ -440,6 +523,7 @@ async function acquireNodeFromFallbackLocation(
   version: string,
   arch: string = os.arch()
 ): Promise<string> {
+  const initialUrl = getNodejsDistUrl(version);
   let osPlat: string = os.platform();
   let osArch: string = translateArchToDistUrl(arch);
 
@@ -453,8 +537,8 @@ async function acquireNodeFromFallbackLocation(
   let exeUrl: string;
   let libUrl: string;
   try {
-    exeUrl = `https://nodejs.org/dist/v${version}/win-${osArch}/node.exe`;
-    libUrl = `https://nodejs.org/dist/v${version}/win-${osArch}/node.lib`;
+    exeUrl = `${initialUrl}/v${version}/win-${osArch}/node.exe`;
+    libUrl = `${initialUrl}/v${version}/win-${osArch}/node.lib`;
 
     core.info(`Downloading only node binary from ${exeUrl}`);
 
@@ -464,8 +548,8 @@ async function acquireNodeFromFallbackLocation(
     await io.cp(libPath, path.join(tempDir, 'node.lib'));
   } catch (err) {
     if (err instanceof tc.HTTPError && err.httpStatusCode == 404) {
-      exeUrl = `https://nodejs.org/dist/v${version}/node.exe`;
-      libUrl = `https://nodejs.org/dist/v${version}/node.lib`;
+      exeUrl = `${initialUrl}/v${version}/node.exe`;
+      libUrl = `${initialUrl}/v${version}/node.lib`;
 
       const exePath = await tc.downloadTool(exeUrl);
       await io.cp(exePath, path.join(tempDir, 'node.exe'));

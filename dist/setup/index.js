@@ -73196,6 +73196,9 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 var __importStar = (this && this.__importStar) || function (mod) {
     if (mod && mod.__esModule) return mod;
     var result = {};
@@ -73204,7 +73207,7 @@ var __importStar = (this && this.__importStar) || function (mod) {
     return result;
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-const os = __nccwpck_require__(2037);
+const os_1 = __importDefault(__nccwpck_require__(2037));
 const assert = __importStar(__nccwpck_require__(9491));
 const core = __importStar(__nccwpck_require__(2186));
 const hc = __importStar(__nccwpck_require__(9925));
@@ -73212,13 +73215,14 @@ const io = __importStar(__nccwpck_require__(7436));
 const tc = __importStar(__nccwpck_require__(7784));
 const path = __importStar(__nccwpck_require__(1017));
 const semver = __importStar(__nccwpck_require__(5911));
-const fs = __nccwpck_require__(7147);
-function getNode(versionSpec, stable, checkLatest, auth, arch = os.arch()) {
+const fs_1 = __importDefault(__nccwpck_require__(7147));
+function getNode(versionSpec, stable, checkLatest, auth, arch = os_1.default.arch()) {
     return __awaiter(this, void 0, void 0, function* () {
         // Store manifest data to avoid multiple calls
         let manifest;
         let nodeVersions;
-        let osPlat = os.platform();
+        let isNightly = versionSpec.includes('nightly');
+        let osPlat = os_1.default.platform();
         let osArch = translateArchToDistUrl(arch);
         if (isLtsAlias(versionSpec)) {
             core.info('Attempt to resolve LTS alias from manifest...');
@@ -73227,11 +73231,15 @@ function getNode(versionSpec, stable, checkLatest, auth, arch = os.arch()) {
             versionSpec = resolveLtsAliasFromManifest(versionSpec, stable, manifest);
         }
         if (isLatestSyntax(versionSpec)) {
-            nodeVersions = yield getVersionsFromDist();
+            nodeVersions = yield getVersionsFromDist(versionSpec);
             versionSpec = yield queryDistForMatch(versionSpec, arch, nodeVersions);
             core.info(`getting latest node version...`);
         }
-        if (checkLatest) {
+        if (isNightly && checkLatest) {
+            nodeVersions = yield getVersionsFromDist(versionSpec);
+            versionSpec = yield queryDistForMatch(versionSpec, arch, nodeVersions);
+        }
+        if (checkLatest && !isNightly) {
             core.info('Attempt to resolve the latest version from manifest...');
             const resolvedVersion = yield resolveVersionFromManifest(versionSpec, stable, auth, osArch, manifest);
             if (resolvedVersion) {
@@ -73244,7 +73252,13 @@ function getNode(versionSpec, stable, checkLatest, auth, arch = os.arch()) {
         }
         // check cache
         let toolPath;
-        toolPath = tc.find('node', versionSpec, osArch);
+        if (isNightly) {
+            const nightlyVersion = findNightlyVersionInHostedToolcache(versionSpec, osArch);
+            toolPath = nightlyVersion && tc.find('node', nightlyVersion, osArch);
+        }
+        else {
+            toolPath = tc.find('node', versionSpec, osArch);
+        }
         // If not found in cache, download
         if (toolPath) {
             core.info(`Found in cache @ ${toolPath}`);
@@ -73308,7 +73322,7 @@ function getNode(versionSpec, stable, checkLatest, auth, arch = os.arch()) {
                 extPath = yield tc.extract7z(downloadPath, undefined, _7zPath);
                 // 7z extracts to folder matching file name
                 let nestedPath = path.join(extPath, path.basename(info.fileName, '.7z'));
-                if (fs.existsSync(nestedPath)) {
+                if (fs_1.default.existsSync(nestedPath)) {
                     extPath = nestedPath;
                 }
             }
@@ -73340,6 +73354,11 @@ function getNode(versionSpec, stable, checkLatest, auth, arch = os.arch()) {
     });
 }
 exports.getNode = getNode;
+function findNightlyVersionInHostedToolcache(versionsSpec, osArch) {
+    const foundAllVersions = tc.findAllVersions('node', osArch);
+    const version = evaluateVersions(foundAllVersions, versionsSpec);
+    return version;
+}
 function isLtsAlias(versionSpec) {
     return versionSpec.startsWith('lts/');
 }
@@ -73372,7 +73391,7 @@ function resolveLtsAliasFromManifest(versionSpec, stable, manifest) {
     core.debug(`Found LTS release '${release.version}' for Node version '${versionSpec}'`);
     return release.version.split('.')[0];
 }
-function getInfoFromManifest(versionSpec, stable, auth, osArch = translateArchToDistUrl(os.arch()), manifest) {
+function getInfoFromManifest(versionSpec, stable, auth, osArch = translateArchToDistUrl(os_1.default.arch()), manifest) {
     return __awaiter(this, void 0, void 0, function* () {
         let info = null;
         if (!manifest) {
@@ -73390,9 +73409,9 @@ function getInfoFromManifest(versionSpec, stable, auth, osArch = translateArchTo
         return info;
     });
 }
-function getInfoFromDist(versionSpec, arch = os.arch(), nodeVersions) {
+function getInfoFromDist(versionSpec, arch = os_1.default.arch(), nodeVersions) {
     return __awaiter(this, void 0, void 0, function* () {
-        let osPlat = os.platform();
+        let osPlat = os_1.default.platform();
         let osArch = translateArchToDistUrl(arch);
         let version = yield queryDistForMatch(versionSpec, arch, nodeVersions);
         if (!version) {
@@ -73406,7 +73425,8 @@ function getInfoFromDist(versionSpec, arch = os.arch(), nodeVersions) {
             ? `node-v${version}-win-${osArch}`
             : `node-v${version}-${osPlat}-${osArch}`;
         let urlFileName = osPlat == 'win32' ? `${fileName}.7z` : `${fileName}.tar.gz`;
-        let url = `https://nodejs.org/dist/v${version}/${urlFileName}`;
+        const initialUrl = getNodejsDistUrl(versionSpec);
+        const url = `${initialUrl}/v${version}/${urlFileName}`;
         return {
             downloadUrl: url,
             resolvedVersion: version,
@@ -73415,7 +73435,7 @@ function getInfoFromDist(versionSpec, arch = os.arch(), nodeVersions) {
         };
     });
 }
-function resolveVersionFromManifest(versionSpec, stable, auth, osArch = translateArchToDistUrl(os.arch()), manifest) {
+function resolveVersionFromManifest(versionSpec, stable, auth, osArch = translateArchToDistUrl(os_1.default.arch()), manifest) {
     return __awaiter(this, void 0, void 0, function* () {
         try {
             const info = yield getInfoFromManifest(versionSpec, stable, auth, osArch, manifest);
@@ -73427,16 +73447,46 @@ function resolveVersionFromManifest(versionSpec, stable, auth, osArch = translat
         }
     });
 }
+function evaluateNightlyVersions(versions, versionSpec) {
+    let version = '';
+    let range;
+    const [raw, prerelease] = versionSpec.split('-');
+    const isValidVersion = semver.valid(raw);
+    const rawVersion = isValidVersion ? raw : semver.coerce(raw);
+    if (rawVersion) {
+        if (prerelease !== 'nightly') {
+            range = `${rawVersion}-${prerelease.replace('nightly', 'nightly.')}`;
+        }
+        else {
+            range = `${semver.validRange(`^${rawVersion}-0`)}-0`;
+        }
+    }
+    if (range) {
+        versions.sort(semver.rcompare);
+        for (const currentVersion of versions) {
+            const satisfied = semver.satisfies(currentVersion.replace('-nightly', '-nightly.'), range, { includePrerelease: true }) && currentVersion.includes('nightly');
+            if (satisfied) {
+                version = currentVersion;
+                break;
+            }
+        }
+    }
+    if (version) {
+        core.debug(`matched: ${version}`);
+    }
+    else {
+        core.debug('match not found');
+    }
+    return version;
+}
 // TODO - should we just export this from @actions/tool-cache? Lifted directly from there
 function evaluateVersions(versions, versionSpec) {
     let version = '';
     core.debug(`evaluating ${versions.length} versions`);
-    versions = versions.sort((a, b) => {
-        if (semver.gt(a, b)) {
-            return 1;
-        }
-        return -1;
-    });
+    if (versionSpec.includes('nightly')) {
+        return evaluateNightlyVersions(versions, versionSpec);
+    }
+    versions = versions.sort(semver.rcompare);
     for (let i = versions.length - 1; i >= 0; i--) {
         const potential = versions[i];
         const satisfied = semver.satisfies(potential, versionSpec);
@@ -73453,9 +73503,20 @@ function evaluateVersions(versions, versionSpec) {
     }
     return version;
 }
-function queryDistForMatch(versionSpec, arch = os.arch(), nodeVersions) {
+function getNodejsDistUrl(version) {
+    const prerelease = semver.prerelease(version);
+    if (version.includes('nightly')) {
+        return 'https://nodejs.org/download/nightly';
+    }
+    else if (prerelease) {
+        return 'https://nodejs.org/download/rc';
+    }
+    return 'https://nodejs.org/dist';
+}
+exports.getNodejsDistUrl = getNodejsDistUrl;
+function queryDistForMatch(versionSpec, arch = os_1.default.arch(), nodeVersions) {
     return __awaiter(this, void 0, void 0, function* () {
-        let osPlat = os.platform();
+        let osPlat = os_1.default.platform();
         let osArch = translateArchToDistUrl(arch);
         // node offers a json list of versions
         let dataFileName;
@@ -73474,7 +73535,7 @@ function queryDistForMatch(versionSpec, arch = os.arch(), nodeVersions) {
         }
         if (!nodeVersions) {
             core.debug('No dist manifest cached');
-            nodeVersions = yield getVersionsFromDist();
+            nodeVersions = yield getVersionsFromDist(versionSpec);
         }
         let versions = [];
         if (isLatestSyntax(versionSpec)) {
@@ -73492,9 +73553,10 @@ function queryDistForMatch(versionSpec, arch = os.arch(), nodeVersions) {
         return version;
     });
 }
-function getVersionsFromDist() {
+function getVersionsFromDist(versionSpec) {
     return __awaiter(this, void 0, void 0, function* () {
-        let dataUrl = 'https://nodejs.org/dist/index.json';
+        const initialUrl = getNodejsDistUrl(versionSpec);
+        const dataUrl = `${initialUrl}/index.json`;
         let httpClient = new hc.HttpClient('setup-node', [], {
             allowRetries: true,
             maxRetries: 3
@@ -73516,9 +73578,10 @@ exports.getVersionsFromDist = getVersionsFromDist;
 // This method attempts to download and cache the resources from these alternative locations.
 // Note also that the files are normally zipped but in this case they are just an exe
 // and lib file in a folder, not zipped.
-function acquireNodeFromFallbackLocation(version, arch = os.arch()) {
+function acquireNodeFromFallbackLocation(version, arch = os_1.default.arch()) {
     return __awaiter(this, void 0, void 0, function* () {
-        let osPlat = os.platform();
+        const initialUrl = getNodejsDistUrl(version);
+        let osPlat = os_1.default.platform();
         let osArch = translateArchToDistUrl(arch);
         // Create temporary folder to download in to
         const tempDownloadFolder = 'temp_' + Math.floor(Math.random() * 2000000000);
@@ -73529,8 +73592,8 @@ function acquireNodeFromFallbackLocation(version, arch = os.arch()) {
         let exeUrl;
         let libUrl;
         try {
-            exeUrl = `https://nodejs.org/dist/v${version}/win-${osArch}/node.exe`;
-            libUrl = `https://nodejs.org/dist/v${version}/win-${osArch}/node.lib`;
+            exeUrl = `${initialUrl}/v${version}/win-${osArch}/node.exe`;
+            libUrl = `${initialUrl}/v${version}/win-${osArch}/node.lib`;
             core.info(`Downloading only node binary from ${exeUrl}`);
             const exePath = yield tc.downloadTool(exeUrl);
             yield io.cp(exePath, path.join(tempDir, 'node.exe'));
@@ -73539,8 +73602,8 @@ function acquireNodeFromFallbackLocation(version, arch = os.arch()) {
         }
         catch (err) {
             if (err instanceof tc.HTTPError && err.httpStatusCode == 404) {
-                exeUrl = `https://nodejs.org/dist/v${version}/node.exe`;
-                libUrl = `https://nodejs.org/dist/v${version}/node.lib`;
+                exeUrl = `${initialUrl}/v${version}/node.exe`;
+                libUrl = `${initialUrl}/v${version}/node.lib`;
                 const exePath = yield tc.downloadTool(exeUrl);
                 yield io.cp(exePath, path.join(tempDir, 'node.exe'));
                 const libPath = yield tc.downloadTool(libUrl);
@@ -73631,7 +73694,7 @@ const auth = __importStar(__nccwpck_require__(7573));
 const path = __importStar(__nccwpck_require__(1017));
 const cache_restore_1 = __nccwpck_require__(9517);
 const cache_utils_1 = __nccwpck_require__(1678);
-const os = __nccwpck_require__(2037);
+const os_1 = __importDefault(__nccwpck_require__(2037));
 function run() {
     return __awaiter(this, void 0, void 0, function* () {
         try {
@@ -73639,7 +73702,7 @@ function run() {
             // Version is optional.  If supplied, install / use from the tool cache
             // If not supplied then task is still used to setup proxy, auth, etc...
             //
-            let version = resolveVersionInput();
+            const version = resolveVersionInput();
             let arch = core.getInput('architecture');
             const cache = core.getInput('cache');
             // if architecture supplied but node-version is not
@@ -73648,12 +73711,12 @@ function run() {
                 core.warning('`architecture` is provided but `node-version` is missing. In this configuration, the version/architecture of Node will not be changed. To fix this, provide `architecture` in combination with `node-version`');
             }
             if (!arch) {
-                arch = os.arch();
+                arch = os_1.default.arch();
             }
             if (version) {
-                let token = core.getInput('token');
-                let auth = !token ? undefined : `token ${token}`;
-                let stable = (core.getInput('stable') || 'true').toUpperCase() === 'TRUE';
+                const token = core.getInput('token');
+                const auth = !token ? undefined : `token ${token}`;
+                const stable = (core.getInput('stable') || 'true').toUpperCase() === 'TRUE';
                 const checkLatest = (core.getInput('check-latest') || 'false').toUpperCase() === 'TRUE';
                 yield installer.getNode(version, stable, checkLatest, auth, arch);
             }
