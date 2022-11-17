@@ -73786,7 +73786,7 @@ function getToolVersion(tool, options) {
                 core.warning(`[warning]${stderr}`);
                 return '';
             }
-            return stdout;
+            return stdout.trim();
         }
         catch (err) {
             return '';
