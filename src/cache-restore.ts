@@ -43,7 +43,11 @@ export const restoreCache = async (
 
   core.saveState(State.CachePrimaryKey, primaryKey);
 
-  const cacheKey = await cache.restoreCache([cachePath], primaryKey, restoreKeys);
+  const cacheKey = await cache.restoreCache(
+    [cachePath],
+    primaryKey,
+    restoreKeys
+  );
   core.setOutput('cache-hit', Boolean(cacheKey));
 
   if (!cacheKey) {
