@@ -73021,9 +73021,11 @@ exports.restoreCache = (packageManager, cacheDependencyPath) => __awaiter(void 0
         throw new Error('Some specified paths were not resolved, unable to cache dependencies.');
     }
     const primaryKey = `node-cache-${platform}-${packageManager}-${fileHash}`;
+    const restoreKeys = [`node-cache-${platform}-${packageManager}-`];
     core.debug(`primary key is ${primaryKey}`);
+    core.debug(`restore keys are [${restoreKeys}]`);
     core.saveState(constants_1.State.CachePrimaryKey, primaryKey);
-    const cacheKey = yield cache.restoreCache([cachePath], primaryKey);
+    const cacheKey = yield cache.restoreCache([cachePath], primaryKey, restoreKeys);
     core.setOutput('cache-hit', Boolean(cacheKey));
     if (!cacheKey) {
         core.info(`${packageManager} cache is not found`);
