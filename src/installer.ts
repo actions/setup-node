@@ -273,8 +273,8 @@ export function resolveLtsAliasFromManifest(
     alias === '*'
       ? numbered[numbered.length - 1]
       : n < 0
-      ? numbered[numbered.length - 1 + n]
-      : aliases[alias];
+        ? numbered[numbered.length - 1 + n]
+        : aliases[alias];
 
   if (!release) {
     throw new Error(
@@ -419,31 +419,27 @@ function evaluateNightlyVersions(
 }
 
 // TODO - should we just export this from @actions/tool-cache? Lifted directly from there
-export function evaluateVersions(
-  versions: string[],
-  versionSpec: string
-): string {
-  let version = '';
+export function evaluateVersions(versions: string[], versionSpec: string): string {
   core.debug(`evaluating ${versions.length} versions`);
 
   if (versionSpec.includes('nightly')) {
     return evaluateNightlyVersions(versions, versionSpec);
   }
 
-  versions = versions.sort(semver.rcompare);
-
   const matcher: (potential: string) => boolean = isVersionCanary(versionSpec)
     ? evaluateCanaryMatcher(versionSpec)
     : potential => semver.satisfies(potential, versionSpec);
 
-  for (let i = versions.length - 1; i >= 0; i--) {
+  const version = versions.sort(semver.rcompare).find(matcher) || ''
+  /*
+  for (let i = 0; i< versions.length; i++) {
     const potential: string = versions[i];
     const satisfied: boolean = matcher(potential);
     if (satisfied) {
       version = potential;
       break;
     }
-  }
+  }*/
 
   if (version) {
     core.debug(`matched: ${version}`);
@@ -455,7 +451,7 @@ export function evaluateVersions(
 }
 
 export function getNodejsDistUrl(version: string) {
-  const prerelease = semver.prerelease(version);
+  const prerelease = semver.prerelease(version) && !isVersionCanary(version);
   if (version.includes('nightly')) {
     core.debug('requested nightly distribution');
     return 'https://nodejs.org/download/nightly';
