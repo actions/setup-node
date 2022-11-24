@@ -92,26 +92,38 @@ export const canaryExactVersionMatcherFactory = (
 export const nightlyRangeVersionMatcherFactory = (
   version: string
 ): VersionMatcher => {
-  const range = `${semver.validRange(`^${version}-0`)}-0`;
+  const range = semver.validRange(`^${version}`);
+  // TODO: this makes v20.1.1-nightly to do not match v20.1.1-nightly20221103f7e2421e91
+  // const range = `${semver.validRange(`^${version}-0`)}-0`;
   const matcher = (potential: string): boolean =>
     distributionOf(potential) === Distributions.NIGHTLY &&
-    semver.satisfies(potential.replace('-nightly', '-nightly.'), range, {
+    // TODO: dmitry's variant was potential.replace('-nightly', '-nightly.') that made
+    //       all unit tests to fail
+    semver.satisfies(
+      potential.replace('-nightly', '+nightly.'),
+      range /*, {
+      // TODO: what is for?
       includePrerelease: true
-    });
+    }*/
+    );
   matcher.factory = nightlyRangeVersionMatcherFactory;
   return matcher;
 };
 
 export const nightlyExactVersionMatcherFactory = (
   version: string,
-  prerelease_tag: string
+  timestamp: string
 ): VersionMatcher => {
-  const range = `${version}-${prerelease_tag.replace('nightly', 'nightly.')}`;
+  const range = `${version}-${timestamp.replace('nightly', 'nightly.')}`;
   const matcher = (potential: string): boolean =>
     distributionOf(potential) === Distributions.NIGHTLY &&
-    semver.satisfies(potential.replace('-nightly', '-nightly.'), range, {
+    semver.satisfies(
+      potential.replace('-nightly', '-nightly.'),
+      range /*, {
+      // TODO: what is for?
       includePrerelease: true
-    });
+    }*/
+    );
   matcher.factory = nightlyExactVersionMatcherFactory;
   return matcher;
 };
@@ -178,7 +190,7 @@ export async function getNode(
     versionSpec = resolveLtsAliasFromManifest(versionSpec, stable, manifest);
   }
 
-  // TODO: 121-127 and 131-132 seems to be the same. Why do we need them?
+  // TODO: 183-189 and 193-194   seems to be the same. Why do we need them?
   if (isLatestSyntax(versionSpec) || distribution == Distributions.CANARY) {
     nodeVersions = await getVersionsFromDist(versionSpec);
     versionSpec = await queryDistForMatch(versionSpec, arch, nodeVersions);

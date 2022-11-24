@@ -108,90 +108,183 @@ describe('setup-node unit tests', () => {
   });
 
   describe('Version spec matchers', () => {
-    it('semverVersionMatcher should always work as semver.satisfies does', () => {
-      const rangePlain = '1.1.1';
-      const matcherPlain = semverVersionMatcherFactory(rangePlain);
-      expect(matcherPlain('1.1.1')).toBe(semver.satisfies('1.1.1', rangePlain));
-      expect(matcherPlain('1.1.2')).toBe(semver.satisfies('1.1.2', rangePlain));
+    describe('semverVersionMatcher', () => {
+      it('semverVersionMatcher should always work as semver.satisfies does', () => {
+        const rangePlain = '1.1.1';
+        const matcherPlain = semverVersionMatcherFactory(rangePlain);
+        expect(matcherPlain('1.1.1')).toBe(
+          semver.satisfies('1.1.1', rangePlain)
+        );
+        expect(matcherPlain('1.1.2')).toBe(
+          semver.satisfies('1.1.2', rangePlain)
+        );
 
-      const rangeEq = '=1.1.1';
-      const matcherEq = semverVersionMatcherFactory(rangeEq);
-      expect(matcherEq('1.1.1')).toBe(semver.satisfies('1.1.1', rangeEq));
-      expect(matcherEq('1.1.2')).toBe(semver.satisfies('1.1.2', rangeEq));
+        const rangeEq = '=1.1.1';
+        const matcherEq = semverVersionMatcherFactory(rangeEq);
+        expect(matcherEq('1.1.1')).toBe(semver.satisfies('1.1.1', rangeEq));
+        expect(matcherEq('1.1.2')).toBe(semver.satisfies('1.1.2', rangeEq));
 
-      // TODO: add for discovered issues if any
+        // TODO: add for discovered issues if any
+      });
+
+      it("semverVersionMatcher should match release candidate as semver.satisfies does'", () => {
+        const rangePlain = 'v19.0.0-rc.2';
+        const matcherPlain = semverVersionMatcherFactory(rangePlain);
+        expect(matcherPlain('v19.0.0-rc.2')).toBe(
+          semver.satisfies('v19.0.0-rc.2', rangePlain)
+        );
+        expect(matcherPlain('v19.0.1-rc.2')).toBe(
+          semver.satisfies('v19.0.01rc.2', rangePlain)
+        );
+
+        const rangeEq = '=1.1.1';
+        const matcherEq = semverVersionMatcherFactory(rangeEq);
+        expect(matcherPlain('v19.0.0-rc.2')).toBe(
+          semver.satisfies('v19.0.0-rc.2', rangePlain)
+        );
+        expect(matcherPlain('v19.0.1-rc.2')).toBe(
+          semver.satisfies('v19.0.1-rc.2', rangePlain)
+        );
+      });
     });
 
-    it('canaryExactVersionMatcher should match v20.0.0-v8-canary20221103f7e2421e91 only v20.0.0-v8-canary20221103f7e2421e91', () => {
-      const version = semver.coerce('v20.0.0')!.version;
-      const matcher = canaryExactVersionMatcherFactory(
-        version,
-        'v8-canary20221103f7e2421e91'
-      );
-      expect(matcher('v20.0.0-v8-canary20221103f7e2421e91')).toBeTruthy();
-      // see  https://github.com/actions/setup-node/blob/00e1b6691b40cce14b5078cb411dd1ec7dab07f7/__tests__/verify-node.sh#L10
-      expect(matcher('v20.0.0-v8-canary202211026bf85d0fb4')).toBeFalsy();
+    describe('canaryExactVersionMatcher', () => {
+      it('canaryExactVersionMatcher should match v20.0.0-v8-canary20221103f7e2421e91 only v20.0.0-v8-canary20221103f7e2421e91', () => {
+        const version = semver.coerce('v20.0.0')!.version;
+        const matcher = canaryExactVersionMatcherFactory(
+          version,
+          'v8-canary20221103f7e2421e91'
+        );
+        expect(matcher('v20.0.0-v8-canary20221103f7e2421e91')).toBeTruthy();
+        // see  https://github.com/actions/setup-node/blob/00e1b6691b40cce14b5078cb411dd1ec7dab07f7/__tests__/verify-node.sh#L10
+        expect(matcher('v20.0.0-v8-canary202211026bf85d0fb4')).toBeFalsy();
+      });
     });
 
-    it('canaryRangeVersionMatcherFactory should match v20-v8-canary to any minor and patch version', () => {
-      const version = semver.coerce('v20')!.version;
-      const matcher = canaryRangeVersionMatcherFactory(version);
-      expect(matcher('v20.0.0-v8-canary20221103f7e2421e91')).toBeTruthy();
-      expect(matcher('v20.0.1-v8-canary20221103f7e2421e91')).toBeTruthy();
-      expect(matcher('v20.1.0-v8-canary20221103f7e2421e91')).toBeTruthy();
-      expect(matcher('v20.1.1-v8-canary20221103f7e2421e91')).toBeTruthy();
-      expect(matcher('v20.0.0-v8-canary202211026bf85d0fb4')).toBeTruthy();
+    describe('canaryRangeVersionMatcherFactory', () => {
+      it('canaryRangeVersionMatcherFactory should match v20-v8-canary to any v20.x.x', () => {
+        const version = semver.coerce('v20')!.version;
+        const matcher = canaryRangeVersionMatcherFactory(version);
+        expect(matcher('v20.0.0-v8-canary20221103f7e2421e91')).toBeTruthy();
+        expect(matcher('v20.0.1-v8-canary20221103f7e2421e91')).toBeTruthy();
+        expect(matcher('v20.1.0-v8-canary20221103f7e2421e91')).toBeTruthy();
+        expect(matcher('v20.1.1-v8-canary20221103f7e2421e91')).toBeTruthy();
+        expect(matcher('v20.0.0-v8-canary202211026bf85d0fb4')).toBeTruthy();
+      });
+
+      it('canaryRangeVersionMatcherFactory should not match v20-v8-canary to v21.x & v19.x', () => {
+        const version = semver.coerce('v20')!.version;
+        const matcher = canaryRangeVersionMatcherFactory(version);
+        expect(matcher('v21.0.0-v8-canary20221103f7e2421e91')).toBeFalsy();
+        expect(matcher('v21.1.0-v8-canary20221103f7e2421e91')).toBeFalsy();
+        expect(matcher('v21.1.1-v8-canary20221103f7e2421e91')).toBeFalsy();
+        expect(matcher('v19.0.0-v8-canary20221103f7e2421e91')).toBeFalsy();
+        expect(matcher('v19.1.0-v8-canary20221103f7e2421e91')).toBeFalsy();
+        expect(matcher('v19.1.-v8-canary20221103f7e2421e91')).toBeFalsy();
+      });
+
+      it('canaryRangeVersionMatcherFactory should match v20.1-v8-canary to any v20.1.x patch version and minor above or eq v20.1', () => {
+        const version = semver.coerce('v20.1')!.version;
+        const matcher = canaryRangeVersionMatcherFactory(version);
+        expect(matcher('v20.1.0-v8-canary20221103f7e2421e91')).toBeTruthy();
+        expect(matcher('v20.1.1-v8-canary20221103f7e2421e91')).toBeTruthy();
+        expect(matcher('v20.1.0-v8-canary202211026bf85d0fb4')).toBeTruthy();
+        expect(matcher('v20.2.0-v8-canary20221103f7e2421e91')).toBeTruthy();
+      });
+
+      it('canaryRangeVersionMatcherFactory should not match v20.2-v8-canary to v21.x, v19.x, and v20 minor less than v20.2', () => {
+        const version = semver.coerce('v20.2')!.version;
+        const matcher = canaryRangeVersionMatcherFactory(version);
+        expect(matcher('v20.1.0-v8-canary20221103f7e2421e91')).toBeFalsy();
+        expect(matcher('v21.0.0-v8-canary20221103f7e2421e91')).toBeFalsy();
+        expect(matcher('v19.0.0-v8-canary20221103f7e2421e91')).toBeFalsy();
+      });
+
+      it('canaryRangeVersionMatcherFactory should match v20.1.1-v8-canary to v20.1.x patch versions above or eq v20.1.1', () => {
+        const version = semver.coerce('v20.1.1')!.version;
+        const matcher = canaryRangeVersionMatcherFactory('v20.1.1-v8-canary');
+        expect(matcher('v20.1.1-v8-canary20221103f7e2421e91')).toBeTruthy();
+        expect(matcher('v20.1.2-v8-canary20221103f7e2421e91')).toBeTruthy();
+        expect(matcher('v20.2.0-v8-canary20221103f7e2421e91')).toBeTruthy();
+      });
+
+      it('canaryRangeVersionMatcherFactory should not match v20.1.1-v8-canary to any other minor versions and patch versions below v20.1.1', () => {
+        const version = semver.coerce('v20.1.1')!.version;
+        const matcher = canaryRangeVersionMatcherFactory(version);
+        expect(matcher('v20.1.0-v8-canary20221103f7e2421e91')).toBeFalsy();
+        expect(matcher('v21.0.0-v8-canary20221103f7e2421e91')).toBeFalsy();
+        expect(matcher('v19.0.0-v8-canary20221103f7e2421e91')).toBeFalsy();
+      });
+
+      it('canaryRangeVersionMatcherFactory should match v20.1.1-v8-canary to patch versions with any canary timestamp', () => {
+        const version = semver.coerce('v20.1.1')!.version;
+        const matcher = canaryRangeVersionMatcherFactory(version);
+        expect(matcher('v20.1.1-v8-canary20221103f7e2421e91')).toBeTruthy();
+        expect(matcher('v20.1.1-v8-canary202211026bf85d0fb4')).toBeTruthy();
+      });
     });
 
-    it('canaryRangeVersionMatcherFactory should not match v20-v8-canary to v21.x & v19.x', () => {
-      const version = semver.coerce('v20')!.version;
-      const matcher = canaryRangeVersionMatcherFactory(version);
-      expect(matcher('v21.0.0-v8-canary20221103f7e2421e91')).toBeFalsy();
-      expect(matcher('v21.1.0-v8-canary20221103f7e2421e91')).toBeFalsy();
-      expect(matcher('v21.1.1-v8-canary20221103f7e2421e91')).toBeFalsy();
-      expect(matcher('v19.0.0-v8-canary20221103f7e2421e91')).toBeFalsy();
-      expect(matcher('v19.1.0-v8-canary20221103f7e2421e91')).toBeFalsy();
-      expect(matcher('v19.1.-v8-canary20221103f7e2421e91')).toBeFalsy();
-    });
+    describe('nightlyRangeVersionMatcherFactory', () => {
+      it('nightlyRangeVersionMatcherFactory should match v20-nightly to any v20.x.x', () => {
+        const version = semver.coerce('v20')!.version;
+        const matcher = nightlyRangeVersionMatcherFactory(version);
+        expect(matcher('v20.0.0-nightly20221103f7e2421e91')).toBeTruthy();
+        expect(matcher('v20.0.1-nightly20221103f7e2421e91')).toBeTruthy();
+        expect(matcher('v20.1.0-nightly20221103f7e2421e91')).toBeTruthy();
+        expect(matcher('v20.1.1-nightly20221103f7e2421e91')).toBeTruthy();
+        expect(matcher('v20.0.0-nightly202211026bf85d0fb4')).toBeTruthy();
+      });
 
-    it('canaryRangeVersionMatcherFactory should match v20.1-v8-canary to any v20.1 patch version and minor above or eq v20.1', () => {
-      const version = semver.coerce('v20.1')!.version;
-      const matcher = canaryRangeVersionMatcherFactory(version);
-      expect(matcher('v20.1.0-v8-canary20221103f7e2421e91')).toBeTruthy();
-      expect(matcher('v20.1.1-v8-canary20221103f7e2421e91')).toBeTruthy();
-      expect(matcher('v20.1.0-v8-canary202211026bf85d0fb4')).toBeTruthy();
-      expect(matcher('v20.2.0-v8-canary20221103f7e2421e91')).toBeTruthy();
-    });
+      it('nightlyRangeVersionMatcherFactory should not match v20-nightly to v21.x & v19.x', () => {
+        const version = semver.coerce('v20')!.version;
+        const matcher = nightlyRangeVersionMatcherFactory(version);
+        expect(matcher('v21.0.0-nightly20221103f7e2421e91')).toBeFalsy();
+        expect(matcher('v21.1.0-nightly20221103f7e2421e91')).toBeFalsy();
+        expect(matcher('v21.1.1-nightly20221103f7e2421e91')).toBeFalsy();
+        expect(matcher('v19.0.0-nightly20221103f7e2421e91')).toBeFalsy();
+        expect(matcher('v19.1.0-nightly20221103f7e2421e91')).toBeFalsy();
+        expect(matcher('v19.1.-nightly20221103f7e2421e91')).toBeFalsy();
+      });
 
-    it('canaryRangeVersionMatcherFactory should not match canaryRangeVersionMatcherFactory to v21.x, v19.x, and v20 minor less v20.2', () => {
-      const version = semver.coerce('v20.2')!.version;
-      const matcher = canaryRangeVersionMatcherFactory(version);
-      expect(matcher('v20.1.0-v8-canary20221103f7e2421e91')).toBeFalsy();
-      expect(matcher('v21.0.0-v8-canary20221103f7e2421e91')).toBeFalsy();
-      expect(matcher('v19.0.0-v8-canary20221103f7e2421e91')).toBeFalsy();
-    });
+      it('nightlyRangeVersionMatcherFactory should match v20.1-nightly to any v20.1.x patch version and minor above or eq v20.1', () => {
+        const version = semver.coerce('v20.1')!.version;
+        const matcher = nightlyRangeVersionMatcherFactory(version);
+        expect(matcher('v20.1.0-nightly20221103f7e2421e91')).toBeTruthy();
+        expect(matcher('v20.1.1-nightly20221103f7e2421e91')).toBeTruthy();
+        expect(matcher('v20.1.0-nightly202211026bf85d0fb4')).toBeTruthy();
+        expect(matcher('v20.2.0-nightly20221103f7e2421e91')).toBeTruthy();
+      });
 
-    it('canaryRangeVersionMatcherFactory should not match v20.1.1-v8-canary v20.1.x to patch versions above or eq v20.1.1', () => {
-      const version = semver.coerce('v20.1.1')!.version;
-      const matcher = canaryRangeVersionMatcherFactory('v20.1.1-v8-canary');
-      expect(matcher('v20.1.1-v8-canary20221103f7e2421e91')).toBeTruthy();
-      expect(matcher('v20.1.2-v8-canary20221103f7e2421e91')).toBeTruthy();
-      expect(matcher('v20.2.0-v8-canary20221103f7e2421e91')).toBeTruthy();
-    });
+      it('nightlyRangeVersionMatcherFactory should not match v20.2-nightly to v21.x, v19.x, and v20 minor less v20.2', () => {
+        const version = semver.coerce('v20.2')!.version;
+        const matcher = nightlyRangeVersionMatcherFactory(version);
+        expect(matcher('v20.1.0-nightly20221103f7e2421e91')).toBeFalsy();
+        expect(matcher('v21.0.0-nightly20221103f7e2421e91')).toBeFalsy();
+        expect(matcher('v19.0.0-nightly20221103f7e2421e91')).toBeFalsy();
+      });
 
-    it('canaryRangeVersionMatcherFactory should match v20.1.1-v8-canary to patch versions with any canary timestamp', () => {
-      const version = semver.coerce('v20.1.1')!.version;
-      const matcher = canaryRangeVersionMatcherFactory(version);
-      expect(matcher('v20.1.1-v8-canary20221103f7e2421e91')).toBeTruthy();
-      expect(matcher('v20.1.1-v8-canary202211026bf85d0fb4')).toBeTruthy();
-    });
+      it('nightlyRangeVersionMatcherFactory should match v20.1.1-nightly to v20.1.x patch versions above or eq v20.1.1', () => {
+        const version = semver.coerce('v20.1.1')!.version;
+        const matcher = nightlyRangeVersionMatcherFactory('v20.1.1-nightly');
+        expect(matcher('v20.1.1-nightly20221103f7e2421e91')).toBeTruthy();
+        expect(matcher('v20.1.2-nightly20221103f7e2421e91')).toBeTruthy();
+        expect(matcher('v20.2.0-nightly20221103f7e2421e91')).toBeTruthy();
+      });
 
-    it('canaryRangeVersionMatcherFactory should not match v20.1.1-v8-canary to any other minor versions and patch versions below v20.1.1', () => {
-      const version = semver.coerce('v20.1.1')!.version;
-      const matcher = canaryRangeVersionMatcherFactory(version);
-      expect(matcher('v20.1.0-v8-canary20221103f7e2421e91')).toBeFalsy();
-      expect(matcher('v21.0.0-v8-canary20221103f7e2421e91')).toBeFalsy();
-      expect(matcher('v19.0.0-v8-canary20221103f7e2421e91')).toBeFalsy();
+      it('nightlyRangeVersionMatcherFactory should not match v20.1.1-nightly to any other minor versions and patch versions below v20.1.1', () => {
+        const version = semver.coerce('v20.1.1')!.version;
+        const matcher = nightlyRangeVersionMatcherFactory(version);
+        expect(matcher('v20.1.0-nightly20221103f7e2421e91')).toBeFalsy();
+        expect(matcher('v21.0.0-nightly20221103f7e2421e91')).toBeFalsy();
+        expect(matcher('v19.0.0-nightly20221103f7e2421e91')).toBeFalsy();
+      });
+
+      it('nightlyRangeVersionMatcherFactory should match v20.1.1-nightly to patch versions with any timestamp', () => {
+        const version = semver.coerce('v20.1.1')!.version;
+        const matcher = nightlyRangeVersionMatcherFactory(version);
+        expect(matcher('v20.1.1-nightly20221103f7e2421e91')).toBeTruthy();
+        expect(matcher('v20.1.1-nightly202211026bf85d0fb4')).toBeTruthy();
+      });
     });
   });
 
