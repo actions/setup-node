@@ -73253,20 +73253,26 @@ exports.canaryExactVersionMatcherFactory = (version, timestamp) => {
     return matcher;
 };
 exports.nightlyRangeVersionMatcherFactory = (version) => {
-    const range = `${semver.validRange(`^${version}-0`)}-0`;
+    const range = semver.validRange(`^${version}`);
+    // TODO: this makes v20.1.1-nightly to do not match v20.1.1-nightly20221103f7e2421e91
+    // const range = `${semver.validRange(`^${version}-0`)}-0`;
     const matcher = (potential) => exports.distributionOf(potential) === Distributions.NIGHTLY &&
-        semver.satisfies(potential.replace('-nightly', '-nightly.'), range, {
-            includePrerelease: true
-        });
+        // TODO: dmitry's variant was potential.replace('-nightly', '-nightly.') that made
+        //       all unit tests to fail
+        semver.satisfies(potential.replace('-nightly', '+nightly.'), range /*, {
+        // TODO: what is for?
+        includePrerelease: true
+      }*/);
     matcher.factory = exports.nightlyRangeVersionMatcherFactory;
     return matcher;
 };
-exports.nightlyExactVersionMatcherFactory = (version, prerelease_tag) => {
-    const range = `${version}-${prerelease_tag.replace('nightly', 'nightly.')}`;
+exports.nightlyExactVersionMatcherFactory = (version, timestamp) => {
+    const range = `${version}-${timestamp.replace('nightly', 'nightly.')}`;
     const matcher = (potential) => exports.distributionOf(potential) === Distributions.NIGHTLY &&
-        semver.satisfies(potential.replace('-nightly', '-nightly.'), range, {
-            includePrerelease: true
-        });
+        semver.satisfies(potential.replace('-nightly', '-nightly.'), range /*, {
+        // TODO: what is for?
+        includePrerelease: true
+      }*/);
     matcher.factory = exports.nightlyExactVersionMatcherFactory;
     return matcher;
 };
@@ -73319,7 +73325,7 @@ function getNode(versionSpec, stable, checkLatest, auth, arch = os_1.default.arc
             manifest = yield getManifest(auth);
             versionSpec = resolveLtsAliasFromManifest(versionSpec, stable, manifest);
         }
-        // TODO: 121-127 and 131-132 seems to be the same. Why do we need them?
+        // TODO: 183-189 and 193-194   seems to be the same. Why do we need them?
         if (isLatestSyntax(versionSpec) || distribution == Distributions.CANARY) {
             nodeVersions = yield getVersionsFromDist(versionSpec);
             versionSpec = yield queryDistForMatch(versionSpec, arch, nodeVersions);
