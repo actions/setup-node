@@ -58,18 +58,18 @@ jobs:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
         node-version: ['20-v8-canary', '20.0-v8-canary', '20.0.0-v8-canary','20.0.0-v8-canary20221103f7e2421e91']
-      steps:
-        - uses: actions/checkout@v3
-        - name: Setup Node
-          uses: ./
-          with:
-            node-version: ${{ matrix.node-version }}
-        - name: Verify node and npm
-          run: |
-            canaryVersion="${{ matrix.node-version }}"
-            majorVersion=$(echo $canaryVersion | cut -d- -f1)
-            __tests__/verify-node.sh "$majorVersion"
-          shell: bash
+    steps:
+      - uses: actions/checkout@v3
+      - name: Setup Node
+        uses: ./
+        with:
+          node-version: ${{ matrix.node-version }}
+      - name: Verify node and npm
+        run: |
+          canaryVersion="${{ matrix.node-version }}"
+          majorVersion=$(echo $canaryVersion | cut -d- -f1)
+          __tests__/verify-node.sh "$majorVersion"
+        shell: bash
 
   nightly-syntax:
     runs-on: ${{ matrix.os }}
