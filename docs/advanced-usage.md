@@ -124,7 +124,6 @@ jobs:
       - run: npm test
 ```
 ### Install v8 canary build for major node version
->>>>>>> d703091 (Change docs)
 
 ```yaml
 jobs:
