@@ -73216,33 +73216,120 @@ const tc = __importStar(__nccwpck_require__(7784));
 const path = __importStar(__nccwpck_require__(1017));
 const semver = __importStar(__nccwpck_require__(5911));
 const fs_1 = __importDefault(__nccwpck_require__(7147));
-const isVersionCanary = (versionSpec) => versionSpec.includes(`-v8-canary`);
+var Distributions;
+(function (Distributions) {
+    Distributions[Distributions["DEFAULT"] = 0] = "DEFAULT";
+    Distributions[Distributions["CANARY"] = 1] = "CANARY";
+    Distributions[Distributions["NIGHTLY"] = 2] = "NIGHTLY";
+    Distributions[Distributions["RC"] = 3] = "RC";
+})(Distributions = exports.Distributions || (exports.Distributions = {}));
+exports.distributionOf = (versionSpec) => versionSpec.includes('-v8-canary')
+    ? Distributions.CANARY
+    : // TODO: i'd like to have this check, do you?
+        versionSpec.includes('-canary')
+            ? (() => {
+                throw Error('Canary version must have "-v8-canary suffix"');
+            })()
+            : versionSpec.includes('nightly')
+                ? Distributions.NIGHTLY
+                : semver.prerelease(versionSpec)
+                    ? Distributions.RC
+                    : Distributions.DEFAULT;
+exports.semverVersionMatcherFactory = (range) => {
+    const matcher = (potential) => semver.satisfies(potential, range);
+    matcher.factory = exports.semverVersionMatcherFactory;
+    return matcher;
+};
+exports.canaryRangeVersionMatcherFactory = (version) => {
+    const range = semver.validRange(`^${version}`);
+    const matcher = (potential) => semver.satisfies(potential.replace('-v8-canary', '+v8-canary.'), range);
+    matcher.factory = exports.canaryRangeVersionMatcherFactory;
+    return matcher;
+};
+exports.canaryExactVersionMatcherFactory = (version, timestamp) => {
+    const range = `${version}-${timestamp}`;
+    const matcher = (potential) => semver.satisfies(potential, range);
+    matcher.factory = exports.canaryExactVersionMatcherFactory;
+    return matcher;
+};
+exports.nightlyRangeVersionMatcherFactory = (version) => {
+    const range = `${semver.validRange(`^${version}-0`)}-0`;
+    const matcher = (potential) => exports.distributionOf(potential) === Distributions.NIGHTLY &&
+        semver.satisfies(potential.replace('-nightly', '-nightly.'), range, {
+            includePrerelease: true
+        });
+    matcher.factory = exports.nightlyRangeVersionMatcherFactory;
+    return matcher;
+};
+exports.nightlyExactVersionMatcherFactory = (version, prerelease_tag) => {
+    const range = `${version}-${prerelease_tag.replace('nightly', 'nightly.')}`;
+    const matcher = (potential) => exports.distributionOf(potential) === Distributions.NIGHTLY &&
+        semver.satisfies(potential.replace('-nightly', '-nightly.'), range, {
+            includePrerelease: true
+        });
+    matcher.factory = exports.nightlyExactVersionMatcherFactory;
+    return matcher;
+};
+const alwaysFalseVersionMatcherFactory = () => {
+    const matcher = () => false;
+    matcher.factory = alwaysFalseVersionMatcherFactory;
+    return matcher;
+};
+const alwaysFalseVersionMatcher = alwaysFalseVersionMatcherFactory();
+// [raw, prerelease]
+exports.splitVersionSpec = (versionSpec) => versionSpec.split(/-(.*)/s);
+function versionMatcherFactory(versionSpec) {
+    var _a;
+    const [raw, prerelease] = exports.splitVersionSpec(versionSpec);
+    const validVersion = semver.valid(raw) ? raw : (_a = semver.coerce(raw)) === null || _a === void 0 ? void 0 : _a.version;
+    if (validVersion) {
+        switch (exports.distributionOf(versionSpec)) {
+            case Distributions.CANARY:
+                return prerelease === 'v8-canary' // this means versionSpec does not have timestamp
+                    ? exports.canaryRangeVersionMatcherFactory(validVersion)
+                    : exports.canaryExactVersionMatcherFactory(validVersion, prerelease);
+            case Distributions.NIGHTLY:
+                return prerelease === 'nightly' // this means versionSpec does not have prerelease tag
+                    ? exports.nightlyRangeVersionMatcherFactory(validVersion)
+                    : exports.nightlyExactVersionMatcherFactory(validVersion, prerelease);
+            case Distributions.RC:
+            case Distributions.DEFAULT:
+                return exports.semverVersionMatcherFactory(versionSpec);
+        }
+    }
+    else {
+        // TODO: i prefer to have implicit exception for the malformed input
+        throw Error(`Invalid version input "${versionSpec}"`);
+        // TODO: but it is possible to silently fail
+        //  return alwaysFalseVersionMatcher
+    }
+}
+exports.versionMatcherFactory = versionMatcherFactory;
 function getNode(versionSpec, stable, checkLatest, auth, arch = os_1.default.arch()) {
     return __awaiter(this, void 0, void 0, function* () {
         // Store manifest data to avoid multiple calls
         let manifest;
         let nodeVersions;
-        let isNightly = versionSpec.includes('nightly');
-        let osPlat = os_1.default.platform();
-        let osArch = translateArchToDistUrl(arch);
-        let isCanary = isVersionCanary(versionSpec);
+        const osPlat = os_1.default.platform();
+        const osArch = translateArchToDistUrl(arch);
+        const distribution = exports.distributionOf(versionSpec);
         if (isLtsAlias(versionSpec)) {
             core.info('Attempt to resolve LTS alias from manifest...');
             // No try-catch since it's not possible to resolve LTS alias without manifest
             manifest = yield getManifest(auth);
             versionSpec = resolveLtsAliasFromManifest(versionSpec, stable, manifest);
         }
-        // evaluate exact versionSpec from input
-        if (isLatestSyntax(versionSpec) || isCanary) {
+        // TODO: 121-127 and 131-132 seems to be the same. Why do we need them?
+        if (isLatestSyntax(versionSpec) || distribution == Distributions.CANARY) {
             nodeVersions = yield getVersionsFromDist(versionSpec);
             versionSpec = yield queryDistForMatch(versionSpec, arch, nodeVersions);
-            core.info(`getting ${isCanary ? 'v8-canary' : 'latest'} node version ${versionSpec}...`);
+            core.info(`getting ${distribution == Distributions.CANARY ? 'v8-canary' : 'latest'} node version ${versionSpec}...`);
         }
-        if (isNightly && checkLatest) {
+        if (distribution === Distributions.NIGHTLY && checkLatest) {
             nodeVersions = yield getVersionsFromDist(versionSpec);
             versionSpec = yield queryDistForMatch(versionSpec, arch, nodeVersions);
         }
-        if (checkLatest && !isNightly) {
+        if (checkLatest && distribution !== Distributions.NIGHTLY) {
             core.info('Attempt to resolve the latest version from manifest...');
             const resolvedVersion = yield resolveVersionFromManifest(versionSpec, stable, auth, osArch, manifest);
             if (resolvedVersion) {
@@ -73256,16 +73343,13 @@ function getNode(versionSpec, stable, checkLatest, auth, arch = os_1.default.arc
         // check cache
         core.info('Attempt to find existing version in cache...');
         let toolPath;
-        if (isNightly) {
-            const nightlyVersion = findNightlyVersionInHostedToolcache(versionSpec, osArch);
-            toolPath = nightlyVersion && tc.find('node', nightlyVersion, osArch);
-        }
-        else if (isCanary) {
-            const localVersions = tc.findAllVersions('node', osArch);
-            toolPath = evaluateVersions(localVersions, versionSpec);
+        if (distribution === Distributions.DEFAULT) {
+            toolPath = tc.find('node', versionSpec, osArch);
         }
         else {
-            toolPath = tc.find('node', versionSpec, osArch);
+            const localVersionPaths = tc.findAllVersions('node', osArch);
+            const localVersion = evaluateVersions(localVersionPaths, versionSpec);
+            toolPath = localVersion && tc.find('node', localVersion, osArch);
         }
         // If not found in cache, download
         if (toolPath) {
@@ -73362,10 +73446,6 @@ function getNode(versionSpec, stable, checkLatest, auth, arch = os_1.default.arc
     });
 }
 exports.getNode = getNode;
-function findNightlyVersionInHostedToolcache(versionsSpec, osArch) {
-    const foundAllVersions = tc.findAllVersions('node', osArch);
-    return evaluateVersions(foundAllVersions, versionsSpec);
-}
 function isLtsAlias(versionSpec) {
     return versionSpec.startsWith('lts/');
 }
@@ -73456,57 +73536,14 @@ function resolveVersionFromManifest(versionSpec, stable, auth, osArch = translat
         }
     });
 }
-function evaluateNightlyVersions(versions, versionSpec) {
-    let version = '';
-    let range;
-    const [raw, prerelease] = versionSpec.split('-');
-    const isValidVersion = semver.valid(raw);
-    const rawVersion = isValidVersion ? raw : semver.coerce(raw);
-    if (rawVersion) {
-        if (prerelease !== 'nightly') {
-            range = `${rawVersion}-${prerelease.replace('nightly', 'nightly.')}`;
-        }
-        else {
-            range = `${semver.validRange(`^${rawVersion}-0`)}-0`;
-        }
-    }
-    if (range) {
-        versions.sort(semver.rcompare);
-        for (const currentVersion of versions) {
-            const satisfied = semver.satisfies(currentVersion.replace('-nightly', '-nightly.'), range, { includePrerelease: true }) && currentVersion.includes('nightly');
-            if (satisfied) {
-                version = currentVersion;
-                break;
-            }
-        }
-    }
-    if (version) {
-        core.debug(`matched: ${version}`);
-    }
-    else {
-        core.debug('match not found');
-    }
-    return version;
-}
 // TODO - should we just export this from @actions/tool-cache? Lifted directly from there
+//      -  the answer from dsame@github.com - we have customized matcher and can not
+//         export `evaluateVersions` from tc. But it would be possible to modify tc to accept
+//         the matcher as an optional parameter to `evaluateVersions`
 function evaluateVersions(versions, versionSpec) {
-    let version = '';
     core.debug(`evaluating ${versions.length} versions`);
-    if (versionSpec.includes('nightly')) {
-        return evaluateNightlyVersions(versions, versionSpec);
-    }
-    versions = versions.sort(semver.rcompare);
-    const matcher = isVersionCanary(versionSpec)
-        ? evaluateCanaryMatcher(versionSpec)
-        : potential => semver.satisfies(potential, versionSpec);
-    for (let i = versions.length - 1; i >= 0; i--) {
-        const potential = versions[i];
-        const satisfied = matcher(potential);
-        if (satisfied) {
-            version = potential;
-            break;
-        }
-    }
+    const matcher = versionMatcherFactory(versionSpec);
+    const version = versions.sort(semver.rcompare).find(matcher) || '';
     if (version) {
         core.debug(`matched: ${version}`);
     }
@@ -73517,20 +73554,18 @@ function evaluateVersions(versions, versionSpec) {
 }
 exports.evaluateVersions = evaluateVersions;
 function getNodejsDistUrl(version) {
-    const prerelease = semver.prerelease(version);
-    if (version.includes('nightly')) {
-        core.debug('requested nightly distribution');
-        return 'https://nodejs.org/download/nightly';
-    }
-    else if (prerelease) {
-        return 'https://nodejs.org/download/rc';
-    }
-    else if (isVersionCanary(version)) {
-        core.debug('requested v8 canary distribution');
-        return 'https://nodejs.org/download/v8-canary';
-    }
-    else {
-        return 'https://nodejs.org/dist';
+    switch (exports.distributionOf(version)) {
+        case Distributions.CANARY:
+            core.debug('requested v8 canary distribution');
+            return 'https://nodejs.org/download/v8-canary';
+        case Distributions.NIGHTLY:
+            core.debug('requested nightly distribution');
+            return 'https://nodejs.org/download/nightly';
+        case Distributions.RC:
+            core.debug('requested release candidates distribution');
+            return 'https://nodejs.org/download/rc';
+        case Distributions.DEFAULT:
+            return 'https://nodejs.org/dist';
     }
 }
 exports.getNodejsDistUrl = getNodejsDistUrl;
@@ -73678,31 +73713,6 @@ function isLatestSyntax(versionSpec) {
     return ['current', 'latest', 'node'].includes(versionSpec);
 }
 exports.isLatestSyntax = isLatestSyntax;
-function evaluateCanaryMatcher(versionSpec) {
-    var _a;
-    const [raw, prerelease] = versionSpec.split(/-(.*)/s);
-    const isValidVersion = semver.valid(raw);
-    const rawVersion = isValidVersion ? raw : (_a = semver.coerce(raw)) === null || _a === void 0 ? void 0 : _a.version;
-    if (rawVersion) {
-        if (prerelease === 'v8-canary') {
-            // it means versionSpec does not have timestamp
-            const range = semver.validRange(`^${rawVersion}`);
-            return (potential) => semver.satisfies(
-            // TODO: check latest?
-            potential.replace('-v8-canary', '+v8-canary.'), range);
-        }
-        else {
-            // see https://github.com/actions/setup-node/blob/00e1b6691b40cce14b5078cb411dd1ec7dab07f7/__tests__/verify-node.sh#L10
-            // there must be exact match
-            const range = `${rawVersion}-${prerelease}`;
-            return (potential) => semver.satisfies(
-            // TODO: check latest?
-            potential, range);
-        }
-    }
-    return () => false;
-}
-exports.evaluateCanaryMatcher = evaluateCanaryMatcher;
 
 
 /***/ }),
