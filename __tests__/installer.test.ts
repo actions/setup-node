@@ -1354,13 +1354,13 @@ describe('setup-node', () => {
       const versionExpected = 'v20.0.0-v8-canary20221103f7e2421e91';
       findAllVersionSpy.mockImplementation(() => [versionExpected]);
 
-      let toolPath = path.normalize(`/cache/node/${versionExpected}/x64`);
+      const toolPath = path.normalize(`/cache/node/${versionExpected}/x64`);
       findSpy.mockImplementation(version => toolPath);
 
       await main.run();
 
       expect(cnSpy).toHaveBeenCalledWith(
-        `::add-path::${toolPath}/bin${osm.EOL}`
+        `::add-path::${toolPath}${path.sep}bin${osm.EOL}`
       );
 
       expect(dlSpy).not.toHaveBeenCalled();
