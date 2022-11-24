@@ -31,25 +31,18 @@ interface INodeRelease extends tc.IToolRelease {
 }
 
 export enum Distributions {
-  DEFAULT,
-  CANARY,
-  NIGHTLY,
-  RC
+  DEFAULT = 'default',
+  CANARY = 'v8-canary',
+  NIGHTLY = 'nightly',
+  RC = 'rc'
 }
 
-export const distributionOf = (versionSpec: string): Distributions =>
-  versionSpec.includes('-v8-canary')
-    ? Distributions.CANARY
-    : // TODO: i'd like to have this check, do you?
-    versionSpec.includes('-canary')
-    ? (() => {
-        throw Error('Canary version must have "-v8-canary suffix"');
-      })()
-    : versionSpec.includes('nightly')
-    ? Distributions.NIGHTLY
-    : semver.prerelease(versionSpec)
-    ? Distributions.RC
-    : Distributions.DEFAULT;
+export const distributionOf = (versionSpec: string): Distributions => {
+  if (versionSpec.includes('-v8-canary')) return Distributions.CANARY;
+  if (versionSpec.includes('nightly')) return Distributions.NIGHTLY;
+  if (semver.prerelease(versionSpec)) return Distributions.RC;
+  return Distributions.DEFAULT;
+};
 
 interface VersionMatcher {
   (potential: string): boolean;
@@ -190,23 +183,26 @@ export async function getNode(
     versionSpec = resolveLtsAliasFromManifest(versionSpec, stable, manifest);
   }
 
-  // TODO: 183-189 and 193-194   seems to be the same. Why do we need them?
-  if (isLatestSyntax(versionSpec) || distribution == Distributions.CANARY) {
+  if (isLatestSyntax(versionSpec)) {
     nodeVersions = await getVersionsFromDist(versionSpec);
     versionSpec = await queryDistForMatch(versionSpec, arch, nodeVersions);
-    core.info(
-      `getting ${
-        distribution == Distributions.CANARY ? 'v8-canary' : 'latest'
-      } node version ${versionSpec}...`
-    );
+    core.info(`getting latest node version ${versionSpec}...`);
   }
 
-  if (distribution === Distributions.NIGHTLY && checkLatest) {
+  if (
+    (distribution === Distributions.NIGHTLY ||
+      distribution === Distributions.CANARY) &&
+    checkLatest
+  ) {
     nodeVersions = await getVersionsFromDist(versionSpec);
     versionSpec = await queryDistForMatch(versionSpec, arch, nodeVersions);
   }
 
-  if (checkLatest && distribution !== Distributions.NIGHTLY) {
+  if (
+    checkLatest &&
+    distribution !== Distributions.NIGHTLY &&
+    distribution !== Distributions.CANARY
+  ) {
     core.info('Attempt to resolve the latest version from manifest...');
     const resolvedVersion = await resolveVersionFromManifest(
       versionSpec,
@@ -224,7 +220,6 @@ export async function getNode(
   }
 
   // check cache
-  core.info('Attempt to find existing version in cache...');
   let toolPath: string;
   if (distribution === Distributions.DEFAULT) {
     toolPath = tc.find('node', versionSpec, osArch);
@@ -521,13 +516,10 @@ export function evaluateVersions(
 export function getNodejsDistUrl(version: string) {
   switch (distributionOf(version)) {
     case Distributions.CANARY:
-      core.debug('requested v8 canary distribution');
       return 'https://nodejs.org/download/v8-canary';
     case Distributions.NIGHTLY:
-      core.debug('requested nightly distribution');
       return 'https://nodejs.org/download/nightly';
     case Distributions.RC:
-      core.debug('requested release candidates distribution');
       return 'https://nodejs.org/download/rc';
     case Distributions.DEFAULT:
       return 'https://nodejs.org/dist';
@@ -568,7 +560,7 @@ export async function queryDistForMatch(
     return nodeVersions[0].version;
   }
 
-  let versions: string[] = [];
+  const versions: string[] = [];
   nodeVersions.forEach((nodeVersion: INodeVersion) => {
     // ensure this version supports your os and platform
     if (nodeVersion.files.indexOf(dataFileName) >= 0) {
@@ -577,7 +569,8 @@ export async function queryDistForMatch(
   });
 
   // get the latest version that matches the version spec
-  return evaluateVersions(versions, versionSpec);
+  const version = evaluateVersions(versions, versionSpec);
+  return version;
 }
 
 export async function getVersionsFromDist(

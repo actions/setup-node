@@ -73218,23 +73218,20 @@ const semver = __importStar(__nccwpck_require__(5911));
 const fs_1 = __importDefault(__nccwpck_require__(7147));
 var Distributions;
 (function (Distributions) {
-    Distributions[Distributions["DEFAULT"] = 0] = "DEFAULT";
-    Distributions[Distributions["CANARY"] = 1] = "CANARY";
-    Distributions[Distributions["NIGHTLY"] = 2] = "NIGHTLY";
-    Distributions[Distributions["RC"] = 3] = "RC";
+    Distributions["DEFAULT"] = "default";
+    Distributions["CANARY"] = "v8-canary";
+    Distributions["NIGHTLY"] = "nightly";
+    Distributions["RC"] = "rc";
 })(Distributions = exports.Distributions || (exports.Distributions = {}));
-exports.distributionOf = (versionSpec) => versionSpec.includes('-v8-canary')
-    ? Distributions.CANARY
-    : // TODO: i'd like to have this check, do you?
-        versionSpec.includes('-canary')
-            ? (() => {
-                throw Error('Canary version must have "-v8-canary suffix"');
-            })()
-            : versionSpec.includes('nightly')
-                ? Distributions.NIGHTLY
-                : semver.prerelease(versionSpec)
-                    ? Distributions.RC
-                    : Distributions.DEFAULT;
+exports.distributionOf = (versionSpec) => {
+    if (versionSpec.includes('-v8-canary'))
+        return Distributions.CANARY;
+    if (versionSpec.includes('nightly'))
+        return Distributions.NIGHTLY;
+    if (semver.prerelease(versionSpec))
+        return Distributions.RC;
+    return Distributions.DEFAULT;
+};
 exports.semverVersionMatcherFactory = (range) => {
     const matcher = (potential) => semver.satisfies(potential, range);
     matcher.factory = exports.semverVersionMatcherFactory;
@@ -73325,17 +73322,20 @@ function getNode(versionSpec, stable, checkLatest, auth, arch = os_1.default.arc
             manifest = yield getManifest(auth);
             versionSpec = resolveLtsAliasFromManifest(versionSpec, stable, manifest);
         }
-        // TODO: 183-189 and 193-194   seems to be the same. Why do we need them?
-        if (isLatestSyntax(versionSpec) || distribution == Distributions.CANARY) {
+        if (isLatestSyntax(versionSpec)) {
             nodeVersions = yield getVersionsFromDist(versionSpec);
             versionSpec = yield queryDistForMatch(versionSpec, arch, nodeVersions);
-            core.info(`getting ${distribution == Distributions.CANARY ? 'v8-canary' : 'latest'} node version ${versionSpec}...`);
+            core.info(`getting latest node version ${versionSpec}...`);
         }
-        if (distribution === Distributions.NIGHTLY && checkLatest) {
+        if ((distribution === Distributions.NIGHTLY ||
+            distribution === Distributions.CANARY) &&
+            checkLatest) {
             nodeVersions = yield getVersionsFromDist(versionSpec);
             versionSpec = yield queryDistForMatch(versionSpec, arch, nodeVersions);
         }
-        if (checkLatest && distribution !== Distributions.NIGHTLY) {
+        if (checkLatest &&
+            distribution !== Distributions.NIGHTLY &&
+            distribution !== Distributions.CANARY) {
             core.info('Attempt to resolve the latest version from manifest...');
             const resolvedVersion = yield resolveVersionFromManifest(versionSpec, stable, auth, osArch, manifest);
             if (resolvedVersion) {
@@ -73347,7 +73347,6 @@ function getNode(versionSpec, stable, checkLatest, auth, arch = os_1.default.arc
             }
         }
         // check cache
-        core.info('Attempt to find existing version in cache...');
         let toolPath;
         if (distribution === Distributions.DEFAULT) {
             toolPath = tc.find('node', versionSpec, osArch);
@@ -73562,13 +73561,10 @@ exports.evaluateVersions = evaluateVersions;
 function getNodejsDistUrl(version) {
     switch (exports.distributionOf(version)) {
         case Distributions.CANARY:
-            core.debug('requested v8 canary distribution');
             return 'https://nodejs.org/download/v8-canary';
         case Distributions.NIGHTLY:
-            core.debug('requested nightly distribution');
             return 'https://nodejs.org/download/nightly';
         case Distributions.RC:
-            core.debug('requested release candidates distribution');
             return 'https://nodejs.org/download/rc';
         case Distributions.DEFAULT:
             return 'https://nodejs.org/dist';
@@ -73602,7 +73598,7 @@ function queryDistForMatch(versionSpec, arch = os_1.default.arch(), nodeVersions
             core.info(`getting latest node version...`);
             return nodeVersions[0].version;
         }
-        let versions = [];
+        const versions = [];
         nodeVersions.forEach((nodeVersion) => {
             // ensure this version supports your os and platform
             if (nodeVersion.files.indexOf(dataFileName) >= 0) {
@@ -73610,7 +73606,8 @@ function queryDistForMatch(versionSpec, arch = os_1.default.arch(), nodeVersions
             }
         });
         // get the latest version that matches the version spec
-        return evaluateVersions(versions, versionSpec);
+        const version = evaluateVersions(versions, versionSpec);
+        return version;
     });
 }
 exports.queryDistForMatch = queryDistForMatch;

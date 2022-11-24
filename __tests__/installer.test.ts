@@ -72,7 +72,6 @@ describe('setup-node', () => {
     exSpy = jest.spyOn(tc, 'extractTar');
     cacheSpy = jest.spyOn(tc, 'cacheDir');
     getManifestSpy = jest.spyOn(tc, 'getManifestFromRepo');
-    // @ts-ignore
     getDistSpy = jest.spyOn(im, 'getVersionsFromDist');
     parseNodeVersionSpy = jest.spyOn(im, 'parseNodeVersionFile');
 
@@ -1302,37 +1301,25 @@ describe('setup-node', () => {
 
       await main.run();
 
-      expect(dbgSpy.mock.calls[0][0]).toBe('requested v8 canary distribution');
-      expect(dbgSpy.mock.calls[1][0]).toBe('evaluating 17 versions');
-      expect(dbgSpy.mock.calls[2][0]).toBe(
-        'matched: v20.0.0-v8-canary20221103f7e2421e91'
-      );
+      expect(dbgSpy.mock.calls[0][0]).toBe('evaluating 0 versions');
+      expect(dbgSpy.mock.calls[1][0]).toBe('match not found');
       expect(logSpy.mock.calls[0][0]).toBe(
-        'getting v8-canary node version v20.0.0-v8-canary20221103f7e2421e91...'
+        `Attempting to download ${versionSpec}...`
       );
-      expect(logSpy.mock.calls[1][0]).toBe(
-        'Attempt to find existing version in cache...'
-      );
-      expect(dbgSpy.mock.calls[3][0]).toBe('evaluating 0 versions');
-      expect(dbgSpy.mock.calls[4][0]).toBe('match not found');
-      expect(logSpy.mock.calls[2][0]).toBe(
-        'Attempting to download v20.0.0-v8-canary20221103f7e2421e91...'
-      );
-      expect(dbgSpy.mock.calls[5][0]).toBe('No manifest cached');
-      expect(dbgSpy.mock.calls[6][0]).toBe(
+      expect(dbgSpy.mock.calls[2][0]).toBe('No manifest cached');
+      expect(dbgSpy.mock.calls[3][0]).toBe(
         'Getting manifest from actions/node-versions@main'
       );
-      expect(dbgSpy.mock.calls[7][0].slice(0, 6)).toBe('check ');
-      expect(dbgSpy.mock.calls[13][0].slice(0, 6)).toBe('check ');
-      expect(logSpy.mock.calls[3][0]).toBe(
+      expect(dbgSpy.mock.calls[4][0].slice(0, 6)).toBe('check ');
+      expect(dbgSpy.mock.calls[10][0].slice(0, 6)).toBe('check ');
+      expect(logSpy.mock.calls[1][0]).toBe(
         'Not found in manifest.  Falling back to download directly from Node'
       );
-      expect(dbgSpy.mock.calls[14][0]).toBe('evaluating 17 versions');
-      expect(dbgSpy.mock.calls[15][0]).toBe(
+      expect(dbgSpy.mock.calls[12][0]).toBe('evaluating 17 versions');
+      expect(dbgSpy.mock.calls[13][0]).toBe(
         'matched: v20.0.0-v8-canary20221103f7e2421e91'
       );
-      expect(dbgSpy.mock.calls[16][0]).toBe('requested v8 canary distribution');
-      expect(logSpy.mock.calls[4][0]).toBe(
+      expect(logSpy.mock.calls[2][0]).toBe(
         'Acquiring 20.0.0-v8-canary20221103f7e2421e91 - x64 from https://nodejs.org/download/v8-canary/v20.0.0-v8-canary20221103f7e2421e91/node-v20.0.0-v8-canary20221103f7e2421e91-linux-x64.tar.gz'
       );
 
@@ -1373,14 +1360,12 @@ describe('setup-node', () => {
 describe('helper methods', () => {
   it('is not LTS alias', async () => {
     const versionSpec = 'v99.0.0-v8-canary';
-    // @ts-ignore
     const isLtsAlias = im.isLtsAlias(versionSpec);
     expect(isLtsAlias).toBeFalsy();
   });
 
   it('is not isLatestSyntax', async () => {
     const versionSpec = 'v99.0.0-v8-canary';
-    // @ts-ignore
     const isLatestSyntax = im.isLatestSyntax(versionSpec);
     expect(isLatestSyntax).toBeFalsy();
   });
@@ -1388,14 +1373,12 @@ describe('helper methods', () => {
   describe('getNodejsDistUrl', () => {
     it('dist url to be https://nodejs.org/download/v8-canary for input versionSpec', () => {
       const versionSpec = 'v99.0.0-v8-canary';
-      // @ts-ignore
       const url = im.getNodejsDistUrl(versionSpec);
       expect(url).toBe('https://nodejs.org/download/v8-canary');
     });
 
     it('dist url to be https://nodejs.org/download/v8-canary for full versionSpec', () => {
       const versionSpec = 'v20.0.0-v8-canary20221103f7e2421e91';
-      // @ts-ignore
       const url = im.getNodejsDistUrl(versionSpec);
       expect(url).toBe('https://nodejs.org/download/v8-canary');
     });

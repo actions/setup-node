@@ -41,16 +41,6 @@ describe('setup-node unit tests', () => {
         Distributions.CANARY
       );
     });
-    it('1.1.1-canary should throw exception', () => {
-      expect(() => distributionOf('1.1.1-canary')).toThrow(
-        'Canary version must have "-v8-canary suffix"'
-      );
-    });
-    it('1.1.1-canary20221103f7e2421e91 should throw exception', () => {
-      expect(() => distributionOf('1.1.1-canary20221103f7e2421e91')).toThrow(
-        'Canary version must have "-v8-canary suffix"'
-      );
-    });
     it('1.1.1-nightly should be NIGHTLY', () => {
       expect(distributionOf('1.1.1-nightly')).toBe(Distributions.NIGHTLY);
     });
