@@ -34,103 +34,121 @@ export enum Distributions {
   DEFAULT,
   CANARY,
   NIGHTLY,
-  RC,
+  RC
 }
 
 export const distributionOf = (versionSpec: string): Distributions =>
   versionSpec.includes('-v8-canary')
     ? Distributions.CANARY
-    // TODO: i'd like to have this check, do you?
-    : versionSpec.includes('-canary')
-      ? (() => {
-        throw Error('Canary version must have "-v8-canary suffix"')
+    : // TODO: i'd like to have this check, do you?
+    versionSpec.includes('-canary')
+    ? (() => {
+        throw Error('Canary version must have "-v8-canary suffix"');
       })()
-      : versionSpec.includes('nightly')
-        ? Distributions.NIGHTLY
-        : semver.prerelease(versionSpec)
-          ? Distributions.RC
-          : Distributions.DEFAULT
+    : versionSpec.includes('nightly')
+    ? Distributions.NIGHTLY
+    : semver.prerelease(versionSpec)
+    ? Distributions.RC
+    : Distributions.DEFAULT;
 
 interface VersionMatcher {
-  (potential: string): boolean
+  (potential: string): boolean;
 
   // memoize the factory for testing and debug purposes
-  factory: ((ver: string, suffix: string) => VersionMatcher) |
-    ((semverRanger: string) => VersionMatcher) | (() => VersionMatcher)
+  factory:
+    | ((ver: string, suffix: string) => VersionMatcher)
+    | ((semverRanger: string) => VersionMatcher)
+    | (() => VersionMatcher);
 }
 
 export const semverVersionMatcherFactory = (range: string): VersionMatcher => {
-  const matcher = (potential: string): boolean => semver.satisfies(potential, range);
-  matcher.factory = semverVersionMatcherFactory
-  return matcher
-}
-
-export const canaryRangeVersionMatcherFactory = (version: string): VersionMatcher => {
-  const range = semver.validRange(`^${version}`)
-  const matcher = (potential: string): boolean =>
-    semver.satisfies(potential.replace('-v8-canary', '+v8-canary.'), range);
-  matcher.factory = canaryRangeVersionMatcherFactory
-  return matcher
-}
-
-export const canaryExactVersionMatcherFactory = (version: string, timestamp: string): VersionMatcher => {
-  const range = `${version}-${timestamp}`
   const matcher = (potential: string): boolean =>
     semver.satisfies(potential, range);
-  matcher.factory = canaryExactVersionMatcherFactory
-  return matcher
-}
+  matcher.factory = semverVersionMatcherFactory;
+  return matcher;
+};
 
-export const nightlyRangeVersionMatcherFactory = (version: string): VersionMatcher => {
-  const range =  `${semver.validRange(`^${version}-0`)}-0`
+export const canaryRangeVersionMatcherFactory = (
+  version: string
+): VersionMatcher => {
+  const range = semver.validRange(`^${version}`);
+  const matcher = (potential: string): boolean =>
+    semver.satisfies(potential.replace('-v8-canary', '+v8-canary.'), range);
+  matcher.factory = canaryRangeVersionMatcherFactory;
+  return matcher;
+};
+
+export const canaryExactVersionMatcherFactory = (
+  version: string,
+  timestamp: string
+): VersionMatcher => {
+  const range = `${version}-${timestamp}`;
+  const matcher = (potential: string): boolean =>
+    semver.satisfies(potential, range);
+  matcher.factory = canaryExactVersionMatcherFactory;
+  return matcher;
+};
+
+export const nightlyRangeVersionMatcherFactory = (
+  version: string
+): VersionMatcher => {
+  const range = `${semver.validRange(`^${version}-0`)}-0`;
   const matcher = (potential: string): boolean =>
     distributionOf(potential) === Distributions.NIGHTLY &&
-    semver.satisfies(potential.replace('-nightly', '-nightly.'), range, {includePrerelease: true})
-  matcher.factory = nightlyRangeVersionMatcherFactory
-  return matcher
-}
+    semver.satisfies(potential.replace('-nightly', '-nightly.'), range, {
+      includePrerelease: true
+    });
+  matcher.factory = nightlyRangeVersionMatcherFactory;
+  return matcher;
+};
 
-export const nightlyExactVersionMatcherFactory = (version: string, prerelease_tag: string): VersionMatcher => {
+export const nightlyExactVersionMatcherFactory = (
+  version: string,
+  prerelease_tag: string
+): VersionMatcher => {
   const range = `${version}-${prerelease_tag.replace('nightly', 'nightly.')}`;
   const matcher = (potential: string): boolean =>
     distributionOf(potential) === Distributions.NIGHTLY &&
-    semver.satisfies(potential.replace('-nightly', '-nightly.'), range, {includePrerelease: true})
-  matcher.factory = nightlyExactVersionMatcherFactory
-  return matcher
-}
+    semver.satisfies(potential.replace('-nightly', '-nightly.'), range, {
+      includePrerelease: true
+    });
+  matcher.factory = nightlyExactVersionMatcherFactory;
+  return matcher;
+};
 
 const alwaysFalseVersionMatcherFactory = (): VersionMatcher => {
   const matcher = () => false;
-  matcher.factory = alwaysFalseVersionMatcherFactory
-  return matcher
-}
+  matcher.factory = alwaysFalseVersionMatcherFactory;
+  return matcher;
+};
 
-const alwaysFalseVersionMatcher = alwaysFalseVersionMatcherFactory()
+const alwaysFalseVersionMatcher = alwaysFalseVersionMatcherFactory();
 
 // [raw, prerelease]
-export const splitVersionSpec = (versionSpec: string): string[] => versionSpec.split(/-(.*)/s);
+export const splitVersionSpec = (versionSpec: string): string[] =>
+  versionSpec.split(/-(.*)/s);
 
 export function versionMatcherFactory(versionSpec: string): VersionMatcher {
-  const [raw, prerelease] = splitVersionSpec(versionSpec)
+  const [raw, prerelease] = splitVersionSpec(versionSpec);
   const validVersion = semver.valid(raw) ? raw : semver.coerce(raw)?.version;
 
   if (validVersion) {
     switch (distributionOf(versionSpec)) {
       case Distributions.CANARY:
-        return (prerelease === 'v8-canary') // this means versionSpec does not have timestamp
+        return prerelease === 'v8-canary' // this means versionSpec does not have timestamp
           ? canaryRangeVersionMatcherFactory(validVersion)
-          : canaryExactVersionMatcherFactory(validVersion, prerelease)
+          : canaryExactVersionMatcherFactory(validVersion, prerelease);
       case Distributions.NIGHTLY:
-        return (prerelease === 'nightly') // this means versionSpec does not have prerelease tag
-            ? nightlyRangeVersionMatcherFactory(validVersion)
-            : nightlyExactVersionMatcherFactory(validVersion, prerelease)
+        return prerelease === 'nightly' // this means versionSpec does not have prerelease tag
+          ? nightlyRangeVersionMatcherFactory(validVersion)
+          : nightlyExactVersionMatcherFactory(validVersion, prerelease);
       case Distributions.RC:
       case Distributions.DEFAULT:
-        return semverVersionMatcherFactory(versionSpec)
+        return semverVersionMatcherFactory(versionSpec);
     }
   } else {
     // TODO: i prefer to have implicit exception for the malformed input
-    throw Error(`Invalid version input "${versionSpec}"`)
+    throw Error(`Invalid version input "${versionSpec}"`);
 
     // TODO: but it is possible to silently fail
     //  return alwaysFalseVersionMatcher
@@ -149,7 +167,7 @@ export async function getNode(
   let nodeVersions: INodeVersion[] | undefined;
   const osPlat: string = os.platform();
   const osArch: string = translateArchToDistUrl(arch);
-  const distribution = distributionOf(versionSpec)
+  const distribution = distributionOf(versionSpec);
 
   if (isLtsAlias(versionSpec)) {
     core.info('Attempt to resolve LTS alias from manifest...');
@@ -199,7 +217,7 @@ export async function getNode(
   if (distribution === Distributions.DEFAULT) {
     toolPath = tc.find('node', versionSpec, osArch);
   } else {
-    const localVersionPaths = tc.findAllVersions('node', osArch)
+    const localVersionPaths = tc.findAllVersions('node', osArch);
     const localVersion = evaluateVersions(localVersionPaths, versionSpec);
     toolPath = localVersion && tc.find('node', localVersion, osArch);
   }
@@ -363,8 +381,8 @@ export function resolveLtsAliasFromManifest(
     alias === '*'
       ? numbered[numbered.length - 1]
       : n < 0
-        ? numbered[numbered.length - 1 + n]
-        : aliases[alias];
+      ? numbered[numbered.length - 1 + n]
+      : aliases[alias];
 
   if (!release) {
     throw new Error(
@@ -470,11 +488,14 @@ async function resolveVersionFromManifest(
 //      -  the answer from dsame@github.com - we have customized matcher and can not
 //         export `evaluateVersions` from tc. But it would be possible to modify tc to accept
 //         the matcher as an optional parameter to `evaluateVersions`
-export function evaluateVersions(versions: string[], versionSpec: string): string {
+export function evaluateVersions(
+  versions: string[],
+  versionSpec: string
+): string {
   core.debug(`evaluating ${versions.length} versions`);
 
-  const matcher = versionMatcherFactory(versionSpec)
-  const version = versions.sort(semver.rcompare).find(matcher) || ''
+  const matcher = versionMatcherFactory(versionSpec);
+  const version = versions.sort(semver.rcompare).find(matcher) || '';
 
   if (version) {
     core.debug(`matched: ${version}`);

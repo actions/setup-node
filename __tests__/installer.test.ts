@@ -89,8 +89,7 @@ describe('setup-node', () => {
 
     // disable authentication portion for installer tests
     authSpy = jest.spyOn(auth, 'configAuthentication');
-    authSpy.mockImplementation(() => {
-    });
+    authSpy.mockImplementation(() => {});
 
     // gets
     getManifestSpy.mockImplementation(
@@ -1001,15 +1000,17 @@ describe('setup-node', () => {
       'finds the %s version in the hostedToolcache',
       async (input, expectedVersion) => {
         const toolPath = path.normalize(`/cache/node/${expectedVersion}/x64`);
-        findSpy.mockImplementation((_,version)=>path.normalize(`/cache/node/${version}/x64`))
+        findSpy.mockImplementation((_, version) =>
+          path.normalize(`/cache/node/${version}/x64`)
+        );
         findAllVersionsSpy.mockReturnValue([
           '2.2.2-rc.2',
           '1.1.1-rc.1',
           '99.1.1',
           expectedVersion,
           '88.1.1',
-          '3.3.3-rc.3',
-        ])
+          '3.3.3-rc.3'
+        ]);
 
         inputs['node-version'] = input;
         os['arch'] = 'x64';
@@ -1350,15 +1351,17 @@ describe('setup-node', () => {
       os.platform = 'linux';
       os.arch = 'x64';
 
-      const versionExpected = 'v20.0.0-v8-canary20221103f7e2421e91'
-      findAllVersionSpy.mockImplementation(() => [ versionExpected]);
+      const versionExpected = 'v20.0.0-v8-canary20221103f7e2421e91';
+      findAllVersionSpy.mockImplementation(() => [versionExpected]);
 
       let toolPath = path.normalize(`/cache/node/${versionExpected}/x64`);
-      findSpy.mockImplementation((version) => toolPath);
+      findSpy.mockImplementation(version => toolPath);
 
       await main.run();
 
-      expect(cnSpy).toHaveBeenCalledWith(`::add-path::${toolPath}/bin${osm.EOL}`)
+      expect(cnSpy).toHaveBeenCalledWith(
+        `::add-path::${toolPath}/bin${osm.EOL}`
+      );
 
       expect(dlSpy).not.toHaveBeenCalled();
       expect(exSpy).not.toHaveBeenCalled();
