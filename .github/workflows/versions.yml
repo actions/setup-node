@@ -57,7 +57,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
-        node-version: ['20-v8-canary', '20.0-v8-canary', '20.0.0-v8-canary','20.0.0-v8-canary20221103f7e2421e91']
+        node-version: ['20-v8-canary', '20.0.0-v8-canary','20.0.0-v8-canary20221103f7e2421e91']
     steps:
       - uses: actions/checkout@v3
       - name: Setup Node
