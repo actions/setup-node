@@ -73218,93 +73218,80 @@ const semver = __importStar(__nccwpck_require__(5911));
 const fs_1 = __importDefault(__nccwpck_require__(7147));
 var Distributions;
 (function (Distributions) {
-    Distributions["DEFAULT"] = "default";
-    Distributions["CANARY"] = "v8-canary";
-    Distributions["NIGHTLY"] = "nightly";
-    Distributions["RC"] = "rc";
+    Distributions["DEFAULT"] = "";
+    Distributions["CANARY"] = "-v8-canary";
+    Distributions["NIGHTLY"] = "-nightly";
+    Distributions["RC"] = "-rc";
 })(Distributions = exports.Distributions || (exports.Distributions = {}));
 exports.distributionOf = (versionSpec) => {
-    if (versionSpec.includes('-v8-canary'))
+    if (versionSpec.includes(Distributions.CANARY))
         return Distributions.CANARY;
-    if (versionSpec.includes('nightly'))
+    if (versionSpec.includes(Distributions.NIGHTLY))
         return Distributions.NIGHTLY;
     if (semver.prerelease(versionSpec))
         return Distributions.RC;
     return Distributions.DEFAULT;
 };
 exports.semverVersionMatcherFactory = (range) => {
-    const matcher = (potential) => semver.satisfies(potential, range);
+    const matcher = (potential) => {
+        core.debug(`potential is ${potential}`);
+        return semver.satisfies(potential, range);
+    };
+    core.debug(`range is ${range}`);
     matcher.factory = exports.semverVersionMatcherFactory;
     return matcher;
 };
 exports.canaryRangeVersionMatcherFactory = (version) => {
-    const range = semver.validRange(`^${version}`);
-    const matcher = (potential) => semver.satisfies(potential.replace('-v8-canary', '+v8-canary.'), range);
+    const { range, includePrerelease } = createRangePreRelease(version, Distributions.CANARY);
+    const matcher = (potential) => semver.satisfies(potential.replace(Distributions.CANARY, `${Distributions.CANARY}.`), range, { includePrerelease: includePrerelease });
     matcher.factory = exports.canaryRangeVersionMatcherFactory;
     return matcher;
 };
-exports.canaryExactVersionMatcherFactory = (version, timestamp) => {
-    const range = `${version}-${timestamp}`;
-    const matcher = (potential) => semver.satisfies(potential, range);
-    matcher.factory = exports.canaryExactVersionMatcherFactory;
-    return matcher;
-};
 exports.nightlyRangeVersionMatcherFactory = (version) => {
-    const range = semver.validRange(`^${version}`);
-    // TODO: this makes v20.1.1-nightly to do not match v20.1.1-nightly20221103f7e2421e91
-    // const range = `${semver.validRange(`^${version}-0`)}-0`;
+    const { range, includePrerelease } = createRangePreRelease(version, Distributions.NIGHTLY);
     const matcher = (potential) => exports.distributionOf(potential) === Distributions.NIGHTLY &&
-        // TODO: dmitry's variant was potential.replace('-nightly', '-nightly.') that made
-        //       all unit tests to fail
-        semver.satisfies(potential.replace('-nightly', '+nightly.'), range /*, {
-        // TODO: what is for?
-        includePrerelease: true
-      }*/);
+        semver.satisfies(potential.replace(Distributions.NIGHTLY, `${Distributions.NIGHTLY}.`), range, { includePrerelease: includePrerelease });
     matcher.factory = exports.nightlyRangeVersionMatcherFactory;
     return matcher;
 };
-exports.nightlyExactVersionMatcherFactory = (version, timestamp) => {
-    const range = `${version}-${timestamp.replace('nightly', 'nightly.')}`;
-    const matcher = (potential) => exports.distributionOf(potential) === Distributions.NIGHTLY &&
-        semver.satisfies(potential.replace('-nightly', '-nightly.'), range /*, {
-        // TODO: what is for?
-        includePrerelease: true
-      }*/);
-    matcher.factory = exports.nightlyExactVersionMatcherFactory;
-    return matcher;
-};
-const alwaysFalseVersionMatcherFactory = () => {
-    const matcher = () => false;
-    matcher.factory = alwaysFalseVersionMatcherFactory;
-    return matcher;
-};
-const alwaysFalseVersionMatcher = alwaysFalseVersionMatcherFactory();
 // [raw, prerelease]
 exports.splitVersionSpec = (versionSpec) => versionSpec.split(/-(.*)/s);
+const createRangePreRelease = (versionSpec, preRelease = '') => {
+    let range;
+    const [raw, prerelease] = exports.splitVersionSpec(versionSpec);
+    const isValidVersion = semver.valid(raw);
+    const rawVersion = isValidVersion ? raw : semver.coerce(raw);
+    if (rawVersion) {
+        if (`-${prerelease}` !== preRelease) {
+            core.debug(`came to full version ${preRelease}`);
+            range = `${rawVersion}${`-${prerelease}`.replace(preRelease, `${preRelease}.`)}`;
+        }
+        else {
+            core.debug('came to range version');
+            range = `${semver.validRange(`^${rawVersion}${preRelease}`)}-0`;
+        }
+    }
+    core.debug(`prerelease is ${prerelease}, preRelease is ${preRelease}`);
+    core.debug(`Version Range for ${versionSpec} is ${range}`);
+    return { range, includePrerelease: !isValidVersion };
+};
 function versionMatcherFactory(versionSpec) {
     var _a;
-    const [raw, prerelease] = exports.splitVersionSpec(versionSpec);
+    const raw = exports.splitVersionSpec(versionSpec)[0];
     const validVersion = semver.valid(raw) ? raw : (_a = semver.coerce(raw)) === null || _a === void 0 ? void 0 : _a.version;
     if (validVersion) {
         switch (exports.distributionOf(versionSpec)) {
             case Distributions.CANARY:
-                return prerelease === 'v8-canary' // this means versionSpec does not have timestamp
-                    ? exports.canaryRangeVersionMatcherFactory(validVersion)
-                    : exports.canaryExactVersionMatcherFactory(validVersion, prerelease);
+                return exports.canaryRangeVersionMatcherFactory(versionSpec);
             case Distributions.NIGHTLY:
-                return prerelease === 'nightly' // this means versionSpec does not have prerelease tag
-                    ? exports.nightlyRangeVersionMatcherFactory(validVersion)
-                    : exports.nightlyExactVersionMatcherFactory(validVersion, prerelease);
+                return exports.nightlyRangeVersionMatcherFactory(versionSpec);
             case Distributions.RC:
             case Distributions.DEFAULT:
                 return exports.semverVersionMatcherFactory(versionSpec);
         }
     }
     else {
-        // TODO: i prefer to have implicit exception for the malformed input
         throw Error(`Invalid version input "${versionSpec}"`);
-        // TODO: but it is possible to silently fail
-        //  return alwaysFalseVersionMatcher
     }
 }
 exports.versionMatcherFactory = versionMatcherFactory;
