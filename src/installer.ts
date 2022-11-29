@@ -56,43 +56,42 @@ interface VersionMatcher {
 }
 
 export const semverVersionMatcherFactory = (range: string): VersionMatcher => {
-  const matcher = (potential: string): boolean =>{
-    core.debug(`potential is ${potential}`)
-    return semver.satisfies(potential, range);
-  }
-  core.debug(`range is ${range}`);
+  const matcher = (potential: string): boolean =>
+    semver.satisfies(potential, range);
+
   matcher.factory = semverVersionMatcherFactory;
   return matcher;
 };
 
-export const canaryRangeVersionMatcherFactory = (
-  version: string
-): VersionMatcher => {
-  const {range, includePrerelease} = createRangePreRelease(
-    version,
-    Distributions.CANARY
-  )!;
-  const matcher = (potential: string): boolean =>
-    semver.satisfies(
-      potential.replace(Distributions.CANARY, `${Distributions.CANARY}.`),
-      range!,
-      {includePrerelease: includePrerelease}
-    );
-  matcher.factory = canaryRangeVersionMatcherFactory;
-  return matcher;
-};
+// export const canaryRangeVersionMatcherFactory = (
+//   version: string
+// ): VersionMatcher => {
+//   const {range, includePrerelease} = createRangePreRelease(
+//     version,
+//     Distributions.CANARY
+//   )!;
+//   const matcher = (potential: string): boolean =>
+//     semver.satisfies(
+//       potential.replace(Distributions.CANARY, `${Distributions.CANARY}.`),
+//       range!,
+//       {includePrerelease: includePrerelease}
+//     );
+//   matcher.factory = canaryRangeVersionMatcherFactory;
+//   return matcher;
+// };
 
 export const nightlyRangeVersionMatcherFactory = (
-  version: string
+  version: string,
+  distribution: string
 ): VersionMatcher => {
   const {range, includePrerelease} = createRangePreRelease(
     version,
-    Distributions.NIGHTLY
+    distribution
   )!;
   const matcher = (potential: string): boolean =>
-    distributionOf(potential) === Distributions.NIGHTLY &&
+    distributionOf(potential) === distribution &&
     semver.satisfies(
-      potential.replace(Distributions.NIGHTLY, `${Distributions.NIGHTLY}.`),
+      potential.replace(distribution, `${distribution}.`),
       range!,
       {includePrerelease: includePrerelease}
     );
@@ -100,7 +99,6 @@ export const nightlyRangeVersionMatcherFactory = (
   return matcher;
 };
 
-// [raw, prerelease]
 export const splitVersionSpec = (versionSpec: string): string[] =>
   versionSpec.split(/-(.*)/s);
 
@@ -115,18 +113,14 @@ const createRangePreRelease = (
 
   if (rawVersion) {
     if (`-${prerelease}` !== preRelease) {
-      core.debug(`came to full version ${preRelease}`);
       range = `${rawVersion}${`-${prerelease}`.replace(
         preRelease,
         `${preRelease}.`
       )}`;
     } else {
-      core.debug('came to range version');
       range = `${semver.validRange(`^${rawVersion}${preRelease}`)}-0`;
     }
   }
-  core.debug(`prerelease is ${prerelease}, preRelease is ${preRelease}`);
-  core.debug(`Version Range for ${versionSpec} is ${range}`);
 
   return {range, includePrerelease: !isValidVersion};
 };
@@ -138,9 +132,16 @@ export function versionMatcherFactory(versionSpec: string): VersionMatcher {
   if (validVersion) {
     switch (distributionOf(versionSpec)) {
       case Distributions.CANARY:
-        return canaryRangeVersionMatcherFactory(versionSpec);
       case Distributions.NIGHTLY:
-        return nightlyRangeVersionMatcherFactory(versionSpec);
+        return nightlyRangeVersionMatcherFactory(
+          versionSpec,
+          Distributions.CANARY
+        );
+      case Distributions.NIGHTLY:
+        return nightlyRangeVersionMatcherFactory(
+          versionSpec,
+          Distributions.NIGHTLY
+        );
       case Distributions.RC:
       case Distributions.DEFAULT:
         return semverVersionMatcherFactory(versionSpec);

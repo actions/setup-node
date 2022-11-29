@@ -73233,28 +73233,33 @@ exports.distributionOf = (versionSpec) => {
     return Distributions.DEFAULT;
 };
 exports.semverVersionMatcherFactory = (range) => {
-    const matcher = (potential) => {
-        core.debug(`potential is ${potential}`);
-        return semver.satisfies(potential, range);
-    };
-    core.debug(`range is ${range}`);
+    const matcher = (potential) => semver.satisfies(potential, range);
     matcher.factory = exports.semverVersionMatcherFactory;
     return matcher;
 };
-exports.canaryRangeVersionMatcherFactory = (version) => {
-    const { range, includePrerelease } = createRangePreRelease(version, Distributions.CANARY);
-    const matcher = (potential) => semver.satisfies(potential.replace(Distributions.CANARY, `${Distributions.CANARY}.`), range, { includePrerelease: includePrerelease });
-    matcher.factory = exports.canaryRangeVersionMatcherFactory;
-    return matcher;
-};
-exports.nightlyRangeVersionMatcherFactory = (version) => {
-    const { range, includePrerelease } = createRangePreRelease(version, Distributions.NIGHTLY);
-    const matcher = (potential) => exports.distributionOf(potential) === Distributions.NIGHTLY &&
-        semver.satisfies(potential.replace(Distributions.NIGHTLY, `${Distributions.NIGHTLY}.`), range, { includePrerelease: includePrerelease });
+// export const canaryRangeVersionMatcherFactory = (
+//   version: string
+// ): VersionMatcher => {
+//   const {range, includePrerelease} = createRangePreRelease(
+//     version,
+//     Distributions.CANARY
+//   )!;
+//   const matcher = (potential: string): boolean =>
+//     semver.satisfies(
+//       potential.replace(Distributions.CANARY, `${Distributions.CANARY}.`),
+//       range!,
+//       {includePrerelease: includePrerelease}
+//     );
+//   matcher.factory = canaryRangeVersionMatcherFactory;
+//   return matcher;
+// };
+exports.nightlyRangeVersionMatcherFactory = (version, distribution) => {
+    const { range, includePrerelease } = createRangePreRelease(version, distribution);
+    const matcher = (potential) => exports.distributionOf(potential) === distribution &&
+        semver.satisfies(potential.replace(distribution, `${distribution}.`), range, { includePrerelease: includePrerelease });
     matcher.factory = exports.nightlyRangeVersionMatcherFactory;
     return matcher;
 };
-// [raw, prerelease]
 exports.splitVersionSpec = (versionSpec) => versionSpec.split(/-(.*)/s);
 const createRangePreRelease = (versionSpec, preRelease = '') => {
     let range;
@@ -73263,16 +73268,12 @@ const createRangePreRelease = (versionSpec, preRelease = '') => {
     const rawVersion = isValidVersion ? raw : semver.coerce(raw);
     if (rawVersion) {
         if (`-${prerelease}` !== preRelease) {
-            core.debug(`came to full version ${preRelease}`);
             range = `${rawVersion}${`-${prerelease}`.replace(preRelease, `${preRelease}.`)}`;
         }
         else {
-            core.debug('came to range version');
             range = `${semver.validRange(`^${rawVersion}${preRelease}`)}-0`;
         }
     }
-    core.debug(`prerelease is ${prerelease}, preRelease is ${preRelease}`);
-    core.debug(`Version Range for ${versionSpec} is ${range}`);
     return { range, includePrerelease: !isValidVersion };
 };
 function versionMatcherFactory(versionSpec) {
@@ -73282,9 +73283,10 @@ function versionMatcherFactory(versionSpec) {
     if (validVersion) {
         switch (exports.distributionOf(versionSpec)) {
             case Distributions.CANARY:
-                return exports.canaryRangeVersionMatcherFactory(versionSpec);
             case Distributions.NIGHTLY:
-                return exports.nightlyRangeVersionMatcherFactory(versionSpec);
+                return exports.nightlyRangeVersionMatcherFactory(versionSpec, Distributions.CANARY);
+            case Distributions.NIGHTLY:
+                return exports.nightlyRangeVersionMatcherFactory(versionSpec, Distributions.NIGHTLY);
             case Distributions.RC:
             case Distributions.DEFAULT:
                 return exports.semverVersionMatcherFactory(versionSpec);
