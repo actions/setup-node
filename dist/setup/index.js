@@ -73237,27 +73237,11 @@ exports.semverVersionMatcherFactory = (range) => {
     matcher.factory = exports.semverVersionMatcherFactory;
     return matcher;
 };
-// export const canaryRangeVersionMatcherFactory = (
-//   version: string
-// ): VersionMatcher => {
-//   const {range, includePrerelease} = createRangePreRelease(
-//     version,
-//     Distributions.CANARY
-//   )!;
-//   const matcher = (potential: string): boolean =>
-//     semver.satisfies(
-//       potential.replace(Distributions.CANARY, `${Distributions.CANARY}.`),
-//       range!,
-//       {includePrerelease: includePrerelease}
-//     );
-//   matcher.factory = canaryRangeVersionMatcherFactory;
-//   return matcher;
-// };
-exports.nightlyRangeVersionMatcherFactory = (version, distribution) => {
+exports.nightlyV8MatcherFactory = (version, distribution) => {
     const { range, includePrerelease } = createRangePreRelease(version, distribution);
     const matcher = (potential) => exports.distributionOf(potential) === distribution &&
         semver.satisfies(potential.replace(distribution, `${distribution}.`), range, { includePrerelease: includePrerelease });
-    matcher.factory = exports.nightlyRangeVersionMatcherFactory;
+    matcher.factory = exports.nightlyV8MatcherFactory;
     return matcher;
 };
 exports.splitVersionSpec = (versionSpec) => versionSpec.split(/-(.*)/s);
@@ -73283,9 +73267,9 @@ function versionMatcherFactory(versionSpec) {
     if (validVersion) {
         switch (exports.distributionOf(versionSpec)) {
             case Distributions.CANARY:
-                return exports.nightlyRangeVersionMatcherFactory(versionSpec, Distributions.CANARY);
+                return exports.nightlyV8MatcherFactory(versionSpec, Distributions.CANARY);
             case Distributions.NIGHTLY:
-                return exports.nightlyRangeVersionMatcherFactory(versionSpec, Distributions.NIGHTLY);
+                return exports.nightlyV8MatcherFactory(versionSpec, Distributions.NIGHTLY);
             case Distributions.RC:
             case Distributions.DEFAULT:
                 return exports.semverVersionMatcherFactory(versionSpec);

@@ -63,24 +63,7 @@ export const semverVersionMatcherFactory = (range: string): VersionMatcher => {
   return matcher;
 };
 
-// export const canaryRangeVersionMatcherFactory = (
-//   version: string
-// ): VersionMatcher => {
-//   const {range, includePrerelease} = createRangePreRelease(
-//     version,
-//     Distributions.CANARY
-//   )!;
-//   const matcher = (potential: string): boolean =>
-//     semver.satisfies(
-//       potential.replace(Distributions.CANARY, `${Distributions.CANARY}.`),
-//       range!,
-//       {includePrerelease: includePrerelease}
-//     );
-//   matcher.factory = canaryRangeVersionMatcherFactory;
-//   return matcher;
-// };
-
-export const nightlyRangeVersionMatcherFactory = (
+export const nightlyV8MatcherFactory = (
   version: string,
   distribution: string
 ): VersionMatcher => {
@@ -95,7 +78,7 @@ export const nightlyRangeVersionMatcherFactory = (
       range!,
       {includePrerelease: includePrerelease}
     );
-  matcher.factory = nightlyRangeVersionMatcherFactory;
+  matcher.factory = nightlyV8MatcherFactory;
   return matcher;
 };
 
@@ -132,12 +115,12 @@ export function versionMatcherFactory(versionSpec: string): VersionMatcher {
   if (validVersion) {
     switch (distributionOf(versionSpec)) {
       case Distributions.CANARY:
-        return nightlyRangeVersionMatcherFactory(
+        return nightlyV8MatcherFactory(
           versionSpec,
           Distributions.CANARY
         );
       case Distributions.NIGHTLY:
-        return nightlyRangeVersionMatcherFactory(
+        return nightlyV8MatcherFactory(
           versionSpec,
           Distributions.NIGHTLY
         );
