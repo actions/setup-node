@@ -132,7 +132,6 @@ export function versionMatcherFactory(versionSpec: string): VersionMatcher {
   if (validVersion) {
     switch (distributionOf(versionSpec)) {
       case Distributions.CANARY:
-      case Distributions.NIGHTLY:
         return nightlyRangeVersionMatcherFactory(
           versionSpec,
           Distributions.CANARY
