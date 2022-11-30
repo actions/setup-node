@@ -73245,18 +73245,16 @@ exports.nightlyV8MatcherFactory = (version, distribution) => {
     return matcher;
 };
 exports.splitVersionSpec = (versionSpec) => versionSpec.split(/-(.*)/s);
-const createRangePreRelease = (versionSpec, preRelease = '') => {
+const createRangePreRelease = (versionSpec, distribution = '') => {
     let range;
     const [raw, prerelease] = exports.splitVersionSpec(versionSpec);
     const isValidVersion = semver.valid(raw);
-    const rawVersion = isValidVersion ? raw : semver.coerce(raw);
-    if (rawVersion) {
-        if (`-${prerelease}` !== preRelease) {
-            range = `${rawVersion}${`-${prerelease}`.replace(preRelease, `${preRelease}.`)}`;
-        }
-        else {
-            range = `${semver.validRange(`^${rawVersion}${preRelease}`)}-0`;
-        }
+    const rawVersion = (isValidVersion ? raw : semver.coerce(raw));
+    if (`-${prerelease}` !== distribution) {
+        range = `${rawVersion}${`-${prerelease}`.replace(distribution, `${distribution}.`)}`;
+    }
+    else {
+        range = `${semver.validRange(`^${rawVersion}${distribution}`)}-0`;
     }
     return { range, includePrerelease: !isValidVersion };
 };
@@ -73264,12 +73262,12 @@ function versionMatcherFactory(versionSpec) {
     var _a;
     const raw = exports.splitVersionSpec(versionSpec)[0];
     const validVersion = semver.valid(raw) ? raw : (_a = semver.coerce(raw)) === null || _a === void 0 ? void 0 : _a.version;
+    const distribution = exports.distributionOf(versionSpec);
     if (validVersion) {
-        switch (exports.distributionOf(versionSpec)) {
+        switch (distribution) {
             case Distributions.CANARY:
-                return exports.nightlyV8MatcherFactory(versionSpec, Distributions.CANARY);
             case Distributions.NIGHTLY:
-                return exports.nightlyV8MatcherFactory(versionSpec, Distributions.NIGHTLY);
+                return exports.nightlyV8MatcherFactory(versionSpec, distribution);
             case Distributions.RC:
             case Distributions.DEFAULT:
                 return exports.semverVersionMatcherFactory(versionSpec);

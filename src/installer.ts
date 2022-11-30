@@ -87,22 +87,20 @@ export const splitVersionSpec = (versionSpec: string): string[] =>
 
 const createRangePreRelease = (
   versionSpec: string,
-  preRelease: string = ''
+  distribution: string = ''
 ) => {
   let range: string | undefined;
   const [raw, prerelease] = splitVersionSpec(versionSpec);
   const isValidVersion = semver.valid(raw);
-  const rawVersion = isValidVersion ? raw : semver.coerce(raw);
+  const rawVersion = (isValidVersion ? raw : semver.coerce(raw))!;
 
-  if (rawVersion) {
-    if (`-${prerelease}` !== preRelease) {
-      range = `${rawVersion}${`-${prerelease}`.replace(
-        preRelease,
-        `${preRelease}.`
-      )}`;
-    } else {
-      range = `${semver.validRange(`^${rawVersion}${preRelease}`)}-0`;
-    }
+  if (`-${prerelease}` !== distribution) {
+    range = `${rawVersion}${`-${prerelease}`.replace(
+      distribution,
+      `${distribution}.`
+    )}`;
+  } else {
+    range = `${semver.validRange(`^${rawVersion}${distribution}`)}-0`;
   }
 
   return {range, includePrerelease: !isValidVersion};
@@ -111,19 +109,13 @@ const createRangePreRelease = (
 export function versionMatcherFactory(versionSpec: string): VersionMatcher {
   const raw = splitVersionSpec(versionSpec)[0];
   const validVersion = semver.valid(raw) ? raw : semver.coerce(raw)?.version;
+  const distribution = distributionOf(versionSpec);
 
   if (validVersion) {
-    switch (distributionOf(versionSpec)) {
+    switch (distribution) {
       case Distributions.CANARY:
-        return nightlyV8MatcherFactory(
-          versionSpec,
-          Distributions.CANARY
-        );
       case Distributions.NIGHTLY:
-        return nightlyV8MatcherFactory(
-          versionSpec,
-          Distributions.NIGHTLY
-        );
+        return nightlyV8MatcherFactory(versionSpec, distribution);      
       case Distributions.RC:
       case Distributions.DEFAULT:
         return semverVersionMatcherFactory(versionSpec);
