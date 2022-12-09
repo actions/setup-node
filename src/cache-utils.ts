@@ -107,10 +107,12 @@ export function isGhes(): boolean {
 export function isCacheFeatureAvailable(): boolean {
   if (cache.isFeatureAvailable()) return true;
 
-  if (isGhes())
-    throw new Error(
+  if (isGhes()) {
+    core.warning(
       'Cache action is only supported on GHES version >= 3.5. If you are on version >=3.5 Please check with GHES admin if Actions cache service is enabled or not.'
     );
+    return false;
+  }
 
   core.warning(
     'The runner was not able to contact the cache service. Caching will be skipped'
