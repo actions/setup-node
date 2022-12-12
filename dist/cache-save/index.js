@@ -61185,16 +61185,14 @@ function isGhes() {
 }
 exports.isGhes = isGhes;
 function isCacheFeatureAvailable() {
-    if (!cache.isFeatureAvailable()) {
-        if (isGhes()) {
-            throw new Error('Cache action is only supported on GHES version >= 3.5. If you are on version >=3.5 Please check with GHES admin if Actions cache service is enabled or not.');
-        }
-        else {
-            core.warning('The runner was not able to contact the cache service. Caching will be skipped');
-        }
+    if (cache.isFeatureAvailable())
+        return true;
+    if (isGhes()) {
+        core.warning('Cache action is only supported on GHES version >= 3.5. If you are on version >=3.5 Please check with GHES admin if Actions cache service is enabled or not.');
         return false;
     }
-    return true;
+    core.warning('The runner was not able to contact the cache service. Caching will be skipped');
+    return false;
 }
 exports.isCacheFeatureAvailable = isCacheFeatureAvailable;
 
