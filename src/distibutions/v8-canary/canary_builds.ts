@@ -12,6 +12,7 @@ export default class CanaryBuild extends BaseDistribution {
   }
 
   protected findVersionInHoostedToolCacheDirectory(): string {
+    let toolPath = '';
     const localVersionPaths = tc
       .findAllVersions('node', this.nodeInfo.arch)
       .filter(i => {
@@ -24,7 +25,9 @@ export default class CanaryBuild extends BaseDistribution {
       });
 
     const localVersion = this.evaluateVersions(localVersionPaths);
-    const toolPath = tc.find('node', localVersion, this.nodeInfo.arch);
+    if (localVersion) {
+      toolPath = tc.find('node', localVersion, this.nodeInfo.arch);
+    }
 
     return toolPath;
   }

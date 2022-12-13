@@ -73483,6 +73483,7 @@ class NightlyNodejs extends base_distribution_1.default {
         super(nodeInfo);
     }
     findVersionInHoostedToolCacheDirectory() {
+        let toolPath = '';
         const localVersionPaths = tc
             .findAllVersions('node', this.nodeInfo.arch)
             .filter(i => {
@@ -73493,7 +73494,9 @@ class NightlyNodejs extends base_distribution_1.default {
             return prerelease[0].includes('nightly');
         });
         const localVersion = this.evaluateVersions(localVersionPaths);
-        const toolPath = tc.find('node', localVersion, this.nodeInfo.arch);
+        if (localVersion) {
+            toolPath = tc.find('node', localVersion, this.nodeInfo.arch);
+        }
         return toolPath;
     }
     evaluateVersions(versions) {
@@ -73833,6 +73836,7 @@ class CanaryBuild extends base_distribution_1.default {
         super(nodeInfo);
     }
     findVersionInHoostedToolCacheDirectory() {
+        let toolPath = '';
         const localVersionPaths = tc
             .findAllVersions('node', this.nodeInfo.arch)
             .filter(i => {
@@ -73843,7 +73847,9 @@ class CanaryBuild extends base_distribution_1.default {
             return prerelease[0].includes('v8-canary');
         });
         const localVersion = this.evaluateVersions(localVersionPaths);
-        const toolPath = tc.find('node', localVersion, this.nodeInfo.arch);
+        if (localVersion) {
+            toolPath = tc.find('node', localVersion, this.nodeInfo.arch);
+        }
         return toolPath;
     }
     getDistributionUrl() {
