@@ -1,4 +1,5 @@
 import * as core from '@actions/core';
+import * as tc from '@actions/tool-cache';
 
 import semver from 'semver';
 
@@ -10,15 +11,22 @@ export default class NightlyNodejs extends BaseDistribution {
     super(nodeInfo);
   }
 
-  protected evaluateVersions(nodeVersions: INodeVersion[]): string {
+  protected findVersionInHoostedToolCacheDirectory(): string {
+    const localVersionPaths = tc.findAllVersions('node', this.nodeInfo.arch);
+    const localVersion = this.evaluateVersions(localVersionPaths);
+    const toolPath = tc.find('node', localVersion, this.nodeInfo.arch);
+
+    return toolPath;
+  }
+
+  protected evaluateVersions(versions: string[]): string {
     let version = '';
-    const versions = this.filterVersions(nodeVersions);
 
     core.debug(`evaluating ${versions.length} versions`);
 
     const {includePrerelease, range} = this.createRangePreRelease(
       this.nodeInfo.versionSpec,
-      '-nightly'
+      'nightly'
     );
 
     for (let i = 0; i < versions.length; i++) {
@@ -57,25 +65,28 @@ export default class NightlyNodejs extends BaseDistribution {
     return response.result || [];
   }
 
-  createRangePreRelease(versionSpec: string, distribution: string = '') {
-    let range: string | undefined;
+  protected createRangePreRelease(
+    versionSpec: string,
+    distribution: string = ''
+  ) {
+    let range: string;
     const [raw, prerelease] = this.splitVersionSpec(versionSpec);
     const isValidVersion = semver.valid(raw);
     const rawVersion = (isValidVersion ? raw : semver.coerce(raw))!;
 
-    if (`-${prerelease}` !== distribution) {
-      range = `${rawVersion}${`-${prerelease}`.replace(
+    if (prerelease !== distribution) {
+      range = `${rawVersion}-${prerelease.replace(
         distribution,
         `${distribution}.`
       )}`;
     } else {
-      range = `${semver.validRange(`^${rawVersion}${distribution}`)}-0`;
+      range = `${semver.validRange(`^${rawVersion}-${distribution}`)}-0`;
     }
 
     return {range, includePrerelease: !isValidVersion};
   }
 
-  splitVersionSpec(versionSpec: string) {
+  protected splitVersionSpec(versionSpec: string) {
     return versionSpec.split(/-(.*)/s);
   }
 }

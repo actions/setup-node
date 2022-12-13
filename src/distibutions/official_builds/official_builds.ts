@@ -17,48 +17,6 @@ export default class OfficialBuilds extends BaseDistribution {
     super(nodeInfo);
   }
 
-  protected async queryDistForMatch(
-    versionSpec: string,
-    arch: string = os.arch(),
-    nodeVersions: INodeVersion[]
-  ): Promise<string> {
-    let osPlat: string = os.platform();
-    let osArch: string = this.translateArchToDistUrl(arch);
-
-    // node offers a json list of versions
-    let dataFileName: string;
-    switch (osPlat) {
-      case 'linux':
-        dataFileName = `linux-${osArch}`;
-        break;
-      case 'darwin':
-        dataFileName = `osx-${osArch}-tar`;
-        break;
-      case 'win32':
-        dataFileName = `win-${osArch}-exe`;
-        break;
-      default:
-        throw new Error(`Unexpected OS '${osPlat}'`);
-    }
-
-    if (this.isLatestSyntax(versionSpec)) {
-      core.info(`getting latest node version...`);
-      return nodeVersions[0].version;
-    }
-
-    const versions: string[] = [];
-    nodeVersions.forEach((nodeVersion: INodeVersion) => {
-      // ensure this version supports your os and platform
-      if (nodeVersion.files.indexOf(dataFileName) >= 0) {
-        versions.push(nodeVersion.version);
-      }
-    });
-
-    // get the latest version that matches the version spec
-    const version = this.evaluateVersions(nodeVersions);
-    return version;
-  }
-
   public async getNodeJsInfo() {
     let manifest: tc.IToolRelease[] = [];
     let nodeVersions: INodeVersion[] = [];
@@ -77,11 +35,9 @@ export default class OfficialBuilds extends BaseDistribution {
 
     if (this.isLatestSyntax(this.nodeInfo.versionSpec)) {
       nodeVersions = await this.getNodejsVersions();
-      this.nodeInfo.versionSpec = await this.queryDistForMatch(
-        this.nodeInfo.versionSpec,
-        this.nodeInfo.arch,
-        nodeVersions
-      );
+      const versions = this.filterVersions(nodeVersions);
+      this.nodeInfo.versionSpec = this.evaluateVersions(versions);
+
       core.info(`getting latest node version...`);
     }
 
@@ -126,7 +82,8 @@ export default class OfficialBuilds extends BaseDistribution {
         core.info('Falling back to download directly from Node');
       }
 
-      const versions = await this.getNodejsVersions();
+      const nodeVersions = await this.getNodejsVersions();
+      const versions = this.filterVersions(nodeVersions);
       const evaluatedVersion = this.evaluateVersions(versions);
       const toolName = this.getNodejsDistInfo(evaluatedVersion, this.osPlat);
       toolPath = await this.downloadNodejs(toolName);
@@ -139,9 +96,8 @@ export default class OfficialBuilds extends BaseDistribution {
     core.addPath(toolPath);
   }
 
-  protected evaluateVersions(nodeVersions: INodeVersion[]): string {
+  protected evaluateVersions(versions: string[]): string {
     let version = '';
-    const versions = this.filterVersions(nodeVersions);
 
     if (this.isLatestSyntax(this.nodeInfo.versionSpec)) {
       core.info(`getting latest node version...`);

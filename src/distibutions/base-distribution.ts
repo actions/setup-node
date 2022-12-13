@@ -25,12 +25,13 @@ export default abstract class BaseDistribution {
 
   protected abstract getDistributionUrl(): string;
   protected abstract getNodejsVersions(): Promise<INodeVersion[]>;
-  protected abstract evaluateVersions(nodeVersions: INodeVersion[]): string;
+  protected abstract evaluateVersions(nodeVersions: string[]): string;
 
   public async getNodeJsInfo() {
     let toolPath = this.findVersionInHoostedToolCacheDirectory();
     if (!toolPath) {
-      const versions = await this.getNodejsVersions();
+      const nodeVersions = await this.getNodejsVersions();
+      const versions = this.filterVersions(nodeVersions);
       const evaluatedVersion = this.evaluateVersions(versions);
       const toolName = this.getNodejsDistInfo(evaluatedVersion, this.osPlat);
       toolPath = await this.downloadNodejs(toolName);

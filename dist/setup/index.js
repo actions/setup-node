@@ -73229,7 +73229,8 @@ class BaseDistribution {
         return __awaiter(this, void 0, void 0, function* () {
             let toolPath = this.findVersionInHoostedToolCacheDirectory();
             if (!toolPath) {
-                const versions = yield this.getNodejsVersions();
+                const nodeVersions = yield this.getNodejsVersions();
+                const versions = this.filterVersions(nodeVersions);
                 const evaluatedVersion = this.evaluateVersions(versions);
                 const toolName = this.getNodejsDistInfo(evaluatedVersion, this.osPlat);
                 toolPath = yield this.downloadNodejs(toolName);
@@ -73474,17 +73475,23 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 const core = __importStar(__nccwpck_require__(2186));
+const tc = __importStar(__nccwpck_require__(7784));
 const semver_1 = __importDefault(__nccwpck_require__(5911));
 const base_distribution_1 = __importDefault(__nccwpck_require__(8653));
 class NightlyNodejs extends base_distribution_1.default {
     constructor(nodeInfo) {
         super(nodeInfo);
     }
-    evaluateVersions(nodeVersions) {
+    findVersionInHoostedToolCacheDirectory() {
+        const localVersionPaths = tc.findAllVersions('node', this.nodeInfo.arch);
+        const localVersion = this.evaluateVersions(localVersionPaths);
+        const toolPath = tc.find('node', localVersion, this.nodeInfo.arch);
+        return toolPath;
+    }
+    evaluateVersions(versions) {
         let version = '';
-        const versions = this.filterVersions(nodeVersions);
         core.debug(`evaluating ${versions.length} versions`);
-        const { includePrerelease, range } = this.createRangePreRelease(this.nodeInfo.versionSpec, '-nightly');
+        const { includePrerelease, range } = this.createRangePreRelease(this.nodeInfo.versionSpec, 'nightly');
         for (let i = 0; i < versions.length; i++) {
             const potential = versions[i];
             const satisfied = semver_1.default.satisfies(potential.replace('nightly', 'nightly.'), range, {
@@ -73519,11 +73526,11 @@ class NightlyNodejs extends base_distribution_1.default {
         const [raw, prerelease] = this.splitVersionSpec(versionSpec);
         const isValidVersion = semver_1.default.valid(raw);
         const rawVersion = (isValidVersion ? raw : semver_1.default.coerce(raw));
-        if (`-${prerelease}` !== distribution) {
-            range = `${rawVersion}${`-${prerelease}`.replace(distribution, `${distribution}.`)}`;
+        if (prerelease !== distribution) {
+            range = `${rawVersion}-${prerelease.replace(distribution, `${distribution}.`)}`;
         }
         else {
-            range = `${semver_1.default.validRange(`^${rawVersion}${distribution}`)}-0`;
+            range = `${semver_1.default.validRange(`^${rawVersion}-${distribution}`)}-0`;
         }
         return { range, includePrerelease: !isValidVersion };
     }
@@ -73571,41 +73578,6 @@ class OfficialBuilds extends base_distribution_1.default {
     constructor(nodeInfo) {
         super(nodeInfo);
     }
-    queryDistForMatch(versionSpec, arch = os_1.default.arch(), nodeVersions) {
-        return __awaiter(this, void 0, void 0, function* () {
-            let osPlat = os_1.default.platform();
-            let osArch = this.translateArchToDistUrl(arch);
-            // node offers a json list of versions
-            let dataFileName;
-            switch (osPlat) {
-                case 'linux':
-                    dataFileName = `linux-${osArch}`;
-                    break;
-                case 'darwin':
-                    dataFileName = `osx-${osArch}-tar`;
-                    break;
-                case 'win32':
-                    dataFileName = `win-${osArch}-exe`;
-                    break;
-                default:
-                    throw new Error(`Unexpected OS '${osPlat}'`);
-            }
-            if (this.isLatestSyntax(versionSpec)) {
-                core.info(`getting latest node version...`);
-                return nodeVersions[0].version;
-            }
-            const versions = [];
-            nodeVersions.forEach((nodeVersion) => {
-                // ensure this version supports your os and platform
-                if (nodeVersion.files.indexOf(dataFileName) >= 0) {
-                    versions.push(nodeVersion.version);
-                }
-            });
-            // get the latest version that matches the version spec
-            const version = this.evaluateVersions(nodeVersions);
-            return version;
-        });
-    }
     getNodeJsInfo() {
         return __awaiter(this, void 0, void 0, function* () {
             let manifest = [];
@@ -73618,7 +73590,8 @@ class OfficialBuilds extends base_distribution_1.default {
             }
             if (this.isLatestSyntax(this.nodeInfo.versionSpec)) {
                 nodeVersions = yield this.getNodejsVersions();
-                this.nodeInfo.versionSpec = yield this.queryDistForMatch(this.nodeInfo.versionSpec, this.nodeInfo.arch, nodeVersions);
+                const versions = this.filterVersions(nodeVersions);
+                this.nodeInfo.versionSpec = this.evaluateVersions(versions);
                 core.info(`getting latest node version...`);
             }
             let toolPath = this.findVersionInHoostedToolCacheDirectory();
@@ -73645,7 +73618,8 @@ class OfficialBuilds extends base_distribution_1.default {
                     core.debug(err.stack);
                     core.info('Falling back to download directly from Node');
                 }
-                const versions = yield this.getNodejsVersions();
+                const nodeVersions = yield this.getNodejsVersions();
+                const versions = this.filterVersions(nodeVersions);
                 const evaluatedVersion = this.evaluateVersions(versions);
                 const toolName = this.getNodejsDistInfo(evaluatedVersion, this.osPlat);
                 toolPath = yield this.downloadNodejs(toolName);
@@ -73656,9 +73630,8 @@ class OfficialBuilds extends base_distribution_1.default {
             core.addPath(toolPath);
         });
     }
-    evaluateVersions(nodeVersions) {
+    evaluateVersions(versions) {
         let version = '';
-        const versions = this.filterVersions(nodeVersions);
         if (this.isLatestSyntax(this.nodeInfo.versionSpec)) {
             core.info(`getting latest node version...`);
             return versions[0];
@@ -73790,9 +73763,8 @@ class RcBuild extends base_distribution_1.default {
             return response.result || [];
         });
     }
-    evaluateVersions(nodeVersions) {
+    evaluateVersions(versions) {
         let version = '';
-        const versions = this.filterVersions(nodeVersions);
         core.debug(`evaluating ${versions.length} versions`);
         for (let i = 0; i < versions.length; i++) {
             const potential = versions[i];
@@ -73854,9 +73826,8 @@ class CanaryBuild extends base_distribution_1.default {
     getDistributionUrl() {
         return 'https://nodejs.org/download/v8-canary';
     }
-    evaluateVersions(nodeVersions) {
+    evaluateVersions(versions) {
         let version = '';
-        const versions = this.filterVersions(nodeVersions);
         core.debug(`evaluating ${versions.length} versions`);
         const { includePrerelease, range } = this.createRangePreRelease(this.nodeInfo.versionSpec, 'v8-canary');
         for (let i = 0; i < versions.length; i++) {

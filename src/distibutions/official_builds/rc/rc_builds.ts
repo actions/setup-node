@@ -18,9 +18,9 @@ export default class RcBuild extends BaseDistribution {
     return response.result || [];
   }
 
-  protected evaluateVersions(nodeVersions: INodeVersion[]): string {
+  protected evaluateVersions(versions: string[]): string {
     let version = '';
-    const versions = this.filterVersions(nodeVersions);
+
     core.debug(`evaluating ${versions.length} versions`);
 
     for (let i = 0; i < versions.length; i++) {

@@ -14,9 +14,8 @@ export default class CanaryBuild extends BaseDistribution {
     return 'https://nodejs.org/download/v8-canary';
   }
 
-  protected evaluateVersions(nodeVersions: INodeVersion[]): string {
+  protected evaluateVersions(versions: string[]): string {
     let version = '';
-    const versions = this.filterVersions(nodeVersions);
 
     core.debug(`evaluating ${versions.length} versions`);
 
