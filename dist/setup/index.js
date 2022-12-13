@@ -73486,7 +73486,7 @@ class NightlyNodejs extends base_distribution_1.default {
         core.debug(`evaluating ${versions.length} versions`);
         const { includePrerelease, range } = this.createRangePreRelease(this.nodeInfo.versionSpec, '-nightly');
         for (let i = versions.length - 1; i >= 0; i--) {
-            const potential = versions[i];
+            const potential = versions[i].replace('nightly', 'nightly.');
             const satisfied = semver_1.default.satisfies(potential, range, {
                 includePrerelease: includePrerelease
             });
@@ -73850,7 +73850,7 @@ class CanaryBuild extends base_distribution_1.default {
         core.debug(`evaluating ${versions.length} versions`);
         const { includePrerelease, range } = this.createRangePreRelease(this.nodeInfo.versionSpec, '-v8-canary');
         for (let i = versions.length - 1; i >= 0; i--) {
-            const potential = versions[i];
+            const potential = versions[i].replace('v8-canary', 'v8-canary.');
             const satisfied = semver_1.default.satisfies(potential, range, {
                 includePrerelease: includePrerelease
             });

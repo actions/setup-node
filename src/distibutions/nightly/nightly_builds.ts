@@ -22,7 +22,7 @@ export default class NightlyNodejs extends BaseDistribution {
     );
 
     for (let i = versions.length - 1; i >= 0; i--) {
-      const potential: string = versions[i];
+      const potential: string = versions[i].replace('nightly', 'nightly.');
       const satisfied: boolean = semver.satisfies(potential, range, {
         includePrerelease: includePrerelease
       });
