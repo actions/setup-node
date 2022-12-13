@@ -18,10 +18,14 @@ export default class CanaryBuild extends BaseDistribution {
     );
 
     for (let i = versions.length - 1; i >= 0; i--) {
-      const potential: string = versions[i].replace('v8-canary', 'v8-canary.');
-      const satisfied: boolean = semver.satisfies(potential, range, {
-        includePrerelease: includePrerelease
-      });
+      const potential: string = versions[i];
+      const satisfied: boolean = semver.satisfies(
+        potential.replace('v8-canary', 'v8-canary.'),
+        range,
+        {
+          includePrerelease: includePrerelease
+        }
+      );
       if (satisfied) {
         version = potential;
         break;
