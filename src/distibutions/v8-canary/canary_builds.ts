@@ -17,7 +17,7 @@ export default class CanaryBuild extends BaseDistribution {
       '-v8-canary'
     );
 
-    for (let i = versions.length - 1; i >= 0; i--) {
+    for (let i = 0; i < versions.length; i++) {
       const potential: string = versions[i];
       const satisfied: boolean = semver.satisfies(
         potential.replace('v8-canary', 'v8-canary.'),

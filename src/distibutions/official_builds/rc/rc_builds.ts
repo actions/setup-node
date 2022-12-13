@@ -23,7 +23,7 @@ export default class RcBuild extends BaseDistribution {
     const versions = this.filterVersions(nodeVersions);
     core.debug(`evaluating ${versions.length} versions`);
 
-    for (let i = versions.length - 1; i >= 0; i--) {
+    for (let i = 0; i < versions.length; i++) {
       const potential: string = versions[i];
       const satisfied: boolean = semver.satisfies(
         potential,

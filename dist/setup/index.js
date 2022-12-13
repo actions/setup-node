@@ -73485,7 +73485,7 @@ class NightlyNodejs extends base_distribution_1.default {
         const versions = this.filterVersions(nodeVersions);
         core.debug(`evaluating ${versions.length} versions`);
         const { includePrerelease, range } = this.createRangePreRelease(this.nodeInfo.versionSpec, '-nightly');
-        for (let i = versions.length - 1; i >= 0; i--) {
+        for (let i = 0; i < versions.length; i++) {
             const potential = versions[i];
             const satisfied = semver_1.default.satisfies(potential.replace('nightly', 'nightly.'), range, {
                 includePrerelease: includePrerelease
@@ -73664,7 +73664,7 @@ class OfficialBuilds extends base_distribution_1.default {
             return versions[0];
         }
         core.debug(`evaluating ${versions.length} versions`);
-        for (let i = versions.length - 1; i >= 0; i--) {
+        for (let i = 0; i < versions.length; i++) {
             const potential = versions[i];
             const satisfied = semver.satisfies(potential, this.nodeInfo.versionSpec);
             if (satisfied) {
@@ -73794,7 +73794,7 @@ class RcBuild extends base_distribution_1.default {
         let version = '';
         const versions = this.filterVersions(nodeVersions);
         core.debug(`evaluating ${versions.length} versions`);
-        for (let i = versions.length - 1; i >= 0; i--) {
+        for (let i = 0; i < versions.length; i++) {
             const potential = versions[i];
             const satisfied = semver.satisfies(potential, this.nodeInfo.versionSpec);
             if (satisfied) {
@@ -73853,7 +73853,7 @@ class CanaryBuild extends base_distribution_1.default {
         const versions = this.filterVersions(nodeVersions);
         core.debug(`evaluating ${versions.length} versions`);
         const { includePrerelease, range } = this.createRangePreRelease(this.nodeInfo.versionSpec, '-v8-canary');
-        for (let i = versions.length - 1; i >= 0; i--) {
+        for (let i = 0; i < versions.length; i++) {
             const potential = versions[i];
             const satisfied = semver_1.default.satisfies(potential.replace('v8-canary', 'v8-canary.'), range, {
                 includePrerelease: includePrerelease
