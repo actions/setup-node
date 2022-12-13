@@ -7,6 +7,7 @@ import * as path from 'path';
 import {restoreCache} from './cache-restore';
 import {isGhes, isCacheFeatureAvailable} from './cache-utils';
 import os from 'os';
+import {getNodejsDistribution} from './distibutions/installer-factory';
 
 export async function run() {
   try {
@@ -38,7 +39,18 @@ export async function run() {
         (core.getInput('stable') || 'true').toUpperCase() === 'TRUE';
       const checkLatest =
         (core.getInput('check-latest') || 'false').toUpperCase() === 'TRUE';
-      await installer.getNode(version, stable, checkLatest, auth, arch);
+      const nodejsInfo = {
+        versionSpec: version,
+        checkLatest: checkLatest,
+        auth,
+        arch: arch
+      };
+      const nodeDistribution = getNodejsDistribution(nodejsInfo);
+      if (nodeDistribution) {
+        await nodeDistribution?.getNodeJsInfo();
+      }
+
+      // await installer.getNode(version, stable, checkLatest, auth, arch);
     }
 
     await printEnvDetailsAndSetOutput();

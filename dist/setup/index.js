@@ -73182,6 +73182,727 @@ var Outputs;
 
 /***/ }),
 
+/***/ 8653:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
+    result["default"] = mod;
+    return result;
+};
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+const tc = __importStar(__nccwpck_require__(7784));
+const hc = __importStar(__nccwpck_require__(9925));
+const core = __importStar(__nccwpck_require__(2186));
+const io = __importStar(__nccwpck_require__(7436));
+const semver_1 = __importDefault(__nccwpck_require__(5911));
+const assert = __importStar(__nccwpck_require__(9491));
+const path = __importStar(__nccwpck_require__(1017));
+const os = __importStar(__nccwpck_require__(2037));
+const fs_1 = __importDefault(__nccwpck_require__(7147));
+class BaseDistribution {
+    constructor(nodeInfo) {
+        this.nodeInfo = nodeInfo;
+        this.osPlat = os.platform();
+        this.httpClient = new hc.HttpClient('setup-node', [], {
+            allowRetries: true,
+            maxRetries: 3
+        });
+    }
+    getNodeJsInfo() {
+        return __awaiter(this, void 0, void 0, function* () {
+            let toolPath = this.findVersionInHoostedToolCacheDirectory();
+            if (!toolPath) {
+                const versions = yield this.getNodejsVersions();
+                const evaluatedVersion = this.evaluateVersions(versions);
+                const toolName = this.getNodejsDistInfo(evaluatedVersion, this.osPlat);
+                toolPath = yield this.downloadNodejs(toolName);
+            }
+            core.addPath(toolPath);
+        });
+    }
+    findVersionInHoostedToolCacheDirectory() {
+        return tc.find('node', this.nodeInfo.versionSpec, this.nodeInfo.arch);
+    }
+    getNodejsDistInfo(version, osPlat) {
+        let osArch = this.translateArchToDistUrl(this.nodeInfo.arch);
+        version = semver_1.default.clean(version) || '';
+        let fileName = osPlat == 'win32'
+            ? `node-v${version}-win-${osArch}`
+            : `node-v${version}-${osPlat}-${osArch}`;
+        let urlFileName = osPlat == 'win32' ? `${fileName}.7z` : `${fileName}.tar.gz`;
+        const initialUrl = this.getDistributionUrl();
+        const url = `${initialUrl}/v${version}/${urlFileName}`;
+        return {
+            downloadUrl: url,
+            resolvedVersion: version,
+            arch: osArch,
+            fileName: fileName
+        };
+    }
+    downloadNodejs(info) {
+        return __awaiter(this, void 0, void 0, function* () {
+            let osPlat = os.platform();
+            let downloadPath = '';
+            try {
+                downloadPath = yield tc.downloadTool(info.downloadUrl);
+            }
+            catch (err) {
+                if (err instanceof tc.HTTPError && err.httpStatusCode == 404) {
+                    return yield this.acquireNodeFromFallbackLocation(info.resolvedVersion, info.arch);
+                }
+                throw err;
+            }
+            let toolPath = yield this.extractArchive(downloadPath, info);
+            core.info('Done');
+            if (osPlat != 'win32') {
+                toolPath = path.join(toolPath, 'bin');
+            }
+            return toolPath;
+        });
+    }
+    acquireNodeFromFallbackLocation(version, arch = os.arch()) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const initialUrl = this.getDistributionUrl();
+            let osArch = this.translateArchToDistUrl(arch);
+            // Create temporary folder to download in to
+            const tempDownloadFolder = 'temp_' + Math.floor(Math.random() * 2000000000);
+            const tempDirectory = process.env['RUNNER_TEMP'] || '';
+            assert.ok(tempDirectory, 'Expected RUNNER_TEMP to be defined');
+            const tempDir = path.join(tempDirectory, tempDownloadFolder);
+            yield io.mkdirP(tempDir);
+            let exeUrl;
+            let libUrl;
+            try {
+                exeUrl = `${initialUrl}/v${version}/win-${osArch}/node.exe`;
+                libUrl = `${initialUrl}/v${version}/win-${osArch}/node.lib`;
+                core.info(`Downloading only node binary from ${exeUrl}`);
+                const exePath = yield tc.downloadTool(exeUrl);
+                yield io.cp(exePath, path.join(tempDir, 'node.exe'));
+                const libPath = yield tc.downloadTool(libUrl);
+                yield io.cp(libPath, path.join(tempDir, 'node.lib'));
+            }
+            catch (err) {
+                if (err instanceof tc.HTTPError && err.httpStatusCode == 404) {
+                    exeUrl = `${initialUrl}/v${version}/node.exe`;
+                    libUrl = `${initialUrl}/v${version}/node.lib`;
+                    const exePath = yield tc.downloadTool(exeUrl);
+                    yield io.cp(exePath, path.join(tempDir, 'node.exe'));
+                    const libPath = yield tc.downloadTool(libUrl);
+                    yield io.cp(libPath, path.join(tempDir, 'node.lib'));
+                }
+                else {
+                    throw err;
+                }
+            }
+            const toolPath = yield tc.cacheDir(tempDir, 'node', version, arch);
+            return toolPath;
+        });
+    }
+    extractArchive(downloadPath, info) {
+        return __awaiter(this, void 0, void 0, function* () {
+            //
+            // Extract
+            //
+            core.info('Extracting ...');
+            let extPath;
+            info = info || {}; // satisfy compiler, never null when reaches here
+            if (this.osPlat == 'win32') {
+                let _7zPath = path.join(__dirname, '../..', 'externals', '7zr.exe');
+                extPath = yield tc.extract7z(downloadPath, undefined, _7zPath);
+                // 7z extracts to folder matching file name
+                let nestedPath = path.join(extPath, path.basename(info.fileName, '.7z'));
+                if (fs_1.default.existsSync(nestedPath)) {
+                    extPath = nestedPath;
+                }
+            }
+            else {
+                extPath = yield tc.extractTar(downloadPath, undefined, [
+                    'xz',
+                    '--strip',
+                    '1'
+                ]);
+            }
+            //
+            // Install into the local tool cache - node extracts with a root folder that matches the fileName downloaded
+            //
+            core.info('Adding to the cache ...');
+            const toolPath = yield tc.cacheDir(extPath, 'node', info.resolvedVersion, info.arch);
+            return toolPath;
+        });
+    }
+    getDistFileName(arch = os.arch()) {
+        let osPlat = os.platform();
+        let osArch = this.translateArchToDistUrl(arch);
+        // node offers a json list of versions
+        let dataFileName;
+        switch (osPlat) {
+            case 'linux':
+                dataFileName = `linux-${osArch}`;
+                break;
+            case 'darwin':
+                dataFileName = `osx-${osArch}-tar`;
+                break;
+            case 'win32':
+                dataFileName = `win-${osArch}-exe`;
+                break;
+            default:
+                throw new Error(`Unexpected OS '${osPlat}'`);
+        }
+        return dataFileName;
+    }
+    filterVersions(nodeVersions) {
+        let versions = [];
+        const dataFileName = this.getDistFileName(this.nodeInfo.arch);
+        nodeVersions.forEach((nodeVersion) => {
+            // ensure this version supports your os and platform
+            if (nodeVersion.files.indexOf(dataFileName) >= 0) {
+                versions.push(nodeVersion.version);
+            }
+        });
+        return versions.sort(semver_1.default.rcompare);
+    }
+    translateArchToDistUrl(arch) {
+        switch (arch) {
+            case 'arm':
+                return 'armv7l';
+            default:
+                return arch;
+        }
+    }
+}
+exports["default"] = BaseDistribution;
+
+
+/***/ }),
+
+/***/ 1260:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+const nightly_builds_1 = __importDefault(__nccwpck_require__(1002));
+const official_builds_1 = __importDefault(__nccwpck_require__(9856));
+const rc_builds_1 = __importDefault(__nccwpck_require__(6235));
+const canary_builds_1 = __importDefault(__nccwpck_require__(4833));
+var Distributions;
+(function (Distributions) {
+    Distributions["DEFAULT"] = "";
+    Distributions["CANARY"] = "v8-canary";
+    Distributions["NIGHTLY"] = "nightly";
+    Distributions["RC"] = "rc";
+})(Distributions || (Distributions = {}));
+function identifyDistribution(versionSpec) {
+    let distribution = '';
+    if (versionSpec.includes(Distributions.NIGHTLY)) {
+        distribution = Distributions.NIGHTLY;
+    }
+    else if (versionSpec.includes(Distributions.CANARY)) {
+        distribution = Distributions.CANARY;
+    }
+    else if (versionSpec.includes(Distributions.RC)) {
+        distribution = Distributions.RC;
+    }
+    else {
+        distribution = Distributions.DEFAULT;
+    }
+    return distribution;
+}
+function getNodejsDistribution(installerOptions) {
+    const distributionName = identifyDistribution(installerOptions.versionSpec);
+    switch (distributionName) {
+        case Distributions.NIGHTLY:
+            return new nightly_builds_1.default(installerOptions);
+        case Distributions.CANARY:
+            return new canary_builds_1.default(installerOptions);
+        case Distributions.RC:
+            return new rc_builds_1.default(installerOptions);
+        case Distributions.DEFAULT:
+            return new official_builds_1.default(installerOptions);
+        default:
+            return null;
+    }
+}
+exports.getNodejsDistribution = getNodejsDistribution;
+
+
+/***/ }),
+
+/***/ 1002:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
+    result["default"] = mod;
+    return result;
+};
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+const core = __importStar(__nccwpck_require__(2186));
+const semver_1 = __importDefault(__nccwpck_require__(5911));
+const base_distribution_1 = __importDefault(__nccwpck_require__(8653));
+class NightlyNodejs extends base_distribution_1.default {
+    constructor(nodeInfo) {
+        super(nodeInfo);
+    }
+    evaluateVersions(nodeVersions) {
+        let version = '';
+        const versions = this.filterVersions(nodeVersions);
+        core.debug(`evaluating ${versions.length} versions`);
+        const { includePrerelease, range } = this.createRangePreRelease(this.nodeInfo.versionSpec, '-nightly');
+        for (let i = versions.length - 1; i >= 0; i--) {
+            const potential = versions[i];
+            const satisfied = semver_1.default.satisfies(potential, range, {
+                includePrerelease: includePrerelease
+            });
+            if (satisfied) {
+                version = potential;
+                break;
+            }
+        }
+        if (version) {
+            core.debug(`matched: ${version}`);
+        }
+        else {
+            core.debug('match not found');
+        }
+        return version;
+    }
+    getDistributionUrl() {
+        return 'https://nodejs.org/download/nightly';
+    }
+    getNodejsVersions() {
+        return __awaiter(this, void 0, void 0, function* () {
+            const initialUrl = this.getDistributionUrl();
+            const dataUrl = `${initialUrl}/index.json`;
+            let response = yield this.httpClient.getJson(dataUrl);
+            return response.result || [];
+        });
+    }
+    createRangePreRelease(versionSpec, distribution = '') {
+        let range;
+        const [raw, prerelease] = this.splitVersionSpec(versionSpec);
+        const isValidVersion = semver_1.default.valid(raw);
+        const rawVersion = (isValidVersion ? raw : semver_1.default.coerce(raw));
+        if (`-${prerelease}` !== distribution) {
+            range = `${rawVersion}${`-${prerelease}`.replace(distribution, `${distribution}.`)}`;
+        }
+        else {
+            range = `${semver_1.default.validRange(`^${rawVersion}${distribution}`)}-0`;
+        }
+        return { range, includePrerelease: !isValidVersion };
+    }
+    splitVersionSpec(versionSpec) {
+        return versionSpec.split(/-(.*)/s);
+    }
+}
+exports["default"] = NightlyNodejs;
+
+
+/***/ }),
+
+/***/ 9856:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
+    result["default"] = mod;
+    return result;
+};
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+const core = __importStar(__nccwpck_require__(2186));
+const tc = __importStar(__nccwpck_require__(7784));
+const semver = __importStar(__nccwpck_require__(5911));
+const os_1 = __importDefault(__nccwpck_require__(2037));
+const base_distribution_1 = __importDefault(__nccwpck_require__(8653));
+class OfficialBuilds extends base_distribution_1.default {
+    constructor(nodeInfo) {
+        super(nodeInfo);
+    }
+    queryDistForMatch(versionSpec, arch = os_1.default.arch(), nodeVersions) {
+        return __awaiter(this, void 0, void 0, function* () {
+            let osPlat = os_1.default.platform();
+            let osArch = this.translateArchToDistUrl(arch);
+            // node offers a json list of versions
+            let dataFileName;
+            switch (osPlat) {
+                case 'linux':
+                    dataFileName = `linux-${osArch}`;
+                    break;
+                case 'darwin':
+                    dataFileName = `osx-${osArch}-tar`;
+                    break;
+                case 'win32':
+                    dataFileName = `win-${osArch}-exe`;
+                    break;
+                default:
+                    throw new Error(`Unexpected OS '${osPlat}'`);
+            }
+            if (this.isLatestSyntax(versionSpec)) {
+                core.info(`getting latest node version...`);
+                return nodeVersions[0].version;
+            }
+            const versions = [];
+            nodeVersions.forEach((nodeVersion) => {
+                // ensure this version supports your os and platform
+                if (nodeVersion.files.indexOf(dataFileName) >= 0) {
+                    versions.push(nodeVersion.version);
+                }
+            });
+            // get the latest version that matches the version spec
+            const version = this.evaluateVersions(nodeVersions);
+            return version;
+        });
+    }
+    getNodeJsInfo() {
+        return __awaiter(this, void 0, void 0, function* () {
+            let manifest = [];
+            let nodeVersions = [];
+            if (this.isLtsAlias(this.nodeInfo.versionSpec)) {
+                core.info('Attempt to resolve LTS alias from manifest...');
+                // No try-catch since it's not possible to resolve LTS alias without manifest
+                manifest = yield this.getManifest();
+                this.nodeInfo.versionSpec = this.resolveLtsAliasFromManifest(this.nodeInfo.versionSpec, true, manifest);
+            }
+            if (this.isLatestSyntax(this.nodeInfo.versionSpec)) {
+                nodeVersions = yield this.getNodejsVersions();
+                this.nodeInfo.versionSpec = yield this.queryDistForMatch(this.nodeInfo.versionSpec, this.nodeInfo.arch, nodeVersions);
+                core.info(`getting latest node version...`);
+            }
+            let toolPath = this.findVersionInHoostedToolCacheDirectory();
+            if (!toolPath) {
+                try {
+                    const versionInfo = yield this.getInfoFromManifest(this.nodeInfo.versionSpec, true, this.nodeInfo.auth, this.nodeInfo.arch, undefined);
+                    if (versionInfo) {
+                        core.info(`Acquiring ${versionInfo.resolvedVersion} - ${versionInfo.arch} from ${versionInfo.downloadUrl}`);
+                        toolPath = yield tc.downloadTool(versionInfo.downloadUrl, undefined, this.nodeInfo.auth);
+                    }
+                    else {
+                        core.info('Not found in manifest.  Falling back to download directly from Node');
+                    }
+                }
+                catch (err) {
+                    // Rate limit?
+                    if (err instanceof tc.HTTPError &&
+                        (err.httpStatusCode === 403 || err.httpStatusCode === 429)) {
+                        core.info(`Received HTTP status code ${err.httpStatusCode}.  This usually indicates the rate limit has been exceeded`);
+                    }
+                    else {
+                        core.info(err.message);
+                    }
+                    core.debug(err.stack);
+                    core.info('Falling back to download directly from Node');
+                }
+                const versions = yield this.getNodejsVersions();
+                const evaluatedVersion = this.evaluateVersions(versions);
+                const toolName = this.getNodejsDistInfo(evaluatedVersion, this.osPlat);
+                toolPath = yield this.downloadNodejs(toolName);
+            }
+            core.addPath(toolPath);
+        });
+    }
+    evaluateVersions(nodeVersions) {
+        let version = '';
+        const versions = this.filterVersions(nodeVersions);
+        if (this.isLatestSyntax(this.nodeInfo.versionSpec)) {
+            core.info(`getting latest node version...`);
+            return versions[0];
+        }
+        core.debug(`evaluating ${versions.length} versions`);
+        for (let i = versions.length - 1; i >= 0; i--) {
+            const potential = versions[i];
+            const satisfied = semver.satisfies(potential, this.nodeInfo.versionSpec);
+            if (satisfied) {
+                version = potential;
+                break;
+            }
+        }
+        if (version) {
+            core.debug(`matched: ${version}`);
+        }
+        else {
+            core.debug('match not found');
+        }
+        return version;
+    }
+    getDistributionUrl() {
+        return `https://nodejs.org/dist`;
+    }
+    getNodejsVersions() {
+        return __awaiter(this, void 0, void 0, function* () {
+            const initialUrl = this.getDistributionUrl();
+            const dataUrl = `${initialUrl}/index.json`;
+            let response = yield this.httpClient.getJson(dataUrl);
+            return response.result || [];
+        });
+    }
+    getManifest() {
+        core.debug('Getting manifest from actions/node-versions@main');
+        return tc.getManifestFromRepo('actions', 'node-versions', this.nodeInfo.auth, 'main');
+    }
+    resolveLtsAliasFromManifest(versionSpec, stable, manifest) {
+        var _a;
+        const alias = (_a = versionSpec.split('lts/')[1]) === null || _a === void 0 ? void 0 : _a.toLowerCase();
+        if (!alias) {
+            throw new Error(`Unable to parse LTS alias for Node version '${versionSpec}'`);
+        }
+        core.debug(`LTS alias '${alias}' for Node version '${versionSpec}'`);
+        // Supported formats are `lts/<alias>`, `lts/*`, and `lts/-n`. Where asterisk means highest possible LTS and -n means the nth-highest.
+        const n = Number(alias);
+        const aliases = Object.fromEntries(manifest
+            .filter(x => x.lts && x.stable === stable)
+            .map(x => [x.lts.toLowerCase(), x])
+            .reverse());
+        const numbered = Object.values(aliases);
+        const release = alias === '*'
+            ? numbered[numbered.length - 1]
+            : n < 0
+                ? numbered[numbered.length - 1 + n]
+                : aliases[alias];
+        if (!release) {
+            throw new Error(`Unable to find LTS release '${alias}' for Node version '${versionSpec}'.`);
+        }
+        core.debug(`Found LTS release '${release.version}' for Node version '${versionSpec}'`);
+        return release.version.split('.')[0];
+    }
+    getInfoFromManifest(versionSpec, stable, auth, osArch = this.translateArchToDistUrl(os_1.default.arch()), manifest) {
+        return __awaiter(this, void 0, void 0, function* () {
+            let info = null;
+            if (!manifest) {
+                core.debug('No manifest cached');
+                manifest = yield this.getManifest();
+            }
+            const rel = yield tc.findFromManifest(versionSpec, stable, manifest, osArch);
+            if (rel && rel.files.length > 0) {
+                info = {};
+                info.resolvedVersion = rel.version;
+                info.arch = rel.files[0].arch;
+                info.downloadUrl = rel.files[0].download_url;
+                info.fileName = rel.files[0].filename;
+            }
+            return info;
+        });
+    }
+    isLtsAlias(versionSpec) {
+        return versionSpec.startsWith('lts/');
+    }
+    isLatestSyntax(versionSpec) {
+        return ['current', 'latest', 'node'].includes(versionSpec);
+    }
+}
+exports["default"] = OfficialBuilds;
+
+
+/***/ }),
+
+/***/ 6235:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
+    result["default"] = mod;
+    return result;
+};
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+const core = __importStar(__nccwpck_require__(2186));
+const semver = __importStar(__nccwpck_require__(5911));
+const base_distribution_1 = __importDefault(__nccwpck_require__(8653));
+class RcBuild extends base_distribution_1.default {
+    constructor(nodeInfo) {
+        super(nodeInfo);
+    }
+    getNodejsVersions() {
+        return __awaiter(this, void 0, void 0, function* () {
+            const initialUrl = this.getDistributionUrl();
+            const dataUrl = `${initialUrl}/index.json`;
+            let response = yield this.httpClient.getJson(dataUrl);
+            return response.result || [];
+        });
+    }
+    evaluateVersions(nodeVersions) {
+        let version = '';
+        const versions = this.filterVersions(nodeVersions);
+        core.debug(`evaluating ${versions.length} versions`);
+        for (let i = versions.length - 1; i >= 0; i--) {
+            const potential = versions[i];
+            const satisfied = semver.satisfies(potential, this.nodeInfo.versionSpec);
+            if (satisfied) {
+                version = potential;
+                break;
+            }
+        }
+        if (version) {
+            core.debug(`matched: ${version}`);
+        }
+        else {
+            core.debug('match not found');
+        }
+        return version;
+    }
+    getDistributionUrl() {
+        return 'https://nodejs.org/download/rc';
+    }
+}
+exports["default"] = RcBuild;
+
+
+/***/ }),
+
+/***/ 4833:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
+    result["default"] = mod;
+    return result;
+};
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+const core = __importStar(__nccwpck_require__(2186));
+const semver_1 = __importDefault(__nccwpck_require__(5911));
+const base_distribution_1 = __importDefault(__nccwpck_require__(8653));
+class CanaryBuild extends base_distribution_1.default {
+    evaluateVersions(nodeVersions) {
+        let version = '';
+        const versions = this.filterVersions(nodeVersions);
+        core.debug(`evaluating ${versions.length} versions`);
+        const { includePrerelease, range } = this.createRangePreRelease(this.nodeInfo.versionSpec, '-v8-canary');
+        for (let i = versions.length - 1; i >= 0; i--) {
+            const potential = versions[i];
+            const satisfied = semver_1.default.satisfies(potential, range, {
+                includePrerelease: includePrerelease
+            });
+            if (satisfied) {
+                version = potential;
+                break;
+            }
+        }
+        if (version) {
+            core.debug(`matched: ${version}`);
+        }
+        else {
+            core.debug('match not found');
+        }
+        return version;
+    }
+    constructor(nodeInfo) {
+        super(nodeInfo);
+    }
+    getDistributionUrl() {
+        return 'https://nodejs.org/download/v8-canary';
+    }
+    getNodejsVersions() {
+        return __awaiter(this, void 0, void 0, function* () {
+            const initialUrl = this.getDistributionUrl();
+            const dataUrl = `${initialUrl}/index.json`;
+            let response = yield this.httpClient.getJson(dataUrl);
+            return response.result || [];
+        });
+    }
+    createRangePreRelease(versionSpec, distribution = '') {
+        let range;
+        const [raw, prerelease] = this.splitVersionSpec(versionSpec);
+        const isValidVersion = semver_1.default.valid(raw);
+        const rawVersion = (isValidVersion ? raw : semver_1.default.coerce(raw));
+        if (`-${prerelease}` !== distribution) {
+            range = `${rawVersion}${`-${prerelease}`.replace(distribution, `${distribution}.`)}`;
+        }
+        else {
+            range = `${semver_1.default.validRange(`^${rawVersion}${distribution}`)}-0`;
+        }
+        return { range, includePrerelease: !isValidVersion };
+    }
+    splitVersionSpec(versionSpec) {
+        return versionSpec.split(/-(.*)/s);
+    }
+}
+exports["default"] = CanaryBuild;
+
+
+/***/ }),
+
 /***/ 2574:
 /***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
@@ -73724,6 +74445,7 @@ const path = __importStar(__nccwpck_require__(1017));
 const cache_restore_1 = __nccwpck_require__(9517);
 const cache_utils_1 = __nccwpck_require__(1678);
 const os_1 = __importDefault(__nccwpck_require__(2037));
+const installer_factory_1 = __nccwpck_require__(1260);
 function run() {
     return __awaiter(this, void 0, void 0, function* () {
         try {
@@ -73747,7 +74469,17 @@ function run() {
                 const auth = !token ? undefined : `token ${token}`;
                 const stable = (core.getInput('stable') || 'true').toUpperCase() === 'TRUE';
                 const checkLatest = (core.getInput('check-latest') || 'false').toUpperCase() === 'TRUE';
-                yield installer.getNode(version, stable, checkLatest, auth, arch);
+                const nodejsInfo = {
+                    versionSpec: version,
+                    checkLatest: checkLatest,
+                    auth,
+                    arch: arch
+                };
+                const nodeDistribution = installer_factory_1.getNodejsDistribution(nodejsInfo);
+                if (nodeDistribution) {
+                    yield (nodeDistribution === null || nodeDistribution === void 0 ? void 0 : nodeDistribution.getNodeJsInfo());
+                }
+                // await installer.getNode(version, stable, checkLatest, auth, arch);
             }
             yield printEnvDetailsAndSetOutput();
             const registryUrl = core.getInput('registry-url');
