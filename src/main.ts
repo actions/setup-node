@@ -35,8 +35,6 @@ export async function run() {
     if (version) {
       const token = core.getInput('token');
       const auth = !token ? undefined : `token ${token}`;
-      const stable =
-        (core.getInput('stable') || 'true').toUpperCase() === 'TRUE';
       const checkLatest =
         (core.getInput('check-latest') || 'false').toUpperCase() === 'TRUE';
       const nodejsInfo = {
@@ -48,6 +46,8 @@ export async function run() {
       const nodeDistribution = getNodejsDistribution(nodejsInfo);
       if (nodeDistribution) {
         await nodeDistribution?.getNodeJsInfo();
+      } else {
+        throw new Error(`Could not resolve version: ${version} for build`);
       }
 
       // await installer.getNode(version, stable, checkLatest, auth, arch);

@@ -73848,11 +73848,17 @@ const core = __importStar(__nccwpck_require__(2186));
 const semver_1 = __importDefault(__nccwpck_require__(5911));
 const base_distribution_1 = __importDefault(__nccwpck_require__(8653));
 class CanaryBuild extends base_distribution_1.default {
+    constructor(nodeInfo) {
+        super(nodeInfo);
+    }
+    getDistributionUrl() {
+        return 'https://nodejs.org/download/v8-canary';
+    }
     evaluateVersions(nodeVersions) {
         let version = '';
         const versions = this.filterVersions(nodeVersions);
         core.debug(`evaluating ${versions.length} versions`);
-        const { includePrerelease, range } = this.createRangePreRelease(this.nodeInfo.versionSpec, '-v8-canary');
+        const { includePrerelease, range } = this.createRangePreRelease(this.nodeInfo.versionSpec, 'v8-canary');
         for (let i = 0; i < versions.length; i++) {
             const potential = versions[i];
             const satisfied = semver_1.default.satisfies(potential.replace('v8-canary', 'v8-canary.'), range, {
@@ -73871,12 +73877,6 @@ class CanaryBuild extends base_distribution_1.default {
         }
         return version;
     }
-    constructor(nodeInfo) {
-        super(nodeInfo);
-    }
-    getDistributionUrl() {
-        return 'https://nodejs.org/download/v8-canary';
-    }
     getNodejsVersions() {
         return __awaiter(this, void 0, void 0, function* () {
             const initialUrl = this.getDistributionUrl();
@@ -73890,11 +73890,11 @@ class CanaryBuild extends base_distribution_1.default {
         const [raw, prerelease] = this.splitVersionSpec(versionSpec);
         const isValidVersion = semver_1.default.valid(raw);
         const rawVersion = (isValidVersion ? raw : semver_1.default.coerce(raw));
-        if (`-${prerelease}` !== distribution) {
-            range = `${rawVersion}${`-${prerelease}`.replace(distribution, `${distribution}.`)}`;
+        if (prerelease !== distribution) {
+            range = `${rawVersion}-${prerelease.replace(distribution, `${distribution}.`)}`;
         }
         else {
-            range = `${semver_1.default.validRange(`^${rawVersion}${distribution}`)}-0`;
+            range = `${semver_1.default.validRange(`^${rawVersion}-${distribution}`)}-0`;
         }
         return { range, includePrerelease: !isValidVersion };
     }
@@ -74471,7 +74471,6 @@ function run() {
             if (version) {
                 const token = core.getInput('token');
                 const auth = !token ? undefined : `token ${token}`;
-                const stable = (core.getInput('stable') || 'true').toUpperCase() === 'TRUE';
                 const checkLatest = (core.getInput('check-latest') || 'false').toUpperCase() === 'TRUE';
                 const nodejsInfo = {
                     versionSpec: version,
@@ -74482,6 +74481,9 @@ function run() {
                 const nodeDistribution = installer_factory_1.getNodejsDistribution(nodejsInfo);
                 if (nodeDistribution) {
                     yield (nodeDistribution === null || nodeDistribution === void 0 ? void 0 : nodeDistribution.getNodeJsInfo());
+                }
+                else {
+                    throw new Error(`Could not resolve version: ${version} for build`);
                 }
                 // await installer.getNode(version, stable, checkLatest, auth, arch);
             }

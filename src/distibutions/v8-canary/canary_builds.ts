@@ -6,6 +6,14 @@ import BaseDistribution from '../base-distribution';
 import {INodejs, INodeVersion} from '../base-models';
 
 export default class CanaryBuild extends BaseDistribution {
+  constructor(nodeInfo: INodejs) {
+    super(nodeInfo);
+  }
+
+  protected getDistributionUrl(): string {
+    return 'https://nodejs.org/download/v8-canary';
+  }
+
   protected evaluateVersions(nodeVersions: INodeVersion[]): string {
     let version = '';
     const versions = this.filterVersions(nodeVersions);
@@ -14,7 +22,7 @@ export default class CanaryBuild extends BaseDistribution {
 
     const {includePrerelease, range} = this.createRangePreRelease(
       this.nodeInfo.versionSpec,
-      '-v8-canary'
+      'v8-canary'
     );
 
     for (let i = 0; i < versions.length; i++) {
@@ -40,12 +48,6 @@ export default class CanaryBuild extends BaseDistribution {
 
     return version;
   }
-  constructor(nodeInfo: INodejs) {
-    super(nodeInfo);
-  }
-  protected getDistributionUrl(): string {
-    return 'https://nodejs.org/download/v8-canary';
-  }
 
   async getNodejsVersions(): Promise<INodeVersion[]> {
     const initialUrl = this.getDistributionUrl();
@@ -55,25 +57,28 @@ export default class CanaryBuild extends BaseDistribution {
     return response.result || [];
   }
 
-  createRangePreRelease(versionSpec: string, distribution: string = '') {
-    let range: string | undefined;
+  protected createRangePreRelease(
+    versionSpec: string,
+    distribution: string = ''
+  ) {
+    let range: string;
     const [raw, prerelease] = this.splitVersionSpec(versionSpec);
     const isValidVersion = semver.valid(raw);
     const rawVersion = (isValidVersion ? raw : semver.coerce(raw))!;
 
-    if (`-${prerelease}` !== distribution) {
-      range = `${rawVersion}${`-${prerelease}`.replace(
+    if (prerelease !== distribution) {
+      range = `${rawVersion}-${prerelease.replace(
         distribution,
         `${distribution}.`
       )}`;
     } else {
-      range = `${semver.validRange(`^${rawVersion}${distribution}`)}-0`;
+      range = `${semver.validRange(`^${rawVersion}-${distribution}`)}-0`;
     }
 
     return {range, includePrerelease: !isValidVersion};
   }
 
-  splitVersionSpec(versionSpec: string) {
+  protected splitVersionSpec(versionSpec: string) {
     return versionSpec.split(/-(.*)/s);
   }
 }
