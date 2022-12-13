@@ -36,6 +36,10 @@ export default abstract class BaseDistribution {
       toolPath = await this.downloadNodejs(toolName);
     }
 
+    if (this.osPlat != 'win32') {
+      toolPath = path.join(toolPath, 'bin');
+    }
+
     core.addPath(toolPath);
   }
 
@@ -81,10 +85,6 @@ export default abstract class BaseDistribution {
 
     let toolPath = await this.extractArchive(downloadPath, info);
     core.info('Done');
-
-    if (osPlat != 'win32') {
-      toolPath = path.join(toolPath, 'bin');
-    }
 
     return toolPath;
   }

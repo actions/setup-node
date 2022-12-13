@@ -73234,6 +73234,9 @@ class BaseDistribution {
                 const toolName = this.getNodejsDistInfo(evaluatedVersion, this.osPlat);
                 toolPath = yield this.downloadNodejs(toolName);
             }
+            if (this.osPlat != 'win32') {
+                toolPath = path.join(toolPath, 'bin');
+            }
             core.addPath(toolPath);
         });
     }
@@ -73271,9 +73274,6 @@ class BaseDistribution {
             }
             let toolPath = yield this.extractArchive(downloadPath, info);
             core.info('Done');
-            if (osPlat != 'win32') {
-                toolPath = path.join(toolPath, 'bin');
-            }
             return toolPath;
         });
     }
@@ -73565,6 +73565,7 @@ const core = __importStar(__nccwpck_require__(2186));
 const tc = __importStar(__nccwpck_require__(7784));
 const semver = __importStar(__nccwpck_require__(5911));
 const os_1 = __importDefault(__nccwpck_require__(2037));
+const path_1 = __importDefault(__nccwpck_require__(1017));
 const base_distribution_1 = __importDefault(__nccwpck_require__(8653));
 class OfficialBuilds extends base_distribution_1.default {
     constructor(nodeInfo) {
@@ -73648,6 +73649,9 @@ class OfficialBuilds extends base_distribution_1.default {
                 const evaluatedVersion = this.evaluateVersions(versions);
                 const toolName = this.getNodejsDistInfo(evaluatedVersion, this.osPlat);
                 toolPath = yield this.downloadNodejs(toolName);
+            }
+            if (this.osPlat != 'win32') {
+                toolPath = path_1.default.join(toolPath, 'bin');
             }
             core.addPath(toolPath);
         });

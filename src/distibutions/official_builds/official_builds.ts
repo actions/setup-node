@@ -2,6 +2,7 @@ import * as core from '@actions/core';
 import * as tc from '@actions/tool-cache';
 import * as semver from 'semver';
 import os from 'os';
+import path from 'path';
 
 import {INodeVersion} from '../../installer';
 import BaseDistribution from '../base-distribution';
@@ -129,6 +130,10 @@ export default class OfficialBuilds extends BaseDistribution {
       const evaluatedVersion = this.evaluateVersions(versions);
       const toolName = this.getNodejsDistInfo(evaluatedVersion, this.osPlat);
       toolPath = await this.downloadNodejs(toolName);
+    }
+
+    if (this.osPlat != 'win32') {
+      toolPath = path.join(toolPath, 'bin');
     }
 
     core.addPath(toolPath);
