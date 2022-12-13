@@ -12,7 +12,16 @@ export default class NightlyNodejs extends BaseDistribution {
   }
 
   protected findVersionInHoostedToolCacheDirectory(): string {
-    const localVersionPaths = tc.findAllVersions('node', this.nodeInfo.arch);
+    const localVersionPaths = tc
+      .findAllVersions('node', this.nodeInfo.arch)
+      .filter(i => {
+        const prerelease = semver.prerelease(i);
+        if (!prerelease) {
+          return false;
+        }
+
+        return prerelease[0].includes('nightly');
+      });
     const localVersion = this.evaluateVersions(localVersionPaths);
     const toolPath = tc.find('node', localVersion, this.nodeInfo.arch);
 

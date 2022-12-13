@@ -1,4 +1,5 @@
 import * as core from '@actions/core';
+import * as tc from '@actions/tool-cache';
 
 import semver from 'semver';
 
@@ -8,6 +9,24 @@ import {INodejs, INodeVersion} from '../base-models';
 export default class CanaryBuild extends BaseDistribution {
   constructor(nodeInfo: INodejs) {
     super(nodeInfo);
+  }
+
+  protected findVersionInHoostedToolCacheDirectory(): string {
+    const localVersionPaths = tc
+      .findAllVersions('node', this.nodeInfo.arch)
+      .filter(i => {
+        const prerelease = semver.prerelease(i);
+        if (!prerelease) {
+          return false;
+        }
+
+        return prerelease[0].includes('v8-canary');
+      });
+
+    const localVersion = this.evaluateVersions(localVersionPaths);
+    const toolPath = tc.find('node', localVersion, this.nodeInfo.arch);
+
+    return toolPath;
   }
 
   protected getDistributionUrl(): string {

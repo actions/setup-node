@@ -73483,7 +73483,15 @@ class NightlyNodejs extends base_distribution_1.default {
         super(nodeInfo);
     }
     findVersionInHoostedToolCacheDirectory() {
-        const localVersionPaths = tc.findAllVersions('node', this.nodeInfo.arch);
+        const localVersionPaths = tc
+            .findAllVersions('node', this.nodeInfo.arch)
+            .filter(i => {
+            const prerelease = semver_1.default.prerelease(i);
+            if (!prerelease) {
+                return false;
+            }
+            return prerelease[0].includes('nightly');
+        });
         const localVersion = this.evaluateVersions(localVersionPaths);
         const toolPath = tc.find('node', localVersion, this.nodeInfo.arch);
         return toolPath;
@@ -73817,11 +73825,26 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 const core = __importStar(__nccwpck_require__(2186));
+const tc = __importStar(__nccwpck_require__(7784));
 const semver_1 = __importDefault(__nccwpck_require__(5911));
 const base_distribution_1 = __importDefault(__nccwpck_require__(8653));
 class CanaryBuild extends base_distribution_1.default {
     constructor(nodeInfo) {
         super(nodeInfo);
+    }
+    findVersionInHoostedToolCacheDirectory() {
+        const localVersionPaths = tc
+            .findAllVersions('node', this.nodeInfo.arch)
+            .filter(i => {
+            const prerelease = semver_1.default.prerelease(i);
+            if (!prerelease) {
+                return false;
+            }
+            return prerelease[0].includes('v8-canary');
+        });
+        const localVersion = this.evaluateVersions(localVersionPaths);
+        const toolPath = tc.find('node', localVersion, this.nodeInfo.arch);
+        return toolPath;
     }
     getDistributionUrl() {
         return 'https://nodejs.org/download/v8-canary';
