@@ -69,14 +69,6 @@ export default class NightlyNodejs extends BaseDistribution {
     return 'https://nodejs.org/download/nightly';
   }
 
-  async getNodejsVersions(): Promise<INodeVersion[]> {
-    const initialUrl = this.getDistributionUrl();
-    const dataUrl = `${initialUrl}/index.json`;
-
-    let response = await this.httpClient.getJson<INodeVersion[]>(dataUrl);
-    return response.result || [];
-  }
-
   protected createRangePreRelease(
     versionSpec: string,
     distribution: string = ''

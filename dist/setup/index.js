@@ -73244,6 +73244,14 @@ class BaseDistribution {
     findVersionInHoostedToolCacheDirectory() {
         return tc.find('node', this.nodeInfo.versionSpec, this.nodeInfo.arch);
     }
+    getNodejsVersions() {
+        return __awaiter(this, void 0, void 0, function* () {
+            const initialUrl = this.getDistributionUrl();
+            const dataUrl = `${initialUrl}/index.json`;
+            let response = yield this.httpClient.getJson(dataUrl);
+            return response.result || [];
+        });
+    }
     getNodejsDistInfo(version, osPlat) {
         let osArch = this.translateArchToDistUrl(this.nodeInfo.arch);
         version = semver_1.default.clean(version) || '';
@@ -73454,15 +73462,6 @@ exports.getNodejsDistribution = getNodejsDistribution;
 
 "use strict";
 
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
 var __importStar = (this && this.__importStar) || function (mod) {
     if (mod && mod.__esModule) return mod;
     var result = {};
@@ -73523,14 +73522,6 @@ class NightlyNodejs extends base_distribution_1.default {
     }
     getDistributionUrl() {
         return 'https://nodejs.org/download/nightly';
-    }
-    getNodejsVersions() {
-        return __awaiter(this, void 0, void 0, function* () {
-            const initialUrl = this.getDistributionUrl();
-            const dataUrl = `${initialUrl}/index.json`;
-            let response = yield this.httpClient.getJson(dataUrl);
-            return response.result || [];
-        });
     }
     createRangePreRelease(versionSpec, distribution = '') {
         let range;
@@ -73667,14 +73658,6 @@ class OfficialBuilds extends base_distribution_1.default {
     getDistributionUrl() {
         return `https://nodejs.org/dist`;
     }
-    getNodejsVersions() {
-        return __awaiter(this, void 0, void 0, function* () {
-            const initialUrl = this.getDistributionUrl();
-            const dataUrl = `${initialUrl}/index.json`;
-            let response = yield this.httpClient.getJson(dataUrl);
-            return response.result || [];
-        });
-    }
     getManifest() {
         core.debug('Getting manifest from actions/node-versions@main');
         return tc.getManifestFromRepo('actions', 'node-versions', this.nodeInfo.auth, 'main');
@@ -73739,15 +73722,6 @@ exports["default"] = OfficialBuilds;
 
 "use strict";
 
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
 var __importStar = (this && this.__importStar) || function (mod) {
     if (mod && mod.__esModule) return mod;
     var result = {};
@@ -73765,14 +73739,6 @@ const base_distribution_1 = __importDefault(__nccwpck_require__(8653));
 class RcBuild extends base_distribution_1.default {
     constructor(nodeInfo) {
         super(nodeInfo);
-    }
-    getNodejsVersions() {
-        return __awaiter(this, void 0, void 0, function* () {
-            const initialUrl = this.getDistributionUrl();
-            const dataUrl = `${initialUrl}/index.json`;
-            let response = yield this.httpClient.getJson(dataUrl);
-            return response.result || [];
-        });
     }
     evaluateVersions(versions) {
         let version = '';
@@ -73807,15 +73773,6 @@ exports["default"] = RcBuild;
 
 "use strict";
 
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
 var __importStar = (this && this.__importStar) || function (mod) {
     if (mod && mod.__esModule) return mod;
     var result = {};
@@ -73876,14 +73833,6 @@ class CanaryBuild extends base_distribution_1.default {
             core.debug('match not found');
         }
         return version;
-    }
-    getNodejsVersions() {
-        return __awaiter(this, void 0, void 0, function* () {
-            const initialUrl = this.getDistributionUrl();
-            const dataUrl = `${initialUrl}/index.json`;
-            let response = yield this.httpClient.getJson(dataUrl);
-            return response.result || [];
-        });
     }
     createRangePreRelease(versionSpec, distribution = '') {
         let range;

@@ -24,7 +24,6 @@ export default abstract class BaseDistribution {
   }
 
   protected abstract getDistributionUrl(): string;
-  protected abstract getNodejsVersions(): Promise<INodeVersion[]>;
   protected abstract evaluateVersions(nodeVersions: string[]): string;
 
   public async getNodeJsInfo() {
@@ -46,6 +45,14 @@ export default abstract class BaseDistribution {
 
   protected findVersionInHoostedToolCacheDirectory() {
     return tc.find('node', this.nodeInfo.versionSpec, this.nodeInfo.arch);
+  }
+
+  protected async getNodejsVersions(): Promise<INodeVersion[]> {
+    const initialUrl = this.getDistributionUrl();
+    const dataUrl = `${initialUrl}/index.json`;
+
+    let response = await this.httpClient.getJson<INodeVersion[]>(dataUrl);
+    return response.result || [];
   }
 
   protected getNodejsDistInfo(version: string, osPlat: string) {

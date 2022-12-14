@@ -131,14 +131,6 @@ export default class OfficialBuilds extends BaseDistribution {
     return `https://nodejs.org/dist`;
   }
 
-  protected async getNodejsVersions(): Promise<INodeVersion[]> {
-    const initialUrl = this.getDistributionUrl();
-    const dataUrl = `${initialUrl}/index.json`;
-
-    let response = await this.httpClient.getJson<INodeVersion[]>(dataUrl);
-    return response.result || [];
-  }
-
   private getManifest(): Promise<tc.IToolRelease[]> {
     core.debug('Getting manifest from actions/node-versions@main');
     return tc.getManifestFromRepo(
