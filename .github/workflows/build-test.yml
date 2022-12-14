@@ -12,19 +12,7 @@ on:
       - '**.md'
 
 jobs:
-  build:
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
-    steps:
-      - uses: actions/checkout@v3
-      - name: Setup Node 16.x
-        uses: actions/setup-node@v3
-        with:
-          node-version: 16.x
-          cache: npm
-      - run: npm ci
-      - run: npm run build
-      - run: npm run format-check
-      - run: npm test
+  call-basic-validation:
+    name: Basic validation
+    #uses: actions/reusable-workflows/.github/workflows/basic-validation.yml@main
+    uses: IvanZosimov/reusable-workflows/.github/workflows/basic-validation.yml@main
