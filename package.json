@@ -8,6 +8,7 @@
     "build": "ncc build -o dist/setup src/setup-node.ts && ncc build -o dist/cache-save src/cache-save.ts",
     "format": "prettier --write **/*.ts",
     "format-check": "prettier --check **/*.ts",
+    "lint": "",
     "test": "jest --coverage",
     "pre-checkin": "npm run format && npm run build && npm test"
   },
