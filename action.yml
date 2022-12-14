@@ -34,7 +34,7 @@ outputs:
   cache-hit: 
     description: 'A boolean value to indicate if a cache was hit.'
   node-version:
-    description: 'The installed node version.'
+    description: 'The installed node version .'
 runs:
   using: 'node16'
   main: 'dist/setup/index.js'
