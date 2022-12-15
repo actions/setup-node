@@ -1,4 +1,5 @@
-name: CodeQL analysis 
+name: CodeQL analysis
+
 on:
   push:
     branches: [ main ]
@@ -12,5 +13,3 @@ jobs:
     name: CodeQL analysis 
     #uses: actions/reusable-workflows/.github/workflows/codeql-analysis.yml@main
     uses: IvanZosimov/reusable-workflows/.github/workflows/codeql-analysis.yml@main
-    with:  
-      codeql-cfg-path: "./.github/codeql/codeql-config.yml"
