@@ -9,7 +9,7 @@ on:
     - cron: '0 3 * * 0'
 
 jobs:
-  call-codeQL-analysis:
+  call-codeQL-analysis: # The reusable workflow can be found here: https://github.com/actions/reusable-workflows/blob/main/.github/workflows/codeql-analysis.yml
     name: CodeQL analysis 
     #uses: actions/reusable-workflows/.github/workflows/codeql-analysis.yml@main
     uses: IvanZosimov/reusable-workflows/.github/workflows/codeql-analysis.yml@main
