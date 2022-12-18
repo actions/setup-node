@@ -131,7 +131,7 @@ If the runner is not able to access github.com, any Nodejs versions requested du
 1. [Check latest version](docs/advanced-usage.md#check-latest-version)
 2. [Using a node version file](docs/advanced-usage.md#node-version-file)
 3. [Using different architectures](docs/advanced-usage.md#architecture)
-4. [Using nigthly versions](docs/advanced-usage.md#nightly-versions)
+4. [Using nightly versions](docs/advanced-usage.md#nightly-versions)
 5. [Using rc versions](docs/advanced-usage.md#rc-versions)
 6. [Caching packages data](docs/advanced-usage.md#caching-packages-data)
 7. [Using multiple operating systems and architectures](docs/advanced-usage.md#multiple-operating-systems-and-architectures)
