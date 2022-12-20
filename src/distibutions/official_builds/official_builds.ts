@@ -4,9 +4,8 @@ import * as semver from 'semver';
 import os from 'os';
 import path from 'path';
 
-import {INodeVersion} from '../../installer';
 import BaseDistribution from '../base-distribution';
-import {INodejs, INodeVersionInfo} from '../base-models';
+import {INodejs, INodeVersion, INodeVersionInfo} from '../base-models';
 
 interface INodeRelease extends tc.IToolRelease {
   lts?: string;
@@ -18,8 +17,8 @@ export default class OfficialBuilds extends BaseDistribution {
   }
 
   public async getNodeJsInfo() {
-    let manifest: tc.IToolRelease[] = [];
-    let nodeVersions: INodeVersion[] = [];
+    let manifest: tc.IToolRelease[] | undefined;
+    let nodeVersions: INodeVersion[] | undefined;
     if (this.isLtsAlias(this.nodeInfo.versionSpec)) {
       core.info('Attempt to resolve LTS alias from manifest...');
 
@@ -41,16 +40,35 @@ export default class OfficialBuilds extends BaseDistribution {
       core.info(`getting latest node version...`);
     }
 
+    if (this.nodeInfo.checkLatest) {
+      core.info('Attempt to resolve the latest version from manifest...');
+      const osArch = this.translateArchToDistUrl(this.nodeInfo.arch);
+      const resolvedVersion = await this.resolveVersionFromManifest(
+        this.nodeInfo.versionSpec,
+        osArch,
+        manifest
+      );
+      if (resolvedVersion) {
+        this.nodeInfo.versionSpec = resolvedVersion;
+        core.info(`Resolved as '${resolvedVersion}'`);
+      } else {
+        core.info(
+          `Failed to resolve version ${this.nodeInfo.versionSpec} from manifest`
+        );
+      }
+    }
+
     let toolPath = this.findVersionInHoostedToolCacheDirectory();
 
-    if (!toolPath) {
+    if (toolPath) {
+      core.info(`Found in cache @ ${toolPath}`);
+    } else {
       try {
+        core.info(`Attempting to download ${this.nodeInfo.versionSpec}...`);
         const versionInfo = await this.getInfoFromManifest(
           this.nodeInfo.versionSpec,
-          true,
-          this.nodeInfo.auth,
           this.nodeInfo.arch,
-          undefined
+          manifest
         );
         if (versionInfo) {
           core.info(
@@ -106,8 +124,7 @@ export default class OfficialBuilds extends BaseDistribution {
 
     core.debug(`evaluating ${versions.length} versions`);
 
-    for (let i = 0; i < versions.length; i++) {
-      const potential: string = versions[i];
+    for (let potential of versions) {
       const satisfied: boolean = semver.satisfies(
         potential,
         this.nodeInfo.versionSpec
@@ -185,13 +202,30 @@ export default class OfficialBuilds extends BaseDistribution {
     return release.version.split('.')[0];
   }
 
+  private async resolveVersionFromManifest(
+    versionSpec: string,
+    osArch: string = this.translateArchToDistUrl(os.arch()),
+    manifest: tc.IToolRelease[] | undefined
+  ): Promise<string | undefined> {
+    try {
+      const info = await this.getInfoFromManifest(
+        versionSpec,
+        osArch,
+        manifest
+      );
+      return info?.resolvedVersion;
+    } catch (err) {
+      core.info('Unable to resolve version from manifest...');
+      core.debug(err.message);
+    }
+  }
+
   private async getInfoFromManifest(
     versionSpec: string,
-    stable: boolean,
-    auth: string | undefined,
     osArch: string = this.translateArchToDistUrl(os.arch()),
     manifest: tc.IToolRelease[] | undefined
   ): Promise<INodeVersionInfo | null> {
+    const stable = true;
     let info: INodeVersionInfo | null = null;
     if (!manifest) {
       core.debug('No manifest cached');

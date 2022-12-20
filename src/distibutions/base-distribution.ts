@@ -28,7 +28,9 @@ export default abstract class BaseDistribution {
 
   public async getNodeJsInfo() {
     let toolPath = this.findVersionInHoostedToolCacheDirectory();
-    if (!toolPath) {
+    if (toolPath) {
+      core.info(`Found in cache @ ${toolPath}`);
+    } else {
       const nodeVersions = await this.getNodejsVersions();
       const versions = this.filterVersions(nodeVersions);
       const evaluatedVersion = this.evaluateVersions(versions);
@@ -76,7 +78,6 @@ export default abstract class BaseDistribution {
   }
 
   protected async downloadNodejs(info: INodeVersionInfo) {
-    let osPlat: string = os.platform();
     let downloadPath = '';
     try {
       downloadPath = await tc.downloadTool(info.downloadUrl);
@@ -136,7 +137,9 @@ export default abstract class BaseDistribution {
         throw err;
       }
     }
+
     const toolPath = await tc.cacheDir(tempDir, 'node', version, arch);
+
     return toolPath;
   }
 
@@ -151,10 +154,13 @@ export default abstract class BaseDistribution {
     let extPath: string;
     info = info || ({} as INodeVersionInfo); // satisfy compiler, never null when reaches here
     if (this.osPlat == 'win32') {
-      let _7zPath = path.join(__dirname, '../..', 'externals', '7zr.exe');
+      const _7zPath = path.join(__dirname, '../..', 'externals', '7zr.exe');
       extPath = await tc.extract7z(downloadPath, undefined, _7zPath);
       // 7z extracts to folder matching file name
-      let nestedPath = path.join(extPath, path.basename(info.fileName, '.7z'));
+      const nestedPath = path.join(
+        extPath,
+        path.basename(info.fileName, '.7z')
+      );
       if (fs.existsSync(nestedPath)) {
         extPath = nestedPath;
       }
@@ -180,13 +186,12 @@ export default abstract class BaseDistribution {
     return toolPath;
   }
 
-  protected getDistFileName(arch: string = os.arch()): string {
-    let osPlat: string = os.platform();
+  protected getDistFileName(arch: string): string {
     let osArch: string = this.translateArchToDistUrl(arch);
 
     // node offers a json list of versions
     let dataFileName: string;
-    switch (osPlat) {
+    switch (this.osPlat) {
       case 'linux':
         dataFileName = `linux-${osArch}`;
         break;
@@ -197,14 +202,14 @@ export default abstract class BaseDistribution {
         dataFileName = `win-${osArch}-exe`;
         break;
       default:
-        throw new Error(`Unexpected OS '${osPlat}'`);
+        throw new Error(`Unexpected OS '${this.osPlat}'`);
     }
 
     return dataFileName;
   }
 
   protected filterVersions(nodeVersions: INodeVersion[]) {
-    let versions: string[] = [];
+    const versions: string[] = [];
 
     const dataFileName = this.getDistFileName(this.nodeInfo.arch);
 

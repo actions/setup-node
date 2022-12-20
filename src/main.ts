@@ -1,12 +1,13 @@
 import * as core from '@actions/core';
 import * as exec from '@actions/exec';
-import * as installer from './installer';
+
 import fs from 'fs';
+import os from 'os';
+
 import * as auth from './authutil';
 import * as path from 'path';
 import {restoreCache} from './cache-restore';
-import {isGhes, isCacheFeatureAvailable} from './cache-utils';
-import os from 'os';
+import {isCacheFeatureAvailable} from './cache-utils';
 import {getNodejsDistribution} from './distibutions/installer-factory';
 
 export async function run() {
@@ -49,8 +50,6 @@ export async function run() {
       } else {
         throw new Error(`Could not resolve version: ${version} for build`);
       }
-
-      // await installer.getNode(version, stable, checkLatest, auth, arch);
     }
 
     await printEnvDetailsAndSetOutput();
@@ -105,14 +104,35 @@ function resolveVersionInput(): string {
       );
     }
 
-    version = installer.parseNodeVersionFile(
-      fs.readFileSync(versionFilePath, 'utf8')
-    );
+    version = parseNodeVersionFile(fs.readFileSync(versionFilePath, 'utf8'));
 
     core.info(`Resolved ${versionFileInput} as ${version}`);
   }
 
   return version;
+}
+
+export function parseNodeVersionFile(contents: string): string {
+  let nodeVersion: string | undefined;
+
+  // Try parsing the file as an NPM `package.json` file.
+  try {
+    nodeVersion = JSON.parse(contents).volta?.node;
+    if (!nodeVersion) nodeVersion = JSON.parse(contents).engines?.node;
+  } catch {
+    core.info('Node version file is not JSON file');
+  }
+
+  if (!nodeVersion) {
+    const found = contents.match(/^(?:nodejs\s+)?v?(?<version>[^\s]+)$/m);
+    nodeVersion = found?.groups?.version;
+  }
+
+  // In the case of an unknown format,
+  // return as is and evaluate the version separately.
+  if (!nodeVersion) nodeVersion = contents.trim();
+
+  return nodeVersion as string;
 }
 
 export async function printEnvDetailsAndSetOutput() {
