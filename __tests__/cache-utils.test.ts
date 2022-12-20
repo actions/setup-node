@@ -46,7 +46,8 @@ describe('cache-utils', () => {
     isFeatureAvailable.mockImplementation(() => false);
     process.env['GITHUB_SERVER_URL'] = 'https://www.test.com';
 
-    expect(() => isCacheFeatureAvailable()).toThrowError(
+    expect(isCacheFeatureAvailable()).toBeFalsy();
+    expect(warningSpy).toHaveBeenCalledWith(
       'Cache action is only supported on GHES version >= 3.5. If you are on version >=3.5 Please check with GHES admin if Actions cache service is enabled or not.'
     );
   });

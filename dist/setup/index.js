@@ -72945,7 +72945,7 @@ function writeRegistryToFile(registryUrl, fileLocation, alwaysAuth) {
         scope = '@' + scope;
     }
     if (scope) {
-        scope = scope.toLowerCase();
+        scope = scope.toLowerCase() + ':';
     }
     core.debug(`Setting auth in ${fileLocation}`);
     let newContents = '';
@@ -72953,16 +72953,14 @@ function writeRegistryToFile(registryUrl, fileLocation, alwaysAuth) {
         const curContents = fs.readFileSync(fileLocation, 'utf8');
         curContents.split(os.EOL).forEach((line) => {
             // Add current contents unless they are setting the registry
-            if (!line.toLowerCase().startsWith('registry')) {
+            if (!line.toLowerCase().startsWith(`${scope}registry`)) {
                 newContents += line + os.EOL;
             }
         });
     }
     // Remove http: or https: from front of registry.
     const authString = registryUrl.replace(/(^\w+:|^)/, '') + ':_authToken=${NODE_AUTH_TOKEN}';
-    const registryString = scope
-        ? `${scope}:registry=${registryUrl}`
-        : `registry=${registryUrl}`;
+    const registryString = `${scope}registry=${registryUrl}`;
     const alwaysAuthString = `always-auth=${alwaysAuth}`;
     newContents += `${authString}${os.EOL}${registryString}${os.EOL}${alwaysAuthString}`;
     fs.writeFileSync(fileLocation, newContents);
@@ -73141,16 +73139,14 @@ function isGhes() {
 }
 exports.isGhes = isGhes;
 function isCacheFeatureAvailable() {
-    if (!cache.isFeatureAvailable()) {
-        if (isGhes()) {
-            throw new Error('Cache action is only supported on GHES version >= 3.5. If you are on version >=3.5 Please check with GHES admin if Actions cache service is enabled or not.');
-        }
-        else {
-            core.warning('The runner was not able to contact the cache service. Caching will be skipped');
-        }
+    if (cache.isFeatureAvailable())
+        return true;
+    if (isGhes()) {
+        core.warning('Cache action is only supported on GHES version >= 3.5. If you are on version >=3.5 Please check with GHES admin if Actions cache service is enabled or not.');
         return false;
     }
-    return true;
+    core.warning('The runner was not able to contact the cache service. Caching will be skipped');
+    return false;
 }
 exports.isCacheFeatureAvailable = isCacheFeatureAvailable;
 

@@ -729,8 +729,9 @@ describe('setup-node', () => {
 
       await main.run();
 
-      expect(cnSpy).toHaveBeenCalledWith(
-        `::error::Cache action is only supported on GHES version >= 3.5. If you are on version >=3.5 Please check with GHES admin if Actions cache service is enabled or not.${osm.EOL}`
+      expect(warningSpy).toHaveBeenCalledWith(
+        //  `::error::Cache action is only supported on GHES version >= 3.5. If you are on version >=3.5 Please check with GHES admin if Actions cache service is enabled or not.${osm.EOL}`
+        'Cache action is only supported on GHES version >= 3.5. If you are on version >=3.5 Please check with GHES admin if Actions cache service is enabled or not.'
       );
     });
 
