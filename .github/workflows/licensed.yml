@@ -10,6 +10,6 @@ on:
   workflow_dispatch:
 
 jobs:
-  call-licensed: # The reusable workflow can be found here: https://github.com/actions/reusable-workflows/blob/main/.github/workflows/licensed.yml
+  call-licensed:
     name: Licensed
     uses: actions/reusable-workflows/.github/workflows/licensed.yml@main

@@ -12,6 +12,6 @@ on:
   workflow_dispatch:
 
 jobs:
-  call-check-dist: # The reusable workflow can be found here: https://github.com/actions/reusable-workflows/blob/main/.github/workflows/check-dist.yml
+  call-check-dist:
     name: Check dist/
     uses: actions/reusable-workflows/.github/workflows/check-dist.yml@main
