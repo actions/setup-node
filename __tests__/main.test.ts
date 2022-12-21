@@ -11,6 +11,7 @@ import each from 'jest-each';
 
 import * as main from '../src/main';
 import * as util from '../src/util';
+import OfficialBuilds from '../src/distibutions/official_builds/official_builds';
 
 describe('main tests', () => {
   let inputs = {} as any;
@@ -32,12 +33,16 @@ describe('main tests', () => {
   let findSpy: jest.SpyInstance;
   let isCacheActionAvailable: jest.SpyInstance;
 
+  let getNodeJsInfoSpy: jest.SpyInstance;
+
   beforeEach(() => {
     inputs = {};
 
     // node
     os = {};
     console.log('::stop-commands::stoptoken');
+    process.env['GITHUB_PATH'] = ''; // Stub out ENV file functionality so we can verify it writes to standard out
+    process.env['GITHUB_OUTPUT'] = ''; // Stub out ENV file functionality so we can verify it writes to standard out
     infoSpy = jest.spyOn(core, 'info');
     infoSpy.mockImplementation(() => {});
     setOutputSpy = jest.spyOn(core, 'setOutput');
@@ -64,6 +69,9 @@ describe('main tests', () => {
       // uncomment to debug
       // process.stderr.write('write:' + line + '\n');
     });
+
+    getNodeJsInfoSpy = jest.spyOn(OfficialBuilds.prototype, 'getNodeJsInfo');
+    getNodeJsInfoSpy.mockImplementation(() => {});
   });
 
   afterEach(() => {
@@ -145,7 +153,7 @@ describe('main tests', () => {
 
       // Assert
       expect(parseNodeVersionSpy).toHaveBeenCalledTimes(0);
-    });
+    }, 10000);
 
     it('not used if node-version-file not provided', async () => {
       // Act
