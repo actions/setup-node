@@ -178,7 +178,7 @@ describe('main tests', () => {
       expect(infoSpy).toHaveBeenCalledWith(
         `Resolved ${versionFile} as ${expectedVersionSpec}`
       );
-    });
+    }, 10000);
 
     it('reads package.json as node-version-file if provided', async () => {
       // Arrange
@@ -205,7 +205,7 @@ describe('main tests', () => {
       expect(infoSpy).toHaveBeenCalledWith(
         `Resolved ${versionFile} as ${expectedVersionSpec}`
       );
-    });
+    }, 10000);
 
     it('both node-version-file and node-version are provided', async () => {
       inputs['node-version'] = '12';
