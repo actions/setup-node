@@ -7,7 +7,7 @@ import semver from 'semver';
 import * as assert from 'assert';
 
 import * as path from 'path';
-import * as os from 'os';
+import os from 'os';
 import fs from 'fs';
 
 import {INodejs, INodeVersion, INodeVersionInfo} from './base-models';
@@ -27,6 +27,16 @@ export default abstract class BaseDistribution {
   protected abstract evaluateVersions(nodeVersions: string[]): string;
 
   public async getNodeJsInfo() {
+    if (this.nodeInfo.checkLatest) {
+      const nodeVersions = await this.getNodejsVersions();
+      const versions = this.filterVersions(nodeVersions);
+      const evaluatedVersion = this.evaluateVersions(versions);
+
+      if (evaluatedVersion) {
+        this.nodeInfo.versionSpec = evaluatedVersion;
+      }
+    }
+
     let toolPath = this.findVersionInHoostedToolCacheDirectory();
     if (toolPath) {
       core.info(`Found in cache @ ${toolPath}`);
@@ -34,6 +44,11 @@ export default abstract class BaseDistribution {
       const nodeVersions = await this.getNodejsVersions();
       const versions = this.filterVersions(nodeVersions);
       const evaluatedVersion = this.evaluateVersions(versions);
+      if (!evaluatedVersion) {
+        throw new Error(
+          `Unable to find Node version '${this.nodeInfo.versionSpec}' for platform ${this.osPlat} and architecture ${this.nodeInfo.arch}.`
+        );
+      }
       const toolName = this.getNodejsDistInfo(evaluatedVersion, this.osPlat);
       toolPath = await this.downloadNodejs(toolName);
     }
@@ -79,6 +94,9 @@ export default abstract class BaseDistribution {
 
   protected async downloadNodejs(info: INodeVersionInfo) {
     let downloadPath = '';
+    core.info(
+      `Acquiring ${info.resolvedVersion} - ${info.arch} from ${info.downloadUrl}`
+    );
     try {
       downloadPath = await tc.downloadTool(info.downloadUrl);
     } catch (err) {

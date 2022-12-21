@@ -23,7 +23,7 @@ export default class CanaryBuild extends BaseDistribution {
 
         return prerelease[0].includes('v8-canary');
       });
-
+    localVersionPaths.sort(semver.rcompare);
     const localVersion = this.evaluateVersions(localVersionPaths);
     if (localVersion) {
       toolPath = tc.find('node', localVersion, this.nodeInfo.arch);

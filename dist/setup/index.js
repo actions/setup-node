@@ -73210,12 +73210,12 @@ const io = __importStar(__nccwpck_require__(7436));
 const semver_1 = __importDefault(__nccwpck_require__(5911));
 const assert = __importStar(__nccwpck_require__(9491));
 const path = __importStar(__nccwpck_require__(1017));
-const os = __importStar(__nccwpck_require__(2037));
+const os_1 = __importDefault(__nccwpck_require__(2037));
 const fs_1 = __importDefault(__nccwpck_require__(7147));
 class BaseDistribution {
     constructor(nodeInfo) {
         this.nodeInfo = nodeInfo;
-        this.osPlat = os.platform();
+        this.osPlat = os_1.default.platform();
         this.httpClient = new hc.HttpClient('setup-node', [], {
             allowRetries: true,
             maxRetries: 3
@@ -73223,6 +73223,14 @@ class BaseDistribution {
     }
     getNodeJsInfo() {
         return __awaiter(this, void 0, void 0, function* () {
+            if (this.nodeInfo.checkLatest) {
+                const nodeVersions = yield this.getNodejsVersions();
+                const versions = this.filterVersions(nodeVersions);
+                const evaluatedVersion = this.evaluateVersions(versions);
+                if (evaluatedVersion) {
+                    this.nodeInfo.versionSpec = evaluatedVersion;
+                }
+            }
             let toolPath = this.findVersionInHoostedToolCacheDirectory();
             if (toolPath) {
                 core.info(`Found in cache @ ${toolPath}`);
@@ -73231,6 +73239,9 @@ class BaseDistribution {
                 const nodeVersions = yield this.getNodejsVersions();
                 const versions = this.filterVersions(nodeVersions);
                 const evaluatedVersion = this.evaluateVersions(versions);
+                if (!evaluatedVersion) {
+                    throw new Error(`Unable to find Node version '${this.nodeInfo.versionSpec}' for platform ${this.osPlat} and architecture ${this.nodeInfo.arch}.`);
+                }
                 const toolName = this.getNodejsDistInfo(evaluatedVersion, this.osPlat);
                 toolPath = yield this.downloadNodejs(toolName);
             }
@@ -73270,6 +73281,7 @@ class BaseDistribution {
     downloadNodejs(info) {
         return __awaiter(this, void 0, void 0, function* () {
             let downloadPath = '';
+            core.info(`Acquiring ${info.resolvedVersion} - ${info.arch} from ${info.downloadUrl}`);
             try {
                 downloadPath = yield tc.downloadTool(info.downloadUrl);
             }
@@ -73284,7 +73296,7 @@ class BaseDistribution {
             return toolPath;
         });
     }
-    acquireNodeFromFallbackLocation(version, arch = os.arch()) {
+    acquireNodeFromFallbackLocation(version, arch = os_1.default.arch()) {
         return __awaiter(this, void 0, void 0, function* () {
             const initialUrl = this.getDistributionUrl();
             let osArch = this.translateArchToDistUrl(arch);
@@ -73443,10 +73455,8 @@ function getNodejsDistribution(installerOptions) {
             return new canary_builds_1.default(installerOptions);
         case Distributions.RC:
             return new rc_builds_1.default(installerOptions);
-        case Distributions.DEFAULT:
-            return new official_builds_1.default(installerOptions);
         default:
-            return null;
+            return new official_builds_1.default(installerOptions);
     }
 }
 exports.getNodejsDistribution = getNodejsDistribution;
@@ -73489,6 +73499,7 @@ class NightlyNodejs extends base_distribution_1.default {
             }
             return prerelease[0].includes('nightly');
         });
+        localVersionPaths.sort(semver_1.default.rcompare);
         const localVersion = this.evaluateVersions(localVersionPaths);
         if (localVersion) {
             toolPath = tc.find('node', localVersion, this.nodeInfo.arch);
@@ -73591,7 +73602,7 @@ class OfficialBuilds extends base_distribution_1.default {
                 nodeVersions = yield this.getNodejsVersions();
                 const versions = this.filterVersions(nodeVersions);
                 this.nodeInfo.versionSpec = this.evaluateVersions(versions);
-                core.info(`getting latest node version...`);
+                core.info('getting latest node version...');
             }
             if (this.nodeInfo.checkLatest) {
                 core.info('Attempt to resolve the latest version from manifest...');
@@ -73610,12 +73621,17 @@ class OfficialBuilds extends base_distribution_1.default {
                 core.info(`Found in cache @ ${toolPath}`);
             }
             else {
+                let downloadPath = '';
                 try {
                     core.info(`Attempting to download ${this.nodeInfo.versionSpec}...`);
-                    const versionInfo = yield this.getInfoFromManifest(this.nodeInfo.versionSpec, this.nodeInfo.arch, manifest);
+                    const osArch = this.translateArchToDistUrl(this.nodeInfo.arch);
+                    const versionInfo = yield this.getInfoFromManifest(this.nodeInfo.versionSpec, osArch, manifest);
                     if (versionInfo) {
                         core.info(`Acquiring ${versionInfo.resolvedVersion} - ${versionInfo.arch} from ${versionInfo.downloadUrl}`);
-                        toolPath = yield tc.downloadTool(versionInfo.downloadUrl, undefined, this.nodeInfo.auth);
+                        downloadPath = yield tc.downloadTool(versionInfo.downloadUrl, undefined, this.nodeInfo.auth);
+                        if (downloadPath) {
+                            toolPath = yield this.extractArchive(downloadPath, versionInfo);
+                        }
                     }
                     else {
                         core.info('Not found in manifest.  Falling back to download directly from Node');
@@ -73633,11 +73649,17 @@ class OfficialBuilds extends base_distribution_1.default {
                     core.debug(err.stack);
                     core.info('Falling back to download directly from Node');
                 }
-                const nodeVersions = yield this.getNodejsVersions();
-                const versions = this.filterVersions(nodeVersions);
-                const evaluatedVersion = this.evaluateVersions(versions);
-                const toolName = this.getNodejsDistInfo(evaluatedVersion, this.osPlat);
-                toolPath = yield this.downloadNodejs(toolName);
+                if (!toolPath) {
+                    const nodeVersions = yield this.getNodejsVersions();
+                    core.info('came here undefined');
+                    const versions = this.filterVersions(nodeVersions);
+                    const evaluatedVersion = this.evaluateVersions(versions);
+                    if (!evaluatedVersion) {
+                        throw new Error(`Unable to find Node version '${this.nodeInfo.versionSpec}' for platform ${this.osPlat} and architecture ${this.nodeInfo.arch}.`);
+                    }
+                    const toolName = this.getNodejsDistInfo(evaluatedVersion, this.osPlat);
+                    toolPath = yield this.downloadNodejs(toolName);
+                }
             }
             if (this.osPlat != 'win32') {
                 toolPath = path_1.default.join(toolPath, 'bin');
@@ -73699,7 +73721,7 @@ class OfficialBuilds extends base_distribution_1.default {
         core.debug(`Found LTS release '${release.version}' for Node version '${versionSpec}'`);
         return release.version.split('.')[0];
     }
-    resolveVersionFromManifest(versionSpec, osArch = this.translateArchToDistUrl(os_1.default.arch()), manifest) {
+    resolveVersionFromManifest(versionSpec, osArch, manifest) {
         return __awaiter(this, void 0, void 0, function* () {
             try {
                 const info = yield this.getInfoFromManifest(versionSpec, osArch, manifest);
@@ -73828,6 +73850,7 @@ class CanaryBuild extends base_distribution_1.default {
             }
             return prerelease[0].includes('v8-canary');
         });
+        localVersionPaths.sort(semver_1.default.rcompare);
         const localVersion = this.evaluateVersions(localVersionPaths);
         if (localVersion) {
             toolPath = tc.find('node', localVersion, this.nodeInfo.arch);
@@ -73907,7 +73930,6 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 const core = __importStar(__nccwpck_require__(2186));
-const exec = __importStar(__nccwpck_require__(1514));
 const fs_1 = __importDefault(__nccwpck_require__(7147));
 const os_1 = __importDefault(__nccwpck_require__(2037));
 const auth = __importStar(__nccwpck_require__(7573));
@@ -73915,6 +73937,7 @@ const path = __importStar(__nccwpck_require__(1017));
 const cache_restore_1 = __nccwpck_require__(9517);
 const cache_utils_1 = __nccwpck_require__(1678);
 const installer_factory_1 = __nccwpck_require__(1260);
+const util_1 = __nccwpck_require__(2629);
 function run() {
     return __awaiter(this, void 0, void 0, function* () {
         try {
@@ -73939,19 +73962,14 @@ function run() {
                 const checkLatest = (core.getInput('check-latest') || 'false').toUpperCase() === 'TRUE';
                 const nodejsInfo = {
                     versionSpec: version,
-                    checkLatest: checkLatest,
+                    checkLatest,
                     auth,
-                    arch: arch
+                    arch
                 };
                 const nodeDistribution = installer_factory_1.getNodejsDistribution(nodejsInfo);
-                if (nodeDistribution) {
-                    yield (nodeDistribution === null || nodeDistribution === void 0 ? void 0 : nodeDistribution.getNodeJsInfo());
-                }
-                else {
-                    throw new Error(`Could not resolve version: ${version} for build`);
-                }
+                yield nodeDistribution.getNodeJsInfo();
             }
-            yield printEnvDetailsAndSetOutput();
+            yield util_1.printEnvDetailsAndSetOutput();
             const registryUrl = core.getInput('registry-url');
             const alwaysAuth = core.getInput('always-auth');
             if (registryUrl) {
@@ -73986,11 +74004,39 @@ function resolveVersionInput() {
         if (!fs_1.default.existsSync(versionFilePath)) {
             throw new Error(`The specified node version file at: ${versionFilePath} does not exist`);
         }
-        version = parseNodeVersionFile(fs_1.default.readFileSync(versionFilePath, 'utf8'));
+        version = util_1.parseNodeVersionFile(fs_1.default.readFileSync(versionFilePath, 'utf8'));
         core.info(`Resolved ${versionFileInput} as ${version}`);
     }
     return version;
 }
+
+
+/***/ }),
+
+/***/ 2629:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
+    result["default"] = mod;
+    return result;
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+const core = __importStar(__nccwpck_require__(2186));
+const exec = __importStar(__nccwpck_require__(1514));
 function parseNodeVersionFile(contents) {
     var _a, _b, _c;
     let nodeVersion;
@@ -74019,12 +74065,15 @@ function printEnvDetailsAndSetOutput() {
         core.startGroup('Environment details');
         const promises = ['node', 'npm', 'yarn'].map((tool) => __awaiter(this, void 0, void 0, function* () {
             const output = yield getToolVersion(tool, ['--version']);
+            return { tool, output };
+        }));
+        const tools = yield Promise.all(promises);
+        tools.forEach(({ tool, output }) => {
             if (tool === 'node') {
                 core.setOutput(`${tool}-version`, output);
             }
             core.info(`${tool}: ${output}`);
-        }));
-        yield Promise.all(promises);
+        });
         core.endGroup();
     });
 }
@@ -74037,7 +74086,7 @@ function getToolVersion(tool, options) {
                 silent: true
             });
             if (exitCode > 0) {
-                core.warning(`[warning]${stderr}`);
+                core.info(`[warning]${stderr}`);
                 return '';
             }
             return stdout.trim();

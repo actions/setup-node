@@ -29,7 +29,7 @@ function identifyDistribution(versionSpec: string) {
 
 export function getNodejsDistribution(
   installerOptions: INodejs
-): BaseDistribution | null {
+): BaseDistribution {
   const distributionName = identifyDistribution(installerOptions.versionSpec);
   switch (distributionName) {
     case Distributions.NIGHTLY:
@@ -38,9 +38,7 @@ export function getNodejsDistribution(
       return new CanaryBuild(installerOptions);
     case Distributions.RC:
       return new RcBuild(installerOptions);
-    case Distributions.DEFAULT:
-      return new OfficialBuilds(installerOptions);
     default:
-      return null;
+      return new OfficialBuilds(installerOptions);
   }
 }

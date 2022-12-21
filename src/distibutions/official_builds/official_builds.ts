@@ -37,7 +37,7 @@ export default class OfficialBuilds extends BaseDistribution {
       const versions = this.filterVersions(nodeVersions);
       this.nodeInfo.versionSpec = this.evaluateVersions(versions);
 
-      core.info(`getting latest node version...`);
+      core.info('getting latest node version...');
     }
 
     if (this.nodeInfo.checkLatest) {
@@ -63,22 +63,28 @@ export default class OfficialBuilds extends BaseDistribution {
     if (toolPath) {
       core.info(`Found in cache @ ${toolPath}`);
     } else {
+      let downloadPath = '';
       try {
         core.info(`Attempting to download ${this.nodeInfo.versionSpec}...`);
+        const osArch = this.translateArchToDistUrl(this.nodeInfo.arch);
         const versionInfo = await this.getInfoFromManifest(
           this.nodeInfo.versionSpec,
-          this.nodeInfo.arch,
+          osArch,
           manifest
         );
         if (versionInfo) {
           core.info(
             `Acquiring ${versionInfo.resolvedVersion} - ${versionInfo.arch} from ${versionInfo.downloadUrl}`
           );
-          toolPath = await tc.downloadTool(
+          downloadPath = await tc.downloadTool(
             versionInfo.downloadUrl,
             undefined,
             this.nodeInfo.auth
           );
+
+          if (downloadPath) {
+            toolPath = await this.extractArchive(downloadPath, versionInfo);
+          }
         } else {
           core.info(
             'Not found in manifest.  Falling back to download directly from Node'
@@ -100,11 +106,19 @@ export default class OfficialBuilds extends BaseDistribution {
         core.info('Falling back to download directly from Node');
       }
 
-      const nodeVersions = await this.getNodejsVersions();
-      const versions = this.filterVersions(nodeVersions);
-      const evaluatedVersion = this.evaluateVersions(versions);
-      const toolName = this.getNodejsDistInfo(evaluatedVersion, this.osPlat);
-      toolPath = await this.downloadNodejs(toolName);
+      if (!toolPath) {
+        const nodeVersions = await this.getNodejsVersions();
+        core.info('came here undefined');
+        const versions = this.filterVersions(nodeVersions);
+        const evaluatedVersion = this.evaluateVersions(versions);
+        if (!evaluatedVersion) {
+          throw new Error(
+            `Unable to find Node version '${this.nodeInfo.versionSpec}' for platform ${this.osPlat} and architecture ${this.nodeInfo.arch}.`
+          );
+        }
+        const toolName = this.getNodejsDistInfo(evaluatedVersion, this.osPlat);
+        toolPath = await this.downloadNodejs(toolName);
+      }
     }
 
     if (this.osPlat != 'win32') {
@@ -204,7 +218,7 @@ export default class OfficialBuilds extends BaseDistribution {
 
   private async resolveVersionFromManifest(
     versionSpec: string,
-    osArch: string = this.translateArchToDistUrl(os.arch()),
+    osArch: string,
     manifest: tc.IToolRelease[] | undefined
   ): Promise<string | undefined> {
     try {
