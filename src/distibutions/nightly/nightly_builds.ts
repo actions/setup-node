@@ -4,7 +4,7 @@ import * as tc from '@actions/tool-cache';
 import semver from 'semver';
 
 import BaseDistribution from '../base-distribution';
-import {INodejs, INodeVersion} from '../base-models';
+import {INodejs} from '../base-models';
 
 export default class NightlyNodejs extends BaseDistribution {
   constructor(nodeInfo: INodejs) {

@@ -108,7 +108,6 @@ export default class OfficialBuilds extends BaseDistribution {
 
       if (!toolPath) {
         const nodeVersions = await this.getNodejsVersions();
-        core.info('came here undefined');
         const versions = this.filterVersions(nodeVersions);
         const evaluatedVersion = this.evaluateVersions(versions);
         if (!evaluatedVersion) {

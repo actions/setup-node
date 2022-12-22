@@ -73431,7 +73431,7 @@ var Distributions;
     Distributions["RC"] = "rc";
 })(Distributions || (Distributions = {}));
 function identifyDistribution(versionSpec) {
-    let distribution = '';
+    let distribution = Distributions.DEFAULT;
     if (versionSpec.includes(Distributions.NIGHTLY)) {
         distribution = Distributions.NIGHTLY;
     }
@@ -73440,9 +73440,6 @@ function identifyDistribution(versionSpec) {
     }
     else if (versionSpec.includes(Distributions.RC)) {
         distribution = Distributions.RC;
-    }
-    else {
-        distribution = Distributions.DEFAULT;
     }
     return distribution;
 }
@@ -73651,7 +73648,6 @@ class OfficialBuilds extends base_distribution_1.default {
                 }
                 if (!toolPath) {
                     const nodeVersions = yield this.getNodejsVersions();
-                    core.info('came here undefined');
                     const versions = this.filterVersions(nodeVersions);
                     const evaluatedVersion = this.evaluateVersions(versions);
                     if (!evaluatedVersion) {

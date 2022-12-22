@@ -309,7 +309,6 @@ describe('setup-node', () => {
     expect(logSpy).toHaveBeenCalledWith(
       'Not found in manifest.  Falling back to download directly from Node'
     );
-    expect(logSpy).toHaveBeenCalledWith('came here undefined');
     expect(dlSpy).toHaveBeenCalled();
     expect(exSpy).toHaveBeenCalled();
     expect(cnSpy).toHaveBeenCalledWith(`::add-path::${expPath}${osm.EOL}`);

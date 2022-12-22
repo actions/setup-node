@@ -13,15 +13,13 @@ enum Distributions {
 }
 
 function identifyDistribution(versionSpec: string) {
-  let distribution = '';
+  let distribution = Distributions.DEFAULT;
   if (versionSpec.includes(Distributions.NIGHTLY)) {
     distribution = Distributions.NIGHTLY;
   } else if (versionSpec.includes(Distributions.CANARY)) {
     distribution = Distributions.CANARY;
   } else if (versionSpec.includes(Distributions.RC)) {
     distribution = Distributions.RC;
-  } else {
-    distribution = Distributions.DEFAULT;
   }
 
   return distribution;
