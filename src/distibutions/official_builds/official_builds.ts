@@ -19,6 +19,7 @@ export default class OfficialBuilds extends BaseDistribution {
   public async getNodeJsInfo() {
     let manifest: tc.IToolRelease[] | undefined;
     let nodeVersions: INodeVersion[] | undefined;
+    const osArch = this.translateArchToDistUrl(this.nodeInfo.arch);
     if (this.isLtsAlias(this.nodeInfo.versionSpec)) {
       core.info('Attempt to resolve LTS alias from manifest...');
 
@@ -42,7 +43,6 @@ export default class OfficialBuilds extends BaseDistribution {
 
     if (this.nodeInfo.checkLatest) {
       core.info('Attempt to resolve the latest version from manifest...');
-      const osArch = this.translateArchToDistUrl(this.nodeInfo.arch);
       const resolvedVersion = await this.resolveVersionFromManifest(
         this.nodeInfo.versionSpec,
         osArch,
@@ -66,7 +66,7 @@ export default class OfficialBuilds extends BaseDistribution {
       let downloadPath = '';
       try {
         core.info(`Attempting to download ${this.nodeInfo.versionSpec}...`);
-        const osArch = this.translateArchToDistUrl(this.nodeInfo.arch);
+
         const versionInfo = await this.getInfoFromManifest(
           this.nodeInfo.versionSpec,
           osArch,

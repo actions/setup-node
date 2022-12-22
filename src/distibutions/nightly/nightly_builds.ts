@@ -7,6 +7,7 @@ import BaseDistribution from '../base-distribution';
 import {INodejs} from '../base-models';
 
 export default class NightlyNodejs extends BaseDistribution {
+  protected distribution = 'nightly';
   constructor(nodeInfo: INodejs) {
     super(nodeInfo);
   }
@@ -21,7 +22,7 @@ export default class NightlyNodejs extends BaseDistribution {
           return false;
         }
 
-        return prerelease[0].includes('nightly');
+        return prerelease[0].includes(this.distribution);
       });
     localVersionPaths.sort(semver.rcompare);
     const localVersion = this.evaluateVersions(localVersionPaths);
@@ -38,14 +39,13 @@ export default class NightlyNodejs extends BaseDistribution {
     core.debug(`evaluating ${versions.length} versions`);
 
     const {includePrerelease, range} = this.createRangePreRelease(
-      this.nodeInfo.versionSpec,
-      'nightly'
+      this.nodeInfo.versionSpec
     );
 
     for (let i = 0; i < versions.length; i++) {
       const potential: string = versions[i];
       const satisfied: boolean = semver.satisfies(
-        potential.replace('nightly', 'nightly.'),
+        potential.replace(this.distribution, `${this.distribution}.`),
         range,
         {
           includePrerelease: includePrerelease
@@ -70,22 +70,19 @@ export default class NightlyNodejs extends BaseDistribution {
     return 'https://nodejs.org/download/nightly';
   }
 
-  protected createRangePreRelease(
-    versionSpec: string,
-    distribution: string = ''
-  ) {
+  protected createRangePreRelease(versionSpec: string) {
     let range: string;
     const [raw, prerelease] = this.splitVersionSpec(versionSpec);
     const isValidVersion = semver.valid(raw);
     const rawVersion = (isValidVersion ? raw : semver.coerce(raw))!;
 
-    if (prerelease !== distribution) {
+    if (prerelease !== this.distribution) {
       range = `${rawVersion}-${prerelease.replace(
-        distribution,
-        `${distribution}.`
+        this.distribution,
+        `${this.distribution}.`
       )}`;
     } else {
-      range = `${semver.validRange(`^${rawVersion}-${distribution}`)}-0`;
+      range = `${semver.validRange(`^${rawVersion}-${this.distribution}`)}-0`;
     }
 
     return {range, includePrerelease: !isValidVersion};

@@ -27,8 +27,9 @@ export default abstract class BaseDistribution {
   protected abstract evaluateVersions(nodeVersions: string[]): string;
 
   public async getNodeJsInfo() {
+    let nodeVersions: INodeVersion[] | undefined;
     if (this.nodeInfo.checkLatest) {
-      const nodeVersions = await this.getNodejsVersions();
+      nodeVersions = await this.getNodejsVersions();
       const versions = this.filterVersions(nodeVersions);
       const evaluatedVersion = this.evaluateVersions(versions);
 
@@ -41,7 +42,7 @@ export default abstract class BaseDistribution {
     if (toolPath) {
       core.info(`Found in cache @ ${toolPath}`);
     } else {
-      const nodeVersions = await this.getNodejsVersions();
+      nodeVersions ??= await this.getNodejsVersions();
       const versions = this.filterVersions(nodeVersions);
       const evaluatedVersion = this.evaluateVersions(versions);
       if (!evaluatedVersion) {
