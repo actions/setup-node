@@ -73293,7 +73293,7 @@ class BaseDistribution {
                 core.info(`Found in cache @ ${toolPath}`);
             }
             else {
-                nodeVersions !== null && nodeVersions !== void 0 ? nodeVersions : (nodeVersions = yield this.getNodejsVersions());
+                nodeVersions = nodeVersions !== null && nodeVersions !== void 0 ? nodeVersions : (yield this.getNodejsVersions());
                 const versions = this.filterVersions(nodeVersions);
                 const evaluatedVersion = this.evaluateVersions(versions);
                 if (!evaluatedVersion) {

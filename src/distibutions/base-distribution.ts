@@ -42,7 +42,7 @@ export default abstract class BaseDistribution {
     if (toolPath) {
       core.info(`Found in cache @ ${toolPath}`);
     } else {
-      nodeVersions ??= await this.getNodejsVersions();
+      nodeVersions = nodeVersions ?? (await this.getNodejsVersions());
       const versions = this.filterVersions(nodeVersions);
       const evaluatedVersion = this.evaluateVersions(versions);
       if (!evaluatedVersion) {
