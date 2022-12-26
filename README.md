@@ -138,6 +138,7 @@ If the runner is not able to access github.com, any Nodejs versions requested du
 8. [Publishing to npmjs and GPR with npm](docs/advanced-usage.md#publish-to-npmjs-and-gpr-with-npm)
 9. [Publishing to npmjs and GPR with yarn](docs/advanced-usage.md#publish-to-npmjs-and-gpr-with-yarn)
 10. [Using private packages](docs/advanced-usage.md#use-private-packages)
+11. [Enabling Corepack](docs/advanced-usage.md#enabling-corepack)
 
 ## License
 
