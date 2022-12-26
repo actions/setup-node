@@ -1253,6 +1253,44 @@ describe('setup-node', () => {
       }
     );
   });
+
+  describe('corepack flag', () => {
+    it('use corepack if specified', async () => {
+      inputs['corepack'] = 'true';
+      await main.run();
+      expect(getExecOutputSpy).toHaveBeenCalledWith(
+        'corepack',
+        ['enable'],
+        expect.anything()
+      );
+    });
+
+    it('use corepack with given package manager', async () => {
+      inputs['corepack'] = 'npm';
+      await main.run();
+      expect(getExecOutputSpy).toHaveBeenCalledWith(
+        'corepack',
+        ['enable', 'npm'],
+        expect.anything()
+      );
+    });
+
+    it('use corepack with multiple package managers', async () => {
+      inputs['corepack'] = 'npm yarn';
+      await main.run();
+      expect(getExecOutputSpy).toHaveBeenCalledWith(
+        'corepack',
+        ['enable', 'npm', 'yarn'],
+        expect.anything()
+      );
+    });
+
+    it('fails to use corepack with an invalid package manager', async () => {
+      await expect(im.enableCorepack('npm turbo')).rejects.toThrowError(
+        `One or more of the specified package managers [ npm turbo ] are not supported by corepack`
+      );
+    });
+  });
 });
 
 describe('helper methods', () => {
