@@ -10,8 +10,8 @@ import osm from 'os';
 import path from 'path';
 import * as main from '../src/main';
 import * as auth from '../src/authutil';
-import OfficialBuilds from '../src/distibutions/official_builds/official_builds';
-import {INodeVersion} from '../src/distibutions/base-models';
+import OfficialBuilds from '../src/distributions/official_builds/official_builds';
+import {INodeVersion} from '../src/distributions/base-models';
 
 const nodeTestManifest = require('./data/versions-manifest.json');
 const nodeTestDist = require('./data/node-dist-index.json');
@@ -307,7 +307,7 @@ describe('setup-node', () => {
       `Attempting to download ${versionSpec}...`
     );
     expect(logSpy).toHaveBeenCalledWith(
-      'Not found in manifest.  Falling back to download directly from Node'
+      'Not found in manifest. Falling back to download directly from Node'
     );
     expect(dlSpy).toHaveBeenCalled();
     expect(exSpy).toHaveBeenCalled();
@@ -325,7 +325,7 @@ describe('setup-node', () => {
     await main.run();
 
     expect(logSpy).toHaveBeenCalledWith(
-      'Not found in manifest.  Falling back to download directly from Node'
+      'Not found in manifest. Falling back to download directly from Node'
     );
     expect(logSpy).toHaveBeenCalledWith(
       `Attempting to download ${versionSpec}...`

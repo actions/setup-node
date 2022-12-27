@@ -11,7 +11,7 @@ import each from 'jest-each';
 
 import * as main from '../src/main';
 import * as util from '../src/util';
-import OfficialBuilds from '../src/distibutions/official_builds/official_builds';
+import OfficialBuilds from '../src/distributions/official_builds/official_builds';
 
 describe('main tests', () => {
   let inputs = {} as any;
@@ -33,7 +33,7 @@ describe('main tests', () => {
   let findSpy: jest.SpyInstance;
   let isCacheActionAvailable: jest.SpyInstance;
 
-  let getNodeJsInfoSpy: jest.SpyInstance;
+  let setupNodeJsSpy: jest.SpyInstance;
 
   beforeEach(() => {
     inputs = {};
@@ -70,8 +70,8 @@ describe('main tests', () => {
       // process.stderr.write('write:' + line + '\n');
     });
 
-    getNodeJsInfoSpy = jest.spyOn(OfficialBuilds.prototype, 'getNodeJsInfo');
-    getNodeJsInfoSpy.mockImplementation(() => {});
+    setupNodeJsSpy = jest.spyOn(OfficialBuilds.prototype, 'setupNodeJs');
+    setupNodeJsSpy.mockImplementation(() => {});
   });
 
   afterEach(() => {

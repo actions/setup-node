@@ -12,7 +12,7 @@ export default class NightlyNodejs extends BaseDistribution {
     super(nodeInfo);
   }
 
-  protected findVersionInHoostedToolCacheDirectory(): string {
+  protected findVersionInHostedToolCacheDirectory(): string {
     let toolPath = '';
     const localVersionPaths = tc
       .findAllVersions('node', this.nodeInfo.arch)

@@ -26,11 +26,11 @@ export default abstract class BaseDistribution {
   protected abstract getDistributionUrl(): string;
   protected abstract evaluateVersions(nodeVersions: string[]): string;
 
-  public async getNodeJsInfo() {
-    let nodeVersions: INodeVersion[] | undefined;
+  public async setupNodeJs() {
+    let nodeJsVersions: INodeVersion[] | undefined;
     if (this.nodeInfo.checkLatest) {
-      nodeVersions = await this.getNodejsVersions();
-      const versions = this.filterVersions(nodeVersions);
+      nodeJsVersions = await this.getNodeJsVersions();
+      const versions = this.filterVersions(nodeJsVersions);
       const evaluatedVersion = this.evaluateVersions(versions);
 
       if (evaluatedVersion) {
@@ -38,12 +38,12 @@ export default abstract class BaseDistribution {
       }
     }
 
-    let toolPath = this.findVersionInHoostedToolCacheDirectory();
+    let toolPath = this.findVersionInHostedToolCacheDirectory();
     if (toolPath) {
       core.info(`Found in cache @ ${toolPath}`);
     } else {
-      nodeVersions = nodeVersions ?? (await this.getNodejsVersions());
-      const versions = this.filterVersions(nodeVersions);
+      nodeJsVersions = nodeJsVersions ?? (await this.getNodeJsVersions());
+      const versions = this.filterVersions(nodeJsVersions);
       const evaluatedVersion = this.evaluateVersions(versions);
       if (!evaluatedVersion) {
         throw new Error(
@@ -61,11 +61,11 @@ export default abstract class BaseDistribution {
     core.addPath(toolPath);
   }
 
-  protected findVersionInHoostedToolCacheDirectory() {
+  protected findVersionInHostedToolCacheDirectory() {
     return tc.find('node', this.nodeInfo.versionSpec, this.nodeInfo.arch);
   }
 
-  protected async getNodejsVersions(): Promise<INodeVersion[]> {
+  protected async getNodeJsVersions(): Promise<INodeVersion[]> {
     const initialUrl = this.getDistributionUrl();
     const dataUrl = `${initialUrl}/index.json`;
 
@@ -88,7 +88,7 @@ export default abstract class BaseDistribution {
     return <INodeVersionInfo>{
       downloadUrl: url,
       resolvedVersion: version,
-      arch: osArch, // have to be arch but not osArch,
+      arch: osArch,
       fileName: fileName
     };
   }
@@ -227,12 +227,12 @@ export default abstract class BaseDistribution {
     return dataFileName;
   }
 
-  protected filterVersions(nodeVersions: INodeVersion[]) {
+  protected filterVersions(nodeJsVersions: INodeVersion[]) {
     const versions: string[] = [];
 
     const dataFileName = this.getDistFileName(this.nodeInfo.arch);
 
-    nodeVersions.forEach((nodeVersion: INodeVersion) => {
+    nodeJsVersions.forEach((nodeVersion: INodeVersion) => {
       // ensure this version supports your os and platform
       if (nodeVersion.files.indexOf(dataFileName) >= 0) {
         versions.push(nodeVersion.version);

@@ -16,9 +16,9 @@ export default class OfficialBuilds extends BaseDistribution {
     super(nodeInfo);
   }
 
-  public async getNodeJsInfo() {
+  public async setupNodeJs() {
     let manifest: tc.IToolRelease[] | undefined;
-    let nodeVersions: INodeVersion[] | undefined;
+    let nodeJsVersions: INodeVersion[] | undefined;
     const osArch = this.translateArchToDistUrl(this.nodeInfo.arch);
     if (this.isLtsAlias(this.nodeInfo.versionSpec)) {
       core.info('Attempt to resolve LTS alias from manifest...');
@@ -34,8 +34,8 @@ export default class OfficialBuilds extends BaseDistribution {
     }
 
     if (this.isLatestSyntax(this.nodeInfo.versionSpec)) {
-      nodeVersions = await this.getNodejsVersions();
-      const versions = this.filterVersions(nodeVersions);
+      nodeJsVersions = await this.getNodeJsVersions();
+      const versions = this.filterVersions(nodeJsVersions);
       this.nodeInfo.versionSpec = this.evaluateVersions(versions);
 
       core.info('getting latest node version...');
@@ -58,7 +58,7 @@ export default class OfficialBuilds extends BaseDistribution {
       }
     }
 
-    let toolPath = this.findVersionInHoostedToolCacheDirectory();
+    let toolPath = this.findVersionInHostedToolCacheDirectory();
 
     if (toolPath) {
       core.info(`Found in cache @ ${toolPath}`);
@@ -87,7 +87,7 @@ export default class OfficialBuilds extends BaseDistribution {
           }
         } else {
           core.info(
-            'Not found in manifest.  Falling back to download directly from Node'
+            'Not found in manifest. Falling back to download directly from Node'
           );
         }
       } catch (err) {
@@ -97,7 +97,7 @@ export default class OfficialBuilds extends BaseDistribution {
           (err.httpStatusCode === 403 || err.httpStatusCode === 429)
         ) {
           core.info(
-            `Received HTTP status code ${err.httpStatusCode}.  This usually indicates the rate limit has been exceeded`
+            `Received HTTP status code ${err.httpStatusCode}. This usually indicates the rate limit has been exceeded`
           );
         } else {
           core.info(err.message);
@@ -107,8 +107,8 @@ export default class OfficialBuilds extends BaseDistribution {
       }
 
       if (!toolPath) {
-        const nodeVersions = await this.getNodejsVersions();
-        const versions = this.filterVersions(nodeVersions);
+        const nodeJsVersions = await this.getNodeJsVersions();
+        const versions = this.filterVersions(nodeJsVersions);
         const evaluatedVersion = this.evaluateVersions(versions);
         if (!evaluatedVersion) {
           throw new Error(

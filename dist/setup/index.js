@@ -73222,7 +73222,7 @@ var Outputs;
 
 /***/ }),
 
-/***/ 8653:
+/***/ 7:
 /***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
 "use strict";
@@ -73277,24 +73277,24 @@ class BaseDistribution {
             maxRetries: 3
         });
     }
-    getNodeJsInfo() {
+    setupNodeJs() {
         return __awaiter(this, void 0, void 0, function* () {
-            let nodeVersions;
+            let nodeJsVersions;
             if (this.nodeInfo.checkLatest) {
-                nodeVersions = yield this.getNodejsVersions();
-                const versions = this.filterVersions(nodeVersions);
+                nodeJsVersions = yield this.getNodeJsVersions();
+                const versions = this.filterVersions(nodeJsVersions);
                 const evaluatedVersion = this.evaluateVersions(versions);
                 if (evaluatedVersion) {
                     this.nodeInfo.versionSpec = evaluatedVersion;
                 }
             }
-            let toolPath = this.findVersionInHoostedToolCacheDirectory();
+            let toolPath = this.findVersionInHostedToolCacheDirectory();
             if (toolPath) {
                 core.info(`Found in cache @ ${toolPath}`);
             }
             else {
-                nodeVersions = nodeVersions !== null && nodeVersions !== void 0 ? nodeVersions : (yield this.getNodejsVersions());
-                const versions = this.filterVersions(nodeVersions);
+                nodeJsVersions = nodeJsVersions !== null && nodeJsVersions !== void 0 ? nodeJsVersions : (yield this.getNodeJsVersions());
+                const versions = this.filterVersions(nodeJsVersions);
                 const evaluatedVersion = this.evaluateVersions(versions);
                 if (!evaluatedVersion) {
                     throw new Error(`Unable to find Node version '${this.nodeInfo.versionSpec}' for platform ${this.osPlat} and architecture ${this.nodeInfo.arch}.`);
@@ -73308,10 +73308,10 @@ class BaseDistribution {
             core.addPath(toolPath);
         });
     }
-    findVersionInHoostedToolCacheDirectory() {
+    findVersionInHostedToolCacheDirectory() {
         return tc.find('node', this.nodeInfo.versionSpec, this.nodeInfo.arch);
     }
-    getNodejsVersions() {
+    getNodeJsVersions() {
         return __awaiter(this, void 0, void 0, function* () {
             const initialUrl = this.getDistributionUrl();
             const dataUrl = `${initialUrl}/index.json`;
@@ -73442,10 +73442,10 @@ class BaseDistribution {
         }
         return dataFileName;
     }
-    filterVersions(nodeVersions) {
+    filterVersions(nodeJsVersions) {
         const versions = [];
         const dataFileName = this.getDistFileName(this.nodeInfo.arch);
-        nodeVersions.forEach((nodeVersion) => {
+        nodeJsVersions.forEach((nodeVersion) => {
             // ensure this version supports your os and platform
             if (nodeVersion.files.indexOf(dataFileName) >= 0) {
                 versions.push(nodeVersion.version);
@@ -73467,7 +73467,7 @@ exports["default"] = BaseDistribution;
 
 /***/ }),
 
-/***/ 1260:
+/***/ 5617:
 /***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
 "use strict";
@@ -73477,10 +73477,10 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.getNodejsDistribution = void 0;
-const nightly_builds_1 = __importDefault(__nccwpck_require__(1002));
-const official_builds_1 = __importDefault(__nccwpck_require__(9856));
-const rc_builds_1 = __importDefault(__nccwpck_require__(6235));
-const canary_builds_1 = __importDefault(__nccwpck_require__(4833));
+const nightly_builds_1 = __importDefault(__nccwpck_require__(7127));
+const official_builds_1 = __importDefault(__nccwpck_require__(7854));
+const rc_builds_1 = __importDefault(__nccwpck_require__(8837));
+const canary_builds_1 = __importDefault(__nccwpck_require__(969));
 var Distributions;
 (function (Distributions) {
     Distributions["DEFAULT"] = "";
@@ -73519,7 +73519,7 @@ exports.getNodejsDistribution = getNodejsDistribution;
 
 /***/ }),
 
-/***/ 1002:
+/***/ 7127:
 /***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
 "use strict";
@@ -73550,13 +73550,13 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 const core = __importStar(__nccwpck_require__(2186));
 const tc = __importStar(__nccwpck_require__(7784));
 const semver_1 = __importDefault(__nccwpck_require__(5911));
-const base_distribution_1 = __importDefault(__nccwpck_require__(8653));
+const base_distribution_1 = __importDefault(__nccwpck_require__(7));
 class NightlyNodejs extends base_distribution_1.default {
     constructor(nodeInfo) {
         super(nodeInfo);
         this.distribution = 'nightly';
     }
-    findVersionInHoostedToolCacheDirectory() {
+    findVersionInHostedToolCacheDirectory() {
         let toolPath = '';
         const localVersionPaths = tc
             .findAllVersions('node', this.nodeInfo.arch)
@@ -73621,7 +73621,7 @@ exports["default"] = NightlyNodejs;
 
 /***/ }),
 
-/***/ 9856:
+/***/ 7854:
 /***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
 "use strict";
@@ -73663,15 +73663,15 @@ const tc = __importStar(__nccwpck_require__(7784));
 const semver = __importStar(__nccwpck_require__(5911));
 const os_1 = __importDefault(__nccwpck_require__(2037));
 const path_1 = __importDefault(__nccwpck_require__(1017));
-const base_distribution_1 = __importDefault(__nccwpck_require__(8653));
+const base_distribution_1 = __importDefault(__nccwpck_require__(7));
 class OfficialBuilds extends base_distribution_1.default {
     constructor(nodeInfo) {
         super(nodeInfo);
     }
-    getNodeJsInfo() {
+    setupNodeJs() {
         return __awaiter(this, void 0, void 0, function* () {
             let manifest;
-            let nodeVersions;
+            let nodeJsVersions;
             const osArch = this.translateArchToDistUrl(this.nodeInfo.arch);
             if (this.isLtsAlias(this.nodeInfo.versionSpec)) {
                 core.info('Attempt to resolve LTS alias from manifest...');
@@ -73680,8 +73680,8 @@ class OfficialBuilds extends base_distribution_1.default {
                 this.nodeInfo.versionSpec = this.resolveLtsAliasFromManifest(this.nodeInfo.versionSpec, true, manifest);
             }
             if (this.isLatestSyntax(this.nodeInfo.versionSpec)) {
-                nodeVersions = yield this.getNodejsVersions();
-                const versions = this.filterVersions(nodeVersions);
+                nodeJsVersions = yield this.getNodeJsVersions();
+                const versions = this.filterVersions(nodeJsVersions);
                 this.nodeInfo.versionSpec = this.evaluateVersions(versions);
                 core.info('getting latest node version...');
             }
@@ -73696,7 +73696,7 @@ class OfficialBuilds extends base_distribution_1.default {
                     core.info(`Failed to resolve version ${this.nodeInfo.versionSpec} from manifest`);
                 }
             }
-            let toolPath = this.findVersionInHoostedToolCacheDirectory();
+            let toolPath = this.findVersionInHostedToolCacheDirectory();
             if (toolPath) {
                 core.info(`Found in cache @ ${toolPath}`);
             }
@@ -73713,14 +73713,14 @@ class OfficialBuilds extends base_distribution_1.default {
                         }
                     }
                     else {
-                        core.info('Not found in manifest.  Falling back to download directly from Node');
+                        core.info('Not found in manifest. Falling back to download directly from Node');
                     }
                 }
                 catch (err) {
                     // Rate limit?
                     if (err instanceof tc.HTTPError &&
                         (err.httpStatusCode === 403 || err.httpStatusCode === 429)) {
-                        core.info(`Received HTTP status code ${err.httpStatusCode}.  This usually indicates the rate limit has been exceeded`);
+                        core.info(`Received HTTP status code ${err.httpStatusCode}. This usually indicates the rate limit has been exceeded`);
                     }
                     else {
                         core.info(err.message);
@@ -73729,8 +73729,8 @@ class OfficialBuilds extends base_distribution_1.default {
                     core.info('Falling back to download directly from Node');
                 }
                 if (!toolPath) {
-                    const nodeVersions = yield this.getNodejsVersions();
-                    const versions = this.filterVersions(nodeVersions);
+                    const nodeJsVersions = yield this.getNodeJsVersions();
+                    const versions = this.filterVersions(nodeJsVersions);
                     const evaluatedVersion = this.evaluateVersions(versions);
                     if (!evaluatedVersion) {
                         throw new Error(`Unable to find Node version '${this.nodeInfo.versionSpec}' for platform ${this.osPlat} and architecture ${this.nodeInfo.arch}.`);
@@ -73842,7 +73842,7 @@ exports["default"] = OfficialBuilds;
 
 /***/ }),
 
-/***/ 6235:
+/***/ 8837:
 /***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
 "use strict";
@@ -73872,7 +73872,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 const core = __importStar(__nccwpck_require__(2186));
 const semver = __importStar(__nccwpck_require__(5911));
-const base_distribution_1 = __importDefault(__nccwpck_require__(8653));
+const base_distribution_1 = __importDefault(__nccwpck_require__(7));
 class RcBuild extends base_distribution_1.default {
     constructor(nodeInfo) {
         super(nodeInfo);
@@ -73905,7 +73905,7 @@ exports["default"] = RcBuild;
 
 /***/ }),
 
-/***/ 4833:
+/***/ 969:
 /***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
 "use strict";
@@ -73936,13 +73936,13 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 const core = __importStar(__nccwpck_require__(2186));
 const tc = __importStar(__nccwpck_require__(7784));
 const semver_1 = __importDefault(__nccwpck_require__(5911));
-const base_distribution_1 = __importDefault(__nccwpck_require__(8653));
+const base_distribution_1 = __importDefault(__nccwpck_require__(7));
 class CanaryBuild extends base_distribution_1.default {
     constructor(nodeInfo) {
         super(nodeInfo);
         this.distribution = 'v8-canary';
     }
-    findVersionInHoostedToolCacheDirectory() {
+    findVersionInHostedToolCacheDirectory() {
         let toolPath = '';
         const localVersionPaths = tc
             .findAllVersions('node', this.nodeInfo.arch)
@@ -74052,7 +74052,7 @@ const auth = __importStar(__nccwpck_require__(7573));
 const path = __importStar(__nccwpck_require__(1017));
 const cache_restore_1 = __nccwpck_require__(9517);
 const cache_utils_1 = __nccwpck_require__(1678);
-const installer_factory_1 = __nccwpck_require__(1260);
+const installer_factory_1 = __nccwpck_require__(5617);
 const util_1 = __nccwpck_require__(2629);
 function run() {
     return __awaiter(this, void 0, void 0, function* () {
@@ -74083,7 +74083,7 @@ function run() {
                     arch
                 };
                 const nodeDistribution = installer_factory_1.getNodejsDistribution(nodejsInfo);
-                yield nodeDistribution.getNodeJsInfo();
+                yield nodeDistribution.setupNodeJs();
             }
             yield util_1.printEnvDetailsAndSetOutput();
             const registryUrl = core.getInput('registry-url');

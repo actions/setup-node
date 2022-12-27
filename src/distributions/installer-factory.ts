@@ -2,7 +2,7 @@ import BaseDistribution from './base-distribution';
 import {INodejs} from './base-models';
 import NightlyNodejs from './nightly/nightly_builds';
 import OfficialBuilds from './official_builds/official_builds';
-import RcBuild from './official_builds/rc/rc_builds';
+import RcBuild from './rc/rc_builds';
 import CanaryBuild from './v8-canary/canary_builds';
 
 enum Distributions {

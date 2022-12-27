@@ -2,8 +2,8 @@ import * as core from '@actions/core';
 
 import * as semver from 'semver';
 
-import BaseDistribution from '../../base-distribution';
-import {INodejs} from '../../base-models';
+import BaseDistribution from '../base-distribution';
+import {INodejs} from '../base-models';
 
 export default class RcBuild extends BaseDistribution {
   constructor(nodeInfo: INodejs) {

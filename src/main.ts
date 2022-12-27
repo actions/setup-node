@@ -7,7 +7,7 @@ import * as auth from './authutil';
 import * as path from 'path';
 import {restoreCache} from './cache-restore';
 import {isCacheFeatureAvailable} from './cache-utils';
-import {getNodejsDistribution} from './distibutions/installer-factory';
+import {getNodejsDistribution} from './distributions/installer-factory';
 import {parseNodeVersionFile, printEnvDetailsAndSetOutput} from './util';
 
 export async function run() {
@@ -45,7 +45,7 @@ export async function run() {
         arch
       };
       const nodeDistribution = getNodejsDistribution(nodejsInfo);
-      await nodeDistribution.getNodeJsInfo();
+      await nodeDistribution.setupNodeJs();
     }
 
     await printEnvDetailsAndSetOutput();
