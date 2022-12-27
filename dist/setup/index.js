@@ -73849,73 +73849,18 @@ exports["default"] = RcBuild;
 
 "use strict";
 
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
-    __setModuleDefault(result, mod);
-    return result;
-};
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-const tc = __importStar(__nccwpck_require__(7784));
-const semver_1 = __importDefault(__nccwpck_require__(5911));
-const base_distribution_1 = __importDefault(__nccwpck_require__(7));
-class CanaryBuild extends base_distribution_1.default {
+const nightly_builds_1 = __importDefault(__nccwpck_require__(7127));
+class CanaryBuild extends nightly_builds_1.default {
     constructor(nodeInfo) {
         super(nodeInfo);
         this.distribution = 'v8-canary';
     }
-    findVersionInHostedToolCacheDirectory() {
-        let toolPath = '';
-        const localVersionPaths = tc
-            .findAllVersions('node', this.nodeInfo.arch)
-            .filter(i => {
-            const prerelease = semver_1.default.prerelease(i);
-            if (!prerelease) {
-                return false;
-            }
-            return prerelease[0].includes(this.distribution);
-        });
-        localVersionPaths.sort(semver_1.default.rcompare);
-        const localVersion = this.evaluateVersions(localVersionPaths);
-        if (localVersion) {
-            toolPath = tc.find('node', localVersion, this.nodeInfo.arch);
-        }
-        return toolPath;
-    }
     getDistributionUrl() {
         return 'https://nodejs.org/download/v8-canary';
-    }
-    validRange(versionSpec) {
-        let range;
-        const [raw, prerelease] = this.splitVersionSpec(versionSpec);
-        const isValidVersion = semver_1.default.valid(raw);
-        const rawVersion = (isValidVersion ? raw : semver_1.default.coerce(raw));
-        if (prerelease !== this.distribution) {
-            range = versionSpec;
-        }
-        else {
-            range = `${semver_1.default.validRange(`^${rawVersion}-${this.distribution}`)}-0`;
-        }
-        return { range, options: { includePrerelease: !isValidVersion } };
-    }
-    splitVersionSpec(versionSpec) {
-        return versionSpec.split(/-(.*)/s);
     }
 }
 exports["default"] = CanaryBuild;
