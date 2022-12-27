@@ -43,10 +43,7 @@ export default class NightlyNodejs extends BaseDistribution {
     const rawVersion = (isValidVersion ? raw : semver.coerce(raw))!;
 
     if (prerelease !== this.distribution) {
-      range = `${rawVersion}-${prerelease.replace(
-        this.distribution,
-        `${this.distribution}.`
-      )}`;
+      range = versionSpec;
     } else {
       range = `${semver.validRange(`^${rawVersion}-${this.distribution}`)}-0`;
     }

@@ -73530,7 +73530,7 @@ class NightlyNodejs extends base_distribution_1.default {
         const isValidVersion = semver_1.default.valid(raw);
         const rawVersion = (isValidVersion ? raw : semver_1.default.coerce(raw));
         if (prerelease !== this.distribution) {
-            range = `${rawVersion}-${prerelease.replace(this.distribution, `${this.distribution}.`)}`;
+            range = versionSpec;
         }
         else {
             range = `${semver_1.default.validRange(`^${rawVersion}-${this.distribution}`)}-0`;
@@ -73814,7 +73814,7 @@ class CanaryBuild extends base_distribution_1.default {
         const isValidVersion = semver_1.default.valid(raw);
         const rawVersion = (isValidVersion ? raw : semver_1.default.coerce(raw));
         if (prerelease !== this.distribution) {
-            range = `${rawVersion}-${prerelease.replace(this.distribution, `${this.distribution}.`)}`;
+            range = versionSpec;
         }
         else {
             range = `${semver_1.default.validRange(`^${rawVersion}-${this.distribution}`)}-0`;
