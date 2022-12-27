@@ -49,6 +49,9 @@ export async function run() {
       auth.configAuthentication(registryUrl, alwaysAuth);
     }
 
+    const corepack = core.getInput('corepack') || 'false';
+    await installer.enableCorepack(corepack);
+
     if (cache && isCacheFeatureAvailable()) {
       const cacheDependencyPath = core.getInput('cache-dependency-path');
       await restoreCache(cache, cacheDependencyPath);

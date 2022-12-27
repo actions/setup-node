@@ -4,6 +4,7 @@ import * as core from '@actions/core';
 import * as hc from '@actions/http-client';
 import * as io from '@actions/io';
 import * as tc from '@actions/tool-cache';
+import * as exec from '@actions/exec';
 import * as path from 'path';
 import * as semver from 'semver';
 import fs from 'fs';
@@ -603,4 +604,22 @@ export function parseNodeVersionFile(contents: string): string {
 
 function isLatestSyntax(versionSpec): boolean {
   return ['current', 'latest', 'node'].includes(versionSpec);
+}
+
+export async function enableCorepack(input: string): Promise<void> {
+  let corepackArgs = ['enable'];
+  if (input.length > 0 && input !== 'false') {
+    if (input !== 'true') {
+      const packageManagers = input.split(' ');
+      if (!packageManagers.every(pm => ['npm', 'yarn', 'pnpm'].includes(pm))) {
+        throw new Error(
+          `One or more of the specified package managers [ ${input} ] are not supported by corepack`
+        );
+      }
+      corepackArgs.push(...packageManagers);
+    }
+    await exec.getExecOutput('corepack', corepackArgs, {
+      ignoreReturnCode: true
+    });
+  }
 }

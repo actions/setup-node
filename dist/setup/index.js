@@ -73209,6 +73209,7 @@ const core = __importStar(__nccwpck_require__(2186));
 const hc = __importStar(__nccwpck_require__(9925));
 const io = __importStar(__nccwpck_require__(7436));
 const tc = __importStar(__nccwpck_require__(7784));
+const exec = __importStar(__nccwpck_require__(1514));
 const path = __importStar(__nccwpck_require__(1017));
 const semver = __importStar(__nccwpck_require__(5911));
 const fs_1 = __importDefault(__nccwpck_require__(7147));
@@ -73653,6 +73654,24 @@ exports.parseNodeVersionFile = parseNodeVersionFile;
 function isLatestSyntax(versionSpec) {
     return ['current', 'latest', 'node'].includes(versionSpec);
 }
+function enableCorepack(input) {
+    return __awaiter(this, void 0, void 0, function* () {
+        let corepackArgs = ['enable'];
+        if (input.length > 0 && input !== 'false') {
+            if (input !== 'true') {
+                const packageManagers = input.split(' ');
+                if (!packageManagers.every(pm => ['npm', 'yarn', 'pnpm'].includes(pm))) {
+                    throw new Error(`One or more of the specified package managers [ ${input} ] are not supported by corepack`);
+                }
+                corepackArgs.push(...packageManagers);
+            }
+            yield exec.getExecOutput('corepack', corepackArgs, {
+                ignoreReturnCode: true
+            });
+        }
+    });
+}
+exports.enableCorepack = enableCorepack;
 
 
 /***/ }),
@@ -73722,6 +73741,8 @@ function run() {
             if (registryUrl) {
                 auth.configAuthentication(registryUrl, alwaysAuth);
             }
+            const corepack = core.getInput('corepack') || 'false';
+            yield installer.enableCorepack(corepack);
             if (cache && cache_utils_1.isCacheFeatureAvailable()) {
                 const cacheDependencyPath = core.getInput('cache-dependency-path');
                 yield cache_restore_1.restoreCache(cache, cacheDependencyPath);
