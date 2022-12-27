@@ -73254,9 +73254,10 @@ class BaseDistribution {
     }
     evaluateVersions(versions) {
         let version = '';
+        const { range, options } = this.validRange(this.nodeInfo.versionSpec);
         core.debug(`evaluating ${versions.length} versions`);
         for (let potential of versions) {
-            const satisfied = semver_1.default.satisfies(potential, this.nodeInfo.versionSpec);
+            const satisfied = semver_1.default.satisfies(potential, range, options);
             if (satisfied) {
                 version = potential;
                 break;
@@ -73314,6 +73315,13 @@ class BaseDistribution {
             core.info('Done');
             return toolPath;
         });
+    }
+    validRange(versionSpec) {
+        var _a;
+        let options;
+        const c = semver_1.default.clean(versionSpec) || '';
+        const valid = (_a = semver_1.default.valid(c)) !== null && _a !== void 0 ? _a : versionSpec;
+        return { range: valid, options };
     }
     acquireNodeFromFallbackLocation(version, arch = os_1.default.arch()) {
         return __awaiter(this, void 0, void 0, function* () {
@@ -73487,7 +73495,6 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-const core = __importStar(__nccwpck_require__(2186));
 const tc = __importStar(__nccwpck_require__(7784));
 const semver_1 = __importDefault(__nccwpck_require__(5911));
 const base_distribution_1 = __importDefault(__nccwpck_require__(7));
@@ -73514,32 +73521,10 @@ class NightlyNodejs extends base_distribution_1.default {
         }
         return toolPath;
     }
-    evaluateVersions(versions) {
-        let version = '';
-        core.debug(`evaluating ${versions.length} versions`);
-        const { includePrerelease, range } = this.createRangePreRelease(this.nodeInfo.versionSpec);
-        for (let i = 0; i < versions.length; i++) {
-            const potential = versions[i];
-            const satisfied = semver_1.default.satisfies(potential.replace(this.distribution, `${this.distribution}.`), range, {
-                includePrerelease: includePrerelease
-            });
-            if (satisfied) {
-                version = potential;
-                break;
-            }
-        }
-        if (version) {
-            core.debug(`matched: ${version}`);
-        }
-        else {
-            core.debug('match not found');
-        }
-        return version;
-    }
     getDistributionUrl() {
         return 'https://nodejs.org/download/nightly';
     }
-    createRangePreRelease(versionSpec) {
+    validRange(versionSpec) {
         let range;
         const [raw, prerelease] = this.splitVersionSpec(versionSpec);
         const isValidVersion = semver_1.default.valid(raw);
@@ -73550,7 +73535,7 @@ class NightlyNodejs extends base_distribution_1.default {
         else {
             range = `${semver_1.default.validRange(`^${rawVersion}-${this.distribution}`)}-0`;
         }
-        return { range, includePrerelease: !isValidVersion };
+        return { range, options: { includePrerelease: !isValidVersion } };
     }
     splitVersionSpec(versionSpec) {
         return versionSpec.split(/-(.*)/s);
@@ -73794,7 +73779,6 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-const core = __importStar(__nccwpck_require__(2186));
 const tc = __importStar(__nccwpck_require__(7784));
 const semver_1 = __importDefault(__nccwpck_require__(5911));
 const base_distribution_1 = __importDefault(__nccwpck_require__(7));
@@ -73824,29 +73808,7 @@ class CanaryBuild extends base_distribution_1.default {
     getDistributionUrl() {
         return 'https://nodejs.org/download/v8-canary';
     }
-    evaluateVersions(versions) {
-        let version = '';
-        core.debug(`evaluating ${versions.length} versions`);
-        const { includePrerelease, range } = this.createRangePreRelease(this.nodeInfo.versionSpec);
-        for (let i = 0; i < versions.length; i++) {
-            const potential = versions[i];
-            const satisfied = semver_1.default.satisfies(potential.replace(this.distribution, `${this.distribution}.`), range, {
-                includePrerelease: includePrerelease
-            });
-            if (satisfied) {
-                version = potential;
-                break;
-            }
-        }
-        if (version) {
-            core.debug(`matched: ${version}`);
-        }
-        else {
-            core.debug('match not found');
-        }
-        return version;
-    }
-    createRangePreRelease(versionSpec) {
+    validRange(versionSpec) {
         let range;
         const [raw, prerelease] = this.splitVersionSpec(versionSpec);
         const isValidVersion = semver_1.default.valid(raw);
@@ -73857,7 +73819,7 @@ class CanaryBuild extends base_distribution_1.default {
         else {
             range = `${semver_1.default.validRange(`^${rawVersion}-${this.distribution}`)}-0`;
         }
-        return { range, includePrerelease: !isValidVersion };
+        return { range, options: { includePrerelease: !isValidVersion } };
     }
     splitVersionSpec(versionSpec) {
         return versionSpec.split(/-(.*)/s);

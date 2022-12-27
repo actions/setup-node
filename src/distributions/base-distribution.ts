@@ -60,16 +60,15 @@ export default abstract class BaseDistribution {
     core.addPath(toolPath);
   }
 
-  protected evaluateVersions(versions: string[]) {
+  protected evaluateVersions(versions: string[]): string {
     let version = '';
+
+    const {range, options} = this.validRange(this.nodeInfo.versionSpec);
 
     core.debug(`evaluating ${versions.length} versions`);
 
     for (let potential of versions) {
-      const satisfied: boolean = semver.satisfies(
-        potential,
-        this.nodeInfo.versionSpec
-      );
+      const satisfied: boolean = semver.satisfies(potential, range, options);
       if (satisfied) {
         version = potential;
         break;
@@ -139,6 +138,14 @@ export default abstract class BaseDistribution {
     core.info('Done');
 
     return toolPath;
+  }
+
+  protected validRange(versionSpec: string) {
+    let options: semver.Options | undefined;
+    const c = semver.clean(versionSpec) || '';
+    const valid = semver.valid(c) ?? versionSpec;
+
+    return {range: valid, options};
   }
 
   protected async acquireNodeFromFallbackLocation(
