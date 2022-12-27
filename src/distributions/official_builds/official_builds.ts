@@ -1,7 +1,5 @@
 import * as core from '@actions/core';
 import * as tc from '@actions/tool-cache';
-import * as semver from 'semver';
-import os from 'os';
 import path from 'path';
 
 import BaseDistribution from '../base-distribution';
@@ -115,7 +113,7 @@ export default class OfficialBuilds extends BaseDistribution {
             `Unable to find Node version '${this.nodeInfo.versionSpec}' for platform ${this.osPlat} and architecture ${this.nodeInfo.arch}.`
           );
         }
-        const toolName = this.getNodejsDistInfo(evaluatedVersion, this.osPlat);
+        const toolName = this.getNodejsDistInfo(evaluatedVersion);
         toolPath = await this.downloadNodejs(toolName);
       }
     }
@@ -135,24 +133,7 @@ export default class OfficialBuilds extends BaseDistribution {
       return versions[0];
     }
 
-    core.debug(`evaluating ${versions.length} versions`);
-
-    for (let potential of versions) {
-      const satisfied: boolean = semver.satisfies(
-        potential,
-        this.nodeInfo.versionSpec
-      );
-      if (satisfied) {
-        version = potential;
-        break;
-      }
-    }
-
-    if (version) {
-      core.debug(`matched: ${version}`);
-    } else {
-      core.debug('match not found');
-    }
+    version = super.evaluateVersions(versions);
 
     return version;
   }
@@ -235,7 +216,7 @@ export default class OfficialBuilds extends BaseDistribution {
 
   private async getInfoFromManifest(
     versionSpec: string,
-    osArch: string = this.translateArchToDistUrl(os.arch()),
+    osArch: string,
     manifest: tc.IToolRelease[] | undefined
   ): Promise<INodeVersionInfo | null> {
     const stable = true;

@@ -24,7 +24,6 @@ export default abstract class BaseDistribution {
   }
 
   protected abstract getDistributionUrl(): string;
-  protected abstract evaluateVersions(nodeVersions: string[]): string;
 
   public async setupNodeJs() {
     let nodeJsVersions: INodeVersion[] | undefined;
@@ -50,7 +49,7 @@ export default abstract class BaseDistribution {
           `Unable to find Node version '${this.nodeInfo.versionSpec}' for platform ${this.osPlat} and architecture ${this.nodeInfo.arch}.`
         );
       }
-      const toolName = this.getNodejsDistInfo(evaluatedVersion, this.osPlat);
+      const toolName = this.getNodejsDistInfo(evaluatedVersion);
       toolPath = await this.downloadNodejs(toolName);
     }
 
@@ -59,6 +58,31 @@ export default abstract class BaseDistribution {
     }
 
     core.addPath(toolPath);
+  }
+
+  protected evaluateVersions(versions: string[]) {
+    let version = '';
+
+    core.debug(`evaluating ${versions.length} versions`);
+
+    for (let potential of versions) {
+      const satisfied: boolean = semver.satisfies(
+        potential,
+        this.nodeInfo.versionSpec
+      );
+      if (satisfied) {
+        version = potential;
+        break;
+      }
+    }
+
+    if (version) {
+      core.debug(`matched: ${version}`);
+    } else {
+      core.debug('match not found');
+    }
+
+    return version;
   }
 
   protected findVersionInHostedToolCacheDirectory() {
@@ -73,15 +97,15 @@ export default abstract class BaseDistribution {
     return response.result || [];
   }
 
-  protected getNodejsDistInfo(version: string, osPlat: string) {
+  protected getNodejsDistInfo(version: string) {
     let osArch: string = this.translateArchToDistUrl(this.nodeInfo.arch);
     version = semver.clean(version) || '';
     let fileName: string =
-      osPlat == 'win32'
+      this.osPlat == 'win32'
         ? `node-v${version}-win-${osArch}`
-        : `node-v${version}-${osPlat}-${osArch}`;
+        : `node-v${version}-${this.osPlat}-${osArch}`;
     let urlFileName: string =
-      osPlat == 'win32' ? `${fileName}.7z` : `${fileName}.tar.gz`;
+      this.osPlat == 'win32' ? `${fileName}.7z` : `${fileName}.tar.gz`;
     const initialUrl = this.getDistributionUrl();
     const url = `${initialUrl}/v${version}/${urlFileName}`;
 
@@ -205,8 +229,8 @@ export default abstract class BaseDistribution {
     return toolPath;
   }
 
-  protected getDistFileName(arch: string): string {
-    let osArch: string = this.translateArchToDistUrl(arch);
+  protected getDistFileName(): string {
+    let osArch: string = this.translateArchToDistUrl(this.nodeInfo.arch);
 
     // node offers a json list of versions
     let dataFileName: string;
@@ -230,7 +254,7 @@ export default abstract class BaseDistribution {
   protected filterVersions(nodeJsVersions: INodeVersion[]) {
     const versions: string[] = [];
 
-    const dataFileName = this.getDistFileName(this.nodeInfo.arch);
+    const dataFileName = this.getDistFileName();
 
     nodeJsVersions.forEach((nodeVersion: INodeVersion) => {
       // ensure this version supports your os and platform

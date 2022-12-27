@@ -12,31 +12,20 @@ enum Distributions {
   RC = 'rc'
 }
 
-function identifyDistribution(versionSpec: string) {
-  let distribution = Distributions.DEFAULT;
-  if (versionSpec.includes(Distributions.NIGHTLY)) {
-    distribution = Distributions.NIGHTLY;
-  } else if (versionSpec.includes(Distributions.CANARY)) {
-    distribution = Distributions.CANARY;
-  } else if (versionSpec.includes(Distributions.RC)) {
-    distribution = Distributions.RC;
-  }
-
-  return distribution;
-}
-
 export function getNodejsDistribution(
   installerOptions: INodejs
 ): BaseDistribution {
-  const distributionName = identifyDistribution(installerOptions.versionSpec);
-  switch (distributionName) {
-    case Distributions.NIGHTLY:
-      return new NightlyNodejs(installerOptions);
-    case Distributions.CANARY:
-      return new CanaryBuild(installerOptions);
-    case Distributions.RC:
-      return new RcBuild(installerOptions);
-    default:
-      return new OfficialBuilds(installerOptions);
+  const versionSpec = installerOptions.versionSpec;
+  let distribution: BaseDistribution;
+  if (versionSpec.includes(Distributions.NIGHTLY)) {
+    distribution = new NightlyNodejs(installerOptions);
+  } else if (versionSpec.includes(Distributions.CANARY)) {
+    distribution = new CanaryBuild(installerOptions);
+  } else if (versionSpec.includes(Distributions.RC)) {
+    distribution = new RcBuild(installerOptions);
+  } else {
+    distribution = new OfficialBuilds(installerOptions);
   }
+
+  return distribution;
 }

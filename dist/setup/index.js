@@ -72915,27 +72915,14 @@ function wrappy (fn, cb) {
 
 "use strict";
 
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
 var __importStar = (this && this.__importStar) || function (mod) {
     if (mod && mod.__esModule) return mod;
     var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
-    __setModuleDefault(result, mod);
+    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
+    result["default"] = mod;
     return result;
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.configAuthentication = void 0;
 const fs = __importStar(__nccwpck_require__(7147));
 const os = __importStar(__nccwpck_require__(2037));
 const path = __importStar(__nccwpck_require__(1017));
@@ -72990,25 +72977,6 @@ function writeRegistryToFile(registryUrl, fileLocation, alwaysAuth) {
 
 "use strict";
 
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
-    __setModuleDefault(result, mod);
-    return result;
-};
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -73018,11 +72986,17 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
+    result["default"] = mod;
+    return result;
+};
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.restoreCache = void 0;
 const cache = __importStar(__nccwpck_require__(7799));
 const core = __importStar(__nccwpck_require__(2186));
 const glob = __importStar(__nccwpck_require__(8090));
@@ -73030,7 +73004,7 @@ const path_1 = __importDefault(__nccwpck_require__(1017));
 const fs_1 = __importDefault(__nccwpck_require__(7147));
 const constants_1 = __nccwpck_require__(9042);
 const cache_utils_1 = __nccwpck_require__(1678);
-const restoreCache = (packageManager, cacheDependencyPath) => __awaiter(void 0, void 0, void 0, function* () {
+exports.restoreCache = (packageManager, cacheDependencyPath) => __awaiter(void 0, void 0, void 0, function* () {
     const packageManagerInfo = yield cache_utils_1.getPackageManagerInfo(packageManager);
     if (!packageManagerInfo) {
         throw new Error(`Caching for '${packageManager}' is not supported`);
@@ -73056,7 +73030,6 @@ const restoreCache = (packageManager, cacheDependencyPath) => __awaiter(void 0, 
     core.saveState(constants_1.State.CacheMatchedKey, cacheKey);
     core.info(`Cache restored from key: ${cacheKey}`);
 });
-exports.restoreCache = restoreCache;
 const findLockFile = (packageManager) => {
     let lockFiles = packageManager.lockFilePatterns;
     const workspace = process.env.GITHUB_WORKSPACE;
@@ -73076,25 +73049,6 @@ const findLockFile = (packageManager) => {
 
 "use strict";
 
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
-    __setModuleDefault(result, mod);
-    return result;
-};
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -73104,8 +73058,14 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
+    result["default"] = mod;
+    return result;
+};
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.isCacheFeatureAvailable = exports.isGhes = exports.getCacheDirectoryPath = exports.getPackageManagerInfo = exports.getCommandOutput = exports.supportedPackageManagers = void 0;
 const core = __importStar(__nccwpck_require__(2186));
 const exec = __importStar(__nccwpck_require__(1514));
 const cache = __importStar(__nccwpck_require__(7799));
@@ -73127,7 +73087,7 @@ exports.supportedPackageManagers = {
         getCacheFolderCommand: 'yarn config get cacheFolder'
     }
 };
-const getCommandOutput = (toolCommand) => __awaiter(void 0, void 0, void 0, function* () {
+exports.getCommandOutput = (toolCommand) => __awaiter(void 0, void 0, void 0, function* () {
     let { stdout, stderr, exitCode } = yield exec.getExecOutput(toolCommand, undefined, { ignoreReturnCode: true });
     if (exitCode) {
         stderr = !stderr.trim()
@@ -73137,7 +73097,6 @@ const getCommandOutput = (toolCommand) => __awaiter(void 0, void 0, void 0, func
     }
     return stdout.trim();
 });
-exports.getCommandOutput = getCommandOutput;
 const getPackageManagerVersion = (packageManager, command) => __awaiter(void 0, void 0, void 0, function* () {
     const stdOut = yield exports.getCommandOutput(`${packageManager} ${command}`);
     if (!stdOut) {
@@ -73145,7 +73104,7 @@ const getPackageManagerVersion = (packageManager, command) => __awaiter(void 0, 
     }
     return stdOut;
 });
-const getPackageManagerInfo = (packageManager) => __awaiter(void 0, void 0, void 0, function* () {
+exports.getPackageManagerInfo = (packageManager) => __awaiter(void 0, void 0, void 0, function* () {
     if (packageManager === 'npm') {
         return exports.supportedPackageManagers.npm;
     }
@@ -73166,8 +73125,7 @@ const getPackageManagerInfo = (packageManager) => __awaiter(void 0, void 0, void
         return null;
     }
 });
-exports.getPackageManagerInfo = getPackageManagerInfo;
-const getCacheDirectoryPath = (packageManagerInfo, packageManager) => __awaiter(void 0, void 0, void 0, function* () {
+exports.getCacheDirectoryPath = (packageManagerInfo, packageManager) => __awaiter(void 0, void 0, void 0, function* () {
     const stdOut = yield exports.getCommandOutput(packageManagerInfo.getCacheFolderCommand);
     if (!stdOut) {
         throw new Error(`Could not get cache folder path for ${packageManager}`);
@@ -73175,7 +73133,6 @@ const getCacheDirectoryPath = (packageManagerInfo, packageManager) => __awaiter(
     core.debug(`${packageManager} path is ${stdOut}`);
     return stdOut.trim();
 });
-exports.getCacheDirectoryPath = getCacheDirectoryPath;
 function isGhes() {
     const ghUrl = new URL(process.env['GITHUB_SERVER_URL'] || 'https://github.com');
     return ghUrl.hostname.toUpperCase() !== 'GITHUB.COM';
@@ -73202,7 +73159,6 @@ exports.isCacheFeatureAvailable = isCacheFeatureAvailable;
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.Outputs = exports.State = exports.LockType = void 0;
 var LockType;
 (function (LockType) {
     LockType["Npm"] = "npm";
@@ -73227,25 +73183,6 @@ var Outputs;
 
 "use strict";
 
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
-    __setModuleDefault(result, mod);
-    return result;
-};
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -73254,6 +73191,13 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
+};
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
+    result["default"] = mod;
+    return result;
 };
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
@@ -73299,7 +73243,7 @@ class BaseDistribution {
                 if (!evaluatedVersion) {
                     throw new Error(`Unable to find Node version '${this.nodeInfo.versionSpec}' for platform ${this.osPlat} and architecture ${this.nodeInfo.arch}.`);
                 }
-                const toolName = this.getNodejsDistInfo(evaluatedVersion, this.osPlat);
+                const toolName = this.getNodejsDistInfo(evaluatedVersion);
                 toolPath = yield this.downloadNodejs(toolName);
             }
             if (this.osPlat != 'win32') {
@@ -73307,6 +73251,24 @@ class BaseDistribution {
             }
             core.addPath(toolPath);
         });
+    }
+    evaluateVersions(versions) {
+        let version = '';
+        core.debug(`evaluating ${versions.length} versions`);
+        for (let potential of versions) {
+            const satisfied = semver_1.default.satisfies(potential, this.nodeInfo.versionSpec);
+            if (satisfied) {
+                version = potential;
+                break;
+            }
+        }
+        if (version) {
+            core.debug(`matched: ${version}`);
+        }
+        else {
+            core.debug('match not found');
+        }
+        return version;
     }
     findVersionInHostedToolCacheDirectory() {
         return tc.find('node', this.nodeInfo.versionSpec, this.nodeInfo.arch);
@@ -73319,13 +73281,13 @@ class BaseDistribution {
             return response.result || [];
         });
     }
-    getNodejsDistInfo(version, osPlat) {
+    getNodejsDistInfo(version) {
         let osArch = this.translateArchToDistUrl(this.nodeInfo.arch);
         version = semver_1.default.clean(version) || '';
-        let fileName = osPlat == 'win32'
+        let fileName = this.osPlat == 'win32'
             ? `node-v${version}-win-${osArch}`
-            : `node-v${version}-${osPlat}-${osArch}`;
-        let urlFileName = osPlat == 'win32' ? `${fileName}.7z` : `${fileName}.tar.gz`;
+            : `node-v${version}-${this.osPlat}-${osArch}`;
+        let urlFileName = this.osPlat == 'win32' ? `${fileName}.7z` : `${fileName}.tar.gz`;
         const initialUrl = this.getDistributionUrl();
         const url = `${initialUrl}/v${version}/${urlFileName}`;
         return {
@@ -73423,8 +73385,8 @@ class BaseDistribution {
             return toolPath;
         });
     }
-    getDistFileName(arch) {
-        let osArch = this.translateArchToDistUrl(arch);
+    getDistFileName() {
+        let osArch = this.translateArchToDistUrl(this.nodeInfo.arch);
         // node offers a json list of versions
         let dataFileName;
         switch (this.osPlat) {
@@ -73444,7 +73406,7 @@ class BaseDistribution {
     }
     filterVersions(nodeJsVersions) {
         const versions = [];
-        const dataFileName = this.getDistFileName(this.nodeInfo.arch);
+        const dataFileName = this.getDistFileName();
         nodeJsVersions.forEach((nodeVersion) => {
             // ensure this version supports your os and platform
             if (nodeVersion.files.indexOf(dataFileName) >= 0) {
@@ -73476,7 +73438,6 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.getNodejsDistribution = void 0;
 const nightly_builds_1 = __importDefault(__nccwpck_require__(7127));
 const official_builds_1 = __importDefault(__nccwpck_require__(7854));
 const rc_builds_1 = __importDefault(__nccwpck_require__(8837));
@@ -73488,31 +73449,22 @@ var Distributions;
     Distributions["NIGHTLY"] = "nightly";
     Distributions["RC"] = "rc";
 })(Distributions || (Distributions = {}));
-function identifyDistribution(versionSpec) {
-    let distribution = Distributions.DEFAULT;
+function getNodejsDistribution(installerOptions) {
+    const versionSpec = installerOptions.versionSpec;
+    let distribution;
     if (versionSpec.includes(Distributions.NIGHTLY)) {
-        distribution = Distributions.NIGHTLY;
+        distribution = new nightly_builds_1.default(installerOptions);
     }
     else if (versionSpec.includes(Distributions.CANARY)) {
-        distribution = Distributions.CANARY;
+        distribution = new canary_builds_1.default(installerOptions);
     }
     else if (versionSpec.includes(Distributions.RC)) {
-        distribution = Distributions.RC;
+        distribution = new rc_builds_1.default(installerOptions);
+    }
+    else {
+        distribution = new official_builds_1.default(installerOptions);
     }
     return distribution;
-}
-function getNodejsDistribution(installerOptions) {
-    const distributionName = identifyDistribution(installerOptions.versionSpec);
-    switch (distributionName) {
-        case Distributions.NIGHTLY:
-            return new nightly_builds_1.default(installerOptions);
-        case Distributions.CANARY:
-            return new canary_builds_1.default(installerOptions);
-        case Distributions.RC:
-            return new rc_builds_1.default(installerOptions);
-        default:
-            return new official_builds_1.default(installerOptions);
-    }
 }
 exports.getNodejsDistribution = getNodejsDistribution;
 
@@ -73524,23 +73476,11 @@ exports.getNodejsDistribution = getNodejsDistribution;
 
 "use strict";
 
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
 var __importStar = (this && this.__importStar) || function (mod) {
     if (mod && mod.__esModule) return mod;
     var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
-    __setModuleDefault(result, mod);
+    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
+    result["default"] = mod;
     return result;
 };
 var __importDefault = (this && this.__importDefault) || function (mod) {
@@ -73626,25 +73566,6 @@ exports["default"] = NightlyNodejs;
 
 "use strict";
 
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
-    __setModuleDefault(result, mod);
-    return result;
-};
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -73654,14 +73575,19 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
+    result["default"] = mod;
+    return result;
+};
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 const core = __importStar(__nccwpck_require__(2186));
 const tc = __importStar(__nccwpck_require__(7784));
-const semver = __importStar(__nccwpck_require__(5911));
-const os_1 = __importDefault(__nccwpck_require__(2037));
 const path_1 = __importDefault(__nccwpck_require__(1017));
 const base_distribution_1 = __importDefault(__nccwpck_require__(7));
 class OfficialBuilds extends base_distribution_1.default {
@@ -73735,7 +73661,7 @@ class OfficialBuilds extends base_distribution_1.default {
                     if (!evaluatedVersion) {
                         throw new Error(`Unable to find Node version '${this.nodeInfo.versionSpec}' for platform ${this.osPlat} and architecture ${this.nodeInfo.arch}.`);
                     }
-                    const toolName = this.getNodejsDistInfo(evaluatedVersion, this.osPlat);
+                    const toolName = this.getNodejsDistInfo(evaluatedVersion);
                     toolPath = yield this.downloadNodejs(toolName);
                 }
             }
@@ -73751,20 +73677,7 @@ class OfficialBuilds extends base_distribution_1.default {
             core.info(`getting latest node version...`);
             return versions[0];
         }
-        core.debug(`evaluating ${versions.length} versions`);
-        for (let potential of versions) {
-            const satisfied = semver.satisfies(potential, this.nodeInfo.versionSpec);
-            if (satisfied) {
-                version = potential;
-                break;
-            }
-        }
-        if (version) {
-            core.debug(`matched: ${version}`);
-        }
-        else {
-            core.debug('match not found');
-        }
+        version = super.evaluateVersions(versions);
         return version;
     }
     getDistributionUrl() {
@@ -73811,7 +73724,7 @@ class OfficialBuilds extends base_distribution_1.default {
             }
         });
     }
-    getInfoFromManifest(versionSpec, osArch = this.translateArchToDistUrl(os_1.default.arch()), manifest) {
+    getInfoFromManifest(versionSpec, osArch, manifest) {
         return __awaiter(this, void 0, void 0, function* () {
             const stable = true;
             let info = null;
@@ -73847,54 +73760,14 @@ exports["default"] = OfficialBuilds;
 
 "use strict";
 
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
-    __setModuleDefault(result, mod);
-    return result;
-};
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-const core = __importStar(__nccwpck_require__(2186));
-const semver = __importStar(__nccwpck_require__(5911));
 const base_distribution_1 = __importDefault(__nccwpck_require__(7));
 class RcBuild extends base_distribution_1.default {
     constructor(nodeInfo) {
         super(nodeInfo);
-    }
-    evaluateVersions(versions) {
-        let version = '';
-        core.debug(`evaluating ${versions.length} versions`);
-        for (let i = 0; i < versions.length; i++) {
-            const potential = versions[i];
-            const satisfied = semver.satisfies(potential, this.nodeInfo.versionSpec);
-            if (satisfied) {
-                version = potential;
-                break;
-            }
-        }
-        if (version) {
-            core.debug(`matched: ${version}`);
-        }
-        else {
-            core.debug('match not found');
-        }
-        return version;
     }
     getDistributionUrl() {
         return 'https://nodejs.org/download/rc';
@@ -73910,23 +73783,11 @@ exports["default"] = RcBuild;
 
 "use strict";
 
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
 var __importStar = (this && this.__importStar) || function (mod) {
     if (mod && mod.__esModule) return mod;
     var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
-    __setModuleDefault(result, mod);
+    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
+    result["default"] = mod;
     return result;
 };
 var __importDefault = (this && this.__importDefault) || function (mod) {
@@ -74012,25 +73873,6 @@ exports["default"] = CanaryBuild;
 
 "use strict";
 
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
-    __setModuleDefault(result, mod);
-    return result;
-};
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -74040,11 +73882,17 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
+    result["default"] = mod;
+    return result;
+};
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.run = void 0;
 const core = __importStar(__nccwpck_require__(2186));
 const fs_1 = __importDefault(__nccwpck_require__(7147));
 const os_1 = __importDefault(__nccwpck_require__(2037));
@@ -74134,25 +73982,6 @@ function resolveVersionInput() {
 
 "use strict";
 
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
-    __setModuleDefault(result, mod);
-    return result;
-};
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -74162,8 +73991,14 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
+    result["default"] = mod;
+    return result;
+};
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.printEnvDetailsAndSetOutput = exports.parseNodeVersionFile = void 0;
 const core = __importStar(__nccwpck_require__(2186));
 const exec = __importStar(__nccwpck_require__(1514));
 function parseNodeVersionFile(contents) {
