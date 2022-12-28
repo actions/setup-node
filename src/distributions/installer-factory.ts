@@ -1,5 +1,5 @@
 import BaseDistribution from './base-distribution';
-import {INodejs} from './base-models';
+import {NodeInputs} from './base-models';
 import NightlyNodejs from './nightly/nightly_builds';
 import OfficialBuilds from './official_builds/official_builds';
 import RcBuild from './rc/rc_builds';
@@ -13,7 +13,7 @@ enum Distributions {
 }
 
 export function getNodejsDistribution(
-  installerOptions: INodejs
+  installerOptions: NodeInputs
 ): BaseDistribution {
   const versionSpec = installerOptions.versionSpec;
   let distribution: BaseDistribution;

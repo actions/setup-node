@@ -1,8 +1,8 @@
 import BaseDistribution from '../base-distribution';
-import {INodejs} from '../base-models';
+import {NodeInputs} from '../base-models';
 
 export default class RcBuild extends BaseDistribution {
-  constructor(nodeInfo: INodejs) {
+  constructor(nodeInfo: NodeInputs) {
     super(nodeInfo);
   }
 

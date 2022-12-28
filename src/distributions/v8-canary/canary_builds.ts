@@ -1,10 +1,10 @@
-import {INodejs} from '../base-models';
-import NightlyNodejs from '../nightly/nightly_builds';
+import BasePrereleaseNodejs from '../base-distribution-prerelease';
+import {NodeInputs} from '../base-models';
 
-export default class CanaryBuild extends NightlyNodejs {
-  constructor(nodeInfo: INodejs) {
+export default class CanaryBuild extends BasePrereleaseNodejs {
+  protected distribution = 'v8-canary';
+  constructor(nodeInfo: NodeInputs) {
     super(nodeInfo);
-    this.distribution = 'v8-canary';
   }
 
   protected getDistributionUrl(): string {

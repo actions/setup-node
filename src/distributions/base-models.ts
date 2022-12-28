@@ -1,4 +1,4 @@
-export interface INodejs {
+export interface NodeInputs {
   versionSpec: string;
   arch: string;
   auth?: string;

@@ -10,13 +10,13 @@ import * as path from 'path';
 import os from 'os';
 import fs from 'fs';
 
-import {INodejs, INodeVersion, INodeVersionInfo} from './base-models';
+import {NodeInputs, INodeVersion, INodeVersionInfo} from './base-models';
 
 export default abstract class BaseDistribution {
   protected httpClient: hc.HttpClient;
   protected osPlat = os.platform();
 
-  constructor(protected nodeInfo: INodejs) {
+  constructor(protected nodeInfo: NodeInputs) {
     this.httpClient = new hc.HttpClient('setup-node', [], {
       allowRetries: true,
       maxRetries: 3
@@ -28,27 +28,15 @@ export default abstract class BaseDistribution {
   public async setupNodeJs() {
     let nodeJsVersions: INodeVersion[] | undefined;
     if (this.nodeInfo.checkLatest) {
-      nodeJsVersions = await this.getNodeJsVersions();
-      const versions = this.filterVersions(nodeJsVersions);
-      const evaluatedVersion = this.evaluateVersions(versions);
-
-      if (evaluatedVersion) {
-        this.nodeInfo.versionSpec = evaluatedVersion;
-      }
+      const evaluatedVersion = await this.findVersionInDist(nodeJsVersions);
+      this.nodeInfo.versionSpec = evaluatedVersion;
     }
 
     let toolPath = this.findVersionInHostedToolCacheDirectory();
     if (toolPath) {
       core.info(`Found in cache @ ${toolPath}`);
     } else {
-      nodeJsVersions = nodeJsVersions ?? (await this.getNodeJsVersions());
-      const versions = this.filterVersions(nodeJsVersions);
-      const evaluatedVersion = this.evaluateVersions(versions);
-      if (!evaluatedVersion) {
-        throw new Error(
-          `Unable to find Node version '${this.nodeInfo.versionSpec}' for platform ${this.osPlat} and architecture ${this.nodeInfo.arch}.`
-        );
-      }
+      const evaluatedVersion = await this.findVersionInDist(nodeJsVersions);
       const toolName = this.getNodejsDistInfo(evaluatedVersion);
       toolPath = await this.downloadNodejs(toolName);
     }
@@ -58,6 +46,21 @@ export default abstract class BaseDistribution {
     }
 
     core.addPath(toolPath);
+  }
+
+  protected async findVersionInDist(nodeJsVersions?: INodeVersion[]) {
+    if (!nodeJsVersions) {
+      nodeJsVersions = await this.getNodeJsVersions();
+    }
+    const versions = this.filterVersions(nodeJsVersions);
+    const evaluatedVersion = this.evaluateVersions(versions);
+    if (!evaluatedVersion) {
+      throw new Error(
+        `Unable to find Node version '${this.nodeInfo.versionSpec}' for platform ${this.osPlat} and architecture ${this.nodeInfo.arch}.`
+      );
+    }
+
+    return evaluatedVersion;
   }
 
   protected evaluateVersions(versions: string[]): string {

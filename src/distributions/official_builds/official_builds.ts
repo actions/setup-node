@@ -3,14 +3,14 @@ import * as tc from '@actions/tool-cache';
 import path from 'path';
 
 import BaseDistribution from '../base-distribution';
-import {INodejs, INodeVersion, INodeVersionInfo} from '../base-models';
+import {NodeInputs, INodeVersion, INodeVersionInfo} from '../base-models';
 
 interface INodeRelease extends tc.IToolRelease {
   lts?: string;
 }
 
 export default class OfficialBuilds extends BaseDistribution {
-  constructor(nodeInfo: INodejs) {
+  constructor(nodeInfo: NodeInputs) {
     super(nodeInfo);
   }
 
