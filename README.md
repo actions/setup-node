@@ -1,6 +1,6 @@
 # setup-node
 
-[![build-test](https://github.com/actions/setup-node/actions/workflows/build-test.yml/badge.svg)](https://github.com/actions/setup-node/actions/workflows/build-test.yml)
+[![basic-validation](https://github.com/actions/setup-node/actions/workflows/basic-validation.yml/badge.svg)](https://github.com/actions/setup-node/actions/workflows/basic-validation.yml)
 [![versions](https://github.com/actions/setup-node/actions/workflows/versions.yml/badge.svg)](https://github.com/actions/setup-node/actions/workflows/versions.yml)
 [![proxy](https://github.com/actions/setup-node/actions/workflows/proxy.yml/badge.svg)](https://github.com/actions/setup-node/actions/workflows/proxy.yml)
 
