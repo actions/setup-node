@@ -73693,7 +73693,7 @@ class OfficialBuilds extends base_distribution_1.default {
                 core.info('Attempt to resolve LTS alias from manifest...');
                 // No try-catch since it's not possible to resolve LTS alias without manifest
                 manifest = yield this.getManifest();
-                this.nodeInfo.versionSpec = this.resolveLtsAliasFromManifest(this.nodeInfo.versionSpec, true, manifest);
+                this.nodeInfo.versionSpec = this.resolveLtsAliasFromManifest(this.nodeInfo.versionSpec, this.nodeInfo.stable, manifest);
             }
             if (this.isLatestSyntax(this.nodeInfo.versionSpec)) {
                 nodeJsVersions = yield this.getNodeJsVersions();
@@ -73703,7 +73703,7 @@ class OfficialBuilds extends base_distribution_1.default {
             }
             if (this.nodeInfo.checkLatest) {
                 core.info('Attempt to resolve the latest version from manifest...');
-                const resolvedVersion = yield this.resolveVersionFromManifest(this.nodeInfo.versionSpec, osArch, manifest);
+                const resolvedVersion = yield this.resolveVersionFromManifest(this.nodeInfo.versionSpec, this.nodeInfo.stable, osArch, manifest);
                 if (resolvedVersion) {
                     this.nodeInfo.versionSpec = resolvedVersion;
                     core.info(`Resolved as '${resolvedVersion}'`);
@@ -73720,7 +73720,7 @@ class OfficialBuilds extends base_distribution_1.default {
                 let downloadPath = '';
                 try {
                     core.info(`Attempting to download ${this.nodeInfo.versionSpec}...`);
-                    const versionInfo = yield this.getInfoFromManifest(this.nodeInfo.versionSpec, osArch, manifest);
+                    const versionInfo = yield this.getInfoFromManifest(this.nodeInfo.versionSpec, this.nodeInfo.stable, osArch, manifest);
                     if (versionInfo) {
                         core.info(`Acquiring ${versionInfo.resolvedVersion} - ${versionInfo.arch} from ${versionInfo.downloadUrl}`);
                         downloadPath = yield tc.downloadTool(versionInfo.downloadUrl, undefined, this.nodeInfo.auth);
@@ -73802,10 +73802,10 @@ class OfficialBuilds extends base_distribution_1.default {
         core.debug(`Found LTS release '${release.version}' for Node version '${versionSpec}'`);
         return release.version.split('.')[0];
     }
-    resolveVersionFromManifest(versionSpec, osArch, manifest) {
+    resolveVersionFromManifest(versionSpec, stable, osArch, manifest) {
         return __awaiter(this, void 0, void 0, function* () {
             try {
-                const info = yield this.getInfoFromManifest(versionSpec, osArch, manifest);
+                const info = yield this.getInfoFromManifest(versionSpec, stable, osArch, manifest);
                 return info === null || info === void 0 ? void 0 : info.resolvedVersion;
             }
             catch (err) {
@@ -73814,9 +73814,8 @@ class OfficialBuilds extends base_distribution_1.default {
             }
         });
     }
-    getInfoFromManifest(versionSpec, osArch, manifest) {
+    getInfoFromManifest(versionSpec, stable, osArch, manifest) {
         return __awaiter(this, void 0, void 0, function* () {
-            const stable = true;
             let info = null;
             if (!manifest) {
                 core.debug('No manifest cached');
@@ -73960,11 +73959,13 @@ function run() {
             if (version) {
                 const token = core.getInput('token');
                 const auth = !token ? undefined : `token ${token}`;
+                const stable = (core.getInput('stable') || 'true').toUpperCase() === 'TRUE';
                 const checkLatest = (core.getInput('check-latest') || 'false').toUpperCase() === 'TRUE';
                 const nodejsInfo = {
                     versionSpec: version,
                     checkLatest,
                     auth,
+                    stable,
                     arch
                 };
                 const nodeDistribution = installer_factory_1.getNodejsDistribution(nodejsInfo);

@@ -3,6 +3,7 @@ export interface NodeInputs {
   arch: string;
   auth?: string;
   checkLatest: boolean;
+  stable: boolean;
 }
 
 export interface INodeVersionInfo {

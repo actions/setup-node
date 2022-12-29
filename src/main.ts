@@ -36,12 +36,15 @@ export async function run() {
     if (version) {
       const token = core.getInput('token');
       const auth = !token ? undefined : `token ${token}`;
+      const stable =
+        (core.getInput('stable') || 'true').toUpperCase() === 'TRUE';
       const checkLatest =
         (core.getInput('check-latest') || 'false').toUpperCase() === 'TRUE';
       const nodejsInfo = {
         versionSpec: version,
         checkLatest,
         auth,
+        stable,
         arch
       };
       const nodeDistribution = getNodejsDistribution(nodejsInfo);

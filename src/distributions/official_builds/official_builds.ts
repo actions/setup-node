@@ -26,7 +26,7 @@ export default class OfficialBuilds extends BaseDistribution {
 
       this.nodeInfo.versionSpec = this.resolveLtsAliasFromManifest(
         this.nodeInfo.versionSpec,
-        true,
+        this.nodeInfo.stable,
         manifest
       );
     }
@@ -43,6 +43,7 @@ export default class OfficialBuilds extends BaseDistribution {
       core.info('Attempt to resolve the latest version from manifest...');
       const resolvedVersion = await this.resolveVersionFromManifest(
         this.nodeInfo.versionSpec,
+        this.nodeInfo.stable,
         osArch,
         manifest
       );
@@ -67,6 +68,7 @@ export default class OfficialBuilds extends BaseDistribution {
 
         const versionInfo = await this.getInfoFromManifest(
           this.nodeInfo.versionSpec,
+          this.nodeInfo.stable,
           osArch,
           manifest
         );
@@ -198,12 +200,14 @@ export default class OfficialBuilds extends BaseDistribution {
 
   private async resolveVersionFromManifest(
     versionSpec: string,
+    stable: boolean,
     osArch: string,
     manifest: tc.IToolRelease[] | undefined
   ): Promise<string | undefined> {
     try {
       const info = await this.getInfoFromManifest(
         versionSpec,
+        stable,
         osArch,
         manifest
       );
@@ -216,10 +220,10 @@ export default class OfficialBuilds extends BaseDistribution {
 
   private async getInfoFromManifest(
     versionSpec: string,
+    stable: boolean,
     osArch: string,
     manifest: tc.IToolRelease[] | undefined
   ): Promise<INodeVersionInfo | null> {
-    const stable = true;
     let info: INodeVersionInfo | null = null;
     if (!manifest) {
       core.debug('No manifest cached');
