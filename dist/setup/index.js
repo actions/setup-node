@@ -72915,14 +72915,27 @@ function wrappy (fn, cb) {
 
 "use strict";
 
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
 var __importStar = (this && this.__importStar) || function (mod) {
     if (mod && mod.__esModule) return mod;
     var result = {};
-    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
-    result["default"] = mod;
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
     return result;
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.configAuthentication = void 0;
 const fs = __importStar(__nccwpck_require__(7147));
 const os = __importStar(__nccwpck_require__(2037));
 const path = __importStar(__nccwpck_require__(1017));
@@ -72977,6 +72990,25 @@ function writeRegistryToFile(registryUrl, fileLocation, alwaysAuth) {
 
 "use strict";
 
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -72986,17 +73018,11 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
-    result["default"] = mod;
-    return result;
-};
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.restoreCache = void 0;
 const cache = __importStar(__nccwpck_require__(7799));
 const core = __importStar(__nccwpck_require__(2186));
 const glob = __importStar(__nccwpck_require__(8090));
@@ -73004,7 +73030,7 @@ const path_1 = __importDefault(__nccwpck_require__(1017));
 const fs_1 = __importDefault(__nccwpck_require__(7147));
 const constants_1 = __nccwpck_require__(9042);
 const cache_utils_1 = __nccwpck_require__(1678);
-exports.restoreCache = (packageManager, cacheDependencyPath) => __awaiter(void 0, void 0, void 0, function* () {
+const restoreCache = (packageManager, cacheDependencyPath) => __awaiter(void 0, void 0, void 0, function* () {
     const packageManagerInfo = yield cache_utils_1.getPackageManagerInfo(packageManager);
     if (!packageManagerInfo) {
         throw new Error(`Caching for '${packageManager}' is not supported`);
@@ -73030,6 +73056,7 @@ exports.restoreCache = (packageManager, cacheDependencyPath) => __awaiter(void 0
     core.saveState(constants_1.State.CacheMatchedKey, cacheKey);
     core.info(`Cache restored from key: ${cacheKey}`);
 });
+exports.restoreCache = restoreCache;
 const findLockFile = (packageManager) => {
     let lockFiles = packageManager.lockFilePatterns;
     const workspace = process.env.GITHUB_WORKSPACE;
@@ -73049,6 +73076,25 @@ const findLockFile = (packageManager) => {
 
 "use strict";
 
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -73058,14 +73104,8 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
-    result["default"] = mod;
-    return result;
-};
 Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.isCacheFeatureAvailable = exports.isGhes = exports.getCacheDirectoryPath = exports.getPackageManagerInfo = exports.getCommandOutput = exports.supportedPackageManagers = void 0;
 const core = __importStar(__nccwpck_require__(2186));
 const exec = __importStar(__nccwpck_require__(1514));
 const cache = __importStar(__nccwpck_require__(7799));
@@ -73087,7 +73127,7 @@ exports.supportedPackageManagers = {
         getCacheFolderCommand: 'yarn config get cacheFolder'
     }
 };
-exports.getCommandOutput = (toolCommand) => __awaiter(void 0, void 0, void 0, function* () {
+const getCommandOutput = (toolCommand) => __awaiter(void 0, void 0, void 0, function* () {
     let { stdout, stderr, exitCode } = yield exec.getExecOutput(toolCommand, undefined, { ignoreReturnCode: true });
     if (exitCode) {
         stderr = !stderr.trim()
@@ -73097,6 +73137,7 @@ exports.getCommandOutput = (toolCommand) => __awaiter(void 0, void 0, void 0, fu
     }
     return stdout.trim();
 });
+exports.getCommandOutput = getCommandOutput;
 const getPackageManagerVersion = (packageManager, command) => __awaiter(void 0, void 0, void 0, function* () {
     const stdOut = yield exports.getCommandOutput(`${packageManager} ${command}`);
     if (!stdOut) {
@@ -73104,7 +73145,7 @@ const getPackageManagerVersion = (packageManager, command) => __awaiter(void 0, 
     }
     return stdOut;
 });
-exports.getPackageManagerInfo = (packageManager) => __awaiter(void 0, void 0, void 0, function* () {
+const getPackageManagerInfo = (packageManager) => __awaiter(void 0, void 0, void 0, function* () {
     if (packageManager === 'npm') {
         return exports.supportedPackageManagers.npm;
     }
@@ -73125,7 +73166,8 @@ exports.getPackageManagerInfo = (packageManager) => __awaiter(void 0, void 0, vo
         return null;
     }
 });
-exports.getCacheDirectoryPath = (packageManagerInfo, packageManager) => __awaiter(void 0, void 0, void 0, function* () {
+exports.getPackageManagerInfo = getPackageManagerInfo;
+const getCacheDirectoryPath = (packageManagerInfo, packageManager) => __awaiter(void 0, void 0, void 0, function* () {
     const stdOut = yield exports.getCommandOutput(packageManagerInfo.getCacheFolderCommand);
     if (!stdOut) {
         throw new Error(`Could not get cache folder path for ${packageManager}`);
@@ -73133,6 +73175,7 @@ exports.getCacheDirectoryPath = (packageManagerInfo, packageManager) => __awaite
     core.debug(`${packageManager} path is ${stdOut}`);
     return stdOut.trim();
 });
+exports.getCacheDirectoryPath = getCacheDirectoryPath;
 function isGhes() {
     const ghUrl = new URL(process.env['GITHUB_SERVER_URL'] || 'https://github.com');
     return ghUrl.hostname.toUpperCase() !== 'GITHUB.COM';
@@ -73159,6 +73202,7 @@ exports.isCacheFeatureAvailable = isCacheFeatureAvailable;
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.Outputs = exports.State = exports.LockType = void 0;
 var LockType;
 (function (LockType) {
     LockType["Npm"] = "npm";
@@ -73178,11 +73222,105 @@ var Outputs;
 
 /***/ }),
 
-/***/ 2574:
+/***/ 957:
 /***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
 "use strict";
 
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+const tc = __importStar(__nccwpck_require__(7784));
+const semver_1 = __importDefault(__nccwpck_require__(5911));
+const base_distribution_1 = __importDefault(__nccwpck_require__(7));
+class BasePrereleaseNodejs extends base_distribution_1.default {
+    constructor(nodeInfo) {
+        super(nodeInfo);
+    }
+    findVersionInHostedToolCacheDirectory() {
+        let toolPath = '';
+        const localVersionPaths = tc
+            .findAllVersions('node', this.nodeInfo.arch)
+            .filter(i => {
+            const prerelease = semver_1.default.prerelease(i);
+            if (!prerelease) {
+                return false;
+            }
+            return prerelease[0].includes(this.distribution);
+        });
+        localVersionPaths.sort(semver_1.default.rcompare);
+        const localVersion = this.evaluateVersions(localVersionPaths);
+        if (localVersion) {
+            toolPath = tc.find('node', localVersion, this.nodeInfo.arch);
+        }
+        return toolPath;
+    }
+    validRange(versionSpec) {
+        let range;
+        const [raw, prerelease] = this.splitVersionSpec(versionSpec);
+        const isValidVersion = semver_1.default.valid(raw);
+        const rawVersion = (isValidVersion ? raw : semver_1.default.coerce(raw));
+        if (prerelease !== this.distribution) {
+            range = versionSpec;
+        }
+        else {
+            range = `${semver_1.default.validRange(`^${rawVersion}-${this.distribution}`)}-0`;
+        }
+        return { range, options: { includePrerelease: !isValidVersion } };
+    }
+    splitVersionSpec(versionSpec) {
+        return versionSpec.split(/-(.*)/s);
+    }
+}
+exports["default"] = BasePrereleaseNodejs;
+
+
+/***/ }),
+
+/***/ 7:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -73195,129 +73333,182 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
-    result["default"] = mod;
-    return result;
-};
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-const os_1 = __importDefault(__nccwpck_require__(2037));
-const assert = __importStar(__nccwpck_require__(9491));
-const core = __importStar(__nccwpck_require__(2186));
-const hc = __importStar(__nccwpck_require__(9925));
-const io = __importStar(__nccwpck_require__(7436));
 const tc = __importStar(__nccwpck_require__(7784));
+const hc = __importStar(__nccwpck_require__(9925));
+const core = __importStar(__nccwpck_require__(2186));
+const io = __importStar(__nccwpck_require__(7436));
+const semver_1 = __importDefault(__nccwpck_require__(5911));
+const assert = __importStar(__nccwpck_require__(9491));
 const path = __importStar(__nccwpck_require__(1017));
-const semver = __importStar(__nccwpck_require__(5911));
+const os_1 = __importDefault(__nccwpck_require__(2037));
 const fs_1 = __importDefault(__nccwpck_require__(7147));
-function getNode(versionSpec, stable, checkLatest, auth, arch = os_1.default.arch()) {
-    return __awaiter(this, void 0, void 0, function* () {
-        // Store manifest data to avoid multiple calls
-        let manifest;
-        let nodeVersions;
-        let isNightly = versionSpec.includes('nightly');
-        let osPlat = os_1.default.platform();
-        let osArch = translateArchToDistUrl(arch);
-        if (isLtsAlias(versionSpec)) {
-            core.info('Attempt to resolve LTS alias from manifest...');
-            // No try-catch since it's not possible to resolve LTS alias without manifest
-            manifest = yield getManifest(auth);
-            versionSpec = resolveLtsAliasFromManifest(versionSpec, stable, manifest);
-        }
-        if (isLatestSyntax(versionSpec)) {
-            nodeVersions = yield getVersionsFromDist(versionSpec);
-            versionSpec = yield queryDistForMatch(versionSpec, arch, nodeVersions);
-            core.info(`getting latest node version...`);
-        }
-        if (isNightly && checkLatest) {
-            nodeVersions = yield getVersionsFromDist(versionSpec);
-            versionSpec = yield queryDistForMatch(versionSpec, arch, nodeVersions);
-        }
-        if (checkLatest && !isNightly) {
-            core.info('Attempt to resolve the latest version from manifest...');
-            const resolvedVersion = yield resolveVersionFromManifest(versionSpec, stable, auth, osArch, manifest);
-            if (resolvedVersion) {
-                versionSpec = resolvedVersion;
-                core.info(`Resolved as '${versionSpec}'`);
+class BaseDistribution {
+    constructor(nodeInfo) {
+        this.nodeInfo = nodeInfo;
+        this.osPlat = os_1.default.platform();
+        this.httpClient = new hc.HttpClient('setup-node', [], {
+            allowRetries: true,
+            maxRetries: 3
+        });
+    }
+    setupNodeJs() {
+        return __awaiter(this, void 0, void 0, function* () {
+            let nodeJsVersions;
+            if (this.nodeInfo.checkLatest) {
+                const evaluatedVersion = yield this.findVersionInDist(nodeJsVersions);
+                this.nodeInfo.versionSpec = evaluatedVersion;
+            }
+            let toolPath = this.findVersionInHostedToolCacheDirectory();
+            if (toolPath) {
+                core.info(`Found in cache @ ${toolPath}`);
             }
             else {
-                core.info(`Failed to resolve version ${versionSpec} from manifest`);
+                const evaluatedVersion = yield this.findVersionInDist(nodeJsVersions);
+                const toolName = this.getNodejsDistInfo(evaluatedVersion);
+                toolPath = yield this.downloadNodejs(toolName);
+            }
+            if (this.osPlat != 'win32') {
+                toolPath = path.join(toolPath, 'bin');
+            }
+            core.addPath(toolPath);
+        });
+    }
+    findVersionInDist(nodeJsVersions) {
+        return __awaiter(this, void 0, void 0, function* () {
+            if (!nodeJsVersions) {
+                nodeJsVersions = yield this.getNodeJsVersions();
+            }
+            const versions = this.filterVersions(nodeJsVersions);
+            const evaluatedVersion = this.evaluateVersions(versions);
+            if (!evaluatedVersion) {
+                throw new Error(`Unable to find Node version '${this.nodeInfo.versionSpec}' for platform ${this.osPlat} and architecture ${this.nodeInfo.arch}.`);
+            }
+            return evaluatedVersion;
+        });
+    }
+    evaluateVersions(versions) {
+        let version = '';
+        const { range, options } = this.validRange(this.nodeInfo.versionSpec);
+        core.debug(`evaluating ${versions.length} versions`);
+        for (let potential of versions) {
+            const satisfied = semver_1.default.satisfies(potential, range, options);
+            if (satisfied) {
+                version = potential;
+                break;
             }
         }
-        // check cache
-        let toolPath;
-        if (isNightly) {
-            const nightlyVersion = findNightlyVersionInHostedToolcache(versionSpec, osArch);
-            toolPath = nightlyVersion && tc.find('node', nightlyVersion, osArch);
+        if (version) {
+            core.debug(`matched: ${version}`);
         }
         else {
-            toolPath = tc.find('node', versionSpec, osArch);
+            core.debug('match not found');
         }
-        // If not found in cache, download
-        if (toolPath) {
-            core.info(`Found in cache @ ${toolPath}`);
-        }
-        else {
-            core.info(`Attempting to download ${versionSpec}...`);
+        return version;
+    }
+    findVersionInHostedToolCacheDirectory() {
+        return tc.find('node', this.nodeInfo.versionSpec, this.nodeInfo.arch);
+    }
+    getNodeJsVersions() {
+        return __awaiter(this, void 0, void 0, function* () {
+            const initialUrl = this.getDistributionUrl();
+            const dataUrl = `${initialUrl}/index.json`;
+            let response = yield this.httpClient.getJson(dataUrl);
+            return response.result || [];
+        });
+    }
+    getNodejsDistInfo(version) {
+        let osArch = this.translateArchToDistUrl(this.nodeInfo.arch);
+        version = semver_1.default.clean(version) || '';
+        let fileName = this.osPlat == 'win32'
+            ? `node-v${version}-win-${osArch}`
+            : `node-v${version}-${this.osPlat}-${osArch}`;
+        let urlFileName = this.osPlat == 'win32' ? `${fileName}.7z` : `${fileName}.tar.gz`;
+        const initialUrl = this.getDistributionUrl();
+        const url = `${initialUrl}/v${version}/${urlFileName}`;
+        return {
+            downloadUrl: url,
+            resolvedVersion: version,
+            arch: osArch,
+            fileName: fileName
+        };
+    }
+    downloadNodejs(info) {
+        return __awaiter(this, void 0, void 0, function* () {
             let downloadPath = '';
-            let info = null;
-            //
-            // Try download from internal distribution (popular versions only)
-            //
+            core.info(`Acquiring ${info.resolvedVersion} - ${info.arch} from ${info.downloadUrl}`);
             try {
-                info = yield getInfoFromManifest(versionSpec, stable, auth, osArch, manifest);
-                if (info) {
-                    core.info(`Acquiring ${info.resolvedVersion} - ${info.arch} from ${info.downloadUrl}`);
-                    downloadPath = yield tc.downloadTool(info.downloadUrl, undefined, auth);
-                }
-                else {
-                    core.info('Not found in manifest.  Falling back to download directly from Node');
-                }
+                downloadPath = yield tc.downloadTool(info.downloadUrl);
             }
             catch (err) {
-                // Rate limit?
-                if (err instanceof tc.HTTPError &&
-                    (err.httpStatusCode === 403 || err.httpStatusCode === 429)) {
-                    core.info(`Received HTTP status code ${err.httpStatusCode}.  This usually indicates the rate limit has been exceeded`);
+                if (err instanceof tc.HTTPError && err.httpStatusCode == 404) {
+                    return yield this.acquireNodeFromFallbackLocation(info.resolvedVersion, info.arch);
+                }
+                throw err;
+            }
+            let toolPath = yield this.extractArchive(downloadPath, info);
+            core.info('Done');
+            return toolPath;
+        });
+    }
+    validRange(versionSpec) {
+        var _a;
+        let options;
+        const c = semver_1.default.clean(versionSpec) || '';
+        const valid = (_a = semver_1.default.valid(c)) !== null && _a !== void 0 ? _a : versionSpec;
+        return { range: valid, options };
+    }
+    acquireNodeFromFallbackLocation(version, arch = os_1.default.arch()) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const initialUrl = this.getDistributionUrl();
+            let osArch = this.translateArchToDistUrl(arch);
+            // Create temporary folder to download in to
+            const tempDownloadFolder = 'temp_' + Math.floor(Math.random() * 2000000000);
+            const tempDirectory = process.env['RUNNER_TEMP'] || '';
+            assert.ok(tempDirectory, 'Expected RUNNER_TEMP to be defined');
+            const tempDir = path.join(tempDirectory, tempDownloadFolder);
+            yield io.mkdirP(tempDir);
+            let exeUrl;
+            let libUrl;
+            try {
+                exeUrl = `${initialUrl}/v${version}/win-${osArch}/node.exe`;
+                libUrl = `${initialUrl}/v${version}/win-${osArch}/node.lib`;
+                core.info(`Downloading only node binary from ${exeUrl}`);
+                const exePath = yield tc.downloadTool(exeUrl);
+                yield io.cp(exePath, path.join(tempDir, 'node.exe'));
+                const libPath = yield tc.downloadTool(libUrl);
+                yield io.cp(libPath, path.join(tempDir, 'node.lib'));
+            }
+            catch (err) {
+                if (err instanceof tc.HTTPError && err.httpStatusCode == 404) {
+                    exeUrl = `${initialUrl}/v${version}/node.exe`;
+                    libUrl = `${initialUrl}/v${version}/node.lib`;
+                    const exePath = yield tc.downloadTool(exeUrl);
+                    yield io.cp(exePath, path.join(tempDir, 'node.exe'));
+                    const libPath = yield tc.downloadTool(libUrl);
+                    yield io.cp(libPath, path.join(tempDir, 'node.lib'));
                 }
                 else {
-                    core.info(err.message);
-                }
-                core.debug(err.stack);
-                core.info('Falling back to download directly from Node');
-            }
-            //
-            // Download from nodejs.org
-            //
-            if (!downloadPath) {
-                info = yield getInfoFromDist(versionSpec, arch, nodeVersions);
-                if (!info) {
-                    throw new Error(`Unable to find Node version '${versionSpec}' for platform ${osPlat} and architecture ${osArch}.`);
-                }
-                core.info(`Acquiring ${info.resolvedVersion} - ${info.arch} from ${info.downloadUrl}`);
-                try {
-                    downloadPath = yield tc.downloadTool(info.downloadUrl);
-                }
-                catch (err) {
-                    if (err instanceof tc.HTTPError && err.httpStatusCode == 404) {
-                        return yield acquireNodeFromFallbackLocation(info.resolvedVersion, info.arch);
-                    }
                     throw err;
                 }
             }
+            const toolPath = yield tc.cacheDir(tempDir, 'node', version, arch);
+            return toolPath;
+        });
+    }
+    extractArchive(downloadPath, info) {
+        return __awaiter(this, void 0, void 0, function* () {
             //
             // Extract
             //
             core.info('Extracting ...');
             let extPath;
             info = info || {}; // satisfy compiler, never null when reaches here
-            if (osPlat == 'win32') {
-                let _7zPath = path.join(__dirname, '../..', 'externals', '7zr.exe');
+            if (this.osPlat == 'win32') {
+                const _7zPath = path.join(__dirname, '../..', 'externals', '7zr.exe');
                 extPath = yield tc.extract7z(downloadPath, undefined, _7zPath);
                 // 7z extracts to folder matching file name
-                let nestedPath = path.join(extPath, path.basename(info.fileName, '.7z'));
+                const nestedPath = path.join(extPath, path.basename(info.fileName, '.7z'));
                 if (fs_1.default.existsSync(nestedPath)) {
                     extPath = nestedPath;
                 }
@@ -73333,190 +73524,15 @@ function getNode(versionSpec, stable, checkLatest, auth, arch = os_1.default.arc
             // Install into the local tool cache - node extracts with a root folder that matches the fileName downloaded
             //
             core.info('Adding to the cache ...');
-            toolPath = yield tc.cacheDir(extPath, 'node', info.resolvedVersion, info.arch);
-            core.info('Done');
-        }
-        //
-        // a tool installer initimately knows details about the layout of that tool
-        // for example, node binary is in the bin folder after the extract on Mac/Linux.
-        // layouts could change by version, by platform etc... but that's the tool installers job
-        //
-        if (osPlat != 'win32') {
-            toolPath = path.join(toolPath, 'bin');
-        }
-        //
-        // prepend the tools path. instructs the agent to prepend for future tasks
-        core.addPath(toolPath);
-    });
-}
-exports.getNode = getNode;
-function findNightlyVersionInHostedToolcache(versionsSpec, osArch) {
-    const foundAllVersions = tc.findAllVersions('node', osArch);
-    const version = evaluateVersions(foundAllVersions, versionsSpec);
-    return version;
-}
-function isLtsAlias(versionSpec) {
-    return versionSpec.startsWith('lts/');
-}
-function getManifest(auth) {
-    core.debug('Getting manifest from actions/node-versions@main');
-    return tc.getManifestFromRepo('actions', 'node-versions', auth, 'main');
-}
-function resolveLtsAliasFromManifest(versionSpec, stable, manifest) {
-    var _a;
-    const alias = (_a = versionSpec.split('lts/')[1]) === null || _a === void 0 ? void 0 : _a.toLowerCase();
-    if (!alias) {
-        throw new Error(`Unable to parse LTS alias for Node version '${versionSpec}'`);
+            const toolPath = yield tc.cacheDir(extPath, 'node', info.resolvedVersion, info.arch);
+            return toolPath;
+        });
     }
-    core.debug(`LTS alias '${alias}' for Node version '${versionSpec}'`);
-    // Supported formats are `lts/<alias>`, `lts/*`, and `lts/-n`. Where asterisk means highest possible LTS and -n means the nth-highest.
-    const n = Number(alias);
-    const aliases = Object.fromEntries(manifest
-        .filter(x => x.lts && x.stable === stable)
-        .map(x => [x.lts.toLowerCase(), x])
-        .reverse());
-    const numbered = Object.values(aliases);
-    const release = alias === '*'
-        ? numbered[numbered.length - 1]
-        : n < 0
-            ? numbered[numbered.length - 1 + n]
-            : aliases[alias];
-    if (!release) {
-        throw new Error(`Unable to find LTS release '${alias}' for Node version '${versionSpec}'.`);
-    }
-    core.debug(`Found LTS release '${release.version}' for Node version '${versionSpec}'`);
-    return release.version.split('.')[0];
-}
-function getInfoFromManifest(versionSpec, stable, auth, osArch = translateArchToDistUrl(os_1.default.arch()), manifest) {
-    return __awaiter(this, void 0, void 0, function* () {
-        let info = null;
-        if (!manifest) {
-            core.debug('No manifest cached');
-            manifest = yield getManifest(auth);
-        }
-        const rel = yield tc.findFromManifest(versionSpec, stable, manifest, osArch);
-        if (rel && rel.files.length > 0) {
-            info = {};
-            info.resolvedVersion = rel.version;
-            info.arch = rel.files[0].arch;
-            info.downloadUrl = rel.files[0].download_url;
-            info.fileName = rel.files[0].filename;
-        }
-        return info;
-    });
-}
-function getInfoFromDist(versionSpec, arch = os_1.default.arch(), nodeVersions) {
-    return __awaiter(this, void 0, void 0, function* () {
-        let osPlat = os_1.default.platform();
-        let osArch = translateArchToDistUrl(arch);
-        let version = yield queryDistForMatch(versionSpec, arch, nodeVersions);
-        if (!version) {
-            return null;
-        }
-        //
-        // Download - a tool installer intimately knows how to get the tool (and construct urls)
-        //
-        version = semver.clean(version) || '';
-        let fileName = osPlat == 'win32'
-            ? `node-v${version}-win-${osArch}`
-            : `node-v${version}-${osPlat}-${osArch}`;
-        let urlFileName = osPlat == 'win32' ? `${fileName}.7z` : `${fileName}.tar.gz`;
-        const initialUrl = getNodejsDistUrl(versionSpec);
-        const url = `${initialUrl}/v${version}/${urlFileName}`;
-        return {
-            downloadUrl: url,
-            resolvedVersion: version,
-            arch: arch,
-            fileName: fileName
-        };
-    });
-}
-function resolveVersionFromManifest(versionSpec, stable, auth, osArch = translateArchToDistUrl(os_1.default.arch()), manifest) {
-    return __awaiter(this, void 0, void 0, function* () {
-        try {
-            const info = yield getInfoFromManifest(versionSpec, stable, auth, osArch, manifest);
-            return info === null || info === void 0 ? void 0 : info.resolvedVersion;
-        }
-        catch (err) {
-            core.info('Unable to resolve version from manifest...');
-            core.debug(err.message);
-        }
-    });
-}
-function evaluateNightlyVersions(versions, versionSpec) {
-    let version = '';
-    let range;
-    const [raw, prerelease] = versionSpec.split('-');
-    const isValidVersion = semver.valid(raw);
-    const rawVersion = isValidVersion ? raw : semver.coerce(raw);
-    if (rawVersion) {
-        if (prerelease !== 'nightly') {
-            range = `${rawVersion}-${prerelease.replace('nightly', 'nightly.')}`;
-        }
-        else {
-            range = `${semver.validRange(`^${rawVersion}-0`)}-0`;
-        }
-    }
-    if (range) {
-        versions.sort(semver.rcompare);
-        for (const currentVersion of versions) {
-            const satisfied = semver.satisfies(currentVersion.replace('-nightly', '-nightly.'), range, { includePrerelease: true }) && currentVersion.includes('nightly');
-            if (satisfied) {
-                version = currentVersion;
-                break;
-            }
-        }
-    }
-    if (version) {
-        core.debug(`matched: ${version}`);
-    }
-    else {
-        core.debug('match not found');
-    }
-    return version;
-}
-// TODO - should we just export this from @actions/tool-cache? Lifted directly from there
-function evaluateVersions(versions, versionSpec) {
-    let version = '';
-    core.debug(`evaluating ${versions.length} versions`);
-    if (versionSpec.includes('nightly')) {
-        return evaluateNightlyVersions(versions, versionSpec);
-    }
-    versions = versions.sort(semver.rcompare);
-    for (let i = versions.length - 1; i >= 0; i--) {
-        const potential = versions[i];
-        const satisfied = semver.satisfies(potential, versionSpec);
-        if (satisfied) {
-            version = potential;
-            break;
-        }
-    }
-    if (version) {
-        core.debug(`matched: ${version}`);
-    }
-    else {
-        core.debug('match not found');
-    }
-    return version;
-}
-function getNodejsDistUrl(version) {
-    const prerelease = semver.prerelease(version);
-    if (version.includes('nightly')) {
-        return 'https://nodejs.org/download/nightly';
-    }
-    else if (prerelease) {
-        return 'https://nodejs.org/download/rc';
-    }
-    return 'https://nodejs.org/dist';
-}
-exports.getNodejsDistUrl = getNodejsDistUrl;
-function queryDistForMatch(versionSpec, arch = os_1.default.arch(), nodeVersions) {
-    return __awaiter(this, void 0, void 0, function* () {
-        let osPlat = os_1.default.platform();
-        let osArch = translateArchToDistUrl(arch);
+    getDistFileName() {
+        let osArch = this.translateArchToDistUrl(this.nodeInfo.arch);
         // node offers a json list of versions
         let dataFileName;
-        switch (osPlat) {
+        switch (this.osPlat) {
             case 'linux':
                 dataFileName = `linux-${osArch}`;
                 break;
@@ -73527,141 +73543,126 @@ function queryDistForMatch(versionSpec, arch = os_1.default.arch(), nodeVersions
                 dataFileName = `win-${osArch}-exe`;
                 break;
             default:
-                throw new Error(`Unexpected OS '${osPlat}'`);
+                throw new Error(`Unexpected OS '${this.osPlat}'`);
         }
-        if (!nodeVersions) {
-            core.debug('No dist manifest cached');
-            nodeVersions = yield getVersionsFromDist(versionSpec);
-        }
-        let versions = [];
-        if (isLatestSyntax(versionSpec)) {
-            core.info(`getting latest node version...`);
-            return nodeVersions[0].version;
-        }
-        nodeVersions.forEach((nodeVersion) => {
+        return dataFileName;
+    }
+    filterVersions(nodeJsVersions) {
+        const versions = [];
+        const dataFileName = this.getDistFileName();
+        nodeJsVersions.forEach((nodeVersion) => {
             // ensure this version supports your os and platform
             if (nodeVersion.files.indexOf(dataFileName) >= 0) {
                 versions.push(nodeVersion.version);
             }
         });
-        // get the latest version that matches the version spec
-        let version = evaluateVersions(versions, versionSpec);
-        return version;
-    });
-}
-function getVersionsFromDist(versionSpec) {
-    return __awaiter(this, void 0, void 0, function* () {
-        const initialUrl = getNodejsDistUrl(versionSpec);
-        const dataUrl = `${initialUrl}/index.json`;
-        let httpClient = new hc.HttpClient('setup-node', [], {
-            allowRetries: true,
-            maxRetries: 3
-        });
-        let response = yield httpClient.getJson(dataUrl);
-        return response.result || [];
-    });
-}
-exports.getVersionsFromDist = getVersionsFromDist;
-// For non LTS versions of Node, the files we need (for Windows) are sometimes located
-// in a different folder than they normally are for other versions.
-// Normally the format is similar to: https://nodejs.org/dist/v5.10.1/node-v5.10.1-win-x64.7z
-// In this case, there will be two files located at:
-//      /dist/v5.10.1/win-x64/node.exe
-//      /dist/v5.10.1/win-x64/node.lib
-// If this is not the structure, there may also be two files located at:
-//      /dist/v0.12.18/node.exe
-//      /dist/v0.12.18/node.lib
-// This method attempts to download and cache the resources from these alternative locations.
-// Note also that the files are normally zipped but in this case they are just an exe
-// and lib file in a folder, not zipped.
-function acquireNodeFromFallbackLocation(version, arch = os_1.default.arch()) {
-    return __awaiter(this, void 0, void 0, function* () {
-        const initialUrl = getNodejsDistUrl(version);
-        let osPlat = os_1.default.platform();
-        let osArch = translateArchToDistUrl(arch);
-        // Create temporary folder to download in to
-        const tempDownloadFolder = 'temp_' + Math.floor(Math.random() * 2000000000);
-        const tempDirectory = process.env['RUNNER_TEMP'] || '';
-        assert.ok(tempDirectory, 'Expected RUNNER_TEMP to be defined');
-        const tempDir = path.join(tempDirectory, tempDownloadFolder);
-        yield io.mkdirP(tempDir);
-        let exeUrl;
-        let libUrl;
-        try {
-            exeUrl = `${initialUrl}/v${version}/win-${osArch}/node.exe`;
-            libUrl = `${initialUrl}/v${version}/win-${osArch}/node.lib`;
-            core.info(`Downloading only node binary from ${exeUrl}`);
-            const exePath = yield tc.downloadTool(exeUrl);
-            yield io.cp(exePath, path.join(tempDir, 'node.exe'));
-            const libPath = yield tc.downloadTool(libUrl);
-            yield io.cp(libPath, path.join(tempDir, 'node.lib'));
+        return versions.sort(semver_1.default.rcompare);
+    }
+    translateArchToDistUrl(arch) {
+        switch (arch) {
+            case 'arm':
+                return 'armv7l';
+            default:
+                return arch;
         }
-        catch (err) {
-            if (err instanceof tc.HTTPError && err.httpStatusCode == 404) {
-                exeUrl = `${initialUrl}/v${version}/node.exe`;
-                libUrl = `${initialUrl}/v${version}/node.lib`;
-                const exePath = yield tc.downloadTool(exeUrl);
-                yield io.cp(exePath, path.join(tempDir, 'node.exe'));
-                const libPath = yield tc.downloadTool(libUrl);
-                yield io.cp(libPath, path.join(tempDir, 'node.lib'));
-            }
-            else {
-                throw err;
-            }
-        }
-        let toolPath = yield tc.cacheDir(tempDir, 'node', version, arch);
-        core.addPath(toolPath);
-        return toolPath;
-    });
-}
-// os.arch does not always match the relative download url, e.g.
-// os.arch == 'arm' != node-v12.13.1-linux-armv7l.tar.gz
-// All other currently supported architectures match, e.g.:
-//   os.arch = arm64 => https://nodejs.org/dist/v{VERSION}/node-v{VERSION}-{OS}-arm64.tar.gz
-//   os.arch = x64 => https://nodejs.org/dist/v{VERSION}/node-v{VERSION}-{OS}-x64.tar.gz
-function translateArchToDistUrl(arch) {
-    switch (arch) {
-        case 'arm':
-            return 'armv7l';
-        default:
-            return arch;
     }
 }
-function parseNodeVersionFile(contents) {
-    var _a, _b, _c;
-    let nodeVersion;
-    // Try parsing the file as an NPM `package.json` file.
-    try {
-        nodeVersion = (_a = JSON.parse(contents).volta) === null || _a === void 0 ? void 0 : _a.node;
-        if (!nodeVersion)
-            nodeVersion = (_b = JSON.parse(contents).engines) === null || _b === void 0 ? void 0 : _b.node;
-    }
-    catch (_d) {
-        core.info('Node version file is not JSON file');
-    }
-    if (!nodeVersion) {
-        const found = contents.match(/^(?:nodejs\s+)?v?(?<version>[^\s]+)$/m);
-        nodeVersion = (_c = found === null || found === void 0 ? void 0 : found.groups) === null || _c === void 0 ? void 0 : _c.version;
-    }
-    // In the case of an unknown format,
-    // return as is and evaluate the version separately.
-    if (!nodeVersion)
-        nodeVersion = contents.trim();
-    return nodeVersion;
-}
-exports.parseNodeVersionFile = parseNodeVersionFile;
-function isLatestSyntax(versionSpec) {
-    return ['current', 'latest', 'node'].includes(versionSpec);
-}
+exports["default"] = BaseDistribution;
 
 
 /***/ }),
 
-/***/ 399:
+/***/ 5617:
 /***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
 "use strict";
 
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.getNodejsDistribution = void 0;
+const nightly_builds_1 = __importDefault(__nccwpck_require__(7127));
+const official_builds_1 = __importDefault(__nccwpck_require__(7854));
+const rc_builds_1 = __importDefault(__nccwpck_require__(8837));
+const canary_builds_1 = __importDefault(__nccwpck_require__(969));
+var Distributions;
+(function (Distributions) {
+    Distributions["DEFAULT"] = "";
+    Distributions["CANARY"] = "v8-canary";
+    Distributions["NIGHTLY"] = "nightly";
+    Distributions["RC"] = "rc";
+})(Distributions || (Distributions = {}));
+function getNodejsDistribution(installerOptions) {
+    const versionSpec = installerOptions.versionSpec;
+    let distribution;
+    if (versionSpec.includes(Distributions.NIGHTLY)) {
+        distribution = new nightly_builds_1.default(installerOptions);
+    }
+    else if (versionSpec.includes(Distributions.CANARY)) {
+        distribution = new canary_builds_1.default(installerOptions);
+    }
+    else if (versionSpec.includes(Distributions.RC)) {
+        distribution = new rc_builds_1.default(installerOptions);
+    }
+    else {
+        distribution = new official_builds_1.default(installerOptions);
+    }
+    return distribution;
+}
+exports.getNodejsDistribution = getNodejsDistribution;
+
+
+/***/ }),
+
+/***/ 7127:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+const base_distribution_prerelease_1 = __importDefault(__nccwpck_require__(957));
+class NightlyNodejs extends base_distribution_prerelease_1.default {
+    constructor(nodeInfo) {
+        super(nodeInfo);
+        this.distribution = 'nightly';
+    }
+    getDistributionUrl() {
+        return 'https://nodejs.org/download/nightly';
+    }
+}
+exports["default"] = NightlyNodejs;
+
+
+/***/ }),
+
+/***/ 7854:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -73671,26 +73672,272 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
-    result["default"] = mod;
-    return result;
-};
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 const core = __importStar(__nccwpck_require__(2186));
-const exec = __importStar(__nccwpck_require__(1514));
-const installer = __importStar(__nccwpck_require__(2574));
+const tc = __importStar(__nccwpck_require__(7784));
+const path_1 = __importDefault(__nccwpck_require__(1017));
+const base_distribution_1 = __importDefault(__nccwpck_require__(7));
+class OfficialBuilds extends base_distribution_1.default {
+    constructor(nodeInfo) {
+        super(nodeInfo);
+    }
+    setupNodeJs() {
+        return __awaiter(this, void 0, void 0, function* () {
+            let manifest;
+            let nodeJsVersions;
+            const osArch = this.translateArchToDistUrl(this.nodeInfo.arch);
+            if (this.isLtsAlias(this.nodeInfo.versionSpec)) {
+                core.info('Attempt to resolve LTS alias from manifest...');
+                // No try-catch since it's not possible to resolve LTS alias without manifest
+                manifest = yield this.getManifest();
+                this.nodeInfo.versionSpec = this.resolveLtsAliasFromManifest(this.nodeInfo.versionSpec, this.nodeInfo.stable, manifest);
+            }
+            if (this.isLatestSyntax(this.nodeInfo.versionSpec)) {
+                nodeJsVersions = yield this.getNodeJsVersions();
+                const versions = this.filterVersions(nodeJsVersions);
+                this.nodeInfo.versionSpec = this.evaluateVersions(versions);
+                core.info('getting latest node version...');
+            }
+            if (this.nodeInfo.checkLatest) {
+                core.info('Attempt to resolve the latest version from manifest...');
+                const resolvedVersion = yield this.resolveVersionFromManifest(this.nodeInfo.versionSpec, this.nodeInfo.stable, osArch, manifest);
+                if (resolvedVersion) {
+                    this.nodeInfo.versionSpec = resolvedVersion;
+                    core.info(`Resolved as '${resolvedVersion}'`);
+                }
+                else {
+                    core.info(`Failed to resolve version ${this.nodeInfo.versionSpec} from manifest`);
+                }
+            }
+            let toolPath = this.findVersionInHostedToolCacheDirectory();
+            if (toolPath) {
+                core.info(`Found in cache @ ${toolPath}`);
+            }
+            else {
+                let downloadPath = '';
+                try {
+                    core.info(`Attempting to download ${this.nodeInfo.versionSpec}...`);
+                    const versionInfo = yield this.getInfoFromManifest(this.nodeInfo.versionSpec, this.nodeInfo.stable, osArch, manifest);
+                    if (versionInfo) {
+                        core.info(`Acquiring ${versionInfo.resolvedVersion} - ${versionInfo.arch} from ${versionInfo.downloadUrl}`);
+                        downloadPath = yield tc.downloadTool(versionInfo.downloadUrl, undefined, this.nodeInfo.auth);
+                        if (downloadPath) {
+                            toolPath = yield this.extractArchive(downloadPath, versionInfo);
+                        }
+                    }
+                    else {
+                        core.info('Not found in manifest. Falling back to download directly from Node');
+                    }
+                }
+                catch (err) {
+                    // Rate limit?
+                    if (err instanceof tc.HTTPError &&
+                        (err.httpStatusCode === 403 || err.httpStatusCode === 429)) {
+                        core.info(`Received HTTP status code ${err.httpStatusCode}. This usually indicates the rate limit has been exceeded`);
+                    }
+                    else {
+                        core.info(err.message);
+                    }
+                    core.debug(err.stack);
+                    core.info('Falling back to download directly from Node');
+                }
+                if (!toolPath) {
+                    const nodeJsVersions = yield this.getNodeJsVersions();
+                    const versions = this.filterVersions(nodeJsVersions);
+                    const evaluatedVersion = this.evaluateVersions(versions);
+                    if (!evaluatedVersion) {
+                        throw new Error(`Unable to find Node version '${this.nodeInfo.versionSpec}' for platform ${this.osPlat} and architecture ${this.nodeInfo.arch}.`);
+                    }
+                    const toolName = this.getNodejsDistInfo(evaluatedVersion);
+                    toolPath = yield this.downloadNodejs(toolName);
+                }
+            }
+            if (this.osPlat != 'win32') {
+                toolPath = path_1.default.join(toolPath, 'bin');
+            }
+            core.addPath(toolPath);
+        });
+    }
+    evaluateVersions(versions) {
+        let version = '';
+        if (this.isLatestSyntax(this.nodeInfo.versionSpec)) {
+            core.info(`getting latest node version...`);
+            return versions[0];
+        }
+        version = super.evaluateVersions(versions);
+        return version;
+    }
+    getDistributionUrl() {
+        return `https://nodejs.org/dist`;
+    }
+    getManifest() {
+        core.debug('Getting manifest from actions/node-versions@main');
+        return tc.getManifestFromRepo('actions', 'node-versions', this.nodeInfo.auth, 'main');
+    }
+    resolveLtsAliasFromManifest(versionSpec, stable, manifest) {
+        var _a;
+        const alias = (_a = versionSpec.split('lts/')[1]) === null || _a === void 0 ? void 0 : _a.toLowerCase();
+        if (!alias) {
+            throw new Error(`Unable to parse LTS alias for Node version '${versionSpec}'`);
+        }
+        core.debug(`LTS alias '${alias}' for Node version '${versionSpec}'`);
+        // Supported formats are `lts/<alias>`, `lts/*`, and `lts/-n`. Where asterisk means highest possible LTS and -n means the nth-highest.
+        const n = Number(alias);
+        const aliases = Object.fromEntries(manifest
+            .filter(x => x.lts && x.stable === stable)
+            .map(x => [x.lts.toLowerCase(), x])
+            .reverse());
+        const numbered = Object.values(aliases);
+        const release = alias === '*'
+            ? numbered[numbered.length - 1]
+            : n < 0
+                ? numbered[numbered.length - 1 + n]
+                : aliases[alias];
+        if (!release) {
+            throw new Error(`Unable to find LTS release '${alias}' for Node version '${versionSpec}'.`);
+        }
+        core.debug(`Found LTS release '${release.version}' for Node version '${versionSpec}'`);
+        return release.version.split('.')[0];
+    }
+    resolveVersionFromManifest(versionSpec, stable, osArch, manifest) {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                const info = yield this.getInfoFromManifest(versionSpec, stable, osArch, manifest);
+                return info === null || info === void 0 ? void 0 : info.resolvedVersion;
+            }
+            catch (err) {
+                core.info('Unable to resolve version from manifest...');
+                core.debug(err.message);
+            }
+        });
+    }
+    getInfoFromManifest(versionSpec, stable, osArch, manifest) {
+        return __awaiter(this, void 0, void 0, function* () {
+            let info = null;
+            if (!manifest) {
+                core.debug('No manifest cached');
+                manifest = yield this.getManifest();
+            }
+            const rel = yield tc.findFromManifest(versionSpec, stable, manifest, osArch);
+            if (rel && rel.files.length > 0) {
+                info = {};
+                info.resolvedVersion = rel.version;
+                info.arch = rel.files[0].arch;
+                info.downloadUrl = rel.files[0].download_url;
+                info.fileName = rel.files[0].filename;
+            }
+            return info;
+        });
+    }
+    isLtsAlias(versionSpec) {
+        return versionSpec.startsWith('lts/');
+    }
+    isLatestSyntax(versionSpec) {
+        return ['current', 'latest', 'node'].includes(versionSpec);
+    }
+}
+exports["default"] = OfficialBuilds;
+
+
+/***/ }),
+
+/***/ 8837:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+const base_distribution_1 = __importDefault(__nccwpck_require__(7));
+class RcBuild extends base_distribution_1.default {
+    constructor(nodeInfo) {
+        super(nodeInfo);
+    }
+    getDistributionUrl() {
+        return 'https://nodejs.org/download/rc';
+    }
+}
+exports["default"] = RcBuild;
+
+
+/***/ }),
+
+/***/ 969:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+const base_distribution_prerelease_1 = __importDefault(__nccwpck_require__(957));
+class CanaryBuild extends base_distribution_prerelease_1.default {
+    constructor(nodeInfo) {
+        super(nodeInfo);
+        this.distribution = 'v8-canary';
+    }
+    getDistributionUrl() {
+        return 'https://nodejs.org/download/v8-canary';
+    }
+}
+exports["default"] = CanaryBuild;
+
+
+/***/ }),
+
+/***/ 399:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.run = void 0;
+const core = __importStar(__nccwpck_require__(2186));
 const fs_1 = __importDefault(__nccwpck_require__(7147));
+const os_1 = __importDefault(__nccwpck_require__(2037));
 const auth = __importStar(__nccwpck_require__(7573));
 const path = __importStar(__nccwpck_require__(1017));
 const cache_restore_1 = __nccwpck_require__(9517);
 const cache_utils_1 = __nccwpck_require__(1678);
-const os_1 = __importDefault(__nccwpck_require__(2037));
+const installer_factory_1 = __nccwpck_require__(5617);
+const util_1 = __nccwpck_require__(2629);
 function run() {
     return __awaiter(this, void 0, void 0, function* () {
         try {
@@ -73714,9 +73961,17 @@ function run() {
                 const auth = !token ? undefined : `token ${token}`;
                 const stable = (core.getInput('stable') || 'true').toUpperCase() === 'TRUE';
                 const checkLatest = (core.getInput('check-latest') || 'false').toUpperCase() === 'TRUE';
-                yield installer.getNode(version, stable, checkLatest, auth, arch);
+                const nodejsInfo = {
+                    versionSpec: version,
+                    checkLatest,
+                    auth,
+                    stable,
+                    arch
+                };
+                const nodeDistribution = installer_factory_1.getNodejsDistribution(nodejsInfo);
+                yield nodeDistribution.setupNodeJs();
             }
-            yield printEnvDetailsAndSetOutput();
+            yield util_1.printEnvDetailsAndSetOutput();
             const registryUrl = core.getInput('registry-url');
             const alwaysAuth = core.getInput('always-auth');
             if (registryUrl) {
@@ -73751,22 +74006,89 @@ function resolveVersionInput() {
         if (!fs_1.default.existsSync(versionFilePath)) {
             throw new Error(`The specified node version file at: ${versionFilePath} does not exist`);
         }
-        version = installer.parseNodeVersionFile(fs_1.default.readFileSync(versionFilePath, 'utf8'));
+        version = util_1.parseNodeVersionFile(fs_1.default.readFileSync(versionFilePath, 'utf8'));
         core.info(`Resolved ${versionFileInput} as ${version}`);
     }
     return version;
 }
+
+
+/***/ }),
+
+/***/ 2629:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.printEnvDetailsAndSetOutput = exports.parseNodeVersionFile = void 0;
+const core = __importStar(__nccwpck_require__(2186));
+const exec = __importStar(__nccwpck_require__(1514));
+function parseNodeVersionFile(contents) {
+    var _a, _b, _c;
+    let nodeVersion;
+    // Try parsing the file as an NPM `package.json` file.
+    try {
+        nodeVersion = (_a = JSON.parse(contents).volta) === null || _a === void 0 ? void 0 : _a.node;
+        if (!nodeVersion)
+            nodeVersion = (_b = JSON.parse(contents).engines) === null || _b === void 0 ? void 0 : _b.node;
+    }
+    catch (_d) {
+        core.info('Node version file is not JSON file');
+    }
+    if (!nodeVersion) {
+        const found = contents.match(/^(?:nodejs\s+)?v?(?<version>[^\s]+)$/m);
+        nodeVersion = (_c = found === null || found === void 0 ? void 0 : found.groups) === null || _c === void 0 ? void 0 : _c.version;
+    }
+    // In the case of an unknown format,
+    // return as is and evaluate the version separately.
+    if (!nodeVersion)
+        nodeVersion = contents.trim();
+    return nodeVersion;
+}
+exports.parseNodeVersionFile = parseNodeVersionFile;
 function printEnvDetailsAndSetOutput() {
     return __awaiter(this, void 0, void 0, function* () {
         core.startGroup('Environment details');
         const promises = ['node', 'npm', 'yarn'].map((tool) => __awaiter(this, void 0, void 0, function* () {
             const output = yield getToolVersion(tool, ['--version']);
+            return { tool, output };
+        }));
+        const tools = yield Promise.all(promises);
+        tools.forEach(({ tool, output }) => {
             if (tool === 'node') {
                 core.setOutput(`${tool}-version`, output);
             }
             core.info(`${tool}: ${output}`);
-        }));
-        yield Promise.all(promises);
+        });
         core.endGroup();
     });
 }
@@ -73779,7 +74101,7 @@ function getToolVersion(tool, options) {
                 silent: true
             });
             if (exitCode > 0) {
-                core.warning(`[warning]${stderr}`);
+                core.info(`[warning]${stderr}`);
                 return '';
             }
             return stdout.trim();

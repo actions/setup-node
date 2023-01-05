@@ -128,16 +128,17 @@ If the runner is not able to access github.com, any Nodejs versions requested du
 
 ## Advanced usage
 
-1. [Check latest version](docs/advanced-usage.md#check-latest-version)
-2. [Using a node version file](docs/advanced-usage.md#node-version-file)
-3. [Using different architectures](docs/advanced-usage.md#architecture)
-4. [Using nightly versions](docs/advanced-usage.md#nightly-versions)
-5. [Using rc versions](docs/advanced-usage.md#rc-versions)
-6. [Caching packages data](docs/advanced-usage.md#caching-packages-data)
-7. [Using multiple operating systems and architectures](docs/advanced-usage.md#multiple-operating-systems-and-architectures)
-8. [Publishing to npmjs and GPR with npm](docs/advanced-usage.md#publish-to-npmjs-and-gpr-with-npm)
-9. [Publishing to npmjs and GPR with yarn](docs/advanced-usage.md#publish-to-npmjs-and-gpr-with-yarn)
-10. [Using private packages](docs/advanced-usage.md#use-private-packages)
+ - [Check latest version](docs/advanced-usage.md#check-latest-version)
+ - [Using a node version file](docs/advanced-usage.md#node-version-file)
+ - [Using different architectures](docs/advanced-usage.md#architecture)
+ - [Using v8 canary versions](docs/advanced-usage.md#v8-canary-versions)
+ - [Using nigthly versions](docs/advanced-usage.md#nightly-versions)
+ - [Using rc versions](docs/advanced-usage.md#rc-versions)
+ - [Caching packages data](docs/advanced-usage.md#caching-packages-data)
+ - [Using multiple operating systems and architectures](docs/advanced-usage.md#multiple-operating-systems-and-architectures)
+ - [Publishing to npmjs and GPR with npm](docs/advanced-usage.md#publish-to-npmjs-and-gpr-with-npm)
+ - [Publishing to npmjs and GPR with yarn](docs/advanced-usage.md#publish-to-npmjs-and-gpr-with-yarn)
+ - [Using private packages](docs/advanced-usage.md#use-private-packages)
 
 ## License
 

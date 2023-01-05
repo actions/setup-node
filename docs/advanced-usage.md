@@ -104,6 +104,57 @@ jobs:
       - run: npm test
 ```
 
+## V8 Canary versions
+
+You can specify a nightly version to download it from https://nodejs.org/download/v8-canary.
+
+### Install v8 canary build for specific node version
+
+```yaml
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    name: Node sample
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: '20.0.0-v8-canary' # it will install the latest v8 canary release for node 20.0.0
+      - run: npm ci
+      - run: npm test
+```
+### Install v8 canary build for major node version
+
+```yaml
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    name: Node sample
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: '20-v8-canary' # it will install the latest v8 canary release for node 20
+      - run: npm ci
+      - run: npm test
+```
+
+### Install the exact v8 canary version
+
+```yaml
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    name: Node sample
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 'v20.1.1-v8-canary20221103f7e2421e91'
+      - run: npm ci
+      - run: npm test
+```
+
 ## Nightly versions
 
 You can specify a nightly version to download it from https://nodejs.org/download/nightly. 
