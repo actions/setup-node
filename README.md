@@ -132,7 +132,7 @@ If the runner is not able to access github.com, any Nodejs versions requested du
  - [Using a node version file](docs/advanced-usage.md#node-version-file)
  - [Using different architectures](docs/advanced-usage.md#architecture)
  - [Using v8 canary versions](docs/advanced-usage.md#v8-canary-versions)
- - [Using nigthly versions](docs/advanced-usage.md#nightly-versions)
+ - [Using nightly versions](docs/advanced-usage.md#nightly-versions)
  - [Using rc versions](docs/advanced-usage.md#rc-versions)
  - [Caching packages data](docs/advanced-usage.md#caching-packages-data)
  - [Using multiple operating systems and architectures](docs/advanced-usage.md#multiple-operating-systems-and-architectures)
