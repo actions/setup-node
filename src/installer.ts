@@ -611,11 +611,6 @@ export async function enableCorepack(input: string): Promise<void> {
   if (input.length > 0 && input !== 'false') {
     if (input !== 'true') {
       const packageManagers = input.split(' ');
-      if (!packageManagers.every(pm => ['npm', 'yarn', 'pnpm'].includes(pm))) {
-        throw new Error(
-          `One or more of the specified package managers [ ${input} ] are not supported by corepack`
-        );
-      }
       corepackArgs.push(...packageManagers);
     }
     await exec.getExecOutput('corepack', corepackArgs, {
