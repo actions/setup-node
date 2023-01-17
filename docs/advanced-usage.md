@@ -360,7 +360,7 @@ NOTE: As per https://github.com/actions/setup-node/issues/49 you cannot use `sec
 The always-auth input sets `always-auth=true` in .npmrc file. With this option set [npm](https://docs.npmjs.com/cli/v6/using-npm/config#always-auth)/yarn sends the authentication credentials when making a request to the registries.
 
 ## Enabling Corepack
-You can enable [Corepack](https://github.com/nodejs/corepack) by using the `corepack` input. This will enable Corepack. You can then use `pnpm` and `yarn` commands in your project.
+You can enable [Corepack](https://github.com/nodejs/corepack) by using the `corepack` input. You can then use `pnpm` and `yarn` commands in your project.
 
 ```yaml
 steps:
@@ -373,7 +373,7 @@ steps:
   run: yarn install --immutable
 ```
 
-You can also pass package manager names instead if you want to enable corepack for specific package managers only.
+You can also pass package manager names separated by a space to enable corepack for specific package managers only.
 
 ```yaml
 steps:
