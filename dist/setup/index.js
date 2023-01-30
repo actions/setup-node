@@ -74003,11 +74003,22 @@ function resolveVersionInput() {
     }
     if (versionFileInput) {
         const versionFilePath = path.join(process.env.GITHUB_WORKSPACE, versionFileInput);
-        if (!fs_1.default.existsSync(versionFilePath)) {
+        if (fs_1.default.existsSync(versionFilePath)) {
+            version = util_1.parseNodeVersionFile(fs_1.default.readFileSync(versionFilePath, 'utf8'));
+            core.info(`Resolved ${versionFileInput} as ${version}`);
+            return version;
+        }
+        else {
             throw new Error(`The specified node version file at: ${versionFilePath} does not exist`);
         }
-        version = util_1.parseNodeVersionFile(fs_1.default.readFileSync(versionFilePath, 'utf8'));
-        core.info(`Resolved ${versionFileInput} as ${version}`);
+    }
+    for (const versionFile of ['.node-version', '.nvmrc']) {
+        const versionFilePath = path.join(process.env.GITHUB_WORKSPACE, versionFile);
+        if (fs_1.default.existsSync(versionFilePath)) {
+            version = util_1.parseNodeVersionFile(fs_1.default.readFileSync(versionFilePath, 'utf8'));
+            core.info(`Resolved ${versionFile} as ${version}`);
+            return version;
+        }
     }
     return version;
 }

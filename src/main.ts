@@ -97,15 +97,32 @@ function resolveVersionInput(): string {
       versionFileInput
     );
 
-    if (!fs.existsSync(versionFilePath)) {
+    if (fs.existsSync(versionFilePath)) {
+      version = parseNodeVersionFile(fs.readFileSync(versionFilePath, 'utf8'));
+
+      core.info(`Resolved ${versionFileInput} as ${version}`);
+
+      return version;
+    } else {
       throw new Error(
         `The specified node version file at: ${versionFilePath} does not exist`
       );
     }
+  }
 
-    version = parseNodeVersionFile(fs.readFileSync(versionFilePath, 'utf8'));
+  for (const versionFile of ['.node-version', '.nvmrc']) {
+    const versionFilePath = path.join(
+      process.env.GITHUB_WORKSPACE!,
+      versionFile
+    );
 
-    core.info(`Resolved ${versionFileInput} as ${version}`);
+    if (fs.existsSync(versionFilePath)) {
+      version = parseNodeVersionFile(fs.readFileSync(versionFilePath, 'utf8'));
+
+      core.info(`Resolved ${versionFile} as ${version}`);
+
+      return version;
+    }
   }
 
   return version;
