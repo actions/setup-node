@@ -2,6 +2,7 @@
 
 [![basic-validation](https://github.com/actions/setup-node/actions/workflows/basic-validation.yml/badge.svg)](https://github.com/actions/setup-node/actions/workflows/basic-validation.yml)
 [![versions](https://github.com/actions/setup-node/actions/workflows/versions.yml/badge.svg)](https://github.com/actions/setup-node/actions/workflows/versions.yml)
+[![e2e-cache](https://github.com/actions/setup-node/actions/workflows/e2e-cache.yml/badge.svg?branch=main)](https://github.com/actions/setup-node/actions/workflows/e2e-cache.yml)
 [![proxy](https://github.com/actions/setup-node/actions/workflows/proxy.yml/badge.svg)](https://github.com/actions/setup-node/actions/workflows/proxy.yml)
 
 This action provides the following functionality for GitHub Actions users:
