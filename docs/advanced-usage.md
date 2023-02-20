@@ -24,7 +24,7 @@ To ensure that `yarn.lock` is always committed, use `yarn install --immutable` w
 **See also:**
 - [Documentation of `yarn.lock`](https://classic.yarnpkg.com/en/docs/yarn-lock)
 - [Documentation of `--frozen-lockfile` option](https://classic.yarnpkg.com/en/docs/cli/install#toc-yarn-install-frozen-lockfile)
-- [QA - Should lockfiles be committed to the repoistory?](https://yarnpkg.com/getting-started/qa/#should-lockfiles-be-committed-to-the-repository)
+- [QA - Should lockfiles be committed to the repository?](https://yarnpkg.com/getting-started/qa/#should-lockfiles-be-committed-to-the-repository)
 - [Documentation of `yarn install`](https://yarnpkg.com/cli/install)
 
 ### PNPM
