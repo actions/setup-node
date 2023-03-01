@@ -18,7 +18,7 @@ describe('run', () => {
   const commonPath = '/some/random/path';
   process.env['GITHUB_WORKSPACE'] = path.join(__dirname, 'data');
 
-  let inputs = {} as any;
+  const inputs = {} as any;
 
   let getInputSpy: jest.SpyInstance;
   let infoSpy: jest.SpyInstance;

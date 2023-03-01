@@ -266,7 +266,7 @@ describe('main tests', () => {
 
       inSpy.mockImplementation(name => inputs[name]);
 
-      let toolPath = path.normalize('/cache/node/12.16.1/x64');
+      const toolPath = path.normalize('/cache/node/12.16.1/x64');
       findSpy.mockImplementation(() => toolPath);
 
       // expect(logSpy).toHaveBeenCalledWith(`Found in cache @ ${toolPath}`);
@@ -286,7 +286,7 @@ describe('main tests', () => {
 
       inSpy.mockImplementation(name => inputs[name]);
 
-      let toolPath = path.normalize('/cache/node/12.16.1/x64');
+      const toolPath = path.normalize('/cache/node/12.16.1/x64');
       findSpy.mockImplementation(() => toolPath);
 
       // expect(logSpy).toHaveBeenCalledWith(`Found in cache @ ${toolPath}`);

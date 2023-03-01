@@ -12,11 +12,11 @@ import * as main from '../src/main';
 import * as auth from '../src/authutil';
 import {INodeVersion} from '../src/distributions/base-models';
 
-const nodeTestManifest = require('./data/versions-manifest.json');
-const nodeTestDist = require('./data/node-dist-index.json');
-const nodeTestDistNightly = require('./data/node-nightly-index.json');
-const nodeTestDistRc = require('./data/node-rc-index.json');
-const nodeV8CanaryTestDist = require('./data/v8-canary-dist-index.json');
+import nodeTestManifest from './data/versions-manifest.json';
+import nodeTestDist from './data/node-dist-index.json';
+import nodeTestDistNightly from './data/node-nightly-index.json';
+import nodeTestDistRc from './data/node-rc-index.json';
+import nodeV8CanaryTestDist from './data/v8-canary-dist-index.json';
 
 describe('setup-node', () => {
   let inputs = {} as any;
@@ -89,11 +89,11 @@ describe('setup-node', () => {
     getJsonSpy.mockImplementation(url => {
       let res: any;
       if (url.includes('/rc')) {
-        res = <INodeVersion>nodeTestDistRc;
+        res = <INodeVersion[]>nodeTestDistRc;
       } else if (url.includes('/nightly')) {
-        res = <INodeVersion>nodeTestDistNightly;
+        res = <INodeVersion[]>nodeTestDistNightly;
       } else {
-        res = <INodeVersion>nodeTestDist;
+        res = <INodeVersion[]>nodeTestDist;
       }
 
       return {result: res};
@@ -146,7 +146,7 @@ describe('setup-node', () => {
     os['arch'] = 'x64';
     inputs.stable = 'true';
 
-    let toolPath = path.normalize(
+    const toolPath = path.normalize(
       '/cache/node/16.0.0-nightly20210417bc31dc0e0f/x64'
     );
     findSpy.mockImplementation(() => toolPath);
@@ -172,7 +172,7 @@ describe('setup-node', () => {
     os['arch'] = 'x64';
     inputs.stable = 'false';
 
-    let toolPath = path.normalize(
+    const toolPath = path.normalize(
       '/cache/node/16.0.0-nightly20210415c3a5e15ebe/x64'
     );
     findSpy.mockImplementation(() => toolPath);
@@ -199,7 +199,7 @@ describe('setup-node', () => {
 
     inSpy.mockImplementation(name => inputs[name]);
 
-    let toolPath = path.normalize(
+    const toolPath = path.normalize(
       '/cache/node/16.0.0-nightly20210417bc31dc0e0f/x64'
     );
     findSpy.mockImplementation(() => toolPath);
@@ -218,12 +218,12 @@ describe('setup-node', () => {
       'x64'
     );
 
-    let expPath = path.join(toolPath, 'bin');
+    const expPath = path.join(toolPath, 'bin');
     expect(cnSpy).toHaveBeenCalledWith(`::add-path::${expPath}${osm.EOL}`);
   });
 
   it('handles unhandled find error and reports error', async () => {
-    let errMsg = 'unhandled error message';
+    const errMsg = 'unhandled error message';
     inputs['node-version'] = '16.0.0-nightly20210417bc31dc0e0f';
 
     findAllVersionsSpy.mockImplementation(() => [
@@ -247,7 +247,7 @@ describe('setup-node', () => {
     os.arch = 'x64';
 
     // a version which is not in the manifest but is in node dist
-    let versionSpec = '13.13.1-nightly20200415947ddec091';
+    const versionSpec = '13.13.1-nightly20200415947ddec091';
 
     inputs['node-version'] = versionSpec;
     inputs['always-auth'] = false;
@@ -258,7 +258,7 @@ describe('setup-node', () => {
     findAllVersionsSpy.mockImplementation(() => []);
 
     dlSpy.mockImplementation(async () => '/some/temp/path');
-    let toolPath = path.normalize(
+    const toolPath = path.normalize(
       '/cache/node/13.13.1-nightly20200415947ddec091/x64'
     );
     exSpy.mockImplementation(async () => '/some/other/temp/path');
@@ -266,7 +266,7 @@ describe('setup-node', () => {
 
     await main.run();
 
-    let expPath = path.join(toolPath, 'bin');
+    const expPath = path.join(toolPath, 'bin');
 
     expect(dlSpy).toHaveBeenCalled();
     expect(exSpy).toHaveBeenCalled();
@@ -277,7 +277,7 @@ describe('setup-node', () => {
     os.platform = 'linux';
     os.arch = 'x64';
 
-    let versionSpec = '10.13.1-nightly20200415947ddec091';
+    const versionSpec = '10.13.1-nightly20200415947ddec091';
     inputs['node-version'] = versionSpec;
 
     findSpy.mockImplementation(() => '');
@@ -290,12 +290,12 @@ describe('setup-node', () => {
   });
 
   it('reports a failed download', async () => {
-    let errMsg = 'unhandled download message';
+    const errMsg = 'unhandled download message';
     os.platform = 'linux';
     os.arch = 'x64';
 
     // a version which is in the manifest
-    let versionSpec = '18.0.0-nightly202204180699150267';
+    const versionSpec = '18.0.0-nightly202204180699150267';
 
     inputs['node-version'] = versionSpec;
     inputs['always-auth'] = false;
@@ -339,14 +339,14 @@ describe('setup-node', () => {
       inputs['always-auth'] = false;
       inputs['token'] = 'faketoken';
 
-      let expectedUrl = `https://nodejs.org/download/nightly/v${version}/node-v${version}-${platform}-${arch}.${fileExtension}`;
+      const expectedUrl = `https://nodejs.org/download/nightly/v${version}/node-v${version}-${platform}-${arch}.${fileExtension}`;
 
       // ... but not in the local cache
       findSpy.mockImplementation(() => '');
       findAllVersionsSpy.mockImplementation(() => []);
 
       dlSpy.mockImplementation(async () => '/some/temp/path');
-      let toolPath = path.normalize(`/cache/node/${version}/${arch}`);
+      const toolPath = path.normalize(`/cache/node/${version}/${arch}`);
       exSpy.mockImplementation(async () => '/some/other/temp/path');
       cacheSpy.mockImplementation(async () => toolPath);
 

@@ -70,7 +70,7 @@ export default abstract class BaseDistribution {
 
     core.debug(`evaluating ${versions.length} versions`);
 
-    for (let potential of versions) {
+    for (const potential of versions) {
       const satisfied: boolean = semver.satisfies(potential, range, options);
       if (satisfied) {
         version = potential;
@@ -95,18 +95,18 @@ export default abstract class BaseDistribution {
     const initialUrl = this.getDistributionUrl();
     const dataUrl = `${initialUrl}/index.json`;
 
-    let response = await this.httpClient.getJson<INodeVersion[]>(dataUrl);
+    const response = await this.httpClient.getJson<INodeVersion[]>(dataUrl);
     return response.result || [];
   }
 
   protected getNodejsDistInfo(version: string) {
-    let osArch: string = this.translateArchToDistUrl(this.nodeInfo.arch);
+    const osArch: string = this.translateArchToDistUrl(this.nodeInfo.arch);
     version = semver.clean(version) || '';
-    let fileName: string =
+    const fileName: string =
       this.osPlat == 'win32'
         ? `node-v${version}-win-${osArch}`
         : `node-v${version}-${this.osPlat}-${osArch}`;
-    let urlFileName: string =
+    const urlFileName: string =
       this.osPlat == 'win32' ? `${fileName}.7z` : `${fileName}.tar.gz`;
     const initialUrl = this.getDistributionUrl();
     const url = `${initialUrl}/v${version}/${urlFileName}`;
@@ -137,7 +137,7 @@ export default abstract class BaseDistribution {
       throw err;
     }
 
-    let toolPath = await this.extractArchive(downloadPath, info);
+    const toolPath = await this.extractArchive(downloadPath, info);
     core.info('Done');
 
     return toolPath;
@@ -156,7 +156,7 @@ export default abstract class BaseDistribution {
     arch: string = os.arch()
   ): Promise<string> {
     const initialUrl = this.getDistributionUrl();
-    let osArch: string = this.translateArchToDistUrl(arch);
+    const osArch: string = this.translateArchToDistUrl(arch);
 
     // Create temporary folder to download in to
     const tempDownloadFolder: string =
@@ -240,7 +240,7 @@ export default abstract class BaseDistribution {
   }
 
   protected getDistFileName(): string {
-    let osArch: string = this.translateArchToDistUrl(this.nodeInfo.arch);
+    const osArch: string = this.translateArchToDistUrl(this.nodeInfo.arch);
 
     // node offers a json list of versions
     let dataFileName: string;
