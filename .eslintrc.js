@@ -12,6 +12,7 @@ module.exports = {
     '@typescript-eslint/no-require-imports': 'error',
     '@typescript-eslint/no-non-null-assertion': 'off',
     '@typescript-eslint/no-explicit-any': 'off',
+    '@typescript-eslint/no-empty-function': 'off',
     '@typescript-eslint/ban-ts-comment': [
       'error',
       {
@@ -34,7 +35,6 @@ module.exports = {
       files: ['**/*{test,spec}.ts'],
       rules: {
         '@typescript-eslint/no-unused-vars': 'off',
-        '@typescript-eslint/no-empty-function': 'off',
         'jest/no-standalone-expect': 'off',
         'jest/no-conditional-expect': 'off',
         'no-console': 'off',
