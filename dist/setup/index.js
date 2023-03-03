@@ -73058,7 +73058,7 @@ const restoreCache = (packageManager, cacheDependencyPath) => __awaiter(void 0, 
 });
 exports.restoreCache = restoreCache;
 const findLockFile = (packageManager) => {
-    let lockFiles = packageManager.lockFilePatterns;
+    const lockFiles = packageManager.lockFilePatterns;
     const workspace = process.env.GITHUB_WORKSPACE;
     const rootContent = fs_1.default.readdirSync(workspace);
     const lockFile = lockFiles.find(item => rootContent.includes(item));
@@ -73391,7 +73391,7 @@ class BaseDistribution {
         let version = '';
         const { range, options } = this.validRange(this.nodeInfo.versionSpec);
         core.debug(`evaluating ${versions.length} versions`);
-        for (let potential of versions) {
+        for (const potential of versions) {
             const satisfied = semver_1.default.satisfies(potential, range, options);
             if (satisfied) {
                 version = potential;
@@ -73413,17 +73413,17 @@ class BaseDistribution {
         return __awaiter(this, void 0, void 0, function* () {
             const initialUrl = this.getDistributionUrl();
             const dataUrl = `${initialUrl}/index.json`;
-            let response = yield this.httpClient.getJson(dataUrl);
+            const response = yield this.httpClient.getJson(dataUrl);
             return response.result || [];
         });
     }
     getNodejsDistInfo(version) {
-        let osArch = this.translateArchToDistUrl(this.nodeInfo.arch);
+        const osArch = this.translateArchToDistUrl(this.nodeInfo.arch);
         version = semver_1.default.clean(version) || '';
-        let fileName = this.osPlat == 'win32'
+        const fileName = this.osPlat == 'win32'
             ? `node-v${version}-win-${osArch}`
             : `node-v${version}-${this.osPlat}-${osArch}`;
-        let urlFileName = this.osPlat == 'win32' ? `${fileName}.7z` : `${fileName}.tar.gz`;
+        const urlFileName = this.osPlat == 'win32' ? `${fileName}.7z` : `${fileName}.tar.gz`;
         const initialUrl = this.getDistributionUrl();
         const url = `${initialUrl}/v${version}/${urlFileName}`;
         return {
@@ -73446,7 +73446,7 @@ class BaseDistribution {
                 }
                 throw err;
             }
-            let toolPath = yield this.extractArchive(downloadPath, info);
+            const toolPath = yield this.extractArchive(downloadPath, info);
             core.info('Done');
             return toolPath;
         });
@@ -73461,7 +73461,7 @@ class BaseDistribution {
     acquireNodeFromFallbackLocation(version, arch = os_1.default.arch()) {
         return __awaiter(this, void 0, void 0, function* () {
             const initialUrl = this.getDistributionUrl();
-            let osArch = this.translateArchToDistUrl(arch);
+            const osArch = this.translateArchToDistUrl(arch);
             // Create temporary folder to download in to
             const tempDownloadFolder = 'temp_' + Math.floor(Math.random() * 2000000000);
             const tempDirectory = process.env['RUNNER_TEMP'] || '';
@@ -73529,7 +73529,7 @@ class BaseDistribution {
         });
     }
     getDistFileName() {
-        let osArch = this.translateArchToDistUrl(this.nodeInfo.arch);
+        const osArch = this.translateArchToDistUrl(this.nodeInfo.arch);
         // node offers a json list of versions
         let dataFileName;
         switch (this.osPlat) {
