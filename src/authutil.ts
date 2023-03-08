@@ -33,7 +33,7 @@ function writeRegistryToFile(
   }
 
   core.debug(`Setting auth in ${fileLocation}`);
-  let newContents: string = '';
+  let newContents = '';
   if (fs.existsSync(fileLocation)) {
     const curContents: string = fs.readFileSync(fileLocation, 'utf8');
     curContents.split(os.EOL).forEach((line: string) => {
@@ -46,8 +46,8 @@ function writeRegistryToFile(
   // Remove http: or https: from front of registry.
   const authString: string =
     registryUrl.replace(/(^\w+:|^)/, '') + ':_authToken=${NODE_AUTH_TOKEN}';
-  const registryString: string = `${scope}registry=${registryUrl}`;
-  const alwaysAuthString: string = `always-auth=${alwaysAuth}`;
+  const registryString = `${scope}registry=${registryUrl}`;
+  const alwaysAuthString = `always-auth=${alwaysAuth}`;
   newContents += `${authString}${os.EOL}${registryString}${os.EOL}${alwaysAuthString}`;
   fs.writeFileSync(fileLocation, newContents);
   core.exportVariable('NPM_CONFIG_USERCONFIG', fileLocation);

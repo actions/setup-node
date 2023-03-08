@@ -7,7 +7,8 @@
     "sourceMap": true,
     "strict": true,                           /* Enable all strict type-checking options. */
     "noImplicitAny": false,                   /* Raise error on expressions and declarations with an implied 'any' type. */
-    "esModuleInterop": true                   /* Enables emit interoperability between CommonJS and ES Modules via creation of namespace objects for all imports. Implies 'allowSyntheticDefaultImports'. */
+    "esModuleInterop": true,                   /* Enables emit interoperability between CommonJS and ES Modules via creation of namespace objects for all imports. Implies 'allowSyntheticDefaultImports'. */
+    "resolveJsonModule": true,                /* Allows importing modules with a '.json' extension, which is a common practice in node projects. */
   },
   "exclude": ["__tests__", "lib", "node_modules"]
 }

@@ -54,7 +54,7 @@ export const restoreCache = async (
 };
 
 const findLockFile = (packageManager: PackageManagerInfo) => {
-  let lockFiles = packageManager.lockFilePatterns;
+  const lockFiles = packageManager.lockFilePatterns;
   const workspace = process.env.GITHUB_WORKSPACE!;
   const rootContent = fs.readdirSync(workspace);
 

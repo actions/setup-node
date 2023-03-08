@@ -21,8 +21,8 @@ jobs:
       name: releaseNewActionVersion
     runs-on: ubuntu-latest
     steps:
-    - name: Update the ${{ env.TAG_NAME }} tag
-      uses: actions/publish-action@v0.2.2
-      with:
-        source-tag: ${{ env.TAG_NAME }}
-        slack-webhook: ${{ secrets.SLACK_WEBHOOK }}
+      - name: Update the ${{ env.TAG_NAME }} tag
+        uses: actions/publish-action@v0.2.2
+        with:
+          source-tag: ${{ env.TAG_NAME }}
+          slack-webhook: ${{ secrets.SLACK_WEBHOOK }}

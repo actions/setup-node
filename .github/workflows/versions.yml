@@ -57,7 +57,12 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
-        node-version: ['20-v8-canary', '20.0.0-v8-canary','20.0.0-v8-canary20221103f7e2421e91']
+        node-version:
+          [
+            '20-v8-canary',
+            '20.0.0-v8-canary',
+            '20.0.0-v8-canary20221103f7e2421e91'
+          ]
     steps:
       - uses: actions/checkout@v3
       - name: Setup Node
@@ -77,7 +82,8 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
-        node-version: [16.0.0-nightly20210420a0261d231c, 17-nightly, 18.0.0-nightly]
+        node-version:
+          [16.0.0-nightly20210420a0261d231c, 17-nightly, 18.0.0-nightly]
     steps:
       - uses: actions/checkout@v3
       - name: Setup Node
@@ -170,7 +176,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ ubuntu-latest, windows-latest, macos-latest ]
+        os: [ubuntu-latest, windows-latest, macos-latest]
     steps:
       - uses: actions/checkout@v3
       - name: Setup node from node version file

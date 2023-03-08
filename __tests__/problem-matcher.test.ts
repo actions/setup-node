@@ -1,10 +1,12 @@
+import tscMatcher from '../.github/tsc.json';
+
 describe('problem matcher tests', () => {
   it('tsc: matches TypeScript "pretty" error message', () => {
     const [
       {
         pattern: [{regexp}]
       }
-    ] = require('../.github/tsc.json').problemMatcher;
+    ] = tscMatcher.problemMatcher;
     const exampleErrorMessage =
       "lib/index.js:23:42 - error TS2345: Argument of type 'A' is not assignable to parameter of type 'B'.";
 
@@ -25,7 +27,7 @@ describe('problem matcher tests', () => {
       {
         pattern: [{regexp}]
       }
-    ] = require('../.github/tsc.json').problemMatcher;
+    ] = tscMatcher.problemMatcher;
     const exampleErrorMessage =
       "lib/index.js(23,42): error TS2345: Argument of type 'A' is not assignable to parameter of type 'B'.";
 
