@@ -127,8 +127,8 @@ export default abstract class BaseDistribution {
     try {
       downloadPath = await tc.downloadTool(info.downloadUrl);
     } catch (err) {
-      if (err instanceof tc.HTTPError && err.httpStatusCode == 404) {
-        return await this.acquireNodeFromFallbackLocation(
+      if (err instanceof tc.HTTPError && err.httpStatusCode == 404 && this.osPlat == 'win32') {
+        return await this.acquireWindowsNodeFromFallbackLocation(
           info.resolvedVersion,
           info.arch
         );
@@ -151,7 +151,7 @@ export default abstract class BaseDistribution {
     return {range: valid, options};
   }
 
-  protected async acquireNodeFromFallbackLocation(
+  protected async acquireWindowsNodeFromFallbackLocation(
     version: string,
     arch: string = os.arch()
   ): Promise<string> {
