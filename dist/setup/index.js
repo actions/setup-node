@@ -73441,8 +73441,8 @@ class BaseDistribution {
                 downloadPath = yield tc.downloadTool(info.downloadUrl);
             }
             catch (err) {
-                if (err instanceof tc.HTTPError && err.httpStatusCode == 404) {
-                    return yield this.acquireNodeFromFallbackLocation(info.resolvedVersion, info.arch);
+                if (err instanceof tc.HTTPError && err.httpStatusCode == 404 && this.osPlat == 'win32') {
+                    return yield this.acquireWindowsNodeFromFallbackLocation(info.resolvedVersion, info.arch);
                 }
                 throw err;
             }
@@ -73458,7 +73458,7 @@ class BaseDistribution {
         const valid = (_a = semver_1.default.valid(c)) !== null && _a !== void 0 ? _a : versionSpec;
         return { range: valid, options };
     }
-    acquireNodeFromFallbackLocation(version, arch = os_1.default.arch()) {
+    acquireWindowsNodeFromFallbackLocation(version, arch = os_1.default.arch()) {
         return __awaiter(this, void 0, void 0, function* () {
             const initialUrl = this.getDistributionUrl();
             const osArch = this.translateArchToDistUrl(arch);

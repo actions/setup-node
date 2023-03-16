@@ -286,7 +286,7 @@ describe('setup-node', () => {
     const workingUrls = [
       `https://nodejs.org/download/nightly/v${versionSpec}/win-x64/node.exe`,
       `https://nodejs.org/download/nightly/v${versionSpec}/win-x64/node.lib`
-    ]
+    ];
 
     inputs['node-version'] = versionSpec;
     inputs['always-auth'] = false;
@@ -296,25 +296,25 @@ describe('setup-node', () => {
     findSpy.mockImplementation(() => '');
     findAllVersionsSpy.mockImplementation(() => []);
 
-    dlSpy.mockImplementation(async (url) => {
+    dlSpy.mockImplementation(async url => {
       if (workingUrls.includes(url)) {
-        return '/some/temp/path'
+        return '/some/temp/path';
       }
 
-      throw new tc.HTTPError(404)
+      throw new tc.HTTPError(404);
     });
     const toolPath = path.normalize(
       '/cache/node/13.13.1-nightly20200415947ddec091/x64'
     );
     cacheSpy.mockImplementation(async () => toolPath);
-    mkdirpSpy.mockImplementation(async () => {})
-    cpSpy.mockImplementation(async () => {})
+    mkdirpSpy.mockImplementation(async () => {});
+    cpSpy.mockImplementation(async () => {});
 
     await main.run();
 
     workingUrls.forEach(url => {
       expect(dlSpy).toHaveBeenCalledWith(url);
-    })
+    });
     expect(cnSpy).toHaveBeenCalledWith(`::add-path::${toolPath}${osm.EOL}`);
   });
 
@@ -328,7 +328,7 @@ describe('setup-node', () => {
     const workingUrls = [
       `https://nodejs.org/download/nightly/v${versionSpec}/win-x64/node.exe`,
       `https://nodejs.org/download/nightly/v${versionSpec}/win-x64/node.lib`
-    ]
+    ];
 
     inputs['node-version'] = versionSpec;
     inputs['always-auth'] = false;
@@ -338,26 +338,28 @@ describe('setup-node', () => {
     findSpy.mockImplementation(() => '');
     findAllVersionsSpy.mockImplementation(() => []);
 
-    dlSpy.mockImplementation(async (url) => {
+    dlSpy.mockImplementation(async url => {
       if (workingUrls.includes(url)) {
-        return '/some/temp/path'
+        return '/some/temp/path';
       }
 
-      throw new tc.HTTPError(404)
+      throw new tc.HTTPError(404);
     });
     const toolPath = path.normalize(
       '/cache/node/13.13.1-nightly20200415947ddec091/x64'
     );
     cacheSpy.mockImplementation(async () => toolPath);
-    mkdirpSpy.mockImplementation(async () => {})
-    cpSpy.mockImplementation(async () => {})
+    mkdirpSpy.mockImplementation(async () => {});
+    cpSpy.mockImplementation(async () => {});
 
     await main.run();
 
     workingUrls.forEach(url => {
       expect(dlSpy).not.toHaveBeenCalledWith(url);
-    })
-    expect(cnSpy).toHaveBeenCalledWith(`::error::Unexpected HTTP response: 404${osm.EOL}`);
+    });
+    expect(cnSpy).toHaveBeenCalledWith(
+      `::error::Unexpected HTTP response: 404${osm.EOL}`
+    );
   });
 
   it('does not find a version that does not exist', async () => {
