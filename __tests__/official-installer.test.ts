@@ -162,7 +162,14 @@ describe('setup-node', () => {
         'mocktoken'
       );
       expect(versions).toBeDefined();
-      const match = await tc.findFromManifest(versionSpec, true, versions);
+      const match = await tc.findFromManifest(
+        versionSpec,
+        true,
+        versions,
+        // `archFilter` parameter of `findFromManifest` function has a default value of `os.arch()`.
+        // However, default parameters cannot be replaced by `spyOn` function of Jest.
+        osm.arch()
+      );
       expect(match).toBeDefined();
       expect(match?.version).toBe(expectedVersion);
       expect((match as any).lts).toBe(expectedLts);
