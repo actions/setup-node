@@ -368,6 +368,7 @@ describe('setup-node', () => {
       inputs['node-version'] = version;
       inputs['architecture'] = arch;
       inputs['always-auth'] = false;
+      inputs['cache'] = '';
       inputs['token'] = 'faketoken';
 
       let expectedUrl =

@@ -1,9 +1,9 @@
 ---
-name: "@actions/tool-cache"
-version: 1.7.2
+name: "@actions/core"
+version: 1.10.0
 type: npm
-summary: Actions tool-cache lib
-homepage: https://github.com/actions/toolkit/tree/main/packages/tool-cache
+summary: Actions core lib
+homepage: https://github.com/actions/toolkit/tree/main/packages/core
 license: mit
 licenses:
 - sources: LICENSE.md

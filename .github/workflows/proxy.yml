@@ -14,14 +14,12 @@ on:
 jobs:
   test-proxy:
     runs-on: ubuntu-latest
-    strategy:    
-      fail-fast: false    
     container:
       image: ubuntu:latest
       options: --dns 127.0.0.1
     services:
       squid-proxy:
-        image: datadog/squid:latest
+        image: ubuntu/squid:latest
         ports:
           - 3128:3128
     env:
