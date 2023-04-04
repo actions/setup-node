@@ -39,7 +39,8 @@ See [action.yml](action.yml)
     # Default: ''. The action use system architecture by default 
     architecture: ''
 
-    # Used to pull node distributions from node-versions. Since there's a default, this is typically not supplied by the user. 
+    # Used to pull node distributions from https://github.com/actions/node-versions. 
+    # Since there's a default, this is typically not supplied by the user. 
     # When running this action on github.com, the default value is sufficient. 
     # When running on GHES, you can pass a personal access token for github.com if you are experiencing rate limiting.
     #
