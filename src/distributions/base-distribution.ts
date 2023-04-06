@@ -127,7 +127,11 @@ export default abstract class BaseDistribution {
     try {
       downloadPath = await tc.downloadTool(info.downloadUrl);
     } catch (err) {
-      if (err instanceof tc.HTTPError && err.httpStatusCode == 404 && this.osPlat == 'win32') {
+      if (
+        err instanceof tc.HTTPError &&
+        err.httpStatusCode == 404 &&
+        this.osPlat == 'win32'
+      ) {
         return await this.acquireWindowsNodeFromFallbackLocation(
           info.resolvedVersion,
           info.arch

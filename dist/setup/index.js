@@ -73441,7 +73441,9 @@ class BaseDistribution {
                 downloadPath = yield tc.downloadTool(info.downloadUrl);
             }
             catch (err) {
-                if (err instanceof tc.HTTPError && err.httpStatusCode == 404 && this.osPlat == 'win32') {
+                if (err instanceof tc.HTTPError &&
+                    err.httpStatusCode == 404 &&
+                    this.osPlat == 'win32') {
                     return yield this.acquireWindowsNodeFromFallbackLocation(info.resolvedVersion, info.arch);
                 }
                 throw err;
