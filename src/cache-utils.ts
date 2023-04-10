@@ -1,6 +1,7 @@
 import * as core from '@actions/core';
 import * as exec from '@actions/exec';
 import * as cache from '@actions/cache';
+import path from 'path';
 
 type SupportedPackageManagers = {
   [prop: string]: PackageManagerInfo;
@@ -30,11 +31,14 @@ export const supportedPackageManagers: SupportedPackageManagers = {
   }
 };
 
-export const getCommandOutput = async (toolCommand: string) => {
+export const getCommandOutput = async (
+  toolCommand: string,
+  cwd: string | null
+) => {
   let {stdout, stderr, exitCode} = await exec.getExecOutput(
     toolCommand,
     undefined,
-    {ignoreReturnCode: true}
+    {ignoreReturnCode: true, ...(cwd !== null && {cwd})}
   );
 
   if (exitCode) {
@@ -47,11 +51,29 @@ export const getCommandOutput = async (toolCommand: string) => {
   return stdout.trim();
 };
 
+const getPackageManagerWorkingDir = (): string | null => {
+  const projectDir = core.getInput('project-dir');
+  if (projectDir) {
+    return projectDir;
+  }
+
+  const cache = core.getInput('cache');
+  if (cache !== 'yarn') {
+    return null;
+  }
+
+  const cacheDependencyPath = core.getInput('cache-dependency-path');
+  return cacheDependencyPath ? path.dirname(cacheDependencyPath) : null;
+};
+
 const getPackageManagerVersion = async (
   packageManager: string,
   command: string
 ) => {
-  const stdOut = await getCommandOutput(`${packageManager} ${command}`);
+  const stdOut = await getCommandOutput(
+    `${packageManager} ${command}`,
+    getPackageManagerWorkingDir()
+  );
 
   if (!stdOut) {
     throw new Error(`Could not retrieve version of ${packageManager}`);
@@ -85,7 +107,8 @@ export const getCacheDirectoryPath = async (
   packageManager: string
 ) => {
   const stdOut = await getCommandOutput(
-    packageManagerInfo.getCacheFolderCommand
+    packageManagerInfo.getCacheFolderCommand,
+    getPackageManagerWorkingDir()
   );
 
   if (!stdOut) {
