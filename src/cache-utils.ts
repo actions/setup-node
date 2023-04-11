@@ -51,7 +51,7 @@ export const getCommandOutput = async (
   return stdout.trim();
 };
 
-const getPackageManagerWorkingDir = (): string | null => {
+export const getPackageManagerWorkingDir = (): string | null => {
   const projectDir = core.getInput('project-dir');
   if (projectDir) {
     return projectDir;
