@@ -71167,7 +71167,7 @@ const restoreCache = (packageManager, cacheDependencyPath) => __awaiter(void 0, 
 exports.restoreCache = restoreCache;
 const findLockFile = (packageManager) => {
     const lockFiles = packageManager.lockFilePatterns;
-    const workspace = process.env.GITHUB_WORKSPACE;
+    const workspace = cache_utils_1.getPackageManagerWorkingDir() || process.env.GITHUB_WORKSPACE;
     const rootContent = fs_1.default.readdirSync(workspace);
     const lockFile = lockFiles.find(item => rootContent.includes(item));
     if (!lockFile) {
@@ -71216,7 +71216,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.isCacheFeatureAvailable = exports.isGhes = exports.getCacheDirectoryPath = exports.getPackageManagerInfo = exports.getCommandOutput = exports.supportedPackageManagers = void 0;
+exports.isCacheFeatureAvailable = exports.isGhes = exports.getCacheDirectoryPath = exports.getPackageManagerInfo = exports.getPackageManagerWorkingDir = exports.getCommandOutput = exports.supportedPackageManagers = void 0;
 const core = __importStar(__nccwpck_require__(2186));
 const exec = __importStar(__nccwpck_require__(1514));
 const cache = __importStar(__nccwpck_require__(7799));
@@ -71262,8 +71262,9 @@ const getPackageManagerWorkingDir = () => {
     const cacheDependencyPath = core.getInput('cache-dependency-path');
     return cacheDependencyPath ? path_1.default.dirname(cacheDependencyPath) : null;
 };
+exports.getPackageManagerWorkingDir = getPackageManagerWorkingDir;
 const getPackageManagerVersion = (packageManager, command) => __awaiter(void 0, void 0, void 0, function* () {
-    const stdOut = yield exports.getCommandOutput(`${packageManager} ${command}`, getPackageManagerWorkingDir());
+    const stdOut = yield exports.getCommandOutput(`${packageManager} ${command}`, exports.getPackageManagerWorkingDir());
     if (!stdOut) {
         throw new Error(`Could not retrieve version of ${packageManager}`);
     }
@@ -71292,7 +71293,7 @@ const getPackageManagerInfo = (packageManager) => __awaiter(void 0, void 0, void
 });
 exports.getPackageManagerInfo = getPackageManagerInfo;
 const getCacheDirectoryPath = (packageManagerInfo, packageManager) => __awaiter(void 0, void 0, void 0, function* () {
-    const stdOut = yield exports.getCommandOutput(packageManagerInfo.getCacheFolderCommand, getPackageManagerWorkingDir());
+    const stdOut = yield exports.getCommandOutput(packageManagerInfo.getCacheFolderCommand, exports.getPackageManagerWorkingDir());
     if (!stdOut) {
         throw new Error(`Could not get cache folder path for ${packageManager}`);
     }
