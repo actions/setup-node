@@ -37,3 +37,7 @@ runs:
   main: 'dist/setup/index.js'
   post: 'dist/cache-save/index.js'
   post-if: success()
+  - name: Setup Node.js environment
+  uses: actions/setup-node@v2.5.2
+
+  
