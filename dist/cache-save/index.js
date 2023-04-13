@@ -59283,10 +59283,6 @@ const getCommandOutput = (toolCommand, cwd) => __awaiter(void 0, void 0, void 0,
 });
 exports.getCommandOutput = getCommandOutput;
 const getPackageManagerWorkingDir = () => {
-    const projectDir = core.getInput('project-dir');
-    if (projectDir) {
-        return projectDir;
-    }
     const cache = core.getInput('cache');
     if (cache !== 'yarn') {
         return null;

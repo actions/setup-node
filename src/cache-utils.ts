@@ -52,7 +52,6 @@ export const getCommandOutput = async (
 };
 
 export const getPackageManagerWorkingDir = (): string | null => {
-
   const cache = core.getInput('cache');
   if (cache !== 'yarn') {
     return null;
