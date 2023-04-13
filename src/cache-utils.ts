@@ -52,10 +52,6 @@ export const getCommandOutput = async (
 };
 
 export const getPackageManagerWorkingDir = (): string | null => {
-  const projectDir = core.getInput('project-dir');
-  if (projectDir) {
-    return projectDir;
-  }
 
   const cache = core.getInput('cache');
   if (cache !== 'yarn') {
