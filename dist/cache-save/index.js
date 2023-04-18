@@ -7808,20 +7808,19 @@ var uuid = __nccwpck_require__(3415);
 var util = __nccwpck_require__(3837);
 var tslib = __nccwpck_require__(2107);
 var xml2js = __nccwpck_require__(6189);
-var abortController = __nccwpck_require__(2557);
+var coreUtil = __nccwpck_require__(1333);
 var logger$1 = __nccwpck_require__(3233);
 var coreAuth = __nccwpck_require__(9645);
 var os = __nccwpck_require__(2037);
 var http = __nccwpck_require__(3685);
 var https = __nccwpck_require__(5687);
 var tough = __nccwpck_require__(7372);
+var abortController = __nccwpck_require__(2557);
 var tunnel = __nccwpck_require__(4294);
 var stream = __nccwpck_require__(2781);
 var FormData = __nccwpck_require__(6279);
 var node_fetch = __nccwpck_require__(467);
 var coreTracing = __nccwpck_require__(4175);
-var url = __nccwpck_require__(7310);
-__nccwpck_require__(2356);
 
 function _interopDefaultLegacy (e) { return e && typeof e === 'object' && 'default' in e ? e : { 'default': e }; }
 
@@ -8039,7 +8038,7 @@ const Constants = {
     /**
      * The core-http version
      */
-    coreHttpVersion: "2.2.4",
+    coreHttpVersion: "2.3.2",
     /**
      * Specifies HTTP.
      */
@@ -8340,6 +8339,7 @@ class Serializer {
      * @param mapper - The definition of data models.
      * @param value - The value.
      * @param objectName - Name of the object. Used in the error messages.
+     * @deprecated Removing the constraints validation on client side.
      */
     validateConstraints(mapper, value, objectName) {
         const failValidation = (constraintName, constraintValue) => {
@@ -8438,8 +8438,6 @@ class Serializer {
             payload = object;
         }
         else {
-            // Validate Constraints if any
-            this.validateConstraints(mapper, object, objectName);
             if (mapperType.match(/^any$/i) !== null) {
                 payload = object;
             }
@@ -8957,7 +8955,8 @@ function isSpecialXmlProperty(propertyName, options) {
     return [XML_ATTRKEY, options.xmlCharKey].includes(propertyName);
 }
 function deserializeCompositeType(serializer, mapper, responseBody, objectName, options) {
-    var _a;
+    var _a, _b;
+    const xmlCharKey = (_a = options.xmlCharKey) !== null && _a !== void 0 ? _a : XML_CHARKEY;
     if (getPolymorphicDiscriminatorRecursively(serializer, mapper)) {
         mapper = getPolymorphicMapper(serializer, mapper, responseBody, "serializedName");
     }
@@ -8988,6 +8987,16 @@ function deserializeCompositeType(serializer, mapper, responseBody, objectName, 
             if (propertyMapper.xmlIsAttribute && responseBody[XML_ATTRKEY]) {
                 instance[key] = serializer.deserialize(propertyMapper, responseBody[XML_ATTRKEY][xmlName], propertyObjectName, options);
             }
+            else if (propertyMapper.xmlIsMsText) {
+                if (responseBody[xmlCharKey] !== undefined) {
+                    instance[key] = responseBody[xmlCharKey];
+                }
+                else if (typeof responseBody === "string") {
+                    // The special case where xml parser parses "<Name>content</Name>" into JSON of
+                    //   `{ name: "content"}` instead of `{ name: { "_": "content" }}`
+                    instance[key] = responseBody;
+                }
+            }
             else {
                 const propertyName = xmlElementName || xmlName || serializedName;
                 if (propertyMapper.xmlIsWrapped) {
@@ -9006,7 +9015,7 @@ function deserializeCompositeType(serializer, mapper, responseBody, objectName, 
                       xmlName is "Cors" and xmlElementName is"CorsRule".
                     */
                     const wrapped = responseBody[xmlName];
-                    const elementList = (_a = wrapped === null || wrapped === void 0 ? void 0 : wrapped[xmlElementName]) !== null && _a !== void 0 ? _a : [];
+                    const elementList = (_b = wrapped === null || wrapped === void 0 ? void 0 : wrapped[xmlElementName]) !== null && _b !== void 0 ? _b : [];
                     instance[key] = serializer.deserialize(propertyMapper, elementList, propertyObjectName, options);
                 }
                 else {
@@ -10166,6 +10175,7 @@ const defaultAllowedHeaderNames = [
     "Server",
     "Transfer-Encoding",
     "User-Agent",
+    "WWW-Authenticate",
 ];
 const defaultAllowedQueryParameters = ["api-version"];
 class Sanitizer {
@@ -10431,7 +10441,11 @@ class NodeFetchHttpClient {
             body = uploadReportStream;
         }
         const platformSpecificRequestInit = await this.prepareRequest(httpRequest);
-        const requestInit = Object.assign({ body: body, headers: httpRequest.headers.rawHeaders(), method: httpRequest.method, signal: abortController$1.signal, redirect: "manual" }, platformSpecificRequestInit);
+        const requestInit = Object.assign({ body: body, headers: httpRequest.headers.rawHeaders(), method: httpRequest.method, 
+            // the types for RequestInit are from the browser, which expects AbortSignal to
+            // have `reason` and `throwIfAborted`, but these don't exist on our polyfill
+            // for Node.
+            signal: abortController$1.signal, redirect: "manual" }, platformSpecificRequestInit);
         let operationResponse;
         try {
             const response = await this.fetch(httpRequest.url, requestInit);
@@ -10628,7 +10642,6 @@ exports.HttpPipelineLogLevel = void 0;
  * @param opts - OperationOptions object to convert to RequestOptionsBase
  */
 function operationOptionsToRequestOptionsBase(opts) {
-    var _a;
     const { requestOptions, tracingOptions } = opts, additionalOptions = tslib.__rest(opts, ["requestOptions", "tracingOptions"]);
     let result = additionalOptions;
     if (requestOptions) {
@@ -10637,7 +10650,7 @@ function operationOptionsToRequestOptionsBase(opts) {
     if (tracingOptions) {
         result.tracingContext = tracingOptions.tracingContext;
         // By passing spanOptions if they exist at runtime, we're backwards compatible with @azure/core-tracing@preview.13 and earlier.
-        result.spanOptions = (_a = tracingOptions) === null || _a === void 0 ? void 0 : _a.spanOptions;
+        result.spanOptions = tracingOptions === null || tracingOptions === void 0 ? void 0 : tracingOptions.spanOptions;
     }
     return result;
 }
@@ -10927,7 +10940,7 @@ function deserializeResponseBody(jsonContentTypes, xmlContentTypes, response, op
                 parsedResponse.parsedBody = response.status >= 200 && response.status < 300;
             }
             if (responseSpec.headersMapper) {
-                parsedResponse.parsedHeaders = operationSpec.serializer.deserialize(responseSpec.headersMapper, parsedResponse.headers.rawHeaders(), "operationRes.parsedHeaders", options);
+                parsedResponse.parsedHeaders = operationSpec.serializer.deserialize(responseSpec.headersMapper, parsedResponse.headers.toJson(), "operationRes.parsedHeaders", options);
             }
         }
         return parsedResponse;
@@ -10993,7 +11006,7 @@ function handleErrorResponse(parsedResponse, operationSpec, responseSpec) {
         }
         // If error response has headers, try to deserialize it using default header mapper
         if (parsedResponse.headers && defaultHeadersMapper) {
-            error.response.parsedHeaders = operationSpec.serializer.deserialize(defaultHeadersMapper, parsedResponse.headers.rawHeaders(), "operationRes.parsedHeaders");
+            error.response.parsedHeaders = operationSpec.serializer.deserialize(defaultHeadersMapper, parsedResponse.headers.toJson(), "operationRes.parsedHeaders");
         }
     }
     catch (defaultError) {
@@ -11195,60 +11208,6 @@ function updateRetryData(retryOptions, retryData = { retryCount: 0, retryInterva
 }
 
 // Copyright (c) Microsoft Corporation.
-// Licensed under the MIT license.
-/**
- * Helper TypeGuard that checks if the value is not null or undefined.
- * @param thing - Anything
- * @internal
- */
-function isDefined(thing) {
-    return typeof thing !== "undefined" && thing !== null;
-}
-
-// Copyright (c) Microsoft Corporation.
-const StandardAbortMessage$1 = "The operation was aborted.";
-/**
- * A wrapper for setTimeout that resolves a promise after delayInMs milliseconds.
- * @param delayInMs - The number of milliseconds to be delayed.
- * @param value - The value to be resolved with after a timeout of t milliseconds.
- * @param options - The options for delay - currently abort options
- *   @param abortSignal - The abortSignal associated with containing operation.
- *   @param abortErrorMsg - The abort error message associated with containing operation.
- * @returns - Resolved promise
- */
-function delay(delayInMs, value, options) {
-    return new Promise((resolve, reject) => {
-        let timer = undefined;
-        let onAborted = undefined;
-        const rejectOnAbort = () => {
-            return reject(new abortController.AbortError((options === null || options === void 0 ? void 0 : options.abortErrorMsg) ? options === null || options === void 0 ? void 0 : options.abortErrorMsg : StandardAbortMessage$1));
-        };
-        const removeListeners = () => {
-            if ((options === null || options === void 0 ? void 0 : options.abortSignal) && onAborted) {
-                options.abortSignal.removeEventListener("abort", onAborted);
-            }
-        };
-        onAborted = () => {
-            if (isDefined(timer)) {
-                clearTimeout(timer);
-            }
-            removeListeners();
-            return rejectOnAbort();
-        };
-        if ((options === null || options === void 0 ? void 0 : options.abortSignal) && options.abortSignal.aborted) {
-            return rejectOnAbort();
-        }
-        timer = setTimeout(() => {
-            removeListeners();
-            resolve(value);
-        }, delayInMs);
-        if (options === null || options === void 0 ? void 0 : options.abortSignal) {
-            options.abortSignal.addEventListener("abort", onAborted);
-        }
-    });
-}
-
-// Copyright (c) Microsoft Corporation.
 /**
  * Policy that retries the request as many times as configured for as long as the max retry time interval specified, each retry waiting longer to begin than the last time.
  * @param retryCount - Maximum number of retries.
@@ -11328,7 +11287,7 @@ async function retry$1(policy, request, response, retryData, requestError) {
     if (!isAborted && shouldRetry(policy.retryCount, shouldPolicyRetry, retryData, response)) {
         logger.info(`Retrying request in ${retryData.retryInterval}`);
         try {
-            await delay(retryData.retryInterval);
+            await coreUtil.delay(retryData.retryInterval);
             const res = await policy._nextPolicy.sendRequest(request.clone());
             return retry$1(policy, request, res, retryData);
         }
@@ -11623,7 +11582,7 @@ async function beginRefresh(getAccessToken, retryIntervalInMs, timeoutInMs) {
     }
     let token = await tryGetAccessToken();
     while (token === null) {
-        await delay(retryIntervalInMs);
+        await coreUtil.delay(retryIntervalInMs);
         token = await tryGetAccessToken();
     }
     return token;
@@ -12155,7 +12114,7 @@ async function getRegistrationStatus(policy, url, originalRequest) {
         return true;
     }
     else {
-        await delay(policy._retryTimeout * 1000);
+        await coreUtil.delay(policy._retryTimeout * 1000);
         return getRegistrationStatus(policy, url, originalRequest);
     }
 }
@@ -12247,7 +12206,7 @@ async function retry(policy, request, operationResponse, err, retryData) {
     if (shouldRetry(policy.retryCount, shouldPolicyRetry, retryData, operationResponse, err)) {
         // If previous operation ended with an error and the policy allows a retry, do that
         try {
-            await delay(retryData.retryInterval);
+            await coreUtil.delay(retryData.retryInterval);
             return policy._nextPolicy.sendRequest(request.clone());
         }
         catch (nestedErr) {
@@ -12322,7 +12281,7 @@ class ThrottlingRetryPolicy extends BaseRequestPolicy {
             const delayInMs = ThrottlingRetryPolicy.parseRetryAfterHeader(retryAfterHeader);
             if (delayInMs) {
                 this.numberOfRetries += 1;
-                await delay(delayInMs, undefined, {
+                await coreUtil.delay(delayInMs, {
                     abortSignal: httpRequest.abortSignal,
                     abortErrorMsg: StandardAbortMessage,
                 });
@@ -13048,8 +13007,8 @@ function getCredentialScopes(options, baseUri) {
     if (options === null || options === void 0 ? void 0 : options.credentialScopes) {
         const scopes = options.credentialScopes;
         return Array.isArray(scopes)
-            ? scopes.map((scope) => new url.URL(scope).toString())
-            : new url.URL(scopes).toString();
+            ? scopes.map((scope) => new URL(scope).toString())
+            : new URL(scopes).toString();
     }
     if (baseUri) {
         return `${baseUri}/.default`;
@@ -13278,6 +13237,10 @@ class TopicCredentials extends ApiKeyCredentials {
     }
 }
 
+Object.defineProperty(exports, "delay", ({
+    enumerable: true,
+    get: function () { return coreUtil.delay; }
+}));
 Object.defineProperty(exports, "isTokenCredential", ({
     enumerable: true,
     get: function () { return coreAuth.isTokenCredential; }
@@ -13305,7 +13268,6 @@ exports.applyMixins = applyMixins;
 exports.bearerTokenAuthenticationPolicy = bearerTokenAuthenticationPolicy;
 exports.createPipelineFromOptions = createPipelineFromOptions;
 exports.createSpanFunction = createSpanFunction;
-exports.delay = delay;
 exports.deserializationPolicy = deserializationPolicy;
 exports.deserializeResponseBody = deserializeResponseBody;
 exports.disableResponseDecompressionPolicy = disableResponseDecompressionPolicy;
@@ -16202,6 +16164,284 @@ exports.getTracer = getTracer;
 exports.isSpanContextValid = isSpanContextValid;
 exports.setSpan = setSpan;
 exports.setSpanContext = setSpanContext;
+//# sourceMappingURL=index.js.map
+
+
+/***/ }),
+
+/***/ 1333:
+/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+
+var abortController = __nccwpck_require__(2557);
+var crypto = __nccwpck_require__(6113);
+
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+var _a$1;
+/**
+ * A constant that indicates whether the environment the code is running is Node.JS.
+ */
+const isNode = typeof process !== "undefined" && Boolean(process.version) && Boolean((_a$1 = process.versions) === null || _a$1 === void 0 ? void 0 : _a$1.node);
+
+// Copyright (c) Microsoft Corporation.
+/**
+ * Creates an abortable promise.
+ * @param buildPromise - A function that takes the resolve and reject functions as parameters.
+ * @param options - The options for the abortable promise.
+ * @returns A promise that can be aborted.
+ */
+function createAbortablePromise(buildPromise, options) {
+    const { cleanupBeforeAbort, abortSignal, abortErrorMsg } = options !== null && options !== void 0 ? options : {};
+    return new Promise((resolve, reject) => {
+        function rejectOnAbort() {
+            reject(new abortController.AbortError(abortErrorMsg !== null && abortErrorMsg !== void 0 ? abortErrorMsg : "The operation was aborted."));
+        }
+        function removeListeners() {
+            abortSignal === null || abortSignal === void 0 ? void 0 : abortSignal.removeEventListener("abort", onAbort);
+        }
+        function onAbort() {
+            cleanupBeforeAbort === null || cleanupBeforeAbort === void 0 ? void 0 : cleanupBeforeAbort();
+            removeListeners();
+            rejectOnAbort();
+        }
+        if (abortSignal === null || abortSignal === void 0 ? void 0 : abortSignal.aborted) {
+            return rejectOnAbort();
+        }
+        try {
+            buildPromise((x) => {
+                removeListeners();
+                resolve(x);
+            }, (x) => {
+                removeListeners();
+                reject(x);
+            });
+        }
+        catch (err) {
+            reject(err);
+        }
+        abortSignal === null || abortSignal === void 0 ? void 0 : abortSignal.addEventListener("abort", onAbort);
+    });
+}
+
+// Copyright (c) Microsoft Corporation.
+const StandardAbortMessage = "The delay was aborted.";
+/**
+ * A wrapper for setTimeout that resolves a promise after timeInMs milliseconds.
+ * @param timeInMs - The number of milliseconds to be delayed.
+ * @param options - The options for delay - currently abort options
+ * @returns Promise that is resolved after timeInMs
+ */
+function delay(timeInMs, options) {
+    let token;
+    const { abortSignal, abortErrorMsg } = options !== null && options !== void 0 ? options : {};
+    return createAbortablePromise((resolve) => {
+        token = setTimeout(resolve, timeInMs);
+    }, {
+        cleanupBeforeAbort: () => clearTimeout(token),
+        abortSignal,
+        abortErrorMsg: abortErrorMsg !== null && abortErrorMsg !== void 0 ? abortErrorMsg : StandardAbortMessage,
+    });
+}
+
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+/**
+ * Returns a random integer value between a lower and upper bound,
+ * inclusive of both bounds.
+ * Note that this uses Math.random and isn't secure. If you need to use
+ * this for any kind of security purpose, find a better source of random.
+ * @param min - The smallest integer value allowed.
+ * @param max - The largest integer value allowed.
+ */
+function getRandomIntegerInclusive(min, max) {
+    // Make sure inputs are integers.
+    min = Math.ceil(min);
+    max = Math.floor(max);
+    // Pick a random offset from zero to the size of the range.
+    // Since Math.random() can never return 1, we have to make the range one larger
+    // in order to be inclusive of the maximum value after we take the floor.
+    const offset = Math.floor(Math.random() * (max - min + 1));
+    return offset + min;
+}
+
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+/**
+ * Helper to determine when an input is a generic JS object.
+ * @returns true when input is an object type that is not null, Array, RegExp, or Date.
+ */
+function isObject(input) {
+    return (typeof input === "object" &&
+        input !== null &&
+        !Array.isArray(input) &&
+        !(input instanceof RegExp) &&
+        !(input instanceof Date));
+}
+
+// Copyright (c) Microsoft Corporation.
+/**
+ * Typeguard for an error object shape (has name and message)
+ * @param e - Something caught by a catch clause.
+ */
+function isError(e) {
+    if (isObject(e)) {
+        const hasName = typeof e.name === "string";
+        const hasMessage = typeof e.message === "string";
+        return hasName && hasMessage;
+    }
+    return false;
+}
+/**
+ * Given what is thought to be an error object, return the message if possible.
+ * If the message is missing, returns a stringified version of the input.
+ * @param e - Something thrown from a try block
+ * @returns The error message or a string of the input
+ */
+function getErrorMessage(e) {
+    if (isError(e)) {
+        return e.message;
+    }
+    else {
+        let stringified;
+        try {
+            if (typeof e === "object" && e) {
+                stringified = JSON.stringify(e);
+            }
+            else {
+                stringified = String(e);
+            }
+        }
+        catch (err) {
+            stringified = "[unable to stringify input]";
+        }
+        return `Unknown error ${stringified}`;
+    }
+}
+
+// Copyright (c) Microsoft Corporation.
+/**
+ * Generates a SHA-256 HMAC signature.
+ * @param key - The HMAC key represented as a base64 string, used to generate the cryptographic HMAC hash.
+ * @param stringToSign - The data to be signed.
+ * @param encoding - The textual encoding to use for the returned HMAC digest.
+ */
+async function computeSha256Hmac(key, stringToSign, encoding) {
+    const decodedKey = Buffer.from(key, "base64");
+    return crypto.createHmac("sha256", decodedKey).update(stringToSign).digest(encoding);
+}
+/**
+ * Generates a SHA-256 hash.
+ * @param content - The data to be included in the hash.
+ * @param encoding - The textual encoding to use for the returned hash.
+ */
+async function computeSha256Hash(content, encoding) {
+    return crypto.createHash("sha256").update(content).digest(encoding);
+}
+
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+/**
+ * Helper TypeGuard that checks if something is defined or not.
+ * @param thing - Anything
+ */
+function isDefined(thing) {
+    return typeof thing !== "undefined" && thing !== null;
+}
+/**
+ * Helper TypeGuard that checks if the input is an object with the specified properties.
+ * @param thing - Anything.
+ * @param properties - The name of the properties that should appear in the object.
+ */
+function isObjectWithProperties(thing, properties) {
+    if (!isDefined(thing) || typeof thing !== "object") {
+        return false;
+    }
+    for (const property of properties) {
+        if (!objectHasProperty(thing, property)) {
+            return false;
+        }
+    }
+    return true;
+}
+/**
+ * Helper TypeGuard that checks if the input is an object with the specified property.
+ * @param thing - Any object.
+ * @param property - The name of the property that should appear in the object.
+ */
+function objectHasProperty(thing, property) {
+    return (isDefined(thing) && typeof thing === "object" && property in thing);
+}
+
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+/**
+ * Generated Universally Unique Identifier
+ *
+ * @returns RFC4122 v4 UUID.
+ */
+function generateUUID() {
+    let uuid = "";
+    for (let i = 0; i < 32; i++) {
+        // Generate a random number between 0 and 15
+        const randomNumber = Math.floor(Math.random() * 16);
+        // Set the UUID version to 4 in the 13th position
+        if (i === 12) {
+            uuid += "4";
+        }
+        else if (i === 16) {
+            // Set the UUID variant to "10" in the 17th position
+            uuid += (randomNumber & 0x3) | 0x8;
+        }
+        else {
+            // Add a random hexadecimal digit to the UUID string
+            uuid += randomNumber.toString(16);
+        }
+        // Add hyphens to the UUID string at the appropriate positions
+        if (i === 7 || i === 11 || i === 15 || i === 19) {
+            uuid += "-";
+        }
+    }
+    return uuid;
+}
+
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+var _a;
+// NOTE: This is a workaround until we can use `globalThis.crypto.randomUUID` in Node.js 19+.
+let uuidFunction = typeof ((_a = globalThis === null || globalThis === void 0 ? void 0 : globalThis.crypto) === null || _a === void 0 ? void 0 : _a.randomUUID) === "function"
+    ? globalThis.crypto.randomUUID.bind(globalThis.crypto)
+    : crypto.randomUUID;
+// Not defined in earlier versions of Node.js 14
+if (!uuidFunction) {
+    uuidFunction = generateUUID;
+}
+/**
+ * Generated Universally Unique Identifier
+ *
+ * @returns RFC4122 v4 UUID.
+ */
+function randomUUID() {
+    return uuidFunction();
+}
+
+exports.computeSha256Hash = computeSha256Hash;
+exports.computeSha256Hmac = computeSha256Hmac;
+exports.createAbortablePromise = createAbortablePromise;
+exports.delay = delay;
+exports.getErrorMessage = getErrorMessage;
+exports.getRandomIntegerInclusive = getRandomIntegerInclusive;
+exports.isDefined = isDefined;
+exports.isError = isError;
+exports.isNode = isNode;
+exports.isObject = isObject;
+exports.isObjectWithProperties = isObjectWithProperties;
+exports.objectHasProperty = objectHasProperty;
+exports.randomUUID = randomUUID;
 //# sourceMappingURL=index.js.map
 
 
@@ -56389,14 +56629,14 @@ exports.fromPromise = function (fn) {
       this.saxParser.onopentag = (function(_this) {
         return function(node) {
           var key, newValue, obj, processedKey, ref;
-          obj = {};
+          obj = Object.create(null);
           obj[charkey] = "";
           if (!_this.options.ignoreAttrs) {
             ref = node.attributes;
             for (key in ref) {
               if (!hasProp.call(ref, key)) continue;
               if (!(attrkey in obj) && !_this.options.mergeAttrs) {
-                obj[attrkey] = {};
+                obj[attrkey] = Object.create(null);
               }
               newValue = _this.options.attrValueProcessors ? processItem(_this.options.attrValueProcessors, node.attributes[key], key) : node.attributes[key];
               processedKey = _this.options.attrNameProcessors ? processItem(_this.options.attrNameProcessors, key) : key;
@@ -56446,7 +56686,11 @@ exports.fromPromise = function (fn) {
             }
           }
           if (isEmpty(obj)) {
-            obj = _this.options.emptyTag !== '' ? _this.options.emptyTag : emptyStr;
+            if (typeof _this.options.emptyTag === 'function') {
+              obj = _this.options.emptyTag();
+            } else {
+              obj = _this.options.emptyTag !== '' ? _this.options.emptyTag : emptyStr;
+            }
           }
           if (_this.options.validator != null) {
             xpath = "/" + ((function() {
@@ -56470,7 +56714,7 @@ exports.fromPromise = function (fn) {
           }
           if (_this.options.explicitChildren && !_this.options.mergeAttrs && typeof obj === 'object') {
             if (!_this.options.preserveChildrenOrder) {
-              node = {};
+              node = Object.create(null);
               if (_this.options.attrkey in obj) {
                 node[_this.options.attrkey] = obj[_this.options.attrkey];
                 delete obj[_this.options.attrkey];
@@ -56485,7 +56729,7 @@ exports.fromPromise = function (fn) {
               obj = node;
             } else if (s) {
               s[_this.options.childkey] = s[_this.options.childkey] || [];
-              objClone = {};
+              objClone = Object.create(null);
               for (key in obj) {
                 if (!hasProp.call(obj, key)) continue;
                 objClone[key] = obj[key];
@@ -56502,7 +56746,7 @@ exports.fromPromise = function (fn) {
           } else {
             if (_this.options.explicitRoot) {
               old = obj;
-              obj = {};
+              obj = Object.create(null);
               obj[nodeName] = old;
             }
             _this.resultObject = obj;
