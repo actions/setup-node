@@ -61,7 +61,7 @@ export const getPackageManagerWorkingDir = (): string | null => {
   return cacheDependencyPath ? path.dirname(cacheDependencyPath) : null;
 };
 
-const getPackageManagerVersion = async (
+export const getPackageManagerVersion = async (
   packageManager: string,
   command: string
 ) => {

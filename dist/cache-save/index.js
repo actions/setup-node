@@ -59248,7 +59248,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.isCacheFeatureAvailable = exports.isGhes = exports.getCacheDirectoryPath = exports.getPackageManagerInfo = exports.getPackageManagerWorkingDir = exports.getCommandOutput = exports.supportedPackageManagers = void 0;
+exports.isCacheFeatureAvailable = exports.isGhes = exports.getCacheDirectoryPath = exports.getPackageManagerInfo = exports.getPackageManagerVersion = exports.getPackageManagerWorkingDir = exports.getCommandOutput = exports.supportedPackageManagers = void 0;
 const core = __importStar(__nccwpck_require__(2186));
 const exec = __importStar(__nccwpck_require__(1514));
 const cache = __importStar(__nccwpck_require__(7799));
@@ -59298,6 +59298,7 @@ const getPackageManagerVersion = (packageManager, command) => __awaiter(void 0, 
     }
     return stdOut;
 });
+exports.getPackageManagerVersion = getPackageManagerVersion;
 const getPackageManagerInfo = (packageManager) => __awaiter(void 0, void 0, void 0, function* () {
     if (packageManager === 'npm') {
         return exports.supportedPackageManagers.npm;
@@ -59306,7 +59307,7 @@ const getPackageManagerInfo = (packageManager) => __awaiter(void 0, void 0, void
         return exports.supportedPackageManagers.pnpm;
     }
     else if (packageManager === 'yarn') {
-        const yarnVersion = yield getPackageManagerVersion('yarn', '--version');
+        const yarnVersion = yield exports.getPackageManagerVersion('yarn', '--version');
         core.debug(`Consumed yarn version is ${yarnVersion}`);
         if (yarnVersion.startsWith('1.')) {
             return exports.supportedPackageManagers.yarn1;
