@@ -61,13 +61,15 @@ export const getPackageManagerWorkingDir = (): string | null => {
   return cacheDependencyPath ? path.dirname(cacheDependencyPath) : null;
 };
 
+export const getPackageManagerCommandOutput = (command: string) =>
+  getCommandOutput(command, getPackageManagerWorkingDir());
+
 export const getPackageManagerVersion = async (
   packageManager: string,
   command: string
 ) => {
-  const stdOut = await getCommandOutput(
-    `${packageManager} ${command}`,
-    getPackageManagerWorkingDir()
+  const stdOut = await getPackageManagerCommandOutput(
+    `${packageManager} ${command}`
   );
 
   if (!stdOut) {
@@ -101,9 +103,8 @@ export const getCacheDirectoryPath = async (
   packageManagerInfo: PackageManagerInfo,
   packageManager: string
 ) => {
-  const stdOut = await getCommandOutput(
-    packageManagerInfo.getCacheFolderCommand,
-    getPackageManagerWorkingDir()
+  const stdOut = await getPackageManagerCommandOutput(
+    packageManagerInfo.getCacheFolderCommand
   );
 
   if (!stdOut) {
