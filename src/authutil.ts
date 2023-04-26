@@ -52,8 +52,8 @@ function writeRegistryToFile(
   const registryPrefix = registryUrl.replace(/(^\w+:|^)/, '');
 
   if (username) {
-    newContents += registryPrefix + `:_username=${username}${os.EOL}`;
-    newContents += registryPrefix + `:_email=dummy value` + os.EOL;
+    newContents += registryPrefix + `:username=${username}${os.EOL}`;
+    newContents += registryPrefix + `:email=dummy value` + os.EOL;
   }
 
   const authString: string = username
