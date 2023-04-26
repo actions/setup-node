@@ -4,7 +4,11 @@ import * as path from 'path';
 import * as core from '@actions/core';
 import * as github from '@actions/github';
 
-export function configAuthentication(registryUrl: string, alwaysAuth: string) {
+export function configAuthentication(
+  registryUrl: string,
+  alwaysAuth: string,
+  username?: string
+) {
   const npmrc: string = path.resolve(
     process.env['RUNNER_TEMP'] || process.cwd(),
     '.npmrc'
@@ -13,13 +17,14 @@ export function configAuthentication(registryUrl: string, alwaysAuth: string) {
     registryUrl += '/';
   }
 
-  writeRegistryToFile(registryUrl, npmrc, alwaysAuth);
+  writeRegistryToFile(registryUrl, npmrc, alwaysAuth, username);
 }
 
 function writeRegistryToFile(
   registryUrl: string,
   fileLocation: string,
-  alwaysAuth: string
+  alwaysAuth: string,
+  username?: string
 ) {
   let scope: string = core.getInput('scope');
   if (!scope && registryUrl.indexOf('npm.pkg.github.com') > -1) {
@@ -44,8 +49,17 @@ function writeRegistryToFile(
     });
   }
   // Remove http: or https: from front of registry.
-  const authString: string =
-    registryUrl.replace(/(^\w+:|^)/, '') + ':_authToken=${NODE_AUTH_TOKEN}';
+  const registryPrefix = registryUrl.replace(/(^\w+:|^)/, '');
+
+  if (username) {
+    newContents += registryPrefix + `:_username=${username}${os.EOL}`;
+    newContents += registryPrefix + `:_email=dummy value`;
+  }
+
+  const authString: string = username
+    ? registryPrefix + ':_password=${NODE_AUTH_TOKEN}'
+    : registryPrefix + ':_authToken=${NODE_AUTH_TOKEN}';
+
   const registryString = `${scope}registry=${registryUrl}`;
   const alwaysAuthString = `always-auth=${alwaysAuth}`;
   newContents += `${authString}${os.EOL}${registryString}${os.EOL}${alwaysAuthString}`;
