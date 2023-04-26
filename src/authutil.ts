@@ -53,7 +53,7 @@ function writeRegistryToFile(
 
   if (username) {
     newContents += registryPrefix + `:_username=${username}${os.EOL}`;
-    newContents += registryPrefix + `:_email=dummy value`;
+    newContents += registryPrefix + `:_email=dummy value` + os.EOL;
   }
 
   const authString: string = username
