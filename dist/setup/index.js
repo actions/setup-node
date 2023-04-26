@@ -71049,15 +71049,15 @@ const os = __importStar(__nccwpck_require__(2037));
 const path = __importStar(__nccwpck_require__(1017));
 const core = __importStar(__nccwpck_require__(2186));
 const github = __importStar(__nccwpck_require__(5438));
-function configAuthentication(registryUrl, alwaysAuth) {
+function configAuthentication(registryUrl, alwaysAuth, username) {
     const npmrc = path.resolve(process.env['RUNNER_TEMP'] || process.cwd(), '.npmrc');
     if (!registryUrl.endsWith('/')) {
         registryUrl += '/';
     }
-    writeRegistryToFile(registryUrl, npmrc, alwaysAuth);
+    writeRegistryToFile(registryUrl, npmrc, alwaysAuth, username);
 }
 exports.configAuthentication = configAuthentication;
-function writeRegistryToFile(registryUrl, fileLocation, alwaysAuth) {
+function writeRegistryToFile(registryUrl, fileLocation, alwaysAuth, username) {
     let scope = core.getInput('scope');
     if (!scope && registryUrl.indexOf('npm.pkg.github.com') > -1) {
         scope = github.context.repo.owner;
@@ -71080,7 +71080,14 @@ function writeRegistryToFile(registryUrl, fileLocation, alwaysAuth) {
         });
     }
     // Remove http: or https: from front of registry.
-    const authString = registryUrl.replace(/(^\w+:|^)/, '') + ':_authToken=${NODE_AUTH_TOKEN}';
+    const registryPrefix = registryUrl.replace(/(^\w+:|^)/, '');
+    if (username) {
+        newContents += registryPrefix + `:_username=${username}${os.EOL}`;
+        newContents += registryPrefix + `:_email=dummy value`;
+    }
+    const authString = username
+        ? registryPrefix + ':_password=${NODE_AUTH_TOKEN}'
+        : registryPrefix + ':_authToken=${NODE_AUTH_TOKEN}';
     const registryString = `${scope}registry=${registryUrl}`;
     const alwaysAuthString = `always-auth=${alwaysAuth}`;
     newContents += `${authString}${os.EOL}${registryString}${os.EOL}${alwaysAuthString}`;
@@ -72084,8 +72091,9 @@ function run() {
             yield util_1.printEnvDetailsAndSetOutput();
             const registryUrl = core.getInput('registry-url');
             const alwaysAuth = core.getInput('always-auth');
+            const username = core.getInput('username');
             if (registryUrl) {
-                auth.configAuthentication(registryUrl, alwaysAuth);
+                auth.configAuthentication(registryUrl, alwaysAuth, username);
             }
             if (cache && cache_utils_1.isCacheFeatureAvailable()) {
                 const cacheDependencyPath = core.getInput('cache-dependency-path');
