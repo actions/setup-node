@@ -8,7 +8,6 @@ import {State} from './constants';
 import {
   getCacheDirectoryPath,
   getPackageManagerInfo,
-  getPackageManagerWorkingDir,
   PackageManagerInfo
 } from './cache-utils';
 
@@ -37,7 +36,7 @@ export const restoreCache = async (
     );
   }
 
-  const primaryKey = `node-cache-${platform}-${packageManager}-${fileHash}`;
+  const primaryKey = `node-cache-${platform}-${packageManager}-v2-${fileHash}`;
   core.debug(`primary key is ${primaryKey}`);
 
   core.saveState(State.CachePrimaryKey, primaryKey);
