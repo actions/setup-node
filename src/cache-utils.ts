@@ -2,6 +2,7 @@ import * as core from '@actions/core';
 import * as exec from '@actions/exec';
 import * as cache from '@actions/cache';
 import path from 'path';
+import fs from 'fs';
 
 type SupportedPackageManagers = {
   [prop: string]: PackageManagerInfo;
@@ -58,7 +59,17 @@ export const getPackageManagerWorkingDir = (): string | null => {
   }
 
   const cacheDependencyPath = core.getInput('cache-dependency-path');
-  return cacheDependencyPath ? path.dirname(cacheDependencyPath) : null;
+  if (!cacheDependencyPath) {
+    return null;
+  }
+
+  const wd = path.dirname(cacheDependencyPath);
+
+  if (fs.existsSync(wd) && fs.lstatSync(wd).isDirectory()) {
+    return wd;
+  }
+
+  return null;
 };
 
 export const getPackageManagerCommandOutput = (command: string) =>

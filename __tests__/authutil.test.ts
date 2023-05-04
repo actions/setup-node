@@ -1,11 +1,10 @@
 import os from 'os';
-import * as fs from 'fs';
+import fs from 'fs';
 import * as path from 'path';
 import * as core from '@actions/core';
 import * as io from '@actions/io';
 import * as auth from '../src/authutil';
 import * as cacheUtils from '../src/cache-utils';
-import {getCacheDirectoryPath} from '../src/cache-utils';
 
 let rcFile: string;
 
@@ -212,65 +211,96 @@ describe('authutil tests', () => {
     );
   });
 
-  it('getPackageManagerWorkingDir should return null for not yarn', async () => {
-    process.env['INPUT_CACHE'] = 'some';
-    delete process.env['INPUT_CACHE-DEPENDENCY-PATH'];
-    const dir = cacheUtils.getPackageManagerWorkingDir();
-    expect(dir).toBeNull();
-  });
+  describe('getPackageManagerWorkingDir', () => {
+    let existsSpy: jest.SpyInstance;
+    let lstatSpy: jest.SpyInstance;
 
-  it('getPackageManagerWorkingDir should return null for not yarn with cache-dependency-path', async () => {
-    process.env['INPUT_CACHE'] = 'some';
-    process.env['INPUT_CACHE-DEPENDENCY-PATH'] = '/foo/bar';
-    const dir = cacheUtils.getPackageManagerWorkingDir();
-    expect(dir).toBeNull();
-  });
+    beforeEach(() => {
+      existsSpy = jest.spyOn(fs, 'existsSync');
+      existsSpy.mockImplementation(() => true);
 
-  it('getPackageManagerWorkingDir should return null for yarn but without cache-dependency-path', async () => {
-    process.env['INPUT_CACHE'] = 'yarn';
-    delete process.env['INPUT_CACHE-DEPENDENCY-PATH'];
-    const dir = cacheUtils.getPackageManagerWorkingDir();
-    expect(dir).toBeNull();
-  });
+      lstatSpy = jest.spyOn(fs, 'lstatSync');
+      lstatSpy.mockImplementation(arg => ({
+        isDirectory: () => true
+      }));
+    });
 
-  it('getPackageManagerWorkingDir should return path for yarn with cache-dependency-path', async () => {
-    process.env['INPUT_CACHE'] = 'yarn';
-    const cachePath = '/foo/bar';
-    process.env['INPUT_CACHE-DEPENDENCY-PATH'] = cachePath;
-    const dir = cacheUtils.getPackageManagerWorkingDir();
-    expect(dir).toEqual(path.dirname(cachePath));
-  });
+    afterEach(() => {
+      existsSpy.mockRestore();
+      lstatSpy.mockRestore();
+    });
 
-  it('getCommandOutput(getPackageManagerVersion) should be called from  with getPackageManagerWorkingDir result', async () => {
-    process.env['INPUT_CACHE'] = 'yarn';
-    const cachePath = '/foo/bar';
-    process.env['INPUT_CACHE-DEPENDENCY-PATH'] = cachePath;
-    const getCommandOutputSpy = jest
-      .spyOn(cacheUtils, 'getCommandOutput')
-      .mockReturnValue(Promise.resolve('baz'));
+    it('getPackageManagerWorkingDir should return null for not yarn', async () => {
+      process.env['INPUT_CACHE'] = 'some';
+      delete process.env['INPUT_CACHE-DEPENDENCY-PATH'];
+      const dir = cacheUtils.getPackageManagerWorkingDir();
+      expect(dir).toBeNull();
+    });
 
-    const version = await cacheUtils.getPackageManagerVersion('foo', 'bar');
-    expect(getCommandOutputSpy).toHaveBeenCalledWith(
-      `foo bar`,
-      path.dirname(cachePath)
-    );
-  });
+    it('getPackageManagerWorkingDir should return null for not yarn with cache-dependency-path', async () => {
+      process.env['INPUT_CACHE'] = 'some';
+      process.env['INPUT_CACHE-DEPENDENCY-PATH'] = '/foo/bar';
+      const dir = cacheUtils.getPackageManagerWorkingDir();
+      expect(dir).toBeNull();
+    });
 
-  it('getCommandOutput(getCacheDirectoryPath) should be called from  with getPackageManagerWorkingDir result', async () => {
-    process.env['INPUT_CACHE'] = 'yarn';
-    const cachePath = '/foo/bar';
-    process.env['INPUT_CACHE-DEPENDENCY-PATH'] = cachePath;
-    const getCommandOutputSpy = jest
-      .spyOn(cacheUtils, 'getCommandOutput')
-      .mockReturnValue(Promise.resolve('baz'));
+    it('getPackageManagerWorkingDir should return null for yarn but without cache-dependency-path', async () => {
+      process.env['INPUT_CACHE'] = 'yarn';
+      delete process.env['INPUT_CACHE-DEPENDENCY-PATH'];
+      const dir = cacheUtils.getPackageManagerWorkingDir();
+      expect(dir).toBeNull();
+    });
 
-    const version = await cacheUtils.getCacheDirectoryPath(
-      {lockFilePatterns: [], getCacheFolderCommand: 'quz'},
-      ''
-    );
-    expect(getCommandOutputSpy).toHaveBeenCalledWith(
-      `quz`,
-      path.dirname(cachePath)
-    );
+    it('getPackageManagerWorkingDir should return null for yarn with cache-dependency-path for not-existing directory', async () => {
+      process.env['INPUT_CACHE'] = 'yarn';
+      const cachePath = '/foo/bar';
+      process.env['INPUT_CACHE-DEPENDENCY-PATH'] = cachePath;
+      lstatSpy.mockImplementation(arg => ({
+        isDirectory: () => false
+      }));
+      const dir = cacheUtils.getPackageManagerWorkingDir();
+      expect(dir).toBeNull();
+    });
+
+    it('getPackageManagerWorkingDir should return path for yarn with cache-dependency-path', async () => {
+      process.env['INPUT_CACHE'] = 'yarn';
+      const cachePath = '/foo/bar';
+      process.env['INPUT_CACHE-DEPENDENCY-PATH'] = cachePath;
+      const dir = cacheUtils.getPackageManagerWorkingDir();
+      expect(dir).toEqual(path.dirname(cachePath));
+    });
+
+    it('getCommandOutput(getPackageManagerVersion) should be called from  with getPackageManagerWorkingDir result', async () => {
+      process.env['INPUT_CACHE'] = 'yarn';
+      const cachePath = '/foo/bar';
+      process.env['INPUT_CACHE-DEPENDENCY-PATH'] = cachePath;
+      const getCommandOutputSpy = jest
+        .spyOn(cacheUtils, 'getCommandOutput')
+        .mockReturnValue(Promise.resolve('baz'));
+
+      const version = await cacheUtils.getPackageManagerVersion('foo', 'bar');
+      expect(getCommandOutputSpy).toHaveBeenCalledWith(
+        `foo bar`,
+        path.dirname(cachePath)
+      );
+    });
+
+    it('getCommandOutput(getCacheDirectoryPath) should be called from  with getPackageManagerWorkingDir result', async () => {
+      process.env['INPUT_CACHE'] = 'yarn';
+      const cachePath = '/foo/bar';
+      process.env['INPUT_CACHE-DEPENDENCY-PATH'] = cachePath;
+      const getCommandOutputSpy = jest
+        .spyOn(cacheUtils, 'getCommandOutput')
+        .mockReturnValue(Promise.resolve('baz'));
+
+      const version = await cacheUtils.getCacheDirectoryPath(
+        {lockFilePatterns: [], getCacheFolderCommand: 'quz'},
+        ''
+      );
+      expect(getCommandOutputSpy).toHaveBeenCalledWith(
+        `quz`,
+        path.dirname(cachePath)
+      );
+    });
   });
 });
