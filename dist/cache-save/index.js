@@ -59253,6 +59253,7 @@ const core = __importStar(__nccwpck_require__(2186));
 const exec = __importStar(__nccwpck_require__(1514));
 const cache = __importStar(__nccwpck_require__(7799));
 const path_1 = __importDefault(__nccwpck_require__(1017));
+const fs_1 = __importDefault(__nccwpck_require__(7147));
 exports.supportedPackageManagers = {
     npm: {
         lockFilePatterns: ['package-lock.json', 'npm-shrinkwrap.json', 'yarn.lock'],
@@ -59288,7 +59289,14 @@ const getPackageManagerWorkingDir = () => {
         return null;
     }
     const cacheDependencyPath = core.getInput('cache-dependency-path');
-    return cacheDependencyPath ? path_1.default.dirname(cacheDependencyPath) : null;
+    if (!cacheDependencyPath) {
+        return null;
+    }
+    const wd = path_1.default.dirname(cacheDependencyPath);
+    if (fs_1.default.existsSync(wd) && fs_1.default.lstatSync(wd).isDirectory()) {
+        return wd;
+    }
+    return null;
 };
 exports.getPackageManagerWorkingDir = getPackageManagerWorkingDir;
 const getPackageManagerCommandOutput = (command) => exports.getCommandOutput(command, exports.getPackageManagerWorkingDir());
