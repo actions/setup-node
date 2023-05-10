@@ -55,8 +55,9 @@ export async function run() {
 
     const registryUrl: string = core.getInput('registry-url');
     const alwaysAuth: string = core.getInput('always-auth');
+    const username: string | undefined = core.getInput('username');
     if (registryUrl) {
-      auth.configAuthentication(registryUrl, alwaysAuth);
+      auth.configAuthentication(registryUrl, alwaysAuth, username);
     }
 
     if (cache && isCacheFeatureAvailable()) {

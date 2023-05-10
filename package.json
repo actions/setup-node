@@ -15,7 +15,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/actions/setup-node.git"
+    "url": "git+https://github.com/rapid-platform/setup-node.git"
   },
   "keywords": [
     "actions",

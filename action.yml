@@ -25,6 +25,8 @@ inputs:
     description: 'Used to specify a package manager for caching in the default directory. Supported values: npm, yarn, pnpm.'
   cache-dependency-path:
     description: 'Used to specify the path to a dependency file: package-lock.json, yarn.lock, etc. Supports wildcards or a list of file names for caching multiple dependencies.'
+  username:
+    description: 'Used to specify username/password authentication for NPM, used for Azure DevOps Artifacts and registries which expect a username and password.'
 # TODO: add input to control forcing to pull from cloud or dist. 
 #       escape valve for someone having issues or needing the absolute latest which isn't cached yet
 outputs:
