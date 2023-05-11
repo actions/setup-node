@@ -117,7 +117,9 @@ describe('run', () => {
       expect(getInputSpy).toHaveBeenCalled();
       expect(getStateSpy).toHaveBeenCalledTimes(2);
       expect(getCommandOutputSpy).toHaveBeenCalledTimes(2);
-      expect(debugSpy).toHaveBeenCalledWith(`yarn path is ${commonPath}/yarn1`);
+      expect(debugSpy).toHaveBeenCalledWith(
+        'yarn path is /some/random/path/yarn1 (derived from cache-dependency-path: "")'
+      );
       expect(debugSpy).toHaveBeenCalledWith('Consumed yarn version is 1.2.3');
       expect(infoSpy).toHaveBeenCalledWith(
         `Cache hit occurred on the primary key ${yarnFileHash}, not saving cache.`
@@ -137,7 +139,9 @@ describe('run', () => {
       expect(getInputSpy).toHaveBeenCalled();
       expect(getStateSpy).toHaveBeenCalledTimes(2);
       expect(getCommandOutputSpy).toHaveBeenCalledTimes(2);
-      expect(debugSpy).toHaveBeenCalledWith(`yarn path is ${commonPath}/yarn2`);
+      expect(debugSpy).toHaveBeenCalledWith(
+        'yarn path is /some/random/path/yarn2 (derived from cache-dependency-path: "")'
+      );
       expect(debugSpy).toHaveBeenCalledWith('Consumed yarn version is 2.2.3');
       expect(infoSpy).toHaveBeenCalledWith(
         `Cache hit occurred on the primary key ${yarnFileHash}, not saving cache.`
@@ -199,7 +203,9 @@ describe('run', () => {
       expect(getInputSpy).toHaveBeenCalled();
       expect(getStateSpy).toHaveBeenCalledTimes(2);
       expect(getCommandOutputSpy).toHaveBeenCalledTimes(2);
-      expect(debugSpy).toHaveBeenCalledWith(`yarn path is ${commonPath}/yarn1`);
+      expect(debugSpy).toHaveBeenCalledWith(
+        'yarn path is /some/random/path/yarn1 (derived from cache-dependency-path: "")'
+      );
       expect(debugSpy).toHaveBeenCalledWith('Consumed yarn version is 1.2.3');
       expect(infoSpy).not.toHaveBeenCalledWith(
         `Cache hit occurred on the primary key ${yarnFileHash}, not saving cache.`
@@ -229,7 +235,9 @@ describe('run', () => {
       expect(getInputSpy).toHaveBeenCalled();
       expect(getStateSpy).toHaveBeenCalledTimes(2);
       expect(getCommandOutputSpy).toHaveBeenCalledTimes(2);
-      expect(debugSpy).toHaveBeenCalledWith(`yarn path is ${commonPath}/yarn2`);
+      expect(debugSpy).toHaveBeenCalledWith(
+        'yarn path is /some/random/path/yarn2 (derived from cache-dependency-path: "")'
+      );
       expect(debugSpy).toHaveBeenCalledWith('Consumed yarn version is 2.2.3');
       expect(infoSpy).not.toHaveBeenCalledWith(
         `Cache hit occurred on the primary key ${yarnFileHash}, not saving cache.`

@@ -32,13 +32,13 @@ describe('cache-restore', () => {
 
   function findCacheFolder(command: string) {
     switch (command) {
-      case utils.supportedPackageManagers.npm.getCacheFolderCommand:
+      case utils.npmGetCacheFolderCommand:
         return npmCachePath;
-      case utils.supportedPackageManagers.pnpm.getCacheFolderCommand:
+      case utils.pnpmGetCacheFolderCommand:
         return pnpmCachePath;
-      case utils.supportedPackageManagers.yarn1.getCacheFolderCommand:
+      case utils.yarn1GetCacheFolderCommand:
         return yarn1CachePath;
-      case utils.supportedPackageManagers.yarn2.getCacheFolderCommand:
+      case utils.yarn2GetCacheFolderCommand:
         return yarn2CachePath;
       default:
         return 'packge/not/found';
@@ -108,7 +108,7 @@ describe('cache-restore', () => {
     it.each([['npm7'], ['npm6'], ['pnpm6'], ['yarn1'], ['yarn2'], ['random']])(
       'Throw an error because %s is not supported',
       async packageManager => {
-        await expect(restoreCache(packageManager)).rejects.toThrow(
+        await expect(restoreCache(packageManager, '')).rejects.toThrow(
           `Caching for '${packageManager}' is not supported`
         );
       }
@@ -132,7 +132,7 @@ describe('cache-restore', () => {
           }
         });
 
-        await restoreCache(packageManager);
+        await restoreCache(packageManager, '');
         expect(hashFilesSpy).toHaveBeenCalled();
         expect(infoSpy).toHaveBeenCalledWith(
           `Cache restored from key: node-cache-${platform}-${packageManager}-v2-${fileHash}`
@@ -163,7 +163,7 @@ describe('cache-restore', () => {
         });
 
         restoreCacheSpy.mockImplementationOnce(() => undefined);
-        await restoreCache(packageManager);
+        await restoreCache(packageManager, '');
         expect(hashFilesSpy).toHaveBeenCalled();
         expect(infoSpy).toHaveBeenCalledWith(
           `${packageManager} cache is not found`

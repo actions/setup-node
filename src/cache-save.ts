@@ -2,7 +2,7 @@ import * as core from '@actions/core';
 import * as cache from '@actions/cache';
 import fs from 'fs';
 import {State} from './constants';
-import {getCacheDirectoryPath, getPackageManagerInfo} from './cache-utils';
+import {getCacheDirectoriesPaths, getPackageManagerInfo} from './cache-utils';
 
 // Catch and log any unhandled exceptions.  These exceptions can leak out of the uploadChunk method in
 // @actions/toolkit when a failed upload closes the file descriptor causing any in-process reads to
@@ -31,14 +31,17 @@ const cachePackages = async (packageManager: string) => {
     return;
   }
 
-  const cachePath = await getCacheDirectoryPath(
+  // TODO: core.getInput has a bug - it can return undefined despite its definition
+  //       export declare function getInput(name: string, options?: InputOptions): string;
+  const cacheDependencyPath = core.getInput('cache-dependency-path') || '';
+  const cachePaths = await getCacheDirectoriesPaths(
     packageManagerInfo,
-    packageManager
+    cacheDependencyPath
   );
 
-  if (!fs.existsSync(cachePath)) {
+  if (cachePaths.length === 0) {
     throw new Error(
-      `Cache folder path is retrieved for ${packageManager} but doesn't exist on disk: ${cachePath}`
+      `Cache folder paths are not retrieved for ${packageManager} with cache-dependency-path = ${cacheDependencyPath}`
     );
   }
 
@@ -49,7 +52,7 @@ const cachePackages = async (packageManager: string) => {
     return;
   }
 
-  const cacheId = await cache.saveCache([cachePath], primaryKey);
+  const cacheId = await cache.saveCache(cachePaths, primaryKey);
   if (cacheId == -1) {
     return;
   }
