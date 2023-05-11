@@ -1,45 +1,79 @@
 import * as core from '@actions/core';
 import * as exec from '@actions/exec';
 import * as cache from '@actions/cache';
+import * as glob from '@actions/glob';
 import path from 'path';
 import fs from 'fs';
 
-type SupportedPackageManagers = {
-  [prop: string]: PackageManagerInfo;
-};
-
 export interface PackageManagerInfo {
+  label: string;
   lockFilePatterns: Array<string>;
-  getCacheFolderCommand: string;
+  getCacheFolderPath: (projectDir?: string) => Promise<string>;
 }
 
+interface SupportedPackageManagers {
+  npm: PackageManagerInfo;
+  pnpm: PackageManagerInfo;
+  yarn: PackageManagerInfo;
+}
+
+// for testing purposes
+export const npmGetCacheFolderCommand = 'npm config get cache';
+export const pnpmGetCacheFolderCommand = 'pnpm store path --silent';
+export const yarn1GetCacheFolderCommand = 'yarn cache dir';
+export const yarn2GetCacheFolderCommand = 'yarn config get cacheFolder';
 export const supportedPackageManagers: SupportedPackageManagers = {
   npm: {
+    label: 'npm',
     lockFilePatterns: ['package-lock.json', 'npm-shrinkwrap.json', 'yarn.lock'],
-    getCacheFolderCommand: 'npm config get cache'
+    getCacheFolderPath: () =>
+      getCommandOutputGuarded(
+        npmGetCacheFolderCommand,
+        'Could not get npm cache folder path'
+      )
   },
   pnpm: {
+    label: 'pnpm',
     lockFilePatterns: ['pnpm-lock.yaml'],
-    getCacheFolderCommand: 'pnpm store path --silent'
+    getCacheFolderPath: () =>
+      getCommandOutputGuarded(
+        pnpmGetCacheFolderCommand,
+        'Could not get pnpm cache folder path'
+      )
   },
-  yarn1: {
+  yarn: {
+    label: 'yarn',
     lockFilePatterns: ['yarn.lock'],
-    getCacheFolderCommand: 'yarn cache dir'
-  },
-  yarn2: {
-    lockFilePatterns: ['yarn.lock'],
-    getCacheFolderCommand: 'yarn config get cacheFolder'
+    getCacheFolderPath: async projectDir => {
+      const yarnVersion = await getCommandOutputGuarded(
+        `yarn --version`,
+        'Could not retrieve version of yarn',
+        projectDir
+      );
+
+      core.debug(`Get yarn cache folder path for directory: ${projectDir}`);
+      const stdOut = yarnVersion.startsWith('1.')
+        ? await getCommandOutput(yarn1GetCacheFolderCommand, projectDir)
+        : await getCommandOutput(yarn2GetCacheFolderCommand, projectDir);
+
+      if (!stdOut) {
+        throw new Error(
+          `Could not get yarn cache folder path for ${projectDir}`
+        );
+      }
+      return stdOut;
+    }
   }
 };
 
 export const getCommandOutput = async (
   toolCommand: string,
-  cwd: string | null
-) => {
+  cwd?: string
+): Promise<string> => {
   let {stdout, stderr, exitCode} = await exec.getExecOutput(
     toolCommand,
     undefined,
-    {ignoreReturnCode: true, ...(cwd !== null && {cwd})}
+    {ignoreReturnCode: true, ...(cwd && {cwd})}
   );
 
   if (exitCode) {
@@ -52,41 +86,15 @@ export const getCommandOutput = async (
   return stdout.trim();
 };
 
-export const getPackageManagerWorkingDir = (): string | null => {
-  const cache = core.getInput('cache');
-  if (cache !== 'yarn') {
-    return null;
-  }
-
-  const cacheDependencyPath = core.getInput('cache-dependency-path');
-  if (!cacheDependencyPath) {
-    return null;
-  }
-
-  const wd = path.dirname(cacheDependencyPath);
-
-  if (fs.existsSync(wd) && fs.lstatSync(wd).isDirectory()) {
-    return wd;
-  }
-
-  return null;
-};
-
-export const getPackageManagerCommandOutput = (command: string) =>
-  getCommandOutput(command, getPackageManagerWorkingDir());
-
-export const getPackageManagerVersion = async (
-  packageManager: string,
-  command: string
-) => {
-  const stdOut = await getPackageManagerCommandOutput(
-    `${packageManager} ${command}`
-  );
-
+export const getCommandOutputGuarded = async (
+  toolCommand: string,
+  error: string,
+  cwd?: string
+): Promise<string> => {
+  const stdOut = getCommandOutput(toolCommand, cwd);
   if (!stdOut) {
-    throw new Error(`Could not retrieve version of ${packageManager}`);
+    throw new Error(error);
   }
-
   return stdOut;
 };
 
@@ -96,36 +104,94 @@ export const getPackageManagerInfo = async (packageManager: string) => {
   } else if (packageManager === 'pnpm') {
     return supportedPackageManagers.pnpm;
   } else if (packageManager === 'yarn') {
-    const yarnVersion = await getPackageManagerVersion('yarn', '--version');
-
-    core.debug(`Consumed yarn version is ${yarnVersion}`);
-
-    if (yarnVersion.startsWith('1.')) {
-      return supportedPackageManagers.yarn1;
-    } else {
-      return supportedPackageManagers.yarn2;
-    }
+    return supportedPackageManagers.yarn;
   } else {
     return null;
   }
 };
 
-export const getCacheDirectoryPath = async (
+const globPatternToArray = async (pattern: string): Promise<string[]> => {
+  const globber = await glob.create(pattern);
+  return globber.glob();
+};
+
+// TODO: handle array
+const expandCacheDependencyPath = (
+  cacheDependencyPath: string
+): Promise<string[]> =>
+  cacheDependencyPath.includes('*')
+    ? globPatternToArray(cacheDependencyPath)
+    : Promise.resolve([cacheDependencyPath]);
+
+const cacheDependencyPathToCacheFolderPath = async (
   packageManagerInfo: PackageManagerInfo,
-  packageManager: string
-) => {
-  const stdOut = await getPackageManagerCommandOutput(
-    packageManagerInfo.getCacheFolderCommand
+  cacheDependencyPath: string
+): Promise<string> => {
+  const cacheDependencyPathDirectory = path.dirname(cacheDependencyPath);
+  core.debug(`Get cache folder for the dependency ${cacheDependencyPath}`);
+  const cacheFolderPath =
+    fs.existsSync(cacheDependencyPathDirectory) &&
+    fs.lstatSync(cacheDependencyPathDirectory).isDirectory()
+      ? await packageManagerInfo.getCacheFolderPath(
+          cacheDependencyPathDirectory
+        )
+      : await packageManagerInfo.getCacheFolderPath();
+
+  core.debug(
+    `${packageManagerInfo.label} path is ${cacheFolderPath} (derived: from ${cacheDependencyPath})`
   );
 
-  if (!stdOut) {
-    throw new Error(`Could not get cache folder path for ${packageManager}`);
-  }
-
-  core.debug(`${packageManager} path is ${stdOut}`);
-
-  return stdOut.trim();
+  return cacheFolderPath;
 };
+const cacheDependenciesPathsToCacheFoldersPaths = async (
+  packageManagerInfo: PackageManagerInfo,
+  cacheDependenciesPaths: string[]
+): Promise<string[]> => {
+  const cacheFoldersPaths = await Promise.all(
+    cacheDependenciesPaths.map(cacheDependencyPath =>
+      cacheDependencyPathToCacheFolderPath(
+        packageManagerInfo,
+        cacheDependencyPath
+      )
+    )
+  );
+  return cacheFoldersPaths.filter(
+    (cachePath, i, result) => result.indexOf(cachePath) === i
+  );
+};
+
+const cacheDependencyPathToCacheFoldersPaths = async (
+  packageManagerInfo: PackageManagerInfo,
+  cacheDependencyPath: string
+): Promise<string[]> => {
+  const cacheDependenciesPaths = await expandCacheDependencyPath(
+    cacheDependencyPath
+  );
+  return cacheDependenciesPathsToCacheFoldersPaths(
+    packageManagerInfo,
+    cacheDependenciesPaths
+  );
+};
+
+const cacheFoldersPathsForRoot = async (
+  packageManagerInfo: PackageManagerInfo
+): Promise<string[]> => {
+  const cacheFolderPath = await packageManagerInfo.getCacheFolderPath();
+  core.debug(`${packageManagerInfo.label} path is ${cacheFolderPath}`);
+  return [cacheFolderPath];
+};
+
+export const getCacheDirectoriesPaths = async (
+  packageManagerInfo: PackageManagerInfo,
+  cacheDependencyPath: string
+): Promise<string[]> =>
+  // TODO: multiple directories limited to yarn so far
+  cacheDependencyPath && packageManagerInfo === supportedPackageManagers.yarn
+    ? cacheDependencyPathToCacheFoldersPaths(
+        packageManagerInfo,
+        cacheDependencyPath
+      )
+    : cacheFoldersPathsForRoot(packageManagerInfo);
 
 export function isGhes(): boolean {
   const ghUrl = new URL(

@@ -117,8 +117,8 @@ describe('run', () => {
       expect(getInputSpy).toHaveBeenCalled();
       expect(getStateSpy).toHaveBeenCalledTimes(2);
       expect(getCommandOutputSpy).toHaveBeenCalledTimes(2);
-      expect(debugSpy).toHaveBeenCalledWith(`yarn path is ${commonPath}/yarn1`);
       expect(debugSpy).toHaveBeenCalledWith('Consumed yarn version is 1.2.3');
+      expect(debugSpy).toHaveBeenCalledWith(`yarn path is ${commonPath}/yarn1`);
       expect(infoSpy).toHaveBeenCalledWith(
         `Cache hit occurred on the primary key ${yarnFileHash}, not saving cache.`
       );

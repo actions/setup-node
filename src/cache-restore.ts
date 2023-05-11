@@ -6,14 +6,14 @@ import fs from 'fs';
 
 import {State} from './constants';
 import {
-  getCacheDirectoryPath,
+  getCacheDirectoriesPaths,
   getPackageManagerInfo,
   PackageManagerInfo
 } from './cache-utils';
 
 export const restoreCache = async (
   packageManager: string,
-  cacheDependencyPath?: string
+  cacheDependencyPath: string
 ) => {
   const packageManagerInfo = await getPackageManagerInfo(packageManager);
   if (!packageManagerInfo) {
@@ -21,9 +21,9 @@ export const restoreCache = async (
   }
   const platform = process.env.RUNNER_OS;
 
-  const cachePath = await getCacheDirectoryPath(
+  const cachePaths = await getCacheDirectoriesPaths(
     packageManagerInfo,
-    packageManager
+    cacheDependencyPath
   );
   const lockFilePath = cacheDependencyPath
     ? cacheDependencyPath
@@ -41,7 +41,7 @@ export const restoreCache = async (
 
   core.saveState(State.CachePrimaryKey, primaryKey);
 
-  const cacheKey = await cache.restoreCache([cachePath], primaryKey);
+  const cacheKey = await cache.restoreCache(cachePaths, primaryKey);
   core.setOutput('cache-hit', Boolean(cacheKey));
 
   if (!cacheKey) {
