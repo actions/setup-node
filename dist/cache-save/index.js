@@ -60434,7 +60434,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.isCacheFeatureAvailable = exports.isGhes = exports.getCacheDirectoriesPaths = exports.expandCacheDependencyPath = exports.getPackageManagerInfo = exports.getCommandOutputGuarded = exports.getCommandOutput = exports.supportedPackageManagers = exports.yarn2GetCacheFolderCommand = exports.yarn1GetCacheFolderCommand = exports.pnpmGetCacheFolderCommand = exports.npmGetCacheFolderCommand = void 0;
+exports.isCacheFeatureAvailable = exports.isGhes = exports.getCacheDirectoriesPaths = exports.expandCacheDependencyPath = exports.expandedPatternsMemoized = exports.getPackageManagerInfo = exports.getCommandOutputGuarded = exports.getCommandOutput = exports.supportedPackageManagers = exports.yarn2GetCacheFolderCommand = exports.yarn1GetCacheFolderCommand = exports.pnpmGetCacheFolderCommand = exports.npmGetCacheFolderCommand = void 0;
 const core = __importStar(__nccwpck_require__(2186));
 const exec = __importStar(__nccwpck_require__(1514));
 const cache = __importStar(__nccwpck_require__(7799));
@@ -60462,7 +60462,7 @@ exports.supportedPackageManagers = {
         lockFilePatterns: ['yarn.lock'],
         getCacheFolderPath: (projectDir) => __awaiter(void 0, void 0, void 0, function* () {
             const yarnVersion = yield exports.getCommandOutputGuarded(`yarn --version`, 'Could not retrieve version of yarn', projectDir);
-            core.debug(`Consumed yarn version is ${yarnVersion}`);
+            core.debug(`Consumed yarn version is ${yarnVersion} (working dir: "${projectDir}")`);
             const stdOut = yarnVersion.startsWith('1.')
                 ? yield exports.getCommandOutput(exports.yarn1GetCacheFolderCommand, projectDir)
                 : yield exports.getCommandOutput(exports.yarn2GetCacheFolderCommand, projectDir);
@@ -60507,10 +60507,27 @@ const getPackageManagerInfo = (packageManager) => __awaiter(void 0, void 0, void
     }
 });
 exports.getPackageManagerInfo = getPackageManagerInfo;
+exports.expandedPatternsMemoized = {};
+/**
+ * Wrapper around `glob.create(pattern).glob()` with the memoization
+ * @param pattern is expected to be a globed path
+ * @return list of files or directories expanded from glob
+ */
 const globPatternToArray = (pattern) => __awaiter(void 0, void 0, void 0, function* () {
+    const memoized = exports.expandedPatternsMemoized[pattern];
+    if (memoized)
+        return Promise.resolve(memoized);
     const globber = yield glob.create(pattern);
-    return globber.glob();
+    const expanded = yield globber.glob();
+    exports.expandedPatternsMemoized[pattern] = expanded;
+    return expanded;
 });
+/**
+ * Expands (converts) the string input `cache-dependency-path` to list of files' paths
+ * First it breaks the input by new lines and then expand glob patterns if any
+ * @param cacheDependencyPath - either a single string or multiline string with possible glob patterns
+ * @return list of files on which the cache depends
+ */
 const expandCacheDependencyPath = (cacheDependencyPath) => __awaiter(void 0, void 0, void 0, function* () {
     const multilinePaths = cacheDependencyPath
         .split(/\r?\n/)
@@ -60521,26 +60538,55 @@ const expandCacheDependencyPath = (cacheDependencyPath) => __awaiter(void 0, voi
     return expandedPaths.length === 0 ? [''] : expandedPaths.flat();
 });
 exports.expandCacheDependencyPath = expandCacheDependencyPath;
-const cacheDependencyPathToCacheFolderPath = (packageManagerInfo, cacheDependencyPath) => __awaiter(void 0, void 0, void 0, function* () {
-    const cacheDependencyPathDirectory = path_1.default.dirname(cacheDependencyPath);
-    const cacheFolderPath = fs_1.default.existsSync(cacheDependencyPathDirectory) &&
-        fs_1.default.lstatSync(cacheDependencyPathDirectory).isDirectory()
-        ? yield packageManagerInfo.getCacheFolderPath(cacheDependencyPathDirectory)
-        : yield packageManagerInfo.getCacheFolderPath();
-    core.debug(`${packageManagerInfo.name} path is ${cacheFolderPath} (derived from cache-dependency-path: "${cacheDependencyPath}")`);
+/**
+ * Converts dependency file to the directory it resides in and ensures the directory exists
+ * @param cacheDependencyPath - file name
+ * @return either directory containing file or null
+ */
+const cacheDependencyPathToProjectDirectory = (cacheDependencyPath) => {
+    const projectDirectory = path_1.default.dirname(cacheDependencyPath);
+    if (fs_1.default.existsSync(projectDirectory) &&
+        fs_1.default.lstatSync(projectDirectory).isDirectory()) {
+        core.debug(`Project directory "${projectDirectory}" derived from cache-dependency-path: "${cacheDependencyPath}"`);
+        return projectDirectory;
+    }
+    else {
+        core.debug(`No project directory found for cache-dependency-path: "${cacheDependencyPath}", will be skipped`);
+        return null;
+    }
+};
+/**
+ * Expands (converts) the string input `cache-dependency-path` to list of directories that
+ * may be project roots
+ * @param cacheDependencyPath
+ * @return list of directories and possible
+ */
+const cacheDependencyPathToProjectsDirectories = (cacheDependencyPath) => __awaiter(void 0, void 0, void 0, function* () {
+    const cacheDependenciesPaths = yield exports.expandCacheDependencyPath(cacheDependencyPath);
+    const existingDirectories = cacheDependenciesPaths
+        .map(cacheDependencyPath => cacheDependencyPathToProjectDirectory(cacheDependencyPath))
+        .filter(path => path !== null);
+    if (existingDirectories.length === 0)
+        throw Error('No existing directories found containing `cache-dependency-path`="${cacheDependencyPath}"');
+    // uniq
+    return existingDirectories.filter((cachePath, i, result) => cachePath != null && result.indexOf(cachePath) === i);
+});
+const projectDirectoryToCacheFolderPath = (packageManagerInfo, projectDirectory) => __awaiter(void 0, void 0, void 0, function* () {
+    const cacheFolderPath = yield packageManagerInfo.getCacheFolderPath(projectDirectory);
+    core.debug(`${packageManagerInfo.name}'s cache folder "${cacheFolderPath}" configured for the directory "${projectDirectory}"`);
     return cacheFolderPath;
 });
-const cacheDependenciesPathsToCacheFoldersPaths = (packageManagerInfo, cacheDependenciesPaths) => __awaiter(void 0, void 0, void 0, function* () {
-    const cacheFoldersPaths = yield Promise.all(cacheDependenciesPaths.map(cacheDependencyPath => cacheDependencyPathToCacheFolderPath(packageManagerInfo, cacheDependencyPath)));
+const projectDirectoriesToCacheFoldersPaths = (packageManagerInfo, projectDirectories) => __awaiter(void 0, void 0, void 0, function* () {
+    const cacheFoldersPaths = yield Promise.all(projectDirectories.map(projectDirectory => projectDirectoryToCacheFolderPath(packageManagerInfo, projectDirectory)));
     return cacheFoldersPaths.filter((cachePath, i, result) => result.indexOf(cachePath) === i);
 });
 const cacheDependencyPathToCacheFoldersPaths = (packageManagerInfo, cacheDependencyPath) => __awaiter(void 0, void 0, void 0, function* () {
-    const cacheDependenciesPaths = yield exports.expandCacheDependencyPath(cacheDependencyPath);
-    return cacheDependenciesPathsToCacheFoldersPaths(packageManagerInfo, cacheDependenciesPaths);
+    const projectDirectories = yield cacheDependencyPathToProjectsDirectories(cacheDependencyPath);
+    return projectDirectoriesToCacheFoldersPaths(packageManagerInfo, projectDirectories);
 });
 const cacheFoldersPathsForRoot = (packageManagerInfo) => __awaiter(void 0, void 0, void 0, function* () {
     const cacheFolderPath = yield packageManagerInfo.getCacheFolderPath();
-    core.debug(`${packageManagerInfo.name} path is ${cacheFolderPath}`);
+    core.debug(`${packageManagerInfo.name}'s cache folder "${cacheFolderPath}" configured for the root directory`);
     return [cacheFolderPath];
 });
 const getCacheDirectoriesPaths = (packageManagerInfo, cacheDependencyPath) => __awaiter(void 0, void 0, void 0, function* () {

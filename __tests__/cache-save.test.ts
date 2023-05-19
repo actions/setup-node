@@ -118,9 +118,14 @@ describe('run', () => {
       expect(getStateSpy).toHaveBeenCalledTimes(2);
       expect(getCommandOutputSpy).toHaveBeenCalledTimes(2);
       expect(debugSpy).toHaveBeenCalledWith(
-        'yarn path is /some/random/path/yarn1 (derived from cache-dependency-path: "")'
+        'Project directory "." derived from cache-dependency-path: ""'
       );
-      expect(debugSpy).toHaveBeenCalledWith('Consumed yarn version is 1.2.3');
+      expect(debugSpy).toHaveBeenCalledWith(
+        'Consumed yarn version is 1.2.3 (working dir: ".")'
+      );
+      expect(debugSpy).toHaveBeenCalledWith(
+        'yarn\'s cache folder "/some/random/path/yarn1" configured for the directory "."'
+      );
       expect(infoSpy).toHaveBeenCalledWith(
         `Cache hit occurred on the primary key ${yarnFileHash}, not saving cache.`
       );
@@ -140,9 +145,14 @@ describe('run', () => {
       expect(getStateSpy).toHaveBeenCalledTimes(2);
       expect(getCommandOutputSpy).toHaveBeenCalledTimes(2);
       expect(debugSpy).toHaveBeenCalledWith(
-        'yarn path is /some/random/path/yarn2 (derived from cache-dependency-path: "")'
+        'Project directory "." derived from cache-dependency-path: ""'
       );
-      expect(debugSpy).toHaveBeenCalledWith('Consumed yarn version is 2.2.3');
+      expect(debugSpy).toHaveBeenCalledWith(
+        'Consumed yarn version is 2.2.3 (working dir: ".")'
+      );
+      expect(debugSpy).toHaveBeenCalledWith(
+        'yarn\'s cache folder "/some/random/path/yarn2" configured for the directory "."'
+      );
       expect(infoSpy).toHaveBeenCalledWith(
         `Cache hit occurred on the primary key ${yarnFileHash}, not saving cache.`
       );
@@ -159,7 +169,9 @@ describe('run', () => {
       expect(getInputSpy).toHaveBeenCalled();
       expect(getStateSpy).toHaveBeenCalledTimes(2);
       expect(getCommandOutputSpy).toHaveBeenCalledTimes(1);
-      expect(debugSpy).toHaveBeenCalledWith(`npm path is ${commonPath}/npm`);
+      expect(debugSpy).toHaveBeenCalledWith(
+        `npm's cache folder "${commonPath}/npm" configured for the root directory`
+      );
       expect(infoSpy).toHaveBeenCalledWith(
         `Cache hit occurred on the primary key ${npmFileHash}, not saving cache.`
       );
@@ -176,7 +188,9 @@ describe('run', () => {
       expect(getInputSpy).toHaveBeenCalled();
       expect(getStateSpy).toHaveBeenCalledTimes(2);
       expect(getCommandOutputSpy).toHaveBeenCalledTimes(1);
-      expect(debugSpy).toHaveBeenCalledWith(`pnpm path is ${commonPath}/pnpm`);
+      expect(debugSpy).toHaveBeenCalledWith(
+        `pnpm's cache folder "${commonPath}/pnpm" configured for the root directory`
+      );
       expect(infoSpy).toHaveBeenCalledWith(
         `Cache hit occurred on the primary key ${pnpmFileHash}, not saving cache.`
       );
@@ -204,9 +218,14 @@ describe('run', () => {
       expect(getStateSpy).toHaveBeenCalledTimes(2);
       expect(getCommandOutputSpy).toHaveBeenCalledTimes(2);
       expect(debugSpy).toHaveBeenCalledWith(
-        'yarn path is /some/random/path/yarn1 (derived from cache-dependency-path: "")'
+        'Project directory "." derived from cache-dependency-path: ""'
       );
-      expect(debugSpy).toHaveBeenCalledWith('Consumed yarn version is 1.2.3');
+      expect(debugSpy).toHaveBeenCalledWith(
+        'Consumed yarn version is 1.2.3 (working dir: ".")'
+      );
+      expect(debugSpy).toHaveBeenCalledWith(
+        'yarn\'s cache folder "/some/random/path/yarn1" configured for the directory "."'
+      );
       expect(infoSpy).not.toHaveBeenCalledWith(
         `Cache hit occurred on the primary key ${yarnFileHash}, not saving cache.`
       );
@@ -236,9 +255,14 @@ describe('run', () => {
       expect(getStateSpy).toHaveBeenCalledTimes(2);
       expect(getCommandOutputSpy).toHaveBeenCalledTimes(2);
       expect(debugSpy).toHaveBeenCalledWith(
-        'yarn path is /some/random/path/yarn2 (derived from cache-dependency-path: "")'
+        'Project directory "." derived from cache-dependency-path: ""'
       );
-      expect(debugSpy).toHaveBeenCalledWith('Consumed yarn version is 2.2.3');
+      expect(debugSpy).toHaveBeenCalledWith(
+        'Consumed yarn version is 2.2.3 (working dir: ".")'
+      );
+      expect(debugSpy).toHaveBeenCalledWith(
+        'yarn\'s cache folder "/some/random/path/yarn2" configured for the directory "."'
+      );
       expect(infoSpy).not.toHaveBeenCalledWith(
         `Cache hit occurred on the primary key ${yarnFileHash}, not saving cache.`
       );
@@ -265,7 +289,9 @@ describe('run', () => {
       expect(getInputSpy).toHaveBeenCalled();
       expect(getStateSpy).toHaveBeenCalledTimes(2);
       expect(getCommandOutputSpy).toHaveBeenCalledTimes(1);
-      expect(debugSpy).toHaveBeenCalledWith(`npm path is ${commonPath}/npm`);
+      expect(debugSpy).toHaveBeenCalledWith(
+        `npm's cache folder "${commonPath}/npm" configured for the root directory`
+      );
       expect(infoSpy).not.toHaveBeenCalledWith(
         `Cache hit occurred on the primary key ${npmFileHash}, not saving cache.`
       );
@@ -292,7 +318,9 @@ describe('run', () => {
       expect(getInputSpy).toHaveBeenCalled();
       expect(getStateSpy).toHaveBeenCalledTimes(2);
       expect(getCommandOutputSpy).toHaveBeenCalledTimes(1);
-      expect(debugSpy).toHaveBeenCalledWith(`pnpm path is ${commonPath}/pnpm`);
+      expect(debugSpy).toHaveBeenCalledWith(
+        `pnpm's cache folder "${commonPath}/pnpm" configured for the root directory`
+      );
       expect(infoSpy).not.toHaveBeenCalledWith(
         `Cache hit occurred on the primary key ${pnpmFileHash}, not saving cache.`
       );
@@ -322,7 +350,9 @@ describe('run', () => {
       expect(getInputSpy).toHaveBeenCalled();
       expect(getStateSpy).toHaveBeenCalledTimes(2);
       expect(getCommandOutputSpy).toHaveBeenCalledTimes(1);
-      expect(debugSpy).toHaveBeenCalledWith(`npm path is ${commonPath}/npm`);
+      expect(debugSpy).toHaveBeenCalledWith(
+        `npm's cache folder "${commonPath}/npm" configured for the root directory`
+      );
       expect(infoSpy).not.toHaveBeenCalledWith(
         `Cache hit occurred on the primary key ${npmFileHash}, not saving cache.`
       );
@@ -352,7 +382,9 @@ describe('run', () => {
       expect(getInputSpy).toHaveBeenCalled();
       expect(getStateSpy).toHaveBeenCalledTimes(2);
       expect(getCommandOutputSpy).toHaveBeenCalledTimes(1);
-      expect(debugSpy).toHaveBeenCalledWith(`npm path is ${commonPath}/npm`);
+      expect(debugSpy).toHaveBeenCalledWith(
+        `npm's cache folder "${commonPath}/npm" configured for the root directory`
+      );
       expect(infoSpy).not.toHaveBeenCalledWith(
         `Cache hit occurred on the primary key ${npmFileHash}, not saving cache.`
       );

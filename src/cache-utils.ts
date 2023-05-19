@@ -51,7 +51,9 @@ export const supportedPackageManagers: SupportedPackageManagers = {
         projectDir
       );
 
-      core.debug(`Consumed yarn version is ${yarnVersion}`);
+      core.debug(
+        `Consumed yarn version is ${yarnVersion} (working dir: "${projectDir}")`
+      );
 
       const stdOut = yarnVersion.startsWith('1.')
         ? await getCommandOutput(yarn1GetCacheFolderCommand, projectDir)
@@ -110,12 +112,27 @@ export const getPackageManagerInfo = async (packageManager: string) => {
     return null;
   }
 };
-
+export const expandedPatternsMemoized: Record<string, string[]> = {};
+/**
+ * Wrapper around `glob.create(pattern).glob()` with the memoization
+ * @param pattern is expected to be a globed path
+ * @return list of files or directories expanded from glob
+ */
 const globPatternToArray = async (pattern: string): Promise<string[]> => {
+  const memoized = expandedPatternsMemoized[pattern];
+  if (memoized) return Promise.resolve(memoized);
   const globber = await glob.create(pattern);
-  return globber.glob();
+  const expanded = await globber.glob();
+  expandedPatternsMemoized[pattern] = expanded;
+  return expanded;
 };
 
+/**
+ * Expands (converts) the string input `cache-dependency-path` to list of files' paths
+ * First it breaks the input by new lines and then expand glob patterns if any
+ * @param cacheDependencyPath - either a single string or multiline string with possible glob patterns
+ * @return list of files on which the cache depends
+ */
 export const expandCacheDependencyPath = async (
   cacheDependencyPath: string
 ): Promise<string[]> => {
@@ -130,52 +147,98 @@ export const expandCacheDependencyPath = async (
   return expandedPaths.length === 0 ? [''] : expandedPaths.flat();
 };
 
-const cacheDependencyPathToCacheFolderPath = async (
-  packageManagerInfo: PackageManagerInfo,
+/**
+ * Converts dependency file to the directory it resides in and ensures the directory exists
+ * @param cacheDependencyPath - file name
+ * @return either directory containing file or null
+ */
+const cacheDependencyPathToProjectDirectory = (
   cacheDependencyPath: string
-): Promise<string> => {
-  const cacheDependencyPathDirectory = path.dirname(cacheDependencyPath);
-  const cacheFolderPath =
-    fs.existsSync(cacheDependencyPathDirectory) &&
-    fs.lstatSync(cacheDependencyPathDirectory).isDirectory()
-      ? await packageManagerInfo.getCacheFolderPath(
-          cacheDependencyPathDirectory
-        )
-      : await packageManagerInfo.getCacheFolderPath();
+): string | null => {
+  const projectDirectory = path.dirname(cacheDependencyPath);
+  if (
+    fs.existsSync(projectDirectory) &&
+    fs.lstatSync(projectDirectory).isDirectory()
+  ) {
+    core.debug(
+      `Project directory "${projectDirectory}" derived from cache-dependency-path: "${cacheDependencyPath}"`
+    );
+    return projectDirectory;
+  } else {
+    core.debug(
+      `No project directory found for cache-dependency-path: "${cacheDependencyPath}", will be skipped`
+    );
+    return null;
+  }
+};
 
-  core.debug(
-    `${packageManagerInfo.name} path is ${cacheFolderPath} (derived from cache-dependency-path: "${cacheDependencyPath}")`
+/**
+ * Expands (converts) the string input `cache-dependency-path` to list of directories that
+ * may be project roots
+ * @param cacheDependencyPath
+ * @return list of directories and possible
+ */
+const cacheDependencyPathToProjectsDirectories = async (
+  cacheDependencyPath: string
+): Promise<string[]> => {
+  const cacheDependenciesPaths = await expandCacheDependencyPath(
+    cacheDependencyPath
   );
 
+  const existingDirectories: string[] = cacheDependenciesPaths
+    .map(cacheDependencyPath =>
+      cacheDependencyPathToProjectDirectory(cacheDependencyPath)
+    )
+    .filter(path => path !== null) as string[];
+
+  if (existingDirectories.length === 0)
+    throw Error(
+      'No existing directories found containing `cache-dependency-path`="${cacheDependencyPath}"'
+    );
+
+  // uniq
+  return existingDirectories.filter(
+    (cachePath, i, result) =>
+      cachePath != null && result.indexOf(cachePath) === i
+  );
+};
+
+const projectDirectoryToCacheFolderPath = async (
+  packageManagerInfo: PackageManagerInfo,
+  projectDirectory: string
+): Promise<string> => {
+  const cacheFolderPath = await packageManagerInfo.getCacheFolderPath(
+    projectDirectory
+  );
+  core.debug(
+    `${packageManagerInfo.name}'s cache folder "${cacheFolderPath}" configured for the directory "${projectDirectory}"`
+  );
   return cacheFolderPath;
 };
-const cacheDependenciesPathsToCacheFoldersPaths = async (
+
+const projectDirectoriesToCacheFoldersPaths = async (
   packageManagerInfo: PackageManagerInfo,
-  cacheDependenciesPaths: string[]
+  projectDirectories: string[]
 ): Promise<string[]> => {
   const cacheFoldersPaths = await Promise.all(
-    cacheDependenciesPaths.map(cacheDependencyPath =>
-      cacheDependencyPathToCacheFolderPath(
-        packageManagerInfo,
-        cacheDependencyPath
-      )
+    projectDirectories.map(projectDirectory =>
+      projectDirectoryToCacheFolderPath(packageManagerInfo, projectDirectory)
     )
   );
   return cacheFoldersPaths.filter(
     (cachePath, i, result) => result.indexOf(cachePath) === i
   );
 };
-
 const cacheDependencyPathToCacheFoldersPaths = async (
   packageManagerInfo: PackageManagerInfo,
   cacheDependencyPath: string
 ): Promise<string[]> => {
-  const cacheDependenciesPaths = await expandCacheDependencyPath(
+  const projectDirectories = await cacheDependencyPathToProjectsDirectories(
     cacheDependencyPath
   );
-  return cacheDependenciesPathsToCacheFoldersPaths(
+  return projectDirectoriesToCacheFoldersPaths(
     packageManagerInfo,
-    cacheDependenciesPaths
+    projectDirectories
   );
 };
 
@@ -183,7 +246,9 @@ const cacheFoldersPathsForRoot = async (
   packageManagerInfo: PackageManagerInfo
 ): Promise<string[]> => {
   const cacheFolderPath = await packageManagerInfo.getCacheFolderPath();
-  core.debug(`${packageManagerInfo.name} path is ${cacheFolderPath}`);
+  core.debug(
+    `${packageManagerInfo.name}'s cache folder "${cacheFolderPath}" configured for the root directory`
+  );
   return [cacheFolderPath];
 };
 

@@ -7,7 +7,8 @@ import {
   isCacheFeatureAvailable,
   supportedPackageManagers,
   getCommandOutput,
-  expandCacheDependencyPath
+  expandCacheDependencyPath,
+  expandedPatternsMemoized
 } from '../src/cache-utils';
 import fs from 'fs';
 import * as cacheUtils from '../src/cache-utils';
@@ -104,6 +105,10 @@ describe('cache-utils', () => {
         (pattern: string): Promise<Globber> =>
           MockGlobber.create(['/foo', '/bar'])
       );
+
+      Object.keys(expandedPatternsMemoized).forEach(
+        key => delete expandedPatternsMemoized[key]
+      );
     });
 
     afterEach(() => {
@@ -194,13 +199,36 @@ two
       [supportedPackageManagers.yarn, '/dir/file.lock'],
       [supportedPackageManagers.yarn, '/**/file.lock']
     ])(
-      'getCacheDirectoriesPaths should return empty array of folder in case of error',
+      'getCacheDirectoriesPaths should throw for getCommandOutput returning empty',
       async (packageManagerInfo, cacheDependency) => {
         getCommandOutputSpy.mockImplementation((command: string) =>
           // return empty string to indicate getCacheFolderPath failed
           //        --version still works
           command.includes('version') ? '1.' : ''
         );
+
+        await expect(
+          cacheUtils.getCacheDirectoriesPaths(
+            packageManagerInfo,
+            cacheDependency
+          )
+        ).rejects.toThrow(); //'Could not get cache folder path for /dir');
+      }
+    );
+
+    it.each([
+      [supportedPackageManagers.npm, ''],
+      [supportedPackageManagers.npm, '/dir/file.lock'],
+      [supportedPackageManagers.npm, '/**/file.lock'],
+      [supportedPackageManagers.pnpm, ''],
+      [supportedPackageManagers.pnpm, '/dir/file.lock'],
+      [supportedPackageManagers.pnpm, '/**/file.lock'],
+      [supportedPackageManagers.yarn, ''],
+      [supportedPackageManagers.yarn, '/dir/file.lock'],
+      [supportedPackageManagers.yarn, '/**/file.lock']
+    ])(
+      'getCacheDirectoriesPaths should throw in case of having not directories',
+      async (packageManagerInfo, cacheDependency) => {
         lstatSpy.mockImplementation(arg => ({
           isDirectory: () => false
         }));
@@ -248,9 +276,8 @@ two
       }
     );
 
-    // TODO: by design - glob is not expected to return duplicates so 3 patterns do not collapse to 2
     it.each(['1.1.1', '2.2.2'])(
-      'getCacheDirectoriesPaths yarn v%s should return 3 dirs  with globbed cacheDependency expanding to duplicates',
+      'getCacheDirectoriesPaths yarn v%s should return 2 dirs  with globbed cacheDependency expanding to duplicates',
       async version => {
         let dirNo = 1;
         getCommandOutputSpy.mockImplementation((command: string) =>
@@ -269,11 +296,7 @@ two
           supportedPackageManagers.yarn,
           '/tmp/**/file'
         );
-        expect(dirs).toEqual([
-          `file_${version}_1`,
-          `file_${version}_2`,
-          `file_${version}_3`
-        ]);
+        expect(dirs).toEqual([`file_${version}_1`, `file_${version}_2`]);
       }
     );
 
