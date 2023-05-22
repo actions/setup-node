@@ -71289,6 +71289,10 @@ const getPackageManagerInfo = (packageManager) => __awaiter(void 0, void 0, void
     }
 });
 exports.getPackageManagerInfo = getPackageManagerInfo;
+/**
+ * glob expanding memoized because it involves potentially very deep
+ * traversing through the directories tree
+ */
 exports.expandedPatternsMemoized = {};
 /**
  * Wrapper around `glob.create(pattern).glob()` with the memoization
@@ -71321,9 +71325,9 @@ const expandCacheDependencyPath = (cacheDependencyPath) => __awaiter(void 0, voi
 });
 exports.expandCacheDependencyPath = expandCacheDependencyPath;
 /**
- * Converts dependency file to the directory it resides in and ensures the directory exists
- * @param cacheDependencyPath - file name
- * @return either directory containing file or null
+ * Converts dependency file path to the directory it resides in and ensures the directory exists
+ * @param cacheDependencyPath - a file name path
+ * @return either directory containing the file or null
  */
 const cacheDependencyPathToProjectDirectory = (cacheDependencyPath) => {
     const projectDirectory = path_1.default.dirname(cacheDependencyPath);
@@ -71340,7 +71344,8 @@ const cacheDependencyPathToProjectDirectory = (cacheDependencyPath) => {
 /**
  * Expands (converts) the string input `cache-dependency-path` to list of directories that
  * may be project roots
- * @param cacheDependencyPath
+ * @param cacheDependencyPath - either a single string or multiline string with possible glob patterns
+ *                              expected to be the result of `core.getInput('cache-dependency-path')`
  * @return list of directories and possible
  */
 const cacheDependencyPathToProjectsDirectories = (cacheDependencyPath) => __awaiter(void 0, void 0, void 0, function* () {
@@ -71348,29 +71353,57 @@ const cacheDependencyPathToProjectsDirectories = (cacheDependencyPath) => __awai
     const existingDirectories = cacheDependenciesPaths
         .map(cacheDependencyPath => cacheDependencyPathToProjectDirectory(cacheDependencyPath))
         .filter(path => path !== null);
+    // if user explicitly pointed out some file, but it does not exist it is definitely
+    // not he wanted, thus we should throw an error not trying to workaround with unexpected
+    // result to the whole build
     if (existingDirectories.length === 0)
         throw Error('No existing directories found containing `cache-dependency-path`="${cacheDependencyPath}"');
-    // uniq
+    // uniq in order to do not traverse the same directories during the further processing
     return existingDirectories.filter((cachePath, i, result) => cachePath != null && result.indexOf(cachePath) === i);
 });
+/**
+ * Utility function to be used from within `map`
+ * Finds the cache directories configured for the project directory
+ * @param packageManagerInfo - an object having getCacheFolderPath method specific to given PM
+ * @param projectDirectory - the string pointing out to a project dir (i.e. directory with its own .yarnrc)
+ * @return list of directories to be cached according to the project configuration in the directory
+ */
 const projectDirectoryToCacheFolderPath = (packageManagerInfo, projectDirectory) => __awaiter(void 0, void 0, void 0, function* () {
     const cacheFolderPath = yield packageManagerInfo.getCacheFolderPath(projectDirectory);
     core.debug(`${packageManagerInfo.name}'s cache folder "${cacheFolderPath}" configured for the directory "${projectDirectory}"`);
     return cacheFolderPath;
 });
-const projectDirectoriesToCacheFoldersPaths = (packageManagerInfo, projectDirectories) => __awaiter(void 0, void 0, void 0, function* () {
-    const cacheFoldersPaths = yield Promise.all(projectDirectories.map(projectDirectory => projectDirectoryToCacheFolderPath(packageManagerInfo, projectDirectory)));
-    return cacheFoldersPaths.filter((cachePath, i, result) => result.indexOf(cachePath) === i);
-});
+/**
+ * Top-entry function to find the cache directories configured for the repo if cache-dependency-path is not empty
+ * @param packageManagerInfo - an object having getCacheFolderPath method specific to given PM
+ * @param cacheDependencyPath - either a single string or multiline string with possible glob patterns
+ *                              expected to be the result of `core.getInput('cache-dependency-path')`
+ * @return list of files on which the cache depends
+ */
 const cacheDependencyPathToCacheFoldersPaths = (packageManagerInfo, cacheDependencyPath) => __awaiter(void 0, void 0, void 0, function* () {
     const projectDirectories = yield cacheDependencyPathToProjectsDirectories(cacheDependencyPath);
-    return projectDirectoriesToCacheFoldersPaths(packageManagerInfo, projectDirectories);
+    const cacheFoldersPaths = yield Promise.all(projectDirectories.map(projectDirectory => projectDirectoryToCacheFolderPath(packageManagerInfo, projectDirectory)));
+    // uniq in order to do not cache the same directories twice
+    return cacheFoldersPaths.filter((cachePath, i, result) => result.indexOf(cachePath) === i);
 });
+/**
+ * Top-entry function to find the cache directories configured for the repo if cache-dependency-path is empty
+ * @param packageManagerInfo - an object having getCacheFolderPath method specific to given PM
+ * @return list of files on which the cache depends
+ */
 const cacheFoldersPathsForRoot = (packageManagerInfo) => __awaiter(void 0, void 0, void 0, function* () {
     const cacheFolderPath = yield packageManagerInfo.getCacheFolderPath();
     core.debug(`${packageManagerInfo.name}'s cache folder "${cacheFolderPath}" configured for the root directory`);
     return [cacheFolderPath];
 });
+/**
+ * Main function to find the cache directories configured for the repo
+ * currently it handles only the case of PM=yarn && cacheDependencyPath is not empty
+ * @param packageManagerInfo - an object having getCacheFolderPath method specific to given PM
+ * @param cacheDependencyPath - either a single string or multiline string with possible glob patterns
+ *                              expected to be the result of `core.getInput('cache-dependency-path')`
+ * @return list of files on which the cache depends
+ */
 const getCacheDirectoriesPaths = (packageManagerInfo, cacheDependencyPath) => __awaiter(void 0, void 0, void 0, function* () {
     // TODO: multiple directories limited to yarn so far
     return packageManagerInfo === exports.supportedPackageManagers.yarn

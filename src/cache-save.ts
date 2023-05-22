@@ -1,6 +1,5 @@
 import * as core from '@actions/core';
 import * as cache from '@actions/cache';
-import fs from 'fs';
 import {State} from './constants';
 import {getCacheDirectoriesPaths, getPackageManagerInfo} from './cache-utils';
 
@@ -31,7 +30,7 @@ const cachePackages = async (packageManager: string) => {
     return;
   }
 
-  // TODO: core.getInput has a bug - it can return undefined despite its definition
+  // TODO: core.getInput has a bug - it can return undefined despite its definition (tests only?)
   //       export declare function getInput(name: string, options?: InputOptions): string;
   const cacheDependencyPath = core.getInput('cache-dependency-path') || '';
   const cachePaths = await getCacheDirectoriesPaths(
