@@ -61,7 +61,7 @@ jobs:
           [
             '20-v8-canary',
             '20.0.0-v8-canary',
-            '20.0.0-v8-canary20221103f7e2421e91'
+            '20.0.0-v8-canary20221101e50e45c9f8'
           ]
     steps:
       - uses: actions/checkout@v3
