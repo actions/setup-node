@@ -32,13 +32,13 @@ describe('cache-restore', () => {
 
   function findCacheFolder(command: string) {
     switch (command) {
-      case utils.npmGetCacheFolderCommand:
+      case 'npm config get cache':
         return npmCachePath;
-      case utils.pnpmGetCacheFolderCommand:
+      case 'pnpm store path --silent':
         return pnpmCachePath;
-      case utils.yarn1GetCacheFolderCommand:
+      case 'yarn cache dir':
         return yarn1CachePath;
-      case utils.yarn2GetCacheFolderCommand:
+      case 'yarn config get cacheFolder':
         return yarn2CachePath;
       default:
         return 'packge/not/found';

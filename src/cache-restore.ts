@@ -6,7 +6,7 @@ import fs from 'fs';
 
 import {State} from './constants';
 import {
-  getCacheDirectoriesPaths,
+  getCacheDirectories,
   getPackageManagerInfo,
   PackageManagerInfo
 } from './cache-utils';
@@ -21,7 +21,7 @@ export const restoreCache = async (
   }
   const platform = process.env.RUNNER_OS;
 
-  const cachePaths = await getCacheDirectoriesPaths(
+  const cachePaths = await getCacheDirectories(
     packageManagerInfo,
     cacheDependencyPath
   );

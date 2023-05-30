@@ -1,7 +1,7 @@
 import * as core from '@actions/core';
 import * as cache from '@actions/cache';
 import {State} from './constants';
-import {getCacheDirectoriesPaths, getPackageManagerInfo} from './cache-utils';
+import {getCacheDirectories, getPackageManagerInfo} from './cache-utils';
 
 // Catch and log any unhandled exceptions.  These exceptions can leak out of the uploadChunk method in
 // @actions/toolkit when a failed upload closes the file descriptor causing any in-process reads to
@@ -33,7 +33,7 @@ const cachePackages = async (packageManager: string) => {
   // TODO: core.getInput has a bug - it can return undefined despite its definition (tests only?)
   //       export declare function getInput(name: string, options?: InputOptions): string;
   const cacheDependencyPath = core.getInput('cache-dependency-path') || '';
-  const cachePaths = await getCacheDirectoriesPaths(
+  const cachePaths = await getCacheDirectories(
     packageManagerInfo,
     cacheDependencyPath
   );

@@ -7,8 +7,7 @@ import {
   isCacheFeatureAvailable,
   supportedPackageManagers,
   getCommandOutput,
-  expandCacheDependencyPath,
-  expandedPatternsMemoized
+  memoizedCacheDependencies
 } from '../src/cache-utils';
 import fs from 'fs';
 import * as cacheUtils from '../src/cache-utils';
@@ -106,8 +105,8 @@ describe('cache-utils', () => {
           MockGlobber.create(['/foo', '/bar'])
       );
 
-      Object.keys(expandedPatternsMemoized).forEach(
-        key => delete expandedPatternsMemoized[key]
+      Object.keys(memoizedCacheDependencies).forEach(
+        key => delete memoizedCacheDependencies[key]
       );
     });
 
@@ -115,44 +114,6 @@ describe('cache-utils', () => {
       existsSpy.mockRestore();
       lstatSpy.mockRestore();
       globCreateSpy.mockRestore();
-    });
-
-    it('expandCacheDependencyPath should handle one line', async () => {
-      expect(await expandCacheDependencyPath('one')).toEqual(['one']);
-    });
-
-    it('expandCacheDependencyPath should handle one line glob', async () => {
-      globCreateSpy.mockImplementation(
-        (pattern: string): Promise<Globber> =>
-          MockGlobber.create(['one', 'two'])
-      );
-      expect(await expandCacheDependencyPath('**')).toEqual(['one', 'two']);
-    });
-
-    it('expandCacheDependencyPath should handle multiple lines', async () => {
-      const lines = `
-          one
-two
-
-          `;
-      expect(await expandCacheDependencyPath(lines)).toEqual(['one', 'two']);
-    });
-
-    it('expandCacheDependencyPath should handle multiple globs', async () => {
-      const lines = `
-          one
-**
-
-          `;
-      globCreateSpy.mockImplementation(
-        (pattern: string): Promise<Globber> =>
-          MockGlobber.create(['two', 'three'])
-      );
-      expect(await expandCacheDependencyPath(lines)).toEqual([
-        'one',
-        'two',
-        'three'
-      ]);
     });
 
     it.each([
@@ -167,7 +128,7 @@ two
       async (packageManagerInfo, cacheDependency) => {
         getCommandOutputSpy.mockImplementation(() => 'foo');
 
-        const dirs = await cacheUtils.getCacheDirectoriesPaths(
+        const dirs = await cacheUtils.getCacheDirectories(
           packageManagerInfo,
           cacheDependency
         );
@@ -181,7 +142,7 @@ two
     it('getCacheDirectoriesPaths should return one dir for yarn without cacheDependency', async () => {
       getCommandOutputSpy.mockImplementation(() => 'foo');
 
-      const dirs = await cacheUtils.getCacheDirectoriesPaths(
+      const dirs = await cacheUtils.getCacheDirectories(
         supportedPackageManagers.yarn,
         ''
       );
@@ -208,10 +169,7 @@ two
         );
 
         await expect(
-          cacheUtils.getCacheDirectoriesPaths(
-            packageManagerInfo,
-            cacheDependency
-          )
+          cacheUtils.getCacheDirectories(packageManagerInfo, cacheDependency)
         ).rejects.toThrow(); //'Could not get cache folder path for /dir');
       }
     );
@@ -234,10 +192,7 @@ two
         }));
 
         await expect(
-          cacheUtils.getCacheDirectoriesPaths(
-            packageManagerInfo,
-            cacheDependency
-          )
+          cacheUtils.getCacheDirectories(packageManagerInfo, cacheDependency)
         ).rejects.toThrow(); //'Could not get cache folder path for /dir');
       }
     );
@@ -248,7 +203,7 @@ two
         getCommandOutputSpy.mockImplementationOnce(() => version);
         getCommandOutputSpy.mockImplementationOnce(() => `foo${version}`);
 
-        const dirs = await cacheUtils.getCacheDirectoriesPaths(
+        const dirs = await cacheUtils.getCacheDirectories(
           supportedPackageManagers.yarn,
           ''
         );
@@ -268,7 +223,7 @@ two
             MockGlobber.create(['/tmp/dir1/file', '/tmp/dir2/file'])
         );
 
-        const dirs = await cacheUtils.getCacheDirectoriesPaths(
+        const dirs = await cacheUtils.getCacheDirectories(
           supportedPackageManagers.yarn,
           '/tmp/**/file'
         );
@@ -292,7 +247,7 @@ two
             ])
         );
 
-        const dirs = await cacheUtils.getCacheDirectoriesPaths(
+        const dirs = await cacheUtils.getCacheDirectories(
           supportedPackageManagers.yarn,
           '/tmp/**/file'
         );
@@ -318,7 +273,7 @@ two
             ])
         );
 
-        const dirs = await cacheUtils.getCacheDirectoriesPaths(
+        const dirs = await cacheUtils.getCacheDirectories(
           supportedPackageManagers.yarn,
           '/tmp/**/file'
         );
@@ -367,13 +322,18 @@ two
           `;
         globCreateSpy.mockImplementation(
           (pattern: string): Promise<Globber> =>
-            MockGlobber.create(['/tmp/dir3/file', '/tmp/dir4/file'])
+            MockGlobber.create([
+              '/tmp/dir1/file',
+              '/tmp/dir2/file',
+              '/tmp/dir3/file',
+              '/tmp/dir4/file'
+            ])
         );
         let dirNo = 1;
         getCommandOutputSpy.mockImplementation((command: string) =>
           command.includes('version') ? version : `file_${version}_${dirNo++}`
         );
-        const dirs = await cacheUtils.getCacheDirectoriesPaths(
+        const dirs = await cacheUtils.getCacheDirectories(
           supportedPackageManagers.yarn,
           cacheDependencyPath
         );
