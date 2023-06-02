@@ -71304,15 +71304,14 @@ const getProjectDirectoriesFromCacheDependencyPath = (cacheDependencyPath) => __
         cacheDependenciesPaths = memoized;
     }
     else {
-        cacheDependenciesPaths = (yield glob
-            .create(cacheDependencyPath)
-            .then(globber => globber.glob())) || [''];
+        const globber = yield glob.create(cacheDependencyPath);
+        cacheDependenciesPaths = (yield globber.glob()) || [''];
         exports.memoizedCacheDependencies[cacheDependencyPath] = cacheDependenciesPaths;
     }
     const existingDirectories = cacheDependenciesPaths
-        .map(cacheDependencyPath => path_1.default.dirname(cacheDependencyPath))
+        .map(path_1.default.dirname)
         // uniq in order to do not traverse the same directories during the further processing
-        .filter((cachePath, i, result) => cachePath != null && result.indexOf(cachePath) === i)
+        .filter((item, i, src) => item != null && src.indexOf(item) === i)
         .filter(directory => fs_1.default.existsSync(directory) && fs_1.default.lstatSync(directory).isDirectory());
     // if user explicitly pointed out some file, but it does not exist it is definitely
     // not he wanted, thus we should throw an error not trying to workaround with unexpected
@@ -71337,7 +71336,7 @@ const getCacheDirectoriesFromCacheDependencyPath = (packageManagerInfo, cacheDep
         return cacheFolderPath;
     })));
     // uniq in order to do not cache the same directories twice
-    return cacheFoldersPaths.filter((cachePath, i, result) => result.indexOf(cachePath) === i);
+    return cacheFoldersPaths.filter((item, i, src) => src.indexOf(item) === i);
 });
 /**
  * Finds the cache directories configured for the repo ignoring cache-dependency-path

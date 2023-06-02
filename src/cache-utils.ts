@@ -131,19 +131,15 @@ const getProjectDirectoriesFromCacheDependencyPath = async (
   if (memoized) {
     cacheDependenciesPaths = memoized;
   } else {
-    cacheDependenciesPaths = (await glob
-      .create(cacheDependencyPath)
-      .then(globber => globber.glob())) || [''];
+    const globber = await glob.create(cacheDependencyPath);
+    cacheDependenciesPaths = (await globber.glob()) || [''];
     memoizedCacheDependencies[cacheDependencyPath] = cacheDependenciesPaths;
   }
 
   const existingDirectories: string[] = cacheDependenciesPaths
-    .map(cacheDependencyPath => path.dirname(cacheDependencyPath))
+    .map(path.dirname)
     // uniq in order to do not traverse the same directories during the further processing
-    .filter(
-      (cachePath, i, result) =>
-        cachePath != null && result.indexOf(cachePath) === i
-    )
+    .filter((item, i, src) => item != null && src.indexOf(item) === i)
     .filter(
       directory =>
         fs.existsSync(directory) && fs.lstatSync(directory).isDirectory()
@@ -187,9 +183,7 @@ const getCacheDirectoriesFromCacheDependencyPath = async (
     )
   );
   // uniq in order to do not cache the same directories twice
-  return cacheFoldersPaths.filter(
-    (cachePath, i, result) => result.indexOf(cachePath) === i
-  );
+  return cacheFoldersPaths.filter((item, i, src) => src.indexOf(item) === i);
 };
 
 /**
