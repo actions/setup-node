@@ -71223,6 +71223,7 @@ const cache = __importStar(__nccwpck_require__(7799));
 const glob = __importStar(__nccwpck_require__(8090));
 const path_1 = __importDefault(__nccwpck_require__(1017));
 const fs_1 = __importDefault(__nccwpck_require__(7147));
+const util_1 = __nccwpck_require__(2629);
 exports.supportedPackageManagers = {
     npm: {
         name: 'npm',
@@ -71310,9 +71311,10 @@ const getProjectDirectoriesFromCacheDependencyPath = (cacheDependencyPath) => __
     }
     const existingDirectories = cacheDependenciesPaths
         .map(path_1.default.dirname)
-        // uniq in order to do not traverse the same directories during the further processing
-        .filter((item, i, src) => item != null && src.indexOf(item) === i)
-        .filter(directory => fs_1.default.existsSync(directory) && fs_1.default.lstatSync(directory).isDirectory());
+        .filter(path => path != null)
+        .filter(util_1.unique())
+        .filter(fs_1.default.existsSync)
+        .filter(directory => fs_1.default.lstatSync(directory).isDirectory());
     // if user explicitly pointed out some file, but it does not exist it is definitely
     // not he wanted, thus we should throw an error not trying to workaround with unexpected
     // result to the whole build
@@ -71336,7 +71338,7 @@ const getCacheDirectoriesFromCacheDependencyPath = (packageManagerInfo, cacheDep
         return cacheFolderPath;
     })));
     // uniq in order to do not cache the same directories twice
-    return cacheFoldersPaths.filter((item, i, src) => src.indexOf(item) === i);
+    return cacheFoldersPaths.filter(util_1.unique());
 });
 /**
  * Finds the cache directories configured for the repo ignoring cache-dependency-path
@@ -72240,7 +72242,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.printEnvDetailsAndSetOutput = exports.parseNodeVersionFile = void 0;
+exports.unique = exports.printEnvDetailsAndSetOutput = exports.parseNodeVersionFile = void 0;
 const core = __importStar(__nccwpck_require__(2186));
 const exec = __importStar(__nccwpck_require__(1514));
 function parseNodeVersionFile(contents) {
@@ -72302,6 +72304,16 @@ function getToolVersion(tool, options) {
         }
     });
 }
+const unique = () => {
+    const encountered = new Set();
+    return (value) => {
+        if (encountered.has(value))
+            return false;
+        encountered.add(value);
+        return true;
+    };
+};
+exports.unique = unique;
 
 
 /***/ }),

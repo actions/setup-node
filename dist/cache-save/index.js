@@ -60441,6 +60441,7 @@ const cache = __importStar(__nccwpck_require__(7799));
 const glob = __importStar(__nccwpck_require__(8090));
 const path_1 = __importDefault(__nccwpck_require__(1017));
 const fs_1 = __importDefault(__nccwpck_require__(7147));
+const util_1 = __nccwpck_require__(2629);
 exports.supportedPackageManagers = {
     npm: {
         name: 'npm',
@@ -60528,9 +60529,10 @@ const getProjectDirectoriesFromCacheDependencyPath = (cacheDependencyPath) => __
     }
     const existingDirectories = cacheDependenciesPaths
         .map(path_1.default.dirname)
-        // uniq in order to do not traverse the same directories during the further processing
-        .filter((item, i, src) => item != null && src.indexOf(item) === i)
-        .filter(directory => fs_1.default.existsSync(directory) && fs_1.default.lstatSync(directory).isDirectory());
+        .filter(path => path != null)
+        .filter(util_1.unique())
+        .filter(fs_1.default.existsSync)
+        .filter(directory => fs_1.default.lstatSync(directory).isDirectory());
     // if user explicitly pointed out some file, but it does not exist it is definitely
     // not he wanted, thus we should throw an error not trying to workaround with unexpected
     // result to the whole build
@@ -60554,7 +60556,7 @@ const getCacheDirectoriesFromCacheDependencyPath = (packageManagerInfo, cacheDep
         return cacheFolderPath;
     })));
     // uniq in order to do not cache the same directories twice
-    return cacheFoldersPaths.filter((item, i, src) => src.indexOf(item) === i);
+    return cacheFoldersPaths.filter(util_1.unique());
 });
 /**
  * Finds the cache directories configured for the repo ignoring cache-dependency-path
@@ -60625,6 +60627,116 @@ var Outputs;
 (function (Outputs) {
     Outputs["CacheHit"] = "cache-hit";
 })(Outputs = exports.Outputs || (exports.Outputs = {}));
+
+
+/***/ }),
+
+/***/ 2629:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.unique = exports.printEnvDetailsAndSetOutput = exports.parseNodeVersionFile = void 0;
+const core = __importStar(__nccwpck_require__(2186));
+const exec = __importStar(__nccwpck_require__(1514));
+function parseNodeVersionFile(contents) {
+    var _a, _b, _c;
+    let nodeVersion;
+    // Try parsing the file as an NPM `package.json` file.
+    try {
+        nodeVersion = (_a = JSON.parse(contents).volta) === null || _a === void 0 ? void 0 : _a.node;
+        if (!nodeVersion)
+            nodeVersion = (_b = JSON.parse(contents).engines) === null || _b === void 0 ? void 0 : _b.node;
+    }
+    catch (_d) {
+        core.info('Node version file is not JSON file');
+    }
+    if (!nodeVersion) {
+        const found = contents.match(/^(?:nodejs\s+)?v?(?<version>[^\s]+)$/m);
+        nodeVersion = (_c = found === null || found === void 0 ? void 0 : found.groups) === null || _c === void 0 ? void 0 : _c.version;
+    }
+    // In the case of an unknown format,
+    // return as is and evaluate the version separately.
+    if (!nodeVersion)
+        nodeVersion = contents.trim();
+    return nodeVersion;
+}
+exports.parseNodeVersionFile = parseNodeVersionFile;
+function printEnvDetailsAndSetOutput() {
+    return __awaiter(this, void 0, void 0, function* () {
+        core.startGroup('Environment details');
+        const promises = ['node', 'npm', 'yarn'].map((tool) => __awaiter(this, void 0, void 0, function* () {
+            const output = yield getToolVersion(tool, ['--version']);
+            return { tool, output };
+        }));
+        const tools = yield Promise.all(promises);
+        tools.forEach(({ tool, output }) => {
+            if (tool === 'node') {
+                core.setOutput(`${tool}-version`, output);
+            }
+            core.info(`${tool}: ${output}`);
+        });
+        core.endGroup();
+    });
+}
+exports.printEnvDetailsAndSetOutput = printEnvDetailsAndSetOutput;
+function getToolVersion(tool, options) {
+    return __awaiter(this, void 0, void 0, function* () {
+        try {
+            const { stdout, stderr, exitCode } = yield exec.getExecOutput(tool, options, {
+                ignoreReturnCode: true,
+                silent: true
+            });
+            if (exitCode > 0) {
+                core.info(`[warning]${stderr}`);
+                return '';
+            }
+            return stdout.trim();
+        }
+        catch (err) {
+            return '';
+        }
+    });
+}
+const unique = () => {
+    const encountered = new Set();
+    return (value) => {
+        if (encountered.has(value))
+            return false;
+        encountered.add(value);
+        return true;
+    };
+};
+exports.unique = unique;
 
 
 /***/ }),

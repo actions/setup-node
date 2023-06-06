@@ -4,6 +4,7 @@ import * as cache from '@actions/cache';
 import * as glob from '@actions/glob';
 import path from 'path';
 import fs from 'fs';
+import {unique} from './util';
 
 export interface PackageManagerInfo {
   name: string;
@@ -138,12 +139,10 @@ const getProjectDirectoriesFromCacheDependencyPath = async (
 
   const existingDirectories: string[] = cacheDependenciesPaths
     .map(path.dirname)
-    // uniq in order to do not traverse the same directories during the further processing
-    .filter((item, i, src) => item != null && src.indexOf(item) === i)
-    .filter(
-      directory =>
-        fs.existsSync(directory) && fs.lstatSync(directory).isDirectory()
-    ) as string[];
+    .filter(path => path != null)
+    .filter(unique())
+    .filter(fs.existsSync)
+    .filter(directory => fs.lstatSync(directory).isDirectory());
 
   // if user explicitly pointed out some file, but it does not exist it is definitely
   // not he wanted, thus we should throw an error not trying to workaround with unexpected
@@ -183,7 +182,7 @@ const getCacheDirectoriesFromCacheDependencyPath = async (
     )
   );
   // uniq in order to do not cache the same directories twice
-  return cacheFoldersPaths.filter((item, i, src) => src.indexOf(item) === i);
+  return cacheFoldersPaths.filter(unique());
 };
 
 /**
