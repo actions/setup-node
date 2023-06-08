@@ -60370,16 +60370,16 @@ exports.run = run;
 const cachePackages = (packageManager) => __awaiter(void 0, void 0, void 0, function* () {
     const state = core.getState(constants_1.State.CacheMatchedKey);
     const primaryKey = core.getState(constants_1.State.CachePrimaryKey);
+    const cachePaths = JSON.parse(core.getState(constants_1.State.CachePaths) || '[]');
     const packageManagerInfo = yield cache_utils_1.getPackageManagerInfo(packageManager);
     if (!packageManagerInfo) {
         core.debug(`Caching for '${packageManager}' is not supported`);
         return;
     }
-    // TODO: core.getInput has a bug - it can return undefined despite its definition (tests only?)
-    //       export declare function getInput(name: string, options?: InputOptions): string;
-    const cacheDependencyPath = core.getInput('cache-dependency-path') || '';
-    const cachePaths = yield cache_utils_1.getCacheDirectories(packageManagerInfo, cacheDependencyPath);
     if (cachePaths.length === 0) {
+        // TODO: core.getInput has a bug - it can return undefined despite its definition (tests only?)
+        //       export declare function getInput(name: string, options?: InputOptions): string;
+        const cacheDependencyPath = core.getInput('cache-dependency-path') || '';
         throw new Error(`Cache folder paths are not retrieved for ${packageManager} with cache-dependency-path = ${cacheDependencyPath}`);
     }
     if (primaryKey === state) {
@@ -60524,19 +60524,18 @@ const getProjectDirectoriesFromCacheDependencyPath = (cacheDependencyPath) => __
     }
     else {
         const globber = yield glob.create(cacheDependencyPath);
-        cacheDependenciesPaths = (yield globber.glob()) || [''];
+        cacheDependenciesPaths = yield globber.glob();
         exports.memoizedCacheDependencies[cacheDependencyPath] = cacheDependenciesPaths;
     }
     const existingDirectories = cacheDependenciesPaths
         .map(path_1.default.dirname)
-        .filter(path => path != null)
         .filter(util_1.unique())
         .filter(fs_1.default.existsSync)
         .filter(directory => fs_1.default.lstatSync(directory).isDirectory());
     // if user explicitly pointed out some file, but it does not exist it is definitely
     // not he wanted, thus we should throw an error not trying to workaround with unexpected
     // result to the whole build
-    if (existingDirectories.length === 0)
+    if (!existingDirectories.length)
         throw Error('No existing directories found containing `cache-dependency-path`="${cacheDependencyPath}"');
     return existingDirectories;
 });
@@ -60549,9 +60548,8 @@ const getProjectDirectoriesFromCacheDependencyPath = (cacheDependencyPath) => __
  */
 const getCacheDirectoriesFromCacheDependencyPath = (packageManagerInfo, cacheDependencyPath) => __awaiter(void 0, void 0, void 0, function* () {
     const projectDirectories = yield getProjectDirectoriesFromCacheDependencyPath(cacheDependencyPath);
-    const cacheFoldersPaths = yield Promise.all(projectDirectories.map(projectDirectory => packageManagerInfo
-        .getCacheFolderPath(projectDirectory)
-        .then(cacheFolderPath => {
+    const cacheFoldersPaths = yield Promise.all(projectDirectories.map((projectDirectory) => __awaiter(void 0, void 0, void 0, function* () {
+        const cacheFolderPath = packageManagerInfo.getCacheFolderPath(projectDirectory);
         core.debug(`${packageManagerInfo.name}'s cache folder "${cacheFolderPath}" configured for the directory "${projectDirectory}"`);
         return cacheFolderPath;
     })));
@@ -60622,6 +60620,7 @@ var State;
 (function (State) {
     State["CachePrimaryKey"] = "CACHE_KEY";
     State["CacheMatchedKey"] = "CACHE_RESULT";
+    State["CachePaths"] = "CACHE_PATHS";
 })(State = exports.State || (exports.State = {}));
 var Outputs;
 (function (Outputs) {

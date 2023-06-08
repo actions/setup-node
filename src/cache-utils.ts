@@ -133,13 +133,12 @@ const getProjectDirectoriesFromCacheDependencyPath = async (
     cacheDependenciesPaths = memoized;
   } else {
     const globber = await glob.create(cacheDependencyPath);
-    cacheDependenciesPaths = (await globber.glob()) || [''];
+    cacheDependenciesPaths = await globber.glob();
     memoizedCacheDependencies[cacheDependencyPath] = cacheDependenciesPaths;
   }
 
   const existingDirectories: string[] = cacheDependenciesPaths
     .map(path.dirname)
-    .filter(path => path != null)
     .filter(unique())
     .filter(fs.existsSync)
     .filter(directory => fs.lstatSync(directory).isDirectory());
@@ -147,7 +146,7 @@ const getProjectDirectoriesFromCacheDependencyPath = async (
   // if user explicitly pointed out some file, but it does not exist it is definitely
   // not he wanted, thus we should throw an error not trying to workaround with unexpected
   // result to the whole build
-  if (existingDirectories.length === 0)
+  if (!existingDirectories.length)
     throw Error(
       'No existing directories found containing `cache-dependency-path`="${cacheDependencyPath}"'
     );
@@ -170,16 +169,14 @@ const getCacheDirectoriesFromCacheDependencyPath = async (
     cacheDependencyPath
   );
   const cacheFoldersPaths = await Promise.all(
-    projectDirectories.map(projectDirectory =>
-      packageManagerInfo
-        .getCacheFolderPath(projectDirectory)
-        .then(cacheFolderPath => {
-          core.debug(
-            `${packageManagerInfo.name}'s cache folder "${cacheFolderPath}" configured for the directory "${projectDirectory}"`
-          );
-          return cacheFolderPath;
-        })
-    )
+    projectDirectories.map(async projectDirectory => {
+      const cacheFolderPath =
+        packageManagerInfo.getCacheFolderPath(projectDirectory);
+      core.debug(
+        `${packageManagerInfo.name}'s cache folder "${cacheFolderPath}" configured for the directory "${projectDirectory}"`
+      );
+      return cacheFolderPath;
+    })
   );
   // uniq in order to do not cache the same directories twice
   return cacheFoldersPaths.filter(unique());

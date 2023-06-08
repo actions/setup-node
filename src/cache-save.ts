@@ -1,7 +1,7 @@
 import * as core from '@actions/core';
 import * as cache from '@actions/cache';
 import {State} from './constants';
-import {getCacheDirectories, getPackageManagerInfo} from './cache-utils';
+import {getPackageManagerInfo} from './cache-utils';
 
 // Catch and log any unhandled exceptions.  These exceptions can leak out of the uploadChunk method in
 // @actions/toolkit when a failed upload closes the file descriptor causing any in-process reads to
@@ -23,6 +23,7 @@ export async function run() {
 const cachePackages = async (packageManager: string) => {
   const state = core.getState(State.CacheMatchedKey);
   const primaryKey = core.getState(State.CachePrimaryKey);
+  const cachePaths = JSON.parse(core.getState(State.CachePaths) || '[]');
 
   const packageManagerInfo = await getPackageManagerInfo(packageManager);
   if (!packageManagerInfo) {
@@ -30,15 +31,10 @@ const cachePackages = async (packageManager: string) => {
     return;
   }
 
-  // TODO: core.getInput has a bug - it can return undefined despite its definition (tests only?)
-  //       export declare function getInput(name: string, options?: InputOptions): string;
-  const cacheDependencyPath = core.getInput('cache-dependency-path') || '';
-  const cachePaths = await getCacheDirectories(
-    packageManagerInfo,
-    cacheDependencyPath
-  );
-
   if (cachePaths.length === 0) {
+    // TODO: core.getInput has a bug - it can return undefined despite its definition (tests only?)
+    //       export declare function getInput(name: string, options?: InputOptions): string;
+    const cacheDependencyPath = core.getInput('cache-dependency-path') || '';
     throw new Error(
       `Cache folder paths are not retrieved for ${packageManager} with cache-dependency-path = ${cacheDependencyPath}`
     );

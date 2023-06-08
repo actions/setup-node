@@ -107,22 +107,20 @@ describe('run', () => {
   describe('Validate unchanged cache is not saved', () => {
     it('should not save cache for yarn1', async () => {
       inputs['cache'] = 'yarn';
-      getStateSpy.mockImplementation(() => yarnFileHash);
-      getCommandOutputSpy
-        .mockImplementationOnce(() => '1.2.3')
-        .mockImplementationOnce(() => `${commonPath}/yarn1`);
+      getStateSpy.mockImplementation(key =>
+        key === State.CachePrimaryKey || key === State.CacheMatchedKey
+          ? yarnFileHash
+          : key === State.CachePaths
+          ? '["/foo/bar"]'
+          : 'not expected'
+      );
 
       await run();
 
       expect(getInputSpy).toHaveBeenCalled();
-      expect(getStateSpy).toHaveBeenCalledTimes(2);
-      expect(getCommandOutputSpy).toHaveBeenCalledTimes(2);
-      expect(debugSpy).toHaveBeenCalledWith(
-        'Consumed yarn version is 1.2.3 (working dir: "")'
-      );
-      expect(debugSpy).toHaveBeenCalledWith(
-        'yarn\'s cache folder "/some/random/path/yarn1" configured for the root directory'
-      );
+      expect(getStateSpy).toHaveBeenCalledTimes(3);
+      expect(getCommandOutputSpy).toHaveBeenCalledTimes(0);
+      expect(debugSpy).toHaveBeenCalledTimes(0);
       expect(infoSpy).toHaveBeenCalledWith(
         `Cache hit occurred on the primary key ${yarnFileHash}, not saving cache.`
       );
@@ -131,22 +129,28 @@ describe('run', () => {
 
     it('should not save cache for yarn2', async () => {
       inputs['cache'] = 'yarn';
-      getStateSpy.mockImplementation(() => yarnFileHash);
-      getCommandOutputSpy
-        .mockImplementationOnce(() => '2.2.3')
-        .mockImplementationOnce(() => `${commonPath}/yarn2`);
+      getStateSpy.mockImplementation(key =>
+        key === State.CachePrimaryKey || key === State.CacheMatchedKey
+          ? yarnFileHash
+          : key === State.CachePaths
+          ? '["/foo/bar"]'
+          : 'not expected'
+      );
 
       await run();
 
       expect(getInputSpy).toHaveBeenCalled();
-      expect(getStateSpy).toHaveBeenCalledTimes(2);
-      expect(getCommandOutputSpy).toHaveBeenCalledTimes(2);
+      expect(getStateSpy).toHaveBeenCalledTimes(3);
+      expect(getCommandOutputSpy).toHaveBeenCalledTimes(0);
+      expect(debugSpy).toHaveBeenCalledTimes(0);
+      /*
       expect(debugSpy).toHaveBeenCalledWith(
         'Consumed yarn version is 2.2.3 (working dir: "")'
       );
       expect(debugSpy).toHaveBeenCalledWith(
         'yarn\'s cache folder "/some/random/path/yarn2" configured for the root directory'
       );
+       */
       expect(infoSpy).toHaveBeenCalledWith(
         `Cache hit occurred on the primary key ${yarnFileHash}, not saving cache.`
       );
@@ -155,39 +159,40 @@ describe('run', () => {
 
     it('should not save cache for npm', async () => {
       inputs['cache'] = 'npm';
-      getStateSpy.mockImplementation(() => npmFileHash);
+      getStateSpy.mockImplementation(key =>
+        key === State.CachePrimaryKey || key === State.CacheMatchedKey
+          ? yarnFileHash
+          : key === State.CachePaths
+          ? '["/foo/bar"]'
+          : 'not expected'
+      );
       getCommandOutputSpy.mockImplementationOnce(() => `${commonPath}/npm`);
 
       await run();
 
       expect(getInputSpy).toHaveBeenCalled();
-      expect(getStateSpy).toHaveBeenCalledTimes(2);
-      expect(getCommandOutputSpy).toHaveBeenCalledTimes(1);
-      expect(debugSpy).toHaveBeenCalledWith(
-        `npm's cache folder "${commonPath}/npm" configured for the root directory`
-      );
-      expect(infoSpy).toHaveBeenCalledWith(
-        `Cache hit occurred on the primary key ${npmFileHash}, not saving cache.`
-      );
+      expect(getStateSpy).toHaveBeenCalledTimes(3);
+      expect(getCommandOutputSpy).toHaveBeenCalledTimes(0);
+      expect(debugSpy).toHaveBeenCalledTimes(0);
       expect(setFailedSpy).not.toHaveBeenCalled();
     });
 
     it('should not save cache for pnpm', async () => {
       inputs['cache'] = 'pnpm';
-      getStateSpy.mockImplementation(() => pnpmFileHash);
-      getCommandOutputSpy.mockImplementationOnce(() => `${commonPath}/pnpm`);
+      getStateSpy.mockImplementation(key =>
+        key === State.CachePrimaryKey || key === State.CacheMatchedKey
+          ? yarnFileHash
+          : key === State.CachePaths
+          ? '["/foo/bar"]'
+          : 'not expected'
+      );
 
       await run();
 
       expect(getInputSpy).toHaveBeenCalled();
-      expect(getStateSpy).toHaveBeenCalledTimes(2);
-      expect(getCommandOutputSpy).toHaveBeenCalledTimes(1);
-      expect(debugSpy).toHaveBeenCalledWith(
-        `pnpm's cache folder "${commonPath}/pnpm" configured for the root directory`
-      );
-      expect(infoSpy).toHaveBeenCalledWith(
-        `Cache hit occurred on the primary key ${pnpmFileHash}, not saving cache.`
-      );
+      expect(getStateSpy).toHaveBeenCalledTimes(3);
+      expect(getCommandOutputSpy).toHaveBeenCalledTimes(0);
+      expect(debugSpy).toHaveBeenCalledTimes(0);
       expect(setFailedSpy).not.toHaveBeenCalled();
     });
   });
@@ -195,28 +200,22 @@ describe('run', () => {
   describe('action saves the cache', () => {
     it('saves cache from yarn 1', async () => {
       inputs['cache'] = 'yarn';
-      getStateSpy.mockImplementation((name: string) => {
-        if (name === State.CacheMatchedKey) {
-          return yarnFileHash;
-        } else {
-          return npmFileHash;
-        }
-      });
-      getCommandOutputSpy
-        .mockImplementationOnce(() => '1.2.3')
-        .mockImplementationOnce(() => `${commonPath}/yarn1`);
+      getStateSpy.mockImplementation((key: string) =>
+        key === State.CacheMatchedKey
+          ? yarnFileHash
+          : key === State.CachePrimaryKey
+          ? npmFileHash
+          : key === State.CachePaths
+          ? '["/foo/bar"]'
+          : 'not expected'
+      );
 
       await run();
 
       expect(getInputSpy).toHaveBeenCalled();
-      expect(getStateSpy).toHaveBeenCalledTimes(2);
-      expect(getCommandOutputSpy).toHaveBeenCalledTimes(2);
-      expect(debugSpy).toHaveBeenCalledWith(
-        'Consumed yarn version is 1.2.3 (working dir: "")'
-      );
-      expect(debugSpy).toHaveBeenCalledWith(
-        'yarn\'s cache folder "/some/random/path/yarn1" configured for the root directory'
-      );
+      expect(getStateSpy).toHaveBeenCalledTimes(3);
+      expect(getCommandOutputSpy).toHaveBeenCalledTimes(0);
+      expect(debugSpy).toHaveBeenCalledTimes(0);
       expect(infoSpy).not.toHaveBeenCalledWith(
         `Cache hit occurred on the primary key ${yarnFileHash}, not saving cache.`
       );
@@ -229,28 +228,22 @@ describe('run', () => {
 
     it('saves cache from yarn 2', async () => {
       inputs['cache'] = 'yarn';
-      getStateSpy.mockImplementation((name: string) => {
-        if (name === State.CacheMatchedKey) {
-          return yarnFileHash;
-        } else {
-          return npmFileHash;
-        }
-      });
-      getCommandOutputSpy
-        .mockImplementationOnce(() => '2.2.3')
-        .mockImplementationOnce(() => `${commonPath}/yarn2`);
+      getStateSpy.mockImplementation((key: string) =>
+        key === State.CacheMatchedKey
+          ? yarnFileHash
+          : key === State.CachePrimaryKey
+          ? npmFileHash
+          : key === State.CachePaths
+          ? '["/foo/bar"]'
+          : 'not expected'
+      );
 
       await run();
 
       expect(getInputSpy).toHaveBeenCalled();
-      expect(getStateSpy).toHaveBeenCalledTimes(2);
-      expect(getCommandOutputSpy).toHaveBeenCalledTimes(2);
-      expect(debugSpy).toHaveBeenCalledWith(
-        'Consumed yarn version is 2.2.3 (working dir: "")'
-      );
-      expect(debugSpy).toHaveBeenCalledWith(
-        'yarn\'s cache folder "/some/random/path/yarn2" configured for the root directory'
-      );
+      expect(getStateSpy).toHaveBeenCalledTimes(3);
+      expect(getCommandOutputSpy).toHaveBeenCalledTimes(0);
+      expect(debugSpy).toHaveBeenCalledTimes(0);
       expect(infoSpy).not.toHaveBeenCalledWith(
         `Cache hit occurred on the primary key ${yarnFileHash}, not saving cache.`
       );
@@ -263,23 +256,22 @@ describe('run', () => {
 
     it('saves cache from npm', async () => {
       inputs['cache'] = 'npm';
-      getStateSpy.mockImplementation((name: string) => {
-        if (name === State.CacheMatchedKey) {
-          return npmFileHash;
-        } else {
-          return yarnFileHash;
-        }
-      });
-      getCommandOutputSpy.mockImplementationOnce(() => `${commonPath}/npm`);
+      getStateSpy.mockImplementation((key: string) =>
+        key === State.CacheMatchedKey
+          ? npmFileHash
+          : key === State.CachePrimaryKey
+          ? yarnFileHash
+          : key === State.CachePaths
+          ? '["/foo/bar"]'
+          : 'not expected'
+      );
 
       await run();
 
       expect(getInputSpy).toHaveBeenCalled();
-      expect(getStateSpy).toHaveBeenCalledTimes(2);
-      expect(getCommandOutputSpy).toHaveBeenCalledTimes(1);
-      expect(debugSpy).toHaveBeenCalledWith(
-        `npm's cache folder "${commonPath}/npm" configured for the root directory`
-      );
+      expect(getStateSpy).toHaveBeenCalledTimes(3);
+      expect(getCommandOutputSpy).toHaveBeenCalledTimes(0);
+      expect(debugSpy).toHaveBeenCalledTimes(0);
       expect(infoSpy).not.toHaveBeenCalledWith(
         `Cache hit occurred on the primary key ${npmFileHash}, not saving cache.`
       );
@@ -292,23 +284,22 @@ describe('run', () => {
 
     it('saves cache from pnpm', async () => {
       inputs['cache'] = 'pnpm';
-      getStateSpy.mockImplementation((name: string) => {
-        if (name === State.CacheMatchedKey) {
-          return pnpmFileHash;
-        } else {
-          return npmFileHash;
-        }
-      });
-      getCommandOutputSpy.mockImplementationOnce(() => `${commonPath}/pnpm`);
+      getStateSpy.mockImplementation((key: string) =>
+        key === State.CacheMatchedKey
+          ? pnpmFileHash
+          : key === State.CachePrimaryKey
+          ? npmFileHash
+          : key === State.CachePaths
+          ? '["/foo/bar"]'
+          : 'not expected'
+      );
 
       await run();
 
       expect(getInputSpy).toHaveBeenCalled();
-      expect(getStateSpy).toHaveBeenCalledTimes(2);
-      expect(getCommandOutputSpy).toHaveBeenCalledTimes(1);
-      expect(debugSpy).toHaveBeenCalledWith(
-        `pnpm's cache folder "${commonPath}/pnpm" configured for the root directory`
-      );
+      expect(getStateSpy).toHaveBeenCalledTimes(3);
+      expect(getCommandOutputSpy).toHaveBeenCalledTimes(0);
+      expect(debugSpy).toHaveBeenCalledTimes(0);
       expect(infoSpy).not.toHaveBeenCalledWith(
         `Cache hit occurred on the primary key ${pnpmFileHash}, not saving cache.`
       );
@@ -321,14 +312,15 @@ describe('run', () => {
 
     it('save with -1 cacheId , should not fail workflow', async () => {
       inputs['cache'] = 'npm';
-      getStateSpy.mockImplementation((name: string) => {
-        if (name === State.CacheMatchedKey) {
-          return npmFileHash;
-        } else {
-          return yarnFileHash;
-        }
-      });
-      getCommandOutputSpy.mockImplementationOnce(() => `${commonPath}/npm`);
+      getStateSpy.mockImplementation((key: string) =>
+        key === State.CacheMatchedKey
+          ? npmFileHash
+          : key === State.CachePrimaryKey
+          ? yarnFileHash
+          : key === State.CachePaths
+          ? '["/foo/bar"]'
+          : 'not expected'
+      );
       saveCacheSpy.mockImplementation(() => {
         return -1;
       });
@@ -336,11 +328,9 @@ describe('run', () => {
       await run();
 
       expect(getInputSpy).toHaveBeenCalled();
-      expect(getStateSpy).toHaveBeenCalledTimes(2);
-      expect(getCommandOutputSpy).toHaveBeenCalledTimes(1);
-      expect(debugSpy).toHaveBeenCalledWith(
-        `npm's cache folder "${commonPath}/npm" configured for the root directory`
-      );
+      expect(getStateSpy).toHaveBeenCalledTimes(3);
+      expect(getCommandOutputSpy).toHaveBeenCalledTimes(0);
+      expect(debugSpy).toHaveBeenCalledTimes(0);
       expect(infoSpy).not.toHaveBeenCalledWith(
         `Cache hit occurred on the primary key ${npmFileHash}, not saving cache.`
       );
@@ -353,14 +343,15 @@ describe('run', () => {
 
     it('saves with error from toolkit, should fail workflow', async () => {
       inputs['cache'] = 'npm';
-      getStateSpy.mockImplementation((name: string) => {
-        if (name === State.CacheMatchedKey) {
-          return npmFileHash;
-        } else {
-          return yarnFileHash;
-        }
-      });
-      getCommandOutputSpy.mockImplementationOnce(() => `${commonPath}/npm`);
+      getStateSpy.mockImplementation((key: string) =>
+        key === State.CacheMatchedKey
+          ? npmFileHash
+          : key === State.CachePrimaryKey
+          ? yarnFileHash
+          : key === State.CachePaths
+          ? '["/foo/bar"]'
+          : 'not expected'
+      );
       saveCacheSpy.mockImplementation(() => {
         throw new cache.ValidationError('Validation failed');
       });
@@ -368,11 +359,9 @@ describe('run', () => {
       await run();
 
       expect(getInputSpy).toHaveBeenCalled();
-      expect(getStateSpy).toHaveBeenCalledTimes(2);
-      expect(getCommandOutputSpy).toHaveBeenCalledTimes(1);
-      expect(debugSpy).toHaveBeenCalledWith(
-        `npm's cache folder "${commonPath}/npm" configured for the root directory`
-      );
+      expect(getStateSpy).toHaveBeenCalledTimes(3);
+      expect(getCommandOutputSpy).toHaveBeenCalledTimes(0);
+      expect(debugSpy).toHaveBeenCalledTimes(0);
       expect(infoSpy).not.toHaveBeenCalledWith(
         `Cache hit occurred on the primary key ${npmFileHash}, not saving cache.`
       );

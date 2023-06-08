@@ -25,6 +25,7 @@ export const restoreCache = async (
     packageManagerInfo,
     cacheDependencyPath
   );
+  core.saveState(State.CachePaths, cachePaths);
   const lockFilePath = cacheDependencyPath
     ? cacheDependencyPath
     : findLockFile(packageManagerInfo);
