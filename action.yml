@@ -1,7 +1,13 @@
+<<<<<<< Updated upstream
+name: 'Setup Node.js'
+description: 'Set up a specific version of Node.js and add the command-line tools to the PATH'
+=======
+<<<<<<< Updated upstream
+name: 'Setup Node.js'
+description: 'Set up a specific version of Node.js and add the command-line tools to the PATH'
+=======
 name: 'Setup Node.js environment'
-description: 'Setup a Node.js environment by adding problem matchers and optionally downloading and adding it to the PATH'
->>>>>>> Stashed changes
->>>>>>> Stashed changes
+description: 'Setup a Node.js environment and add it to the PATH, additionally providing proxy support'
 author: 'GitHub'
 inputs:
   always-auth:
@@ -28,8 +34,12 @@ inputs:
 <<<<<<< Updated upstream
 =======
   token:
-    description: Used to pull node distributions from node-versions.  Since there's a default, this is typically not supplied by the user.
-    default: ${{ github.token }}
+    description: Used to pull node distributions from node-versions. Since there's a default, this is typically not supplied by the user. When running this action on github.com, the default value is sufficient. When running on GHES, you can pass a personal access token for github.com if you are experiencing rate limiting.
+    default: ${{ github.server_url == 'https://github.com' && github.token || '' }}
+  cache:
+    description: 'Used to specify a package manager for caching in the default directory. Supported values: npm, yarn, pnpm.'
+  cache-dependency-path:
+    description: 'Used to specify the path to a dependency file: package-lock.json, yarn.lock, etc. Supports wildcards or a list of file names for caching multiple dependencies.'
 # TODO: add input to control forcing to pull from cloud or dist.
 #       escape valve for someone having issues or needing the absolute latest which isn't cached yet
 >>>>>>> Stashed changes
