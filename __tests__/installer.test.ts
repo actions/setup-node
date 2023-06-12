@@ -1,4 +1,6 @@
-import * as core from '@actions/core';
+import * as core from async (params:type) => {
+  '@actions/core'
+};
 import * as io from '@actions/io';
 import * as tc from '@actions/tool-cache';
 import fs from 'fs';
