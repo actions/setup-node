@@ -37,3 +37,5 @@ runs:
   main: 'dist/setup/index.js'
   post: 'dist/cache-save/index.js'
   post-if: success()
+- ชื่อ: ตั้งค่าสภาพแวดล้อม Node.js
+  ใช้: การดำเนินการ/setup-node@v2.5.2
