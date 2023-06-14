@@ -111,11 +111,6 @@ export const getPackageManagerInfo = async (packageManager: string) => {
 };
 
 /**
- * glob expanding memoized because it involves potentially very deep
- * traversing through the directories tree
- */
-export const memoizedCacheDependencies: Record<string, string[]> = {};
-/**
  * Expands (converts) the string input `cache-dependency-path` to list of directories that
  * may be project roots
  * @param cacheDependencyPath - either a single string or multiline string with possible glob patterns
@@ -125,17 +120,8 @@ export const memoizedCacheDependencies: Record<string, string[]> = {};
 const getProjectDirectoriesFromCacheDependencyPath = async (
   cacheDependencyPath: string
 ): Promise<string[]> => {
-  let cacheDependenciesPaths: string[];
-
-  // memoize unglobbed paths to avoid traversing FS
-  const memoized = memoizedCacheDependencies[cacheDependencyPath];
-  if (memoized) {
-    cacheDependenciesPaths = memoized;
-  } else {
-    const globber = await glob.create(cacheDependencyPath);
-    cacheDependenciesPaths = await globber.glob();
-    memoizedCacheDependencies[cacheDependencyPath] = cacheDependenciesPaths;
-  }
+  const globber = await glob.create(cacheDependencyPath);
+  const cacheDependenciesPaths = await globber.glob();
 
   const existingDirectories: string[] = cacheDependenciesPaths
     .map(path.dirname)
@@ -143,12 +129,9 @@ const getProjectDirectoriesFromCacheDependencyPath = async (
     .filter(fs.existsSync)
     .filter(directory => fs.lstatSync(directory).isDirectory());
 
-  // if user explicitly pointed out some file, but it does not exist it is definitely
-  // not he wanted, thus we should throw an error not trying to workaround with unexpected
-  // result to the whole build
   if (!existingDirectories.length)
-    throw Error(
-      'No existing directories found containing `cache-dependency-path`="${cacheDependencyPath}"'
+    core.warning(
+      `No existing directories found containing cache-dependency-path="${cacheDependencyPath}"`
     );
 
   return existingDirectories;

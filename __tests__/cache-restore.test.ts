@@ -135,7 +135,7 @@ describe('cache-restore', () => {
         await restoreCache(packageManager, '');
         expect(hashFilesSpy).toHaveBeenCalled();
         expect(infoSpy).toHaveBeenCalledWith(
-          `Cache restored from key: node-cache-${platform}-${packageManager}-v2-${fileHash}`
+          `Cache restored from key: node-cache-${platform}-${packageManager}-${fileHash}`
         );
         expect(infoSpy).not.toHaveBeenCalledWith(
           `${packageManager} cache is not found`

@@ -37,7 +37,7 @@ export const restoreCache = async (
     );
   }
 
-  const primaryKey = `node-cache-${platform}-${packageManager}-v2-${fileHash}`;
+  const primaryKey = `node-cache-${platform}-${packageManager}-${fileHash}`;
   core.debug(`primary key is ${primaryKey}`);
 
   core.saveState(State.CachePrimaryKey, primaryKey);

@@ -60434,7 +60434,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.isCacheFeatureAvailable = exports.isGhes = exports.getCacheDirectories = exports.memoizedCacheDependencies = exports.getPackageManagerInfo = exports.getCommandOutputNotEmpty = exports.getCommandOutput = exports.supportedPackageManagers = void 0;
+exports.isCacheFeatureAvailable = exports.isGhes = exports.getCacheDirectories = exports.getPackageManagerInfo = exports.getCommandOutputNotEmpty = exports.getCommandOutput = exports.supportedPackageManagers = void 0;
 const core = __importStar(__nccwpck_require__(2186));
 const exec = __importStar(__nccwpck_require__(1514));
 const cache = __importStar(__nccwpck_require__(7799));
@@ -60504,11 +60504,6 @@ const getPackageManagerInfo = (packageManager) => __awaiter(void 0, void 0, void
 });
 exports.getPackageManagerInfo = getPackageManagerInfo;
 /**
- * glob expanding memoized because it involves potentially very deep
- * traversing through the directories tree
- */
-exports.memoizedCacheDependencies = {};
-/**
  * Expands (converts) the string input `cache-dependency-path` to list of directories that
  * may be project roots
  * @param cacheDependencyPath - either a single string or multiline string with possible glob patterns
@@ -60516,27 +60511,15 @@ exports.memoizedCacheDependencies = {};
  * @return list of directories and possible
  */
 const getProjectDirectoriesFromCacheDependencyPath = (cacheDependencyPath) => __awaiter(void 0, void 0, void 0, function* () {
-    let cacheDependenciesPaths;
-    // memoize unglobbed paths to avoid traversing FS
-    const memoized = exports.memoizedCacheDependencies[cacheDependencyPath];
-    if (memoized) {
-        cacheDependenciesPaths = memoized;
-    }
-    else {
-        const globber = yield glob.create(cacheDependencyPath);
-        cacheDependenciesPaths = yield globber.glob();
-        exports.memoizedCacheDependencies[cacheDependencyPath] = cacheDependenciesPaths;
-    }
+    const globber = yield glob.create(cacheDependencyPath);
+    const cacheDependenciesPaths = yield globber.glob();
     const existingDirectories = cacheDependenciesPaths
         .map(path_1.default.dirname)
         .filter(util_1.unique())
         .filter(fs_1.default.existsSync)
         .filter(directory => fs_1.default.lstatSync(directory).isDirectory());
-    // if user explicitly pointed out some file, but it does not exist it is definitely
-    // not he wanted, thus we should throw an error not trying to workaround with unexpected
-    // result to the whole build
     if (!existingDirectories.length)
-        throw Error('No existing directories found containing `cache-dependency-path`="${cacheDependencyPath}"');
+        core.warning(`No existing directories found containing cache-dependency-path="${cacheDependencyPath}"`);
     return existingDirectories;
 });
 /**

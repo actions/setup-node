@@ -6,8 +6,7 @@ import {
   PackageManagerInfo,
   isCacheFeatureAvailable,
   supportedPackageManagers,
-  getCommandOutput,
-  memoizedCacheDependencies
+  getCommandOutput
 } from '../src/cache-utils';
 import fs from 'fs';
 import * as cacheUtils from '../src/cache-utils';
@@ -104,10 +103,6 @@ describe('cache-utils', () => {
         (pattern: string): Promise<Globber> =>
           MockGlobber.create(['/foo', '/bar'])
       );
-
-      Object.keys(memoizedCacheDependencies).forEach(
-        key => delete memoizedCacheDependencies[key]
-      );
     });
 
     afterEach(() => {
@@ -175,25 +170,23 @@ describe('cache-utils', () => {
     );
 
     it.each([
-      [supportedPackageManagers.npm, ''],
-      [supportedPackageManagers.npm, '/dir/file.lock'],
-      [supportedPackageManagers.npm, '/**/file.lock'],
-      [supportedPackageManagers.pnpm, ''],
-      [supportedPackageManagers.pnpm, '/dir/file.lock'],
-      [supportedPackageManagers.pnpm, '/**/file.lock'],
-      [supportedPackageManagers.yarn, ''],
       [supportedPackageManagers.yarn, '/dir/file.lock'],
       [supportedPackageManagers.yarn, '/**/file.lock']
     ])(
-      'getCacheDirectoriesPaths should throw in case of having not directories',
+      'getCacheDirectoriesPaths should nothrow in case of having not directories',
       async (packageManagerInfo, cacheDependency) => {
         lstatSpy.mockImplementation(arg => ({
           isDirectory: () => false
         }));
 
-        await expect(
-          cacheUtils.getCacheDirectories(packageManagerInfo, cacheDependency)
-        ).rejects.toThrow(); //'Could not get cache folder path for /dir');
+        await cacheUtils.getCacheDirectories(
+          packageManagerInfo,
+          cacheDependency
+        );
+        expect(warningSpy).toHaveBeenCalledTimes(1);
+        expect(warningSpy).toHaveBeenCalledWith(
+          `No existing directories found containing cache-dependency-path="${cacheDependency}"`
+        );
       }
     );
 
