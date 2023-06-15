@@ -63,21 +63,24 @@ const getPackageManagerVersion = async (
 export const getPackageManagerInfo = async (packageManager: string) => {
   if (packageManager === 'npm') {
     return supportedPackageManagers.npm;
-  } else if (packageManager === 'pnpm') {
-    return supportedPackageManagers.pnpm;
-  } else if (packageManager === 'yarn') {
-    const yarnVersion = await getPackageManagerVersion('yarn', '--version');
+  }
 
+  if (packageManager === 'pnpm') {
+    return supportedPackageManagers.pnpm;
+  }
+
+  if (packageManager === 'yarn') {
+    const yarnVersion = await getPackageManagerVersion('yarn', '--version');
     core.debug(`Consumed yarn version is ${yarnVersion}`);
 
     if (yarnVersion.startsWith('1.')) {
       return supportedPackageManagers.yarn1;
-    } else {
-      return supportedPackageManagers.yarn2;
     }
-  } else {
-    return null;
+
+    return supportedPackageManagers.yarn2;
   }
+
+  return null;
 };
 
 export const getCacheDirectoryPath = async (
