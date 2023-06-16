@@ -143,14 +143,6 @@ describe('run', () => {
       expect(getStateSpy).toHaveBeenCalledTimes(3);
       expect(getCommandOutputSpy).toHaveBeenCalledTimes(0);
       expect(debugSpy).toHaveBeenCalledTimes(0);
-      /*
-      expect(debugSpy).toHaveBeenCalledWith(
-        'Consumed yarn version is 2.2.3 (working dir: "")'
-      );
-      expect(debugSpy).toHaveBeenCalledWith(
-        'yarn\'s cache folder "/some/random/path/yarn2" configured for the root directory'
-      );
-       */
       expect(infoSpy).toHaveBeenCalledWith(
         `Cache hit occurred on the primary key ${yarnFileHash}, not saving cache.`
       );

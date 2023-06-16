@@ -126,7 +126,6 @@ const getProjectDirectoriesFromCacheDependencyPath = async (
   const existingDirectories: string[] = cacheDependenciesPaths
     .map(path.dirname)
     .filter(unique())
-    .filter(fs.existsSync)
     .filter(directory => fs.lstatSync(directory).isDirectory());
 
   if (!existingDirectories.length)

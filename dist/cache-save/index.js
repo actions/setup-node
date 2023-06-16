@@ -60516,7 +60516,6 @@ const getProjectDirectoriesFromCacheDependencyPath = (cacheDependencyPath) => __
     const existingDirectories = cacheDependenciesPaths
         .map(path_1.default.dirname)
         .filter(util_1.unique())
-        .filter(fs_1.default.existsSync)
         .filter(directory => fs_1.default.lstatSync(directory).isDirectory());
     if (!existingDirectories.length)
         core.warning(`No existing directories found containing cache-dependency-path="${cacheDependencyPath}"`);
