@@ -39,6 +39,7 @@ describe('setup-node', () => {
   let whichSpy: jest.SpyInstance;
   let existsSpy: jest.SpyInstance;
   let mkdirpSpy: jest.SpyInstance;
+  let cpSpy: jest.SpyInstance;
   let execSpy: jest.SpyInstance;
   let authSpy: jest.SpyInstance;
   let parseNodeVersionSpy: jest.SpyInstance;
@@ -51,6 +52,7 @@ describe('setup-node', () => {
     console.log('::stop-commands::stoptoken'); // Disable executing of runner commands when running tests in actions
     process.env['GITHUB_PATH'] = ''; // Stub out ENV file functionality so we can verify it writes to standard out
     process.env['GITHUB_OUTPUT'] = ''; // Stub out ENV file functionality so we can verify it writes to standard out
+    process.env['RUNNER_TEMP'] = '/runner_temp';
     inputs = {};
     inSpy = jest.spyOn(core, 'getInput');
     inSpy.mockImplementation(name => inputs[name]);
@@ -78,6 +80,7 @@ describe('setup-node', () => {
     whichSpy = jest.spyOn(io, 'which');
     existsSpy = jest.spyOn(fs, 'existsSync');
     mkdirpSpy = jest.spyOn(io, 'mkdirP');
+    cpSpy = jest.spyOn(io, 'cp');
 
     // @actions/tool-cache
     isCacheActionAvailable = jest.spyOn(cache, 'isFeatureAvailable');
@@ -271,6 +274,92 @@ describe('setup-node', () => {
     expect(dlSpy).toHaveBeenCalled();
     expect(exSpy).toHaveBeenCalled();
     expect(cnSpy).toHaveBeenCalledWith(`::add-path::${expPath}${osm.EOL}`);
+  });
+
+  it('windows: falls back to exe version if not in manifest and not in node dist', async () => {
+    os.platform = 'win32';
+    os.arch = 'x64';
+
+    // a version which is not in the manifest but is in node dist
+    const versionSpec = '13.13.1-nightly20200415947ddec091';
+
+    const workingUrls = [
+      `https://nodejs.org/download/nightly/v${versionSpec}/win-x64/node.exe`,
+      `https://nodejs.org/download/nightly/v${versionSpec}/win-x64/node.lib`
+    ];
+
+    inputs['node-version'] = versionSpec;
+    inputs['always-auth'] = false;
+    inputs['token'] = 'faketoken';
+
+    // ... but not in the local cache
+    findSpy.mockImplementation(() => '');
+    findAllVersionsSpy.mockImplementation(() => []);
+
+    dlSpy.mockImplementation(async url => {
+      if (workingUrls.includes(url)) {
+        return '/some/temp/path';
+      }
+
+      throw new tc.HTTPError(404);
+    });
+    const toolPath = path.normalize(
+      '/cache/node/13.13.1-nightly20200415947ddec091/x64'
+    );
+    cacheSpy.mockImplementation(async () => toolPath);
+    mkdirpSpy.mockImplementation(async () => {});
+    cpSpy.mockImplementation(async () => {});
+
+    await main.run();
+
+    workingUrls.forEach(url => {
+      expect(dlSpy).toHaveBeenCalledWith(url);
+    });
+    expect(cnSpy).toHaveBeenCalledWith(`::add-path::${toolPath}${osm.EOL}`);
+  });
+
+  it('linux: does not fall back to exe version if not in manifest and not in node dist', async () => {
+    os.platform = 'linux';
+    os.arch = 'x64';
+
+    // a version which is not in the manifest but is in node dist
+    const versionSpec = '13.13.1-nightly20200415947ddec091';
+
+    const workingUrls = [
+      `https://nodejs.org/download/nightly/v${versionSpec}/win-x64/node.exe`,
+      `https://nodejs.org/download/nightly/v${versionSpec}/win-x64/node.lib`
+    ];
+
+    inputs['node-version'] = versionSpec;
+    inputs['always-auth'] = false;
+    inputs['token'] = 'faketoken';
+
+    // ... but not in the local cache
+    findSpy.mockImplementation(() => '');
+    findAllVersionsSpy.mockImplementation(() => []);
+
+    dlSpy.mockImplementation(async url => {
+      if (workingUrls.includes(url)) {
+        return '/some/temp/path';
+      }
+
+      throw new tc.HTTPError(404);
+    });
+    const toolPath = path.normalize(
+      '/cache/node/13.13.1-nightly20200415947ddec091/x64'
+    );
+    cacheSpy.mockImplementation(async () => toolPath);
+    mkdirpSpy.mockImplementation(async () => {});
+    cpSpy.mockImplementation(async () => {});
+
+    await main.run();
+
+    workingUrls.forEach(url => {
+      expect(dlSpy).not.toHaveBeenCalledWith(url);
+    });
+    expect(cnSpy).toHaveBeenCalledWith(
+      `::error::Unexpected HTTP response: 404${osm.EOL}`
+    );
   });
 
   it('does not find a version that does not exist', async () => {
