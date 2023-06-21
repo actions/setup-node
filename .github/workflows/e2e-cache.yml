@@ -134,3 +134,30 @@ jobs:
       - name: Verify node and yarn
         run: __tests__/verify-node.sh "${{ matrix.node-version }}"
         shell: bash
+
+  yarn-subprojects:
+    name: Test yarn subprojects
+    strategy:
+      matrix:
+        node-version: [12, 14, 16]
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: prepare sub-projects
+        run: __tests__/prepare-subprojects.sh
+
+      # expect
+      #  - no errors
+      #  - log
+      #    ##[debug]Cache Paths:
+      #    ##[debug]["sub2/.yarn/cache","sub3/.yarn/cache","../../../.cache/yarn/v6"]
+      - name: Setup Node
+        uses: ./
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'yarn'
+          cache-dependency-path: |
+            **/*.lock
+            yarn.lock

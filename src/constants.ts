@@ -6,7 +6,8 @@ export enum LockType {
 
 export enum State {
   CachePrimaryKey = 'CACHE_KEY',
-  CacheMatchedKey = 'CACHE_RESULT'
+  CacheMatchedKey = 'CACHE_RESULT',
+  CachePaths = 'CACHE_PATHS'
 }
 
 export enum Outputs {
