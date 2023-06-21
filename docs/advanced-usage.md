@@ -261,9 +261,13 @@ steps:
   with:
     node-version: '14'
     cache: 'pnpm'
-- run: pnpm install --frozen-lockfile
+- run: pnpm install
 - run: pnpm test
 ```
+
+> **Note**: By default `--frozen-lockfile` option is passed starting from pnpm `6.10.x`. It will be automatically added if you run it on [CI](https://pnpm.io/cli/install#--frozen-lockfile). 
+> If the `pnpm-lock.yaml` file changes then pass `--frozen-lockfile` option.
+
 
 **Using wildcard patterns to cache dependencies**
 ```yaml
