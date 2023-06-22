@@ -71157,7 +71157,7 @@ const restoreCache = (packageManager, cacheDependencyPath) => __awaiter(void 0, 
     const primaryKey = `${keyPrefix}-${fileHash}`;
     core.debug(`primary key is ${primaryKey}`);
     core.saveState(constants_1.State.CachePrimaryKey, primaryKey);
-    const cacheKey = (yield cache_utils_1.repoHasYarn3ManagedCache(packageManagerInfo))
+    const cacheKey = (yield cache_utils_1.repoHasYarn3ManagedCache(packageManagerInfo, cacheDependencyPath))
         ? yield cache.restoreCache(cachePaths, primaryKey, [keyPrefix])
         : yield cache.restoreCache(cachePaths, primaryKey);
     core.setOutput('cache-hit', Boolean(cacheKey));
@@ -71390,23 +71390,20 @@ const isCacheManagedByYarn3 = (directory) => __awaiter(void 0, void 0, void 0, f
     return enableGlobalCache === 'false';
 });
 /**
- * A function to report either the repo contains at least one Yarn managed directory
+ * A function to report the repo contains Yarn managed projects
  * @param packageManagerInfo - used to make sure current package manager is yarn
- * @return - true if there's at least one Yarn managed directory in the repo
+ * @param cacheDependencyPath - either a single string or multiline string with possible glob patterns
+ *                              expected to be the result of `core.getInput('cache-dependency-path')`
+ * @return - true if all project directories configured to be Yarn managed
  */
-const repoHasYarn3ManagedCache = (packageManagerInfo) => __awaiter(void 0, void 0, void 0, function* () {
+const repoHasYarn3ManagedCache = (packageManagerInfo, cacheDependencyPath) => __awaiter(void 0, void 0, void 0, function* () {
     if (packageManagerInfo.name !== 'yarn')
         return false;
-    const cacheDependencyPath = core.getInput('cache-dependency-path');
     const yarnDirs = cacheDependencyPath
         ? yield getProjectDirectoriesFromCacheDependencyPath(cacheDependencyPath)
         : [''];
-    for (const dir of yarnDirs.length === 0 ? [''] : yarnDirs) {
-        if (yield isCacheManagedByYarn3(dir)) {
-            return true;
-        }
-    }
-    return false;
+    const isManagedList = yield Promise.all(yarnDirs.map(isCacheManagedByYarn3));
+    return isManagedList.every(Boolean);
 });
 exports.repoHasYarn3ManagedCache = repoHasYarn3ManagedCache;
 function isGhes() {

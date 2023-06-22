@@ -249,28 +249,25 @@ const isCacheManagedByYarn3 = async (directory: string): Promise<boolean> => {
 };
 
 /**
- * A function to report either the repo contains at least one Yarn managed directory
+ * A function to report the repo contains Yarn managed projects
  * @param packageManagerInfo - used to make sure current package manager is yarn
- * @return - true if there's at least one Yarn managed directory in the repo
+ * @param cacheDependencyPath - either a single string or multiline string with possible glob patterns
+ *                              expected to be the result of `core.getInput('cache-dependency-path')`
+ * @return - true if all project directories configured to be Yarn managed
  */
 export const repoHasYarn3ManagedCache = async (
-  packageManagerInfo: PackageManagerInfo
+  packageManagerInfo: PackageManagerInfo,
+  cacheDependencyPath: string
 ): Promise<boolean> => {
   if (packageManagerInfo.name !== 'yarn') return false;
-
-  const cacheDependencyPath = core.getInput('cache-dependency-path');
 
   const yarnDirs = cacheDependencyPath
     ? await getProjectDirectoriesFromCacheDependencyPath(cacheDependencyPath)
     : [''];
 
-  for (const dir of yarnDirs.length === 0 ? [''] : yarnDirs) {
-    if (await isCacheManagedByYarn3(dir)) {
-      return true;
-    }
-  }
+  const isManagedList = await Promise.all(yarnDirs.map(isCacheManagedByYarn3));
 
-  return false;
+  return isManagedList.every(Boolean);
 };
 
 export function isGhes(): boolean {

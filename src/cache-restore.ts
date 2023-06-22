@@ -44,7 +44,10 @@ export const restoreCache = async (
 
   core.saveState(State.CachePrimaryKey, primaryKey);
 
-  const cacheKey = (await repoHasYarn3ManagedCache(packageManagerInfo))
+  const cacheKey = (await repoHasYarn3ManagedCache(
+    packageManagerInfo,
+    cacheDependencyPath
+  ))
     ? await cache.restoreCache(cachePaths, primaryKey, [keyPrefix])
     : await cache.restoreCache(cachePaths, primaryKey);
 
