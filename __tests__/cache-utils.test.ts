@@ -6,7 +6,8 @@ import {
   PackageManagerInfo,
   isCacheFeatureAvailable,
   supportedPackageManagers,
-  getCommandOutput
+  getCommandOutput,
+  resetProjectDirectoriesMemoized
 } from '../src/cache-utils';
 import fs from 'fs';
 import * as cacheUtils from '../src/cache-utils';
@@ -103,6 +104,8 @@ describe('cache-utils', () => {
         (pattern: string): Promise<Globber> =>
           MockGlobber.create(['/foo', '/bar'])
       );
+
+      resetProjectDirectoriesMemoized();
     });
 
     afterEach(() => {

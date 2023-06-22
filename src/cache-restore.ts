@@ -8,6 +8,7 @@ import {State} from './constants';
 import {
   getCacheDirectories,
   getPackageManagerInfo,
+  repoHasYarn3ManagedCache,
   PackageManagerInfo
 } from './cache-utils';
 
@@ -37,12 +38,16 @@ export const restoreCache = async (
     );
   }
 
-  const primaryKey = `node-cache-${platform}-${packageManager}-${fileHash}`;
+  const keyPrefix = `node-cache-${platform}-${packageManager}`;
+  const primaryKey = `${keyPrefix}-${fileHash}`;
   core.debug(`primary key is ${primaryKey}`);
 
   core.saveState(State.CachePrimaryKey, primaryKey);
 
-  const cacheKey = await cache.restoreCache(cachePaths, primaryKey);
+  const cacheKey = (await repoHasYarn3ManagedCache(packageManagerInfo))
+    ? await cache.restoreCache(cachePaths, primaryKey, [keyPrefix])
+    : await cache.restoreCache(cachePaths, primaryKey);
+
   core.setOutput('cache-hit', Boolean(cacheKey));
 
   if (!cacheKey) {

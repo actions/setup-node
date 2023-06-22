@@ -111,6 +111,20 @@ export const getPackageManagerInfo = async (packageManager: string) => {
 };
 
 /**
+ * getProjectDirectoriesFromCacheDependencyPath is called twice during `restoreCache`
+ *  - first through `getCacheDirectories`
+ *  - second from `repoHasYarn3ManagedCache`
+ *
+ *  it contains expensive IO operation and thus should be memoized
+ */
+
+let projectDirectoriesMemoized: string[] | null = null;
+/**
+ * unit test must reset memoized variables
+ */
+export const resetProjectDirectoriesMemoized = () =>
+  (projectDirectoriesMemoized = null);
+/**
  * Expands (converts) the string input `cache-dependency-path` to list of directories that
  * may be project roots
  * @param cacheDependencyPath - either a single string or multiline string with possible glob patterns
@@ -120,6 +134,10 @@ export const getPackageManagerInfo = async (packageManager: string) => {
 const getProjectDirectoriesFromCacheDependencyPath = async (
   cacheDependencyPath: string
 ): Promise<string[]> => {
+  if (projectDirectoriesMemoized !== null) {
+    return projectDirectoriesMemoized;
+  }
+
   const globber = await glob.create(cacheDependencyPath);
   const cacheDependenciesPaths = await globber.glob();
 
@@ -133,6 +151,7 @@ const getProjectDirectoriesFromCacheDependencyPath = async (
       `No existing directories found containing cache-dependency-path="${cacheDependencyPath}"`
     );
 
+  projectDirectoriesMemoized = existingDirectories;
   return existingDirectories;
 };
 
@@ -200,6 +219,58 @@ export const getCacheDirectories = async (
     );
   }
   return getCacheDirectoriesForRootProject(packageManagerInfo);
+};
+
+/**
+ * A function to check if the directory is a yarn project configured to manage
+ * obsolete dependencies in the local cache
+ * @param directory - a path to the folder
+ * @return - true if the directory's project is yarn managed
+ *  - if there's .yarn/cache folder do not mess with the dependencies kept in the repo, return false
+ *  - global cache is not managed by yarn @see https://yarnpkg.com/features/offline-cache, return false
+ *  - if local cache is not explicitly enabled (not yarn3), return false
+ *  - return true otherwise
+ */
+const isCacheManagedByYarn3 = async (directory: string): Promise<boolean> => {
+  const workDir = directory || process.env.GITHUB_WORKSPACE || '.';
+
+  // if .yarn/cache directory exists the cache is managed by version control system
+  const yarnCacheFile = path.join(workDir, '.yarn', 'cache');
+  if (fs.existsSync(yarnCacheFile) && fs.lstatSync(yarnCacheFile).isDirectory())
+    return Promise.resolve(false);
+
+  // NOTE: yarn1 returns 'undefined' with rc = 0
+  const enableGlobalCache = await getCommandOutput(
+    'yarn config get enableGlobalCache',
+    workDir
+  );
+  // only local cache is not managed by yarn
+  return enableGlobalCache === 'false';
+};
+
+/**
+ * A function to report either the repo contains at least one Yarn managed directory
+ * @param packageManagerInfo - used to make sure current package manager is yarn
+ * @return - true if there's at least one Yarn managed directory in the repo
+ */
+export const repoHasYarn3ManagedCache = async (
+  packageManagerInfo: PackageManagerInfo
+): Promise<boolean> => {
+  if (packageManagerInfo.name !== 'yarn') return false;
+
+  const cacheDependencyPath = core.getInput('cache-dependency-path');
+
+  const yarnDirs = cacheDependencyPath
+    ? await getProjectDirectoriesFromCacheDependencyPath(cacheDependencyPath)
+    : [''];
+
+  for (const dir of yarnDirs.length === 0 ? [''] : yarnDirs) {
+    if (await isCacheManagedByYarn3(dir)) {
+      return true;
+    }
+  }
+
+  return false;
 };
 
 export function isGhes(): boolean {
