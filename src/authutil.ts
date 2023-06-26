@@ -46,7 +46,13 @@ function writeRegistryToFile(
   // Remove http: or https: from front of registry.
   const authString: string =
     registryUrl.replace(/(^\w+:|^)/, '') + ':_authToken=${NODE_AUTH_TOKEN}';
+<< Watem-actions
   const registryString = `${scope}registry=${registryUrl}`;
+
+  const registryString: string = scope
+    ? `${scope}:registry=${registryUrl}`
+    : `registry=${registryUrl}`;
+>> main
   const alwaysAuthString = `always-auth=${alwaysAuth}`;
   newContents += `${authString}${os.EOL}${registryString}${os.EOL}${alwaysAuthString}`;
   fs.writeFileSync(fileLocation, newContents);
