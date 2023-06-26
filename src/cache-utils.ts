@@ -171,8 +171,9 @@ const getCacheDirectoriesFromCacheDependencyPath = async (
   );
   const cacheFoldersPaths = await Promise.all(
     projectDirectories.map(async projectDirectory => {
-      const cacheFolderPath =
-        packageManagerInfo.getCacheFolderPath(projectDirectory);
+      const cacheFolderPath = await packageManagerInfo.getCacheFolderPath(
+        projectDirectory
+      );
       core.debug(
         `${packageManagerInfo.name}'s cache folder "${cacheFolderPath}" configured for the directory "${projectDirectory}"`
       );
@@ -231,21 +232,38 @@ export const getCacheDirectories = async (
  *  - if local cache is not explicitly enabled (not yarn3), return false
  *  - return true otherwise
  */
-const isCacheManagedByYarn3 = async (directory: string): Promise<boolean> => {
+const projectHasYarnBerryManagedDependencies = async (
+  directory: string
+): Promise<boolean> => {
   const workDir = directory || process.env.GITHUB_WORKSPACE || '.';
+  core.debug(`check if "${workDir}" has locally managed yarn3 dependencies`);
 
   // if .yarn/cache directory exists the cache is managed by version control system
   const yarnCacheFile = path.join(workDir, '.yarn', 'cache');
-  if (fs.existsSync(yarnCacheFile) && fs.lstatSync(yarnCacheFile).isDirectory())
+  if (
+    fs.existsSync(yarnCacheFile) &&
+    fs.lstatSync(yarnCacheFile).isDirectory()
+  ) {
+    core.debug(
+      `"${workDir}" has .yarn/cache - dependencies are kept in the repository`
+    );
     return Promise.resolve(false);
+  }
 
-  // NOTE: yarn1 returns 'undefined' with rc = 0
+  // NOTE: yarn1 returns 'undefined' with return code = 0
   const enableGlobalCache = await getCommandOutput(
     'yarn config get enableGlobalCache',
     workDir
   );
   // only local cache is not managed by yarn
-  return enableGlobalCache === 'false';
+  const managed = enableGlobalCache.includes('false');
+  if (managed) {
+    core.debug(`"${workDir}" dependencies are managed by yarn 3 locally`);
+    return true;
+  } else {
+    core.debug(`"${workDir}" dependencies are not managed by yarn 3 locally`);
+    return false;
+  }
 };
 
 /**
@@ -255,7 +273,7 @@ const isCacheManagedByYarn3 = async (directory: string): Promise<boolean> => {
  *                              expected to be the result of `core.getInput('cache-dependency-path')`
  * @return - true if all project directories configured to be Yarn managed
  */
-export const repoHasYarn3ManagedCache = async (
+export const repoHasYarnBerryManagedDependencies = async (
   packageManagerInfo: PackageManagerInfo,
   cacheDependencyPath: string
 ): Promise<boolean> => {
@@ -265,7 +283,9 @@ export const repoHasYarn3ManagedCache = async (
     ? await getProjectDirectoriesFromCacheDependencyPath(cacheDependencyPath)
     : [''];
 
-  const isManagedList = await Promise.all(yarnDirs.map(isCacheManagedByYarn3));
+  const isManagedList = await Promise.all(
+    yarnDirs.map(projectHasYarnBerryManagedDependencies)
+  );
 
   return isManagedList.every(Boolean);
 };

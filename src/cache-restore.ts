@@ -8,7 +8,7 @@ import {State} from './constants';
 import {
   getCacheDirectories,
   getPackageManagerInfo,
-  repoHasYarn3ManagedCache,
+  repoHasYarnBerryManagedDependencies,
   PackageManagerInfo
 } from './cache-utils';
 
@@ -44,12 +44,19 @@ export const restoreCache = async (
 
   core.saveState(State.CachePrimaryKey, primaryKey);
 
-  const cacheKey = (await repoHasYarn3ManagedCache(
+  const isManagedByYarnBerry = await repoHasYarnBerryManagedDependencies(
     packageManagerInfo,
     cacheDependencyPath
-  ))
-    ? await cache.restoreCache(cachePaths, primaryKey, [keyPrefix])
-    : await cache.restoreCache(cachePaths, primaryKey);
+  );
+  let cacheKey: string | undefined;
+  if (isManagedByYarnBerry) {
+    core.info(
+      'All dependencies are managed locally by yarn3, the previous cache can be used'
+    );
+    cacheKey = await cache.restoreCache(cachePaths, primaryKey, [keyPrefix]);
+  } else {
+    cacheKey = await cache.restoreCache(cachePaths, primaryKey);
+  }
 
   core.setOutput('cache-hit', Boolean(cacheKey));
 
