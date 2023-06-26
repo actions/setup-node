@@ -1,11 +1,14 @@
 import * as core from '@actions/core';
-import * as installer from './installer';
+
 import fs from 'fs';
+import os from 'os';
+
 import * as auth from './authutil';
 import * as path from 'path';
 import {restoreCache} from './cache-restore';
-import {URL} from 'url';
-import os = require('os');
+import {isCacheFeatureAvailable} from './cache-utils';
+import {getNodejsDistribution} from './distributions/installer-factory';
+import {parseNodeVersionFile, printEnvDetailsAndSetOutput} from './util';
 
 export async function run() {
   try {
@@ -13,7 +16,7 @@ export async function run() {
     // Version is optional.  If supplied, install / use from the tool cache
     // If not supplied then task is still used to setup proxy, auth, etc...
     //
-    let version = resolveVersionInput();
+    const version = resolveVersionInput();
 
     let arch = core.getInput('architecture');
     const cache = core.getInput('cache');
@@ -31,13 +34,24 @@ export async function run() {
     }
 
     if (version) {
-      let token = core.getInput('token');
-      let auth = !token || isGhes() ? undefined : `token ${token}`;
-      let stable = (core.getInput('stable') || 'true').toUpperCase() === 'TRUE';
+      const token = core.getInput('token');
+      const auth = !token ? undefined : `token ${token}`;
+      const stable =
+        (core.getInput('stable') || 'true').toUpperCase() === 'TRUE';
       const checkLatest =
         (core.getInput('check-latest') || 'false').toUpperCase() === 'TRUE';
-      await installer.getNode(version, stable, checkLatest, auth, arch);
+      const nodejsInfo = {
+        versionSpec: version,
+        checkLatest,
+        auth,
+        stable,
+        arch
+      };
+      const nodeDistribution = getNodejsDistribution(nodejsInfo);
+      await nodeDistribution.setupNodeJs();
     }
+
+    await printEnvDetailsAndSetOutput();
 
     const registryUrl: string = core.getInput('registry-url');
     const alwaysAuth: string = core.getInput('always-auth');
@@ -45,10 +59,7 @@ export async function run() {
       auth.configAuthentication(registryUrl, alwaysAuth);
     }
 
-    if (cache) {
-      if (isGhes()) {
-        throw new Error('Caching is not supported on GHES');
-      }
+    if (cache && isCacheFeatureAvailable()) {
       const cacheDependencyPath = core.getInput('cache-dependency-path');
       await restoreCache(cache, cacheDependencyPath);
     }
@@ -66,15 +77,8 @@ export async function run() {
   }
 }
 
-function isGhes(): boolean {
-  const ghUrl = new URL(
-    process.env['GITHUB_SERVER_URL'] || 'https://github.com'
-  );
-  return ghUrl.hostname.toUpperCase() !== 'GITHUB.COM';
-}
-
 function resolveVersionInput(): string {
-  let version = core.getInput('node-version') || core.getInput('version');
+  let version = core.getInput('node-version');
   const versionFileInput = core.getInput('node-version-file');
 
   if (version && versionFileInput) {
@@ -92,14 +96,15 @@ function resolveVersionInput(): string {
       process.env.GITHUB_WORKSPACE!,
       versionFileInput
     );
+
     if (!fs.existsSync(versionFilePath)) {
       throw new Error(
         `The specified node version file at: ${versionFilePath} does not exist`
       );
     }
-    version = installer.parseNodeVersionFile(
-      fs.readFileSync(versionFilePath, 'utf8')
-    );
+
+    version = parseNodeVersionFile(fs.readFileSync(versionFilePath, 'utf8'));
+
     core.info(`Resolved ${versionFileInput} as ${version}`);
   }
 

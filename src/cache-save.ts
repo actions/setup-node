@@ -1,8 +1,7 @@
 import * as core from '@actions/core';
 import * as cache from '@actions/cache';
-import fs from 'fs';
 import {State} from './constants';
-import {getCacheDirectoryPath, getPackageManagerInfo} from './cache-utils';
+import {getPackageManagerInfo} from './cache-utils';
 
 // Catch and log any unhandled exceptions.  These exceptions can leak out of the uploadChunk method in
 // @actions/toolkit when a failed upload closes the file descriptor causing any in-process reads to
@@ -24,6 +23,7 @@ export async function run() {
 const cachePackages = async (packageManager: string) => {
   const state = core.getState(State.CacheMatchedKey);
   const primaryKey = core.getState(State.CachePrimaryKey);
+  const cachePaths = JSON.parse(core.getState(State.CachePaths) || '[]');
 
   const packageManagerInfo = await getPackageManagerInfo(packageManager);
   if (!packageManagerInfo) {
@@ -31,14 +31,12 @@ const cachePackages = async (packageManager: string) => {
     return;
   }
 
-  const cachePath = await getCacheDirectoryPath(
-    packageManagerInfo,
-    packageManager
-  );
-
-  if (!fs.existsSync(cachePath)) {
+  if (cachePaths.length === 0) {
+    // TODO: core.getInput has a bug - it can return undefined despite its definition (tests only?)
+    //       export declare function getInput(name: string, options?: InputOptions): string;
+    const cacheDependencyPath = core.getInput('cache-dependency-path') || '';
     throw new Error(
-      `Cache folder path is retrieved for ${packageManager} but doesn't exist on disk: ${cachePath}`
+      `Cache folder paths are not retrieved for ${packageManager} with cache-dependency-path = ${cacheDependencyPath}`
     );
   }
 
@@ -49,18 +47,12 @@ const cachePackages = async (packageManager: string) => {
     return;
   }
 
-  try {
-    await cache.saveCache([cachePath], primaryKey);
-    core.info(`Cache saved with the key: ${primaryKey}`);
-  } catch (error) {
-    if (error.name === cache.ValidationError.name) {
-      throw error;
-    } else if (error.name === cache.ReserveCacheError.name) {
-      core.info(error.message);
-    } else {
-      core.warning(`${error.message}`);
-    }
+  const cacheId = await cache.saveCache(cachePaths, primaryKey);
+  if (cacheId == -1) {
+    return;
   }
+
+  core.info(`Cache saved with the key: ${primaryKey}`);
 };
 
 run();

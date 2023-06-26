@@ -10,7 +10,7 @@ on:
       - releases/*
     paths-ignore:
       - '**.md'
-      
+
 jobs:
   node-npm-depencies-caching:
     name: Test npm (Node ${{ matrix.node-version}}, ${{ matrix.os }})
@@ -21,7 +21,7 @@ jobs:
         os: [ubuntu-latest, windows-latest, macos-latest]
         node-version: [12, 14, 16]
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Clean global cache
         run: npm cache clean --force
       - name: Setup Node
@@ -44,7 +44,7 @@ jobs:
         os: [ubuntu-latest, windows-latest, macos-latest]
         node-version: [12, 14, 16]
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Install pnpm
         uses: pnpm/action-setup@v2
         with:
@@ -75,9 +75,9 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
-        node-version: [12, 14, 16]
+        node-version: [14, 16]
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Yarn version
         run: yarn --version
       - name: Generate yarn file
@@ -109,7 +109,7 @@ jobs:
         os: [ubuntu-latest, windows-latest, macos-latest]
         node-version: [12, 14, 16]
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Update yarn
         run: yarn set version berry
       - name: Yarn version
@@ -134,3 +134,30 @@ jobs:
       - name: Verify node and yarn
         run: __tests__/verify-node.sh "${{ matrix.node-version }}"
         shell: bash
+
+  yarn-subprojects:
+    name: Test yarn subprojects
+    strategy:
+      matrix:
+        node-version: [12, 14, 16]
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: prepare sub-projects
+        run: __tests__/prepare-subprojects.sh
+
+      # expect
+      #  - no errors
+      #  - log
+      #    ##[debug]Cache Paths:
+      #    ##[debug]["sub2/.yarn/cache","sub3/.yarn/cache","../../../.cache/yarn/v6"]
+      - name: Setup Node
+        uses: ./
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'yarn'
+          cache-dependency-path: |
+            **/*.lock
+            yarn.lock

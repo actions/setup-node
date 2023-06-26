@@ -4,16 +4,16 @@ import * as glob from '@actions/glob';
 import path from 'path';
 import fs from 'fs';
 
-import {State, Outputs} from './constants';
+import {State} from './constants';
 import {
-  getCacheDirectoryPath,
+  getCacheDirectories,
   getPackageManagerInfo,
   PackageManagerInfo
 } from './cache-utils';
 
 export const restoreCache = async (
   packageManager: string,
-  cacheDependencyPath?: string
+  cacheDependencyPath: string
 ) => {
   const packageManagerInfo = await getPackageManagerInfo(packageManager);
   if (!packageManagerInfo) {
@@ -21,10 +21,11 @@ export const restoreCache = async (
   }
   const platform = process.env.RUNNER_OS;
 
-  const cachePath = await getCacheDirectoryPath(
+  const cachePaths = await getCacheDirectories(
     packageManagerInfo,
-    packageManager
+    cacheDependencyPath
   );
+  core.saveState(State.CachePaths, cachePaths);
   const lockFilePath = cacheDependencyPath
     ? cacheDependencyPath
     : findLockFile(packageManagerInfo);
@@ -41,7 +42,7 @@ export const restoreCache = async (
 
   core.saveState(State.CachePrimaryKey, primaryKey);
 
-  const cacheKey = await cache.restoreCache([cachePath], primaryKey);
+  const cacheKey = await cache.restoreCache(cachePaths, primaryKey);
   core.setOutput('cache-hit', Boolean(cacheKey));
 
   if (!cacheKey) {
@@ -54,8 +55,9 @@ export const restoreCache = async (
 };
 
 const findLockFile = (packageManager: PackageManagerInfo) => {
-  let lockFiles = packageManager.lockFilePatterns;
+  const lockFiles = packageManager.lockFilePatterns;
   const workspace = process.env.GITHUB_WORKSPACE!;
+
   const rootContent = fs.readdirSync(workspace);
 
   const lockFile = lockFiles.find(item => rootContent.includes(item));

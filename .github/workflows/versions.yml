@@ -3,14 +3,14 @@ name: versions
 on:
   pull_request:
     paths-ignore:
-      - '**.md'    
-  push:    
+      - '**.md'
+  push:
     branches:
       - main
       - releases/*
     paths-ignore:
       - '**.md'
-      
+
 jobs:
   local-cache:
     runs-on: ${{ matrix.os }}
@@ -20,7 +20,7 @@ jobs:
         os: [ubuntu-latest, windows-latest, macos-latest]
         node-version: [10, 12, 14]
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Setup Node
         uses: ./
         with:
@@ -35,13 +35,87 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
-        node-version: [lts/dubnium, lts/erbium, lts/fermium, lts/*]
+        node-version: [lts/dubnium, lts/erbium, lts/fermium, lts/*, lts/-1]
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Setup Node
         uses: ./
         with:
           node-version: ${{ matrix.node-version }}
+          check-latest: true
+      - if: runner.os != 'Windows'
+        name: Verify node and npm
+        run: |
+          . "$NVM_DIR/nvm.sh"
+          [[ $(nvm version-remote "${{ matrix.node-version }}") =~ ^v([^.]+) ]]
+          __tests__/verify-node.sh "${BASH_REMATCH[1]}"
+        shell: bash
+
+  v8-canary-syntax:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        node-version:
+          [
+            '20-v8-canary',
+            '20.0.0-v8-canary',
+            '20.0.0-v8-canary20221101e50e45c9f8'
+          ]
+    steps:
+      - uses: actions/checkout@v3
+      - name: Setup Node
+        uses: ./
+        with:
+          node-version: ${{ matrix.node-version }}
+      - name: Verify node and npm
+        run: |
+          canaryVersion="${{ matrix.node-version }}"
+          majorVersion=$(echo $canaryVersion | cut -d- -f1)
+          __tests__/verify-node.sh "$majorVersion"
+        shell: bash
+
+  nightly-syntax:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        node-version:
+          [16.0.0-nightly20210420a0261d231c, 17-nightly, 18.0.0-nightly]
+    steps:
+      - uses: actions/checkout@v3
+      - name: Setup Node
+        uses: ./
+        with:
+          node-version: ${{ matrix.node-version }}
+      - name: Verify node and npm
+        run: |
+          nightlyVersion="${{ matrix.node-version }}"
+          majorVersion=$(echo $nightlyVersion | cut -d- -f1)
+          __tests__/verify-node.sh "$majorVersion"
+        shell: bash
+
+  rc-syntax:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        node-version: [16.0.0-rc.1, 18.0.0-rc.2, 19.0.0-rc.0]
+    steps:
+      - uses: actions/checkout@v3
+      - name: Setup Node
+        uses: ./
+        with:
+          node-version: ${{ matrix.node-version }}
+      - name: Verify node and npm
+        run: |
+          rcVersion="${{ matrix.node-version }}"
+          majorVersion=$(echo $rcVersion | cut -d- -f1)
+          __tests__/verify-node.sh "$majorVersion"
+        shell: bash
 
   manifest:
     runs-on: ${{ matrix.os }}
@@ -51,7 +125,7 @@ jobs:
         os: [ubuntu-latest, windows-latest, macos-latest]
         node-version: [10.15, 12.16.0, 14.2.0, 16.3.0]
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Setup Node
         uses: ./
         with:
@@ -68,7 +142,7 @@ jobs:
         os: [ubuntu-latest, windows-latest, macos-latest]
         node-version: [10, 12, 14]
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Setup Node and check latest
         uses: ./
         with:
@@ -84,14 +158,33 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
+        node-version-file: [.nvmrc, .tool-versions, package.json]
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
+      - name: Remove volta from package.json
+        shell: bash
+        run: cat <<< "$(jq 'del(.volta)' ./__tests__/data/package.json)" > ./__tests__/data/package.json
       - name: Setup node from node version file
         uses: ./
         with:
-          node-version-file: '__tests__/data/.nvmrc'
+          node-version-file: '__tests__/data/${{ matrix.node-version-file }}'
       - name: Verify node
         run: __tests__/verify-node.sh 14
+
+  version-file-volta:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@v3
+      - name: Setup node from node version file
+        uses: ./
+        with:
+          node-version-file: '__tests__/data/package.json'
+      - name: Verify node
+        run: __tests__/verify-node.sh 16
 
   node-dist:
     runs-on: ${{ matrix.os }}
@@ -101,7 +194,7 @@ jobs:
         os: [ubuntu-latest, windows-latest, macos-latest]
         node-version: [11, 13]
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Setup Node from dist
         uses: ./
         with:
@@ -117,7 +210,7 @@ jobs:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       # test old versions which didn't have npm and layout different
       - name: Setup node 0.12.18 from dist
         uses: ./
@@ -130,7 +223,7 @@ jobs:
   arch:
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Setup node 14 x86 from dist
         uses: ./
         with:
@@ -139,3 +232,34 @@ jobs:
       - name: Verify node
         run: __tests__/verify-arch.sh "ia32"
         shell: bash
+
+  node-latest-aliases:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        node-version: [current, latest, node]
+    steps:
+      - name: Get node version
+        run: |
+          latestNodeVersion=$(curl https://nodejs.org/dist/index.json | jq -r '. [0].version')
+          echo "LATEST_NODE_VERSION=$latestNodeVersion" >> $GITHUB_OUTPUT
+        id: version
+        shell: bash
+      - uses: actions/checkout@v3
+      - name: Setup Node
+        uses: ./
+        with:
+          node-version: ${{ matrix.node-version }}
+      - name: Retrieve version after install
+        run: |
+          updatedVersion=$(echo $(node --version))
+          echo "NODE_VERSION_UPDATED=$updatedVersion" >> $GITHUB_OUTPUT
+        id: updatedVersion
+        shell: bash
+      - name: Compare versions
+        if: ${{ steps.version.outputs.LATEST_NODE_VERSION != steps.updatedVersion.outputs.NODE_VERSION_UPDATED}}
+        run: |
+          echo "Latest node version failed to download."
+          exit 1

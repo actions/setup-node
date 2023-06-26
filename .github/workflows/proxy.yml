@@ -19,13 +19,13 @@ jobs:
       options: --dns 127.0.0.1
     services:
       squid-proxy:
-        image: datadog/squid:latest
+        image: ubuntu/squid:latest
         ports:
           - 3128:3128
     env:
       https_proxy: http://squid-proxy:3128
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Clear tool cache
         run: rm -rf $RUNNER_TOOL_CACHE/*
       - name: Setup node 14
@@ -41,7 +41,7 @@ jobs:
       https_proxy: http://no-such-proxy:3128
       no_proxy: api.github.com,github.com,nodejs.org,registry.npmjs.org,*.s3.amazonaws.com,s3.amazonaws.com
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Clear tool cache
         run: rm -rf $RUNNER_TOOL_CACHE/*
       - name: Setup node 11

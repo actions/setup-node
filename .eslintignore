@@ -1,0 +1,6 @@
+# Ignore list
+/*
+
+# Do not ignore these folders:
+!__tests__/
+!src/
