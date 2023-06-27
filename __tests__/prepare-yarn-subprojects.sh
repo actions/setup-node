@@ -32,10 +32,20 @@ cat <<EOT >package.json
 EOT
 yarn set version 3.5.1
 yarn install
+if [ x$1 = 'xglobal' ];then
+  echo enableGlobalCache
+  echo 'enableGlobalCache: true' >> .yarnrc.yml
+fi
 
-echo "create yarn1 project in the root"
 cd ..
-cat <<EOT >package.json
+if [ x$1 != 'xkeepcache' -a x$2 != 'xkeepcache' ]; then
+  rm -rf sub2/.yarn/cache
+  rm -rf sub3/.yarn/cache
+fi
+
+if [ x$1 = 'xyarn1' ];then
+  echo "create yarn1 project in the root"
+  cat <<EOT >package.json
 {
   "name": "subproject",
   "dependencies": {
@@ -44,5 +54,6 @@ cat <<EOT >package.json
   }
 }
 EOT
-yarn set version 1.22.19
-yarn install
+  yarn set version 1.22.19
+  yarn install
+fi
