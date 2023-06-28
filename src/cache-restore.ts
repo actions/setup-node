@@ -8,6 +8,7 @@ import {State} from './constants';
 import {
   getCacheDirectories,
   getPackageManagerInfo,
+  repoHasYarnBerryManagedDependencies,
   PackageManagerInfo
 } from './cache-utils';
 
@@ -37,12 +38,26 @@ export const restoreCache = async (
     );
   }
 
-  const primaryKey = `node-cache-${platform}-${packageManager}-${fileHash}`;
+  const keyPrefix = `node-cache-${platform}-${packageManager}`;
+  const primaryKey = `${keyPrefix}-${fileHash}`;
   core.debug(`primary key is ${primaryKey}`);
 
   core.saveState(State.CachePrimaryKey, primaryKey);
 
-  const cacheKey = await cache.restoreCache(cachePaths, primaryKey);
+  const isManagedByYarnBerry = await repoHasYarnBerryManagedDependencies(
+    packageManagerInfo,
+    cacheDependencyPath
+  );
+  let cacheKey: string | undefined;
+  if (isManagedByYarnBerry) {
+    core.info(
+      'All dependencies are managed locally by yarn3, the previous cache can be used'
+    );
+    cacheKey = await cache.restoreCache(cachePaths, primaryKey, [keyPrefix]);
+  } else {
+    cacheKey = await cache.restoreCache(cachePaths, primaryKey);
+  }
+
   core.setOutput('cache-hit', Boolean(cacheKey));
 
   if (!cacheKey) {

@@ -111,6 +111,20 @@ export const getPackageManagerInfo = async (packageManager: string) => {
 };
 
 /**
+ * getProjectDirectoriesFromCacheDependencyPath is called twice during `restoreCache`
+ *  - first through `getCacheDirectories`
+ *  - second from `repoHasYarn3ManagedCache`
+ *
+ *  it contains expensive IO operation and thus should be memoized
+ */
+
+let projectDirectoriesMemoized: string[] | null = null;
+/**
+ * unit test must reset memoized variables
+ */
+export const resetProjectDirectoriesMemoized = () =>
+  (projectDirectoriesMemoized = null);
+/**
  * Expands (converts) the string input `cache-dependency-path` to list of directories that
  * may be project roots
  * @param cacheDependencyPath - either a single string or multiline string with possible glob patterns
@@ -120,6 +134,10 @@ export const getPackageManagerInfo = async (packageManager: string) => {
 const getProjectDirectoriesFromCacheDependencyPath = async (
   cacheDependencyPath: string
 ): Promise<string[]> => {
+  if (projectDirectoriesMemoized !== null) {
+    return projectDirectoriesMemoized;
+  }
+
   const globber = await glob.create(cacheDependencyPath);
   const cacheDependenciesPaths = await globber.glob();
 
@@ -133,6 +151,7 @@ const getProjectDirectoriesFromCacheDependencyPath = async (
       `No existing directories found containing cache-dependency-path="${cacheDependencyPath}"`
     );
 
+  projectDirectoriesMemoized = existingDirectories;
   return existingDirectories;
 };
 
@@ -152,8 +171,9 @@ const getCacheDirectoriesFromCacheDependencyPath = async (
   );
   const cacheFoldersPaths = await Promise.all(
     projectDirectories.map(async projectDirectory => {
-      const cacheFolderPath =
-        packageManagerInfo.getCacheFolderPath(projectDirectory);
+      const cacheFolderPath = await packageManagerInfo.getCacheFolderPath(
+        projectDirectory
+      );
       core.debug(
         `${packageManagerInfo.name}'s cache folder "${cacheFolderPath}" configured for the directory "${projectDirectory}"`
       );
@@ -200,6 +220,74 @@ export const getCacheDirectories = async (
     );
   }
   return getCacheDirectoriesForRootProject(packageManagerInfo);
+};
+
+/**
+ * A function to check if the directory is a yarn project configured to manage
+ * obsolete dependencies in the local cache
+ * @param directory - a path to the folder
+ * @return - true if the directory's project is yarn managed
+ *  - if there's .yarn/cache folder do not mess with the dependencies kept in the repo, return false
+ *  - global cache is not managed by yarn @see https://yarnpkg.com/features/offline-cache, return false
+ *  - if local cache is not explicitly enabled (not yarn3), return false
+ *  - return true otherwise
+ */
+const projectHasYarnBerryManagedDependencies = async (
+  directory: string
+): Promise<boolean> => {
+  const workDir = directory || process.env.GITHUB_WORKSPACE || '.';
+  core.debug(`check if "${workDir}" has locally managed yarn3 dependencies`);
+
+  // if .yarn/cache directory exists the cache is managed by version control system
+  const yarnCacheFile = path.join(workDir, '.yarn', 'cache');
+  if (
+    fs.existsSync(yarnCacheFile) &&
+    fs.lstatSync(yarnCacheFile).isDirectory()
+  ) {
+    core.debug(
+      `"${workDir}" has .yarn/cache - dependencies are kept in the repository`
+    );
+    return Promise.resolve(false);
+  }
+
+  // NOTE: yarn1 returns 'undefined' with return code = 0
+  const enableGlobalCache = await getCommandOutput(
+    'yarn config get enableGlobalCache',
+    workDir
+  );
+  // only local cache is not managed by yarn
+  const managed = enableGlobalCache.includes('false');
+  if (managed) {
+    core.debug(`"${workDir}" dependencies are managed by yarn 3 locally`);
+    return true;
+  } else {
+    core.debug(`"${workDir}" dependencies are not managed by yarn 3 locally`);
+    return false;
+  }
+};
+
+/**
+ * A function to report the repo contains Yarn managed projects
+ * @param packageManagerInfo - used to make sure current package manager is yarn
+ * @param cacheDependencyPath - either a single string or multiline string with possible glob patterns
+ *                              expected to be the result of `core.getInput('cache-dependency-path')`
+ * @return - true if all project directories configured to be Yarn managed
+ */
+export const repoHasYarnBerryManagedDependencies = async (
+  packageManagerInfo: PackageManagerInfo,
+  cacheDependencyPath: string
+): Promise<boolean> => {
+  if (packageManagerInfo.name !== 'yarn') return false;
+
+  const yarnDirs = cacheDependencyPath
+    ? await getProjectDirectoriesFromCacheDependencyPath(cacheDependencyPath)
+    : [''];
+
+  const isManagedList = await Promise.all(
+    yarnDirs.map(projectHasYarnBerryManagedDependencies)
+  );
+
+  return isManagedList.every(Boolean);
 };
 
 export function isGhes(): boolean {
