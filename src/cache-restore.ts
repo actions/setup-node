@@ -6,14 +6,15 @@ import fs from 'fs';
 
 import {State} from './constants';
 import {
-  getCacheDirectoryPath,
+  getCacheDirectories,
   getPackageManagerInfo,
+  repoHasYarnBerryManagedDependencies,
   PackageManagerInfo
 } from './cache-utils';
 
 export const restoreCache = async (
   packageManager: string,
-  cacheDependencyPath?: string
+  cacheDependencyPath: string
 ) => {
   const packageManagerInfo = await getPackageManagerInfo(packageManager);
   if (!packageManagerInfo) {
@@ -21,10 +22,11 @@ export const restoreCache = async (
   }
   const platform = process.env.RUNNER_OS;
 
-  const cachePath = await getCacheDirectoryPath(
+  const cachePaths = await getCacheDirectories(
     packageManagerInfo,
-    packageManager
+    cacheDependencyPath
   );
+  core.saveState(State.CachePaths, cachePaths);
   const lockFilePath = cacheDependencyPath
     ? cacheDependencyPath
     : findLockFile(packageManagerInfo);
@@ -36,12 +38,26 @@ export const restoreCache = async (
     );
   }
 
-  const primaryKey = `node-cache-${platform}-${packageManager}-${fileHash}`;
+  const keyPrefix = `node-cache-${platform}-${packageManager}`;
+  const primaryKey = `${keyPrefix}-${fileHash}`;
   core.debug(`primary key is ${primaryKey}`);
 
   core.saveState(State.CachePrimaryKey, primaryKey);
 
-  const cacheKey = await cache.restoreCache([cachePath], primaryKey);
+  const isManagedByYarnBerry = await repoHasYarnBerryManagedDependencies(
+    packageManagerInfo,
+    cacheDependencyPath
+  );
+  let cacheKey: string | undefined;
+  if (isManagedByYarnBerry) {
+    core.info(
+      'All dependencies are managed locally by yarn3, the previous cache can be used'
+    );
+    cacheKey = await cache.restoreCache(cachePaths, primaryKey, [keyPrefix]);
+  } else {
+    cacheKey = await cache.restoreCache(cachePaths, primaryKey);
+  }
+
   core.setOutput('cache-hit', Boolean(cacheKey));
 
   if (!cacheKey) {
@@ -56,6 +72,7 @@ export const restoreCache = async (
 const findLockFile = (packageManager: PackageManagerInfo) => {
   const lockFiles = packageManager.lockFilePatterns;
   const workspace = process.env.GITHUB_WORKSPACE!;
+
   const rootContent = fs.readdirSync(workspace);
 
   const lockFile = lockFiles.find(item => rootContent.includes(item));

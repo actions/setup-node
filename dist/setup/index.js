@@ -71144,7 +71144,8 @@ const restoreCache = (packageManager, cacheDependencyPath) => __awaiter(void 0, 
         throw new Error(`Caching for '${packageManager}' is not supported`);
     }
     const platform = process.env.RUNNER_OS;
-    const cachePath = yield cache_utils_1.getCacheDirectoryPath(packageManagerInfo, packageManager);
+    const cachePaths = yield cache_utils_1.getCacheDirectories(packageManagerInfo, cacheDependencyPath);
+    core.saveState(constants_1.State.CachePaths, cachePaths);
     const lockFilePath = cacheDependencyPath
         ? cacheDependencyPath
         : findLockFile(packageManagerInfo);
@@ -71152,10 +71153,19 @@ const restoreCache = (packageManager, cacheDependencyPath) => __awaiter(void 0, 
     if (!fileHash) {
         throw new Error('Some specified paths were not resolved, unable to cache dependencies.');
     }
-    const primaryKey = `node-cache-${platform}-${packageManager}-${fileHash}`;
+    const keyPrefix = `node-cache-${platform}-${packageManager}`;
+    const primaryKey = `${keyPrefix}-${fileHash}`;
     core.debug(`primary key is ${primaryKey}`);
     core.saveState(constants_1.State.CachePrimaryKey, primaryKey);
-    const cacheKey = yield cache.restoreCache([cachePath], primaryKey);
+    const isManagedByYarnBerry = yield cache_utils_1.repoHasYarnBerryManagedDependencies(packageManagerInfo, cacheDependencyPath);
+    let cacheKey;
+    if (isManagedByYarnBerry) {
+        core.info('All dependencies are managed locally by yarn3, the previous cache can be used');
+        cacheKey = yield cache.restoreCache(cachePaths, primaryKey, [keyPrefix]);
+    }
+    else {
+        cacheKey = yield cache.restoreCache(cachePaths, primaryKey);
+    }
     core.setOutput('cache-hit', Boolean(cacheKey));
     if (!cacheKey) {
         core.info(`${packageManager} cache is not found`);
@@ -71212,31 +71222,47 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.isCacheFeatureAvailable = exports.isGhes = exports.getCacheDirectoryPath = exports.getPackageManagerInfo = exports.getCommandOutput = exports.supportedPackageManagers = void 0;
+exports.isCacheFeatureAvailable = exports.isGhes = exports.repoHasYarnBerryManagedDependencies = exports.getCacheDirectories = exports.resetProjectDirectoriesMemoized = exports.getPackageManagerInfo = exports.getCommandOutputNotEmpty = exports.getCommandOutput = exports.supportedPackageManagers = void 0;
 const core = __importStar(__nccwpck_require__(2186));
 const exec = __importStar(__nccwpck_require__(1514));
 const cache = __importStar(__nccwpck_require__(7799));
+const glob = __importStar(__nccwpck_require__(8090));
+const path_1 = __importDefault(__nccwpck_require__(1017));
+const fs_1 = __importDefault(__nccwpck_require__(7147));
+const util_1 = __nccwpck_require__(2629);
 exports.supportedPackageManagers = {
     npm: {
+        name: 'npm',
         lockFilePatterns: ['package-lock.json', 'npm-shrinkwrap.json', 'yarn.lock'],
-        getCacheFolderCommand: 'npm config get cache'
+        getCacheFolderPath: () => exports.getCommandOutputNotEmpty('npm config get cache', 'Could not get npm cache folder path')
     },
     pnpm: {
+        name: 'pnpm',
         lockFilePatterns: ['pnpm-lock.yaml'],
-        getCacheFolderCommand: 'pnpm store path --silent'
+        getCacheFolderPath: () => exports.getCommandOutputNotEmpty('pnpm store path --silent', 'Could not get pnpm cache folder path')
     },
-    yarn1: {
+    yarn: {
+        name: 'yarn',
         lockFilePatterns: ['yarn.lock'],
-        getCacheFolderCommand: 'yarn cache dir'
-    },
-    yarn2: {
-        lockFilePatterns: ['yarn.lock'],
-        getCacheFolderCommand: 'yarn config get cacheFolder'
+        getCacheFolderPath: (projectDir) => __awaiter(void 0, void 0, void 0, function* () {
+            const yarnVersion = yield exports.getCommandOutputNotEmpty(`yarn --version`, 'Could not retrieve version of yarn', projectDir);
+            core.debug(`Consumed yarn version is ${yarnVersion} (working dir: "${projectDir || ''}")`);
+            const stdOut = yarnVersion.startsWith('1.')
+                ? yield exports.getCommandOutput('yarn cache dir', projectDir)
+                : yield exports.getCommandOutput('yarn config get cacheFolder', projectDir);
+            if (!stdOut) {
+                throw new Error(`Could not get yarn cache folder path for ${projectDir}`);
+            }
+            return stdOut;
+        })
     }
 };
-const getCommandOutput = (toolCommand) => __awaiter(void 0, void 0, void 0, function* () {
-    let { stdout, stderr, exitCode } = yield exec.getExecOutput(toolCommand, undefined, { ignoreReturnCode: true });
+const getCommandOutput = (toolCommand, cwd) => __awaiter(void 0, void 0, void 0, function* () {
+    let { stdout, stderr, exitCode } = yield exec.getExecOutput(toolCommand, undefined, Object.assign({ ignoreReturnCode: true }, (cwd && { cwd })));
     if (exitCode) {
         stderr = !stderr.trim()
             ? `The '${toolCommand}' command failed with exit code: ${exitCode}`
@@ -71246,13 +71272,14 @@ const getCommandOutput = (toolCommand) => __awaiter(void 0, void 0, void 0, func
     return stdout.trim();
 });
 exports.getCommandOutput = getCommandOutput;
-const getPackageManagerVersion = (packageManager, command) => __awaiter(void 0, void 0, void 0, function* () {
-    const stdOut = yield exports.getCommandOutput(`${packageManager} ${command}`);
+const getCommandOutputNotEmpty = (toolCommand, error, cwd) => __awaiter(void 0, void 0, void 0, function* () {
+    const stdOut = exports.getCommandOutput(toolCommand, cwd);
     if (!stdOut) {
-        throw new Error(`Could not retrieve version of ${packageManager}`);
+        throw new Error(error);
     }
     return stdOut;
 });
+exports.getCommandOutputNotEmpty = getCommandOutputNotEmpty;
 const getPackageManagerInfo = (packageManager) => __awaiter(void 0, void 0, void 0, function* () {
     if (packageManager === 'npm') {
         return exports.supportedPackageManagers.npm;
@@ -71261,29 +71288,142 @@ const getPackageManagerInfo = (packageManager) => __awaiter(void 0, void 0, void
         return exports.supportedPackageManagers.pnpm;
     }
     else if (packageManager === 'yarn') {
-        const yarnVersion = yield getPackageManagerVersion('yarn', '--version');
-        core.debug(`Consumed yarn version is ${yarnVersion}`);
-        if (yarnVersion.startsWith('1.')) {
-            return exports.supportedPackageManagers.yarn1;
-        }
-        else {
-            return exports.supportedPackageManagers.yarn2;
-        }
+        return exports.supportedPackageManagers.yarn;
     }
     else {
         return null;
     }
 });
 exports.getPackageManagerInfo = getPackageManagerInfo;
-const getCacheDirectoryPath = (packageManagerInfo, packageManager) => __awaiter(void 0, void 0, void 0, function* () {
-    const stdOut = yield exports.getCommandOutput(packageManagerInfo.getCacheFolderCommand);
-    if (!stdOut) {
-        throw new Error(`Could not get cache folder path for ${packageManager}`);
+/**
+ * getProjectDirectoriesFromCacheDependencyPath is called twice during `restoreCache`
+ *  - first through `getCacheDirectories`
+ *  - second from `repoHasYarn3ManagedCache`
+ *
+ *  it contains expensive IO operation and thus should be memoized
+ */
+let projectDirectoriesMemoized = null;
+/**
+ * unit test must reset memoized variables
+ */
+const resetProjectDirectoriesMemoized = () => (projectDirectoriesMemoized = null);
+exports.resetProjectDirectoriesMemoized = resetProjectDirectoriesMemoized;
+/**
+ * Expands (converts) the string input `cache-dependency-path` to list of directories that
+ * may be project roots
+ * @param cacheDependencyPath - either a single string or multiline string with possible glob patterns
+ *                              expected to be the result of `core.getInput('cache-dependency-path')`
+ * @return list of directories and possible
+ */
+const getProjectDirectoriesFromCacheDependencyPath = (cacheDependencyPath) => __awaiter(void 0, void 0, void 0, function* () {
+    if (projectDirectoriesMemoized !== null) {
+        return projectDirectoriesMemoized;
     }
-    core.debug(`${packageManager} path is ${stdOut}`);
-    return stdOut.trim();
+    const globber = yield glob.create(cacheDependencyPath);
+    const cacheDependenciesPaths = yield globber.glob();
+    const existingDirectories = cacheDependenciesPaths
+        .map(path_1.default.dirname)
+        .filter(util_1.unique())
+        .filter(directory => fs_1.default.lstatSync(directory).isDirectory());
+    if (!existingDirectories.length)
+        core.warning(`No existing directories found containing cache-dependency-path="${cacheDependencyPath}"`);
+    projectDirectoriesMemoized = existingDirectories;
+    return existingDirectories;
 });
-exports.getCacheDirectoryPath = getCacheDirectoryPath;
+/**
+ * Finds the cache directories configured for the repo if cache-dependency-path is not empty
+ * @param packageManagerInfo - an object having getCacheFolderPath method specific to given PM
+ * @param cacheDependencyPath - either a single string or multiline string with possible glob patterns
+ *                              expected to be the result of `core.getInput('cache-dependency-path')`
+ * @return list of files on which the cache depends
+ */
+const getCacheDirectoriesFromCacheDependencyPath = (packageManagerInfo, cacheDependencyPath) => __awaiter(void 0, void 0, void 0, function* () {
+    const projectDirectories = yield getProjectDirectoriesFromCacheDependencyPath(cacheDependencyPath);
+    const cacheFoldersPaths = yield Promise.all(projectDirectories.map((projectDirectory) => __awaiter(void 0, void 0, void 0, function* () {
+        const cacheFolderPath = yield packageManagerInfo.getCacheFolderPath(projectDirectory);
+        core.debug(`${packageManagerInfo.name}'s cache folder "${cacheFolderPath}" configured for the directory "${projectDirectory}"`);
+        return cacheFolderPath;
+    })));
+    // uniq in order to do not cache the same directories twice
+    return cacheFoldersPaths.filter(util_1.unique());
+});
+/**
+ * Finds the cache directories configured for the repo ignoring cache-dependency-path
+ * @param packageManagerInfo - an object having getCacheFolderPath method specific to given PM
+ * @return list of files on which the cache depends
+ */
+const getCacheDirectoriesForRootProject = (packageManagerInfo) => __awaiter(void 0, void 0, void 0, function* () {
+    const cacheFolderPath = yield packageManagerInfo.getCacheFolderPath();
+    core.debug(`${packageManagerInfo.name}'s cache folder "${cacheFolderPath}" configured for the root directory`);
+    return [cacheFolderPath];
+});
+/**
+ * A function to find the cache directories configured for the repo
+ * currently it handles only the case of PM=yarn && cacheDependencyPath is not empty
+ * @param packageManagerInfo - an object having getCacheFolderPath method specific to given PM
+ * @param cacheDependencyPath - either a single string or multiline string with possible glob patterns
+ *                              expected to be the result of `core.getInput('cache-dependency-path')`
+ * @return list of files on which the cache depends
+ */
+const getCacheDirectories = (packageManagerInfo, cacheDependencyPath) => __awaiter(void 0, void 0, void 0, function* () {
+    // For yarn, if cacheDependencyPath is set, ask information about cache folders in each project
+    // folder satisfied by cacheDependencyPath https://github.com/actions/setup-node/issues/488
+    if (packageManagerInfo.name === 'yarn' && cacheDependencyPath) {
+        return getCacheDirectoriesFromCacheDependencyPath(packageManagerInfo, cacheDependencyPath);
+    }
+    return getCacheDirectoriesForRootProject(packageManagerInfo);
+});
+exports.getCacheDirectories = getCacheDirectories;
+/**
+ * A function to check if the directory is a yarn project configured to manage
+ * obsolete dependencies in the local cache
+ * @param directory - a path to the folder
+ * @return - true if the directory's project is yarn managed
+ *  - if there's .yarn/cache folder do not mess with the dependencies kept in the repo, return false
+ *  - global cache is not managed by yarn @see https://yarnpkg.com/features/offline-cache, return false
+ *  - if local cache is not explicitly enabled (not yarn3), return false
+ *  - return true otherwise
+ */
+const projectHasYarnBerryManagedDependencies = (directory) => __awaiter(void 0, void 0, void 0, function* () {
+    const workDir = directory || process.env.GITHUB_WORKSPACE || '.';
+    core.debug(`check if "${workDir}" has locally managed yarn3 dependencies`);
+    // if .yarn/cache directory exists the cache is managed by version control system
+    const yarnCacheFile = path_1.default.join(workDir, '.yarn', 'cache');
+    if (fs_1.default.existsSync(yarnCacheFile) &&
+        fs_1.default.lstatSync(yarnCacheFile).isDirectory()) {
+        core.debug(`"${workDir}" has .yarn/cache - dependencies are kept in the repository`);
+        return Promise.resolve(false);
+    }
+    // NOTE: yarn1 returns 'undefined' with return code = 0
+    const enableGlobalCache = yield exports.getCommandOutput('yarn config get enableGlobalCache', workDir);
+    // only local cache is not managed by yarn
+    const managed = enableGlobalCache.includes('false');
+    if (managed) {
+        core.debug(`"${workDir}" dependencies are managed by yarn 3 locally`);
+        return true;
+    }
+    else {
+        core.debug(`"${workDir}" dependencies are not managed by yarn 3 locally`);
+        return false;
+    }
+});
+/**
+ * A function to report the repo contains Yarn managed projects
+ * @param packageManagerInfo - used to make sure current package manager is yarn
+ * @param cacheDependencyPath - either a single string or multiline string with possible glob patterns
+ *                              expected to be the result of `core.getInput('cache-dependency-path')`
+ * @return - true if all project directories configured to be Yarn managed
+ */
+const repoHasYarnBerryManagedDependencies = (packageManagerInfo, cacheDependencyPath) => __awaiter(void 0, void 0, void 0, function* () {
+    if (packageManagerInfo.name !== 'yarn')
+        return false;
+    const yarnDirs = cacheDependencyPath
+        ? yield getProjectDirectoriesFromCacheDependencyPath(cacheDependencyPath)
+        : [''];
+    const isManagedList = yield Promise.all(yarnDirs.map(projectHasYarnBerryManagedDependencies));
+    return isManagedList.every(Boolean);
+});
+exports.repoHasYarnBerryManagedDependencies = repoHasYarnBerryManagedDependencies;
 function isGhes() {
     const ghUrl = new URL(process.env['GITHUB_SERVER_URL'] || 'https://github.com');
     return ghUrl.hostname.toUpperCase() !== 'GITHUB.COM';
@@ -71321,6 +71461,7 @@ var State;
 (function (State) {
     State["CachePrimaryKey"] = "CACHE_KEY";
     State["CacheMatchedKey"] = "CACHE_RESULT";
+    State["CachePaths"] = "CACHE_PATHS";
 })(State = exports.State || (exports.State = {}));
 var Outputs;
 (function (Outputs) {
@@ -72159,7 +72300,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.printEnvDetailsAndSetOutput = exports.parseNodeVersionFile = void 0;
+exports.unique = exports.printEnvDetailsAndSetOutput = exports.parseNodeVersionFile = void 0;
 const core = __importStar(__nccwpck_require__(2186));
 const exec = __importStar(__nccwpck_require__(1514));
 function parseNodeVersionFile(contents) {
@@ -72221,6 +72362,16 @@ function getToolVersion(tool, options) {
         }
     });
 }
+const unique = () => {
+    const encountered = new Set();
+    return (value) => {
+        if (encountered.has(value))
+            return false;
+        encountered.add(value);
+        return true;
+    };
+};
+exports.unique = unique;
 
 
 /***/ }),

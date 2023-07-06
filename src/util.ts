@@ -61,3 +61,12 @@ async function getToolVersion(tool: string, options: string[]) {
     return '';
   }
 }
+
+export const unique = () => {
+  const encountered = new Set();
+  return (value: unknown): boolean => {
+    if (encountered.has(value)) return false;
+    encountered.add(value);
+    return true;
+  };
+};
