@@ -88,7 +88,11 @@ export default abstract class BaseDistribution {
   }
 
   protected findVersionInHostedToolCacheDirectory() {
-    return tc.find('node', this.nodeInfo.versionSpec, this.translateArchToDistUrl(this.nodeInfo.arch));
+    return tc.find(
+      'node',
+      this.nodeInfo.versionSpec,
+      this.translateArchToDistUrl(this.nodeInfo.arch)
+    );
   }
 
   protected async getNodeJsVersions(): Promise<INodeVersion[]> {
