@@ -1,4 +1,4 @@
-name: e2e-cache
+/*** name: e2e-cache
 
 on:
   pull_request:
