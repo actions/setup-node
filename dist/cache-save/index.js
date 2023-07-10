@@ -60342,10 +60342,14 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.run = void 0;
 const core = __importStar(__nccwpck_require__(2186));
 const cache = __importStar(__nccwpck_require__(7799));
+const fs_1 = __importDefault(__nccwpck_require__(7147));
 const constants_1 = __nccwpck_require__(9042);
 const cache_utils_1 = __nccwpck_require__(1678);
 // Catch and log any unhandled exceptions.  These exceptions can leak out of the uploadChunk method in
@@ -60370,13 +60374,14 @@ exports.run = run;
 const cachePackages = (packageManager) => __awaiter(void 0, void 0, void 0, function* () {
     const state = core.getState(constants_1.State.CacheMatchedKey);
     const primaryKey = core.getState(constants_1.State.CachePrimaryKey);
-    const cachePaths = JSON.parse(core.getState(constants_1.State.CachePaths) || '[]');
+    let cachePaths = JSON.parse(core.getState(constants_1.State.CachePaths) || '[]');
+    cachePaths = cachePaths.filter(fs_1.default.existsSync);
     const packageManagerInfo = yield cache_utils_1.getPackageManagerInfo(packageManager);
     if (!packageManagerInfo) {
         core.debug(`Caching for '${packageManager}' is not supported`);
         return;
     }
-    if (cachePaths.length === 0) {
+    if (!cachePaths.length) {
         // TODO: core.getInput has a bug - it can return undefined despite its definition (tests only?)
         //       export declare function getInput(name: string, options?: InputOptions): string;
         const cacheDependencyPath = core.getInput('cache-dependency-path') || '';
