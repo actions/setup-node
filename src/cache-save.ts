@@ -26,8 +26,10 @@ export async function run() {
 const cachePackages = async (packageManager: string) => {
   const state = core.getState(State.CacheMatchedKey);
   const primaryKey = core.getState(State.CachePrimaryKey);
-  let cachePaths = JSON.parse(core.getState(State.CachePaths) || '[]') as string[];
-  cachePaths = cachePaths.filter(fs.existsSync)
+  let cachePaths = JSON.parse(
+    core.getState(State.CachePaths) || '[]'
+  ) as string[];
+  cachePaths = cachePaths.filter(fs.existsSync);
 
   const packageManagerInfo = await getPackageManagerInfo(packageManager);
   if (!packageManagerInfo) {
