@@ -6,6 +6,29 @@
 
 "use strict";
 
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -15,14 +38,8 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
-    result["default"] = mod;
-    return result;
-};
 Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.saveCache = exports.restoreCache = exports.isFeatureAvailable = exports.ReserveCacheError = exports.ValidationError = void 0;
 const core = __importStar(__nccwpck_require__(2186));
 const path = __importStar(__nccwpck_require__(1017));
 const utils = __importStar(__nccwpck_require__(1518));
@@ -74,9 +91,10 @@ exports.isFeatureAvailable = isFeatureAvailable;
  * @param primaryKey an explicit key for restoring the cache
  * @param restoreKeys an optional ordered list of keys to use for restoring the cache if no cache hit occurred for key
  * @param downloadOptions cache download options
+ * @param enableCrossOsArchive an optional boolean enabled to restore on windows any cache created on any platform
  * @returns string returns the key for the cache hit, otherwise returns undefined
  */
-function restoreCache(paths, primaryKey, restoreKeys, options) {
+function restoreCache(paths, primaryKey, restoreKeys, options, enableCrossOsArchive = false) {
     return __awaiter(this, void 0, void 0, function* () {
         checkPaths(paths);
         restoreKeys = restoreKeys || [];
@@ -94,22 +112,27 @@ function restoreCache(paths, primaryKey, restoreKeys, options) {
         try {
             // path are needed to compute version
             const cacheEntry = yield cacheHttpClient.getCacheEntry(keys, paths, {
-                compressionMethod
+                compressionMethod,
+                enableCrossOsArchive
             });
             if (!(cacheEntry === null || cacheEntry === void 0 ? void 0 : cacheEntry.archiveLocation)) {
                 // Cache not found
                 return undefined;
+            }
+            if (options === null || options === void 0 ? void 0 : options.lookupOnly) {
+                core.info('Lookup only - skipping download');
+                return cacheEntry.cacheKey;
             }
             archivePath = path.join(yield utils.createTempDirectory(), utils.getCacheFileName(compressionMethod));
             core.debug(`Archive Path: ${archivePath}`);
             // Download the cache from the cache entry
             yield cacheHttpClient.downloadCache(cacheEntry.archiveLocation, archivePath, options);
             if (core.isDebug()) {
-                yield tar_1.listTar(archivePath, compressionMethod);
+                yield (0, tar_1.listTar)(archivePath, compressionMethod);
             }
             const archiveFileSize = utils.getArchiveFileSizeInBytes(archivePath);
             core.info(`Cache Size: ~${Math.round(archiveFileSize / (1024 * 1024))} MB (${archiveFileSize} B)`);
-            yield tar_1.extractTar(archivePath, compressionMethod);
+            yield (0, tar_1.extractTar)(archivePath, compressionMethod);
             core.info('Cache restored successfully');
             return cacheEntry.cacheKey;
         }
@@ -141,10 +164,11 @@ exports.restoreCache = restoreCache;
  *
  * @param paths a list of file paths to be cached
  * @param key an explicit key for restoring the cache
+ * @param enableCrossOsArchive an optional boolean enabled to save cache on windows which could be restored on any platform
  * @param options cache upload options
  * @returns number returns cacheId if the cache was saved successfully and throws an error if save fails
  */
-function saveCache(paths, key, options) {
+function saveCache(paths, key, options, enableCrossOsArchive = false) {
     var _a, _b, _c, _d, _e;
     return __awaiter(this, void 0, void 0, function* () {
         checkPaths(paths);
@@ -161,9 +185,9 @@ function saveCache(paths, key, options) {
         const archivePath = path.join(archiveFolder, utils.getCacheFileName(compressionMethod));
         core.debug(`Archive Path: ${archivePath}`);
         try {
-            yield tar_1.createTar(archiveFolder, cachePaths, compressionMethod);
+            yield (0, tar_1.createTar)(archiveFolder, cachePaths, compressionMethod);
             if (core.isDebug()) {
-                yield tar_1.listTar(archivePath, compressionMethod);
+                yield (0, tar_1.listTar)(archivePath, compressionMethod);
             }
             const fileSizeLimit = 10 * 1024 * 1024 * 1024; // 10GB per repo limit
             const archiveFileSize = utils.getArchiveFileSizeInBytes(archivePath);
@@ -175,6 +199,7 @@ function saveCache(paths, key, options) {
             core.debug('Reserving Cache');
             const reserveCacheResponse = yield cacheHttpClient.reserveCache(key, paths, {
                 compressionMethod,
+                enableCrossOsArchive,
                 cacheSize: archiveFileSize
             });
             if ((_a = reserveCacheResponse === null || reserveCacheResponse === void 0 ? void 0 : reserveCacheResponse.result) === null || _a === void 0 ? void 0 : _a.cacheId) {
@@ -223,6 +248,29 @@ exports.saveCache = saveCache;
 
 "use strict";
 
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -232,14 +280,8 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
-    result["default"] = mod;
-    return result;
-};
 Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.saveCache = exports.reserveCache = exports.downloadCache = exports.getCacheEntry = exports.getCacheVersion = void 0;
 const core = __importStar(__nccwpck_require__(2186));
 const http_client_1 = __nccwpck_require__(1825);
 const auth_1 = __nccwpck_require__(2001);
@@ -247,7 +289,6 @@ const crypto = __importStar(__nccwpck_require__(6113));
 const fs = __importStar(__nccwpck_require__(7147));
 const url_1 = __nccwpck_require__(7310);
 const utils = __importStar(__nccwpck_require__(1518));
-const constants_1 = __nccwpck_require__(8840);
 const downloadUtils_1 = __nccwpck_require__(5500);
 const options_1 = __nccwpck_require__(6215);
 const requestUtils_1 = __nccwpck_require__(3981);
@@ -277,10 +318,17 @@ function createHttpClient() {
     const bearerCredentialHandler = new auth_1.BearerCredentialHandler(token);
     return new http_client_1.HttpClient('actions/cache', [bearerCredentialHandler], getRequestOptions());
 }
-function getCacheVersion(paths, compressionMethod) {
-    const components = paths.concat(!compressionMethod || compressionMethod === constants_1.CompressionMethod.Gzip
-        ? []
-        : [compressionMethod]);
+function getCacheVersion(paths, compressionMethod, enableCrossOsArchive = false) {
+    const components = paths;
+    // Add compression method to cache version to restore
+    // compressed cache as per compression method
+    if (compressionMethod) {
+        components.push(compressionMethod);
+    }
+    // Only check for windows platforms if enableCrossOsArchive is false
+    if (process.platform === 'win32' && !enableCrossOsArchive) {
+        components.push('windows-only');
+    }
     // Add salt to cache version to support breaking changes in cache entry
     components.push(versionSalt);
     return crypto
@@ -292,18 +340,24 @@ exports.getCacheVersion = getCacheVersion;
 function getCacheEntry(keys, paths, options) {
     return __awaiter(this, void 0, void 0, function* () {
         const httpClient = createHttpClient();
-        const version = getCacheVersion(paths, options === null || options === void 0 ? void 0 : options.compressionMethod);
+        const version = getCacheVersion(paths, options === null || options === void 0 ? void 0 : options.compressionMethod, options === null || options === void 0 ? void 0 : options.enableCrossOsArchive);
         const resource = `cache?keys=${encodeURIComponent(keys.join(','))}&version=${version}`;
-        const response = yield requestUtils_1.retryTypedResponse('getCacheEntry', () => __awaiter(this, void 0, void 0, function* () { return httpClient.getJson(getCacheApiUrl(resource)); }));
+        const response = yield (0, requestUtils_1.retryTypedResponse)('getCacheEntry', () => __awaiter(this, void 0, void 0, function* () { return httpClient.getJson(getCacheApiUrl(resource)); }));
+        // Cache not found
         if (response.statusCode === 204) {
+            // List cache for primary key only if cache miss occurs
+            if (core.isDebug()) {
+                yield printCachesListForDiagnostics(keys[0], httpClient, version);
+            }
             return null;
         }
-        if (!requestUtils_1.isSuccessStatusCode(response.statusCode)) {
+        if (!(0, requestUtils_1.isSuccessStatusCode)(response.statusCode)) {
             throw new Error(`Cache service responded with ${response.statusCode}`);
         }
         const cacheResult = response.result;
         const cacheDownloadUrl = cacheResult === null || cacheResult === void 0 ? void 0 : cacheResult.archiveLocation;
         if (!cacheDownloadUrl) {
+            // Cache achiveLocation not found. This should never happen, and hence bail out.
             throw new Error('Cache not found.');
         }
         core.setSecret(cacheDownloadUrl);
@@ -313,18 +367,34 @@ function getCacheEntry(keys, paths, options) {
     });
 }
 exports.getCacheEntry = getCacheEntry;
+function printCachesListForDiagnostics(key, httpClient, version) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const resource = `caches?key=${encodeURIComponent(key)}`;
+        const response = yield (0, requestUtils_1.retryTypedResponse)('listCache', () => __awaiter(this, void 0, void 0, function* () { return httpClient.getJson(getCacheApiUrl(resource)); }));
+        if (response.statusCode === 200) {
+            const cacheListResult = response.result;
+            const totalCount = cacheListResult === null || cacheListResult === void 0 ? void 0 : cacheListResult.totalCount;
+            if (totalCount && totalCount > 0) {
+                core.debug(`No matching cache found for cache key '${key}', version '${version} and scope ${process.env['GITHUB_REF']}. There exist one or more cache(s) with similar key but they have different version or scope. See more info on cache matching here: https://docs.github.com/en/actions/using-workflows/caching-dependencies-to-speed-up-workflows#matching-a-cache-key \nOther caches with similar key:`);
+                for (const cacheEntry of (cacheListResult === null || cacheListResult === void 0 ? void 0 : cacheListResult.artifactCaches) || []) {
+                    core.debug(`Cache Key: ${cacheEntry === null || cacheEntry === void 0 ? void 0 : cacheEntry.cacheKey}, Cache Version: ${cacheEntry === null || cacheEntry === void 0 ? void 0 : cacheEntry.cacheVersion}, Cache Scope: ${cacheEntry === null || cacheEntry === void 0 ? void 0 : cacheEntry.scope}, Cache Created: ${cacheEntry === null || cacheEntry === void 0 ? void 0 : cacheEntry.creationTime}`);
+                }
+            }
+        }
+    });
+}
 function downloadCache(archiveLocation, archivePath, options) {
     return __awaiter(this, void 0, void 0, function* () {
         const archiveUrl = new url_1.URL(archiveLocation);
-        const downloadOptions = options_1.getDownloadOptions(options);
+        const downloadOptions = (0, options_1.getDownloadOptions)(options);
         if (downloadOptions.useAzureSdk &&
             archiveUrl.hostname.endsWith('.blob.core.windows.net')) {
             // Use Azure storage SDK to download caches hosted on Azure to improve speed and reliability.
-            yield downloadUtils_1.downloadCacheStorageSDK(archiveLocation, archivePath, downloadOptions);
+            yield (0, downloadUtils_1.downloadCacheStorageSDK)(archiveLocation, archivePath, downloadOptions);
         }
         else {
             // Otherwise, download using the Actions http-client.
-            yield downloadUtils_1.downloadCacheHttpClient(archiveLocation, archivePath);
+            yield (0, downloadUtils_1.downloadCacheHttpClient)(archiveLocation, archivePath);
         }
     });
 }
@@ -333,13 +403,13 @@ exports.downloadCache = downloadCache;
 function reserveCache(key, paths, options) {
     return __awaiter(this, void 0, void 0, function* () {
         const httpClient = createHttpClient();
-        const version = getCacheVersion(paths, options === null || options === void 0 ? void 0 : options.compressionMethod);
+        const version = getCacheVersion(paths, options === null || options === void 0 ? void 0 : options.compressionMethod, options === null || options === void 0 ? void 0 : options.enableCrossOsArchive);
         const reserveCacheRequest = {
             key,
             version,
             cacheSize: options === null || options === void 0 ? void 0 : options.cacheSize
         };
-        const response = yield requestUtils_1.retryTypedResponse('reserveCache', () => __awaiter(this, void 0, void 0, function* () {
+        const response = yield (0, requestUtils_1.retryTypedResponse)('reserveCache', () => __awaiter(this, void 0, void 0, function* () {
             return httpClient.postJson(getCacheApiUrl('caches'), reserveCacheRequest);
         }));
         return response;
@@ -363,10 +433,10 @@ function uploadChunk(httpClient, resourceUrl, openStream, start, end) {
             'Content-Type': 'application/octet-stream',
             'Content-Range': getContentRange(start, end)
         };
-        const uploadChunkResponse = yield requestUtils_1.retryHttpClientResponse(`uploadChunk (start: ${start}, end: ${end})`, () => __awaiter(this, void 0, void 0, function* () {
+        const uploadChunkResponse = yield (0, requestUtils_1.retryHttpClientResponse)(`uploadChunk (start: ${start}, end: ${end})`, () => __awaiter(this, void 0, void 0, function* () {
             return httpClient.sendStream('PATCH', resourceUrl, openStream(), additionalHeaders);
         }));
-        if (!requestUtils_1.isSuccessStatusCode(uploadChunkResponse.message.statusCode)) {
+        if (!(0, requestUtils_1.isSuccessStatusCode)(uploadChunkResponse.message.statusCode)) {
             throw new Error(`Cache service responded with ${uploadChunkResponse.message.statusCode} during upload chunk.`);
         }
     });
@@ -377,7 +447,7 @@ function uploadFile(httpClient, cacheId, archivePath, options) {
         const fileSize = utils.getArchiveFileSizeInBytes(archivePath);
         const resourceUrl = getCacheApiUrl(`caches/${cacheId.toString()}`);
         const fd = fs.openSync(archivePath, 'r');
-        const uploadOptions = options_1.getUploadOptions(options);
+        const uploadOptions = (0, options_1.getUploadOptions)(options);
         const concurrency = utils.assertDefined('uploadConcurrency', uploadOptions.uploadConcurrency);
         const maxChunkSize = utils.assertDefined('uploadChunkSize', uploadOptions.uploadChunkSize);
         const parallelUploads = [...new Array(concurrency).keys()];
@@ -412,7 +482,7 @@ function uploadFile(httpClient, cacheId, archivePath, options) {
 function commitCache(httpClient, cacheId, filesize) {
     return __awaiter(this, void 0, void 0, function* () {
         const commitCacheRequest = { size: filesize };
-        return yield requestUtils_1.retryTypedResponse('commitCache', () => __awaiter(this, void 0, void 0, function* () {
+        return yield (0, requestUtils_1.retryTypedResponse)('commitCache', () => __awaiter(this, void 0, void 0, function* () {
             return httpClient.postJson(getCacheApiUrl(`caches/${cacheId.toString()}`), commitCacheRequest);
         }));
     });
@@ -427,7 +497,7 @@ function saveCache(cacheId, archivePath, options) {
         const cacheSize = utils.getArchiveFileSizeInBytes(archivePath);
         core.info(`Cache Size: ~${Math.round(cacheSize / (1024 * 1024))} MB (${cacheSize} B)`);
         const commitCacheResponse = yield commitCache(httpClient, cacheId, cacheSize);
-        if (!requestUtils_1.isSuccessStatusCode(commitCacheResponse.statusCode)) {
+        if (!(0, requestUtils_1.isSuccessStatusCode)(commitCacheResponse.statusCode)) {
             throw new Error(`Cache service responded with ${commitCacheResponse.statusCode} during commit cache.`);
         }
         core.info('Cache saved successfully');
@@ -443,6 +513,29 @@ exports.saveCache = saveCache;
 
 "use strict";
 
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -459,14 +552,8 @@ var __asyncValues = (this && this.__asyncValues) || function (o) {
     function verb(n) { i[n] = o[n] && function (v) { return new Promise(function (resolve, reject) { v = o[n](v), settle(resolve, reject, v.done, v.value); }); }; }
     function settle(resolve, reject, d, v) { Promise.resolve(v).then(function(v) { resolve({ value: v, done: d }); }, reject); }
 };
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
-    result["default"] = mod;
-    return result;
-};
 Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.isGhes = exports.assertDefined = exports.getGnuTarPathOnWindows = exports.getCacheFileName = exports.getCompressionMethod = exports.unlinkFile = exports.resolvePaths = exports.getArchiveFileSizeInBytes = exports.createTempDirectory = void 0;
 const core = __importStar(__nccwpck_require__(2186));
 const exec = __importStar(__nccwpck_require__(1514));
 const glob = __importStar(__nccwpck_require__(1597));
@@ -498,7 +585,7 @@ function createTempDirectory() {
             }
             tempDirectory = path.join(baseLocation, 'actions', 'temp');
         }
-        const dest = path.join(tempDirectory, uuid_1.v4());
+        const dest = path.join(tempDirectory, (0, uuid_1.v4)());
         yield io.mkdirP(dest);
         return dest;
     });
@@ -551,12 +638,13 @@ function unlinkFile(filePath) {
     });
 }
 exports.unlinkFile = unlinkFile;
-function getVersion(app) {
+function getVersion(app, additionalArgs = []) {
     return __awaiter(this, void 0, void 0, function* () {
-        core.debug(`Checking ${app} --version`);
         let versionOutput = '';
+        additionalArgs.push('--version');
+        core.debug(`Checking ${app} ${additionalArgs.join(' ')}`);
         try {
-            yield exec.exec(`${app} --version`, [], {
+            yield exec.exec(`${app}`, additionalArgs, {
                 ignoreReturnCode: true,
                 silent: true,
                 listeners: {
@@ -576,23 +664,14 @@ function getVersion(app) {
 // Use zstandard if possible to maximize cache performance
 function getCompressionMethod() {
     return __awaiter(this, void 0, void 0, function* () {
-        if (process.platform === 'win32' && !(yield isGnuTarInstalled())) {
-            // Disable zstd due to bug https://github.com/actions/cache/issues/301
-            return constants_1.CompressionMethod.Gzip;
-        }
-        const versionOutput = yield getVersion('zstd');
+        const versionOutput = yield getVersion('zstd', ['--quiet']);
         const version = semver.clean(versionOutput);
-        if (!versionOutput.toLowerCase().includes('zstd command line interface')) {
-            // zstd is not installed
+        core.debug(`zstd version: ${version}`);
+        if (versionOutput === '') {
             return constants_1.CompressionMethod.Gzip;
-        }
-        else if (!version || semver.lt(version, 'v1.3.2')) {
-            // zstd is installed but using a version earlier than v1.3.2
-            // v1.3.2 is required to use the `--long` options in zstd
-            return constants_1.CompressionMethod.ZstdWithoutLong;
         }
         else {
-            return constants_1.CompressionMethod.Zstd;
+            return constants_1.CompressionMethod.ZstdWithoutLong;
         }
     });
 }
@@ -603,13 +682,16 @@ function getCacheFileName(compressionMethod) {
         : constants_1.CacheFilename.Zstd;
 }
 exports.getCacheFileName = getCacheFileName;
-function isGnuTarInstalled() {
+function getGnuTarPathOnWindows() {
     return __awaiter(this, void 0, void 0, function* () {
+        if (fs.existsSync(constants_1.GnuTarPathOnWindows)) {
+            return constants_1.GnuTarPathOnWindows;
+        }
         const versionOutput = yield getVersion('tar');
-        return versionOutput.toLowerCase().includes('gnu tar');
+        return versionOutput.toLowerCase().includes('gnu tar') ? io.which('tar') : '';
     });
 }
-exports.isGnuTarInstalled = isGnuTarInstalled;
+exports.getGnuTarPathOnWindows = getGnuTarPathOnWindows;
 function assertDefined(name, value) {
     if (value === undefined) {
         throw Error(`Expected ${name} but value was undefiend`);
@@ -632,6 +714,7 @@ exports.isGhes = isGhes;
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.ManifestFilename = exports.TarFilename = exports.SystemTarPathOnWindows = exports.GnuTarPathOnWindows = exports.SocketTimeout = exports.DefaultRetryDelay = exports.DefaultRetryAttempts = exports.ArchiveToolType = exports.CompressionMethod = exports.CacheFilename = void 0;
 var CacheFilename;
 (function (CacheFilename) {
     CacheFilename["Gzip"] = "cache.tgz";
@@ -645,6 +728,11 @@ var CompressionMethod;
     CompressionMethod["ZstdWithoutLong"] = "zstd-without-long";
     CompressionMethod["Zstd"] = "zstd";
 })(CompressionMethod = exports.CompressionMethod || (exports.CompressionMethod = {}));
+var ArchiveToolType;
+(function (ArchiveToolType) {
+    ArchiveToolType["GNU"] = "gnu";
+    ArchiveToolType["BSD"] = "bsd";
+})(ArchiveToolType = exports.ArchiveToolType || (exports.ArchiveToolType = {}));
 // The default number of retry attempts.
 exports.DefaultRetryAttempts = 2;
 // The default delay in milliseconds between retry attempts.
@@ -653,6 +741,12 @@ exports.DefaultRetryDelay = 5000;
 // over the socket during this period, the socket is destroyed and the download
 // is aborted.
 exports.SocketTimeout = 5000;
+// The default path of GNUtar on hosted Windows runners
+exports.GnuTarPathOnWindows = `${process.env['PROGRAMFILES']}\\Git\\usr\\bin\\tar.exe`;
+// The default path of BSDtar on hosted Windows runners
+exports.SystemTarPathOnWindows = `${process.env['SYSTEMDRIVE']}\\Windows\\System32\\tar.exe`;
+exports.TarFilename = 'cache.tar';
+exports.ManifestFilename = 'manifest.txt';
 //# sourceMappingURL=constants.js.map
 
 /***/ }),
@@ -662,6 +756,29 @@ exports.SocketTimeout = 5000;
 
 "use strict";
 
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -671,14 +788,8 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
-    result["default"] = mod;
-    return result;
-};
 Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.downloadCacheStorageSDK = exports.downloadCacheHttpClient = exports.DownloadProgress = void 0;
 const core = __importStar(__nccwpck_require__(2186));
 const http_client_1 = __nccwpck_require__(1825);
 const storage_blob_1 = __nccwpck_require__(4100);
@@ -813,7 +924,7 @@ function downloadCacheHttpClient(archiveLocation, archivePath) {
     return __awaiter(this, void 0, void 0, function* () {
         const writeStream = fs.createWriteStream(archivePath);
         const httpClient = new http_client_1.HttpClient('actions/cache');
-        const downloadResponse = yield requestUtils_1.retryHttpClientResponse('downloadCache', () => __awaiter(this, void 0, void 0, function* () { return httpClient.get(archiveLocation); }));
+        const downloadResponse = yield (0, requestUtils_1.retryHttpClientResponse)('downloadCache', () => __awaiter(this, void 0, void 0, function* () { return httpClient.get(archiveLocation); }));
         // Abort download if no traffic received over the socket.
         downloadResponse.message.socket.setTimeout(constants_1.SocketTimeout, () => {
             downloadResponse.message.destroy();
@@ -868,7 +979,8 @@ function downloadCacheStorageSDK(archiveLocation, archivePath, options) {
             // If the file exceeds the buffer maximum length (~1 GB on 32-bit systems and ~2 GB
             // on 64-bit systems), split the download into multiple segments
             // ~2 GB = 2147483647, beyond this, we start getting out of range error. So, capping it accordingly.
-            const maxSegmentSize = Math.min(2147483647, buffer.constants.MAX_LENGTH);
+            // Updated segment size to 128MB = 134217728 bytes, to complete a segment faster and fail fast
+            const maxSegmentSize = Math.min(134217728, buffer.constants.MAX_LENGTH);
             const downloadProgress = new DownloadProgress(contentLength);
             const fd = fs.openSync(archivePath, 'w');
             try {
@@ -920,6 +1032,29 @@ const promiseWithTimeout = (timeoutMs, promise) => __awaiter(void 0, void 0, voi
 
 "use strict";
 
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -929,14 +1064,8 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
-    result["default"] = mod;
-    return result;
-};
 Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.retryHttpClientResponse = exports.retryTypedResponse = exports.retry = exports.isRetryableStatusCode = exports.isServerErrorStatusCode = exports.isSuccessStatusCode = void 0;
 const core = __importStar(__nccwpck_require__(2186));
 const http_client_1 = __nccwpck_require__(1825);
 const constants_1 = __nccwpck_require__(8840);
@@ -1047,6 +1176,29 @@ exports.retryHttpClientResponse = retryHttpClientResponse;
 
 "use strict";
 
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -1056,14 +1208,8 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
-    result["default"] = mod;
-    return result;
-};
 Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.createTar = exports.extractTar = exports.listTar = void 0;
 const exec_1 = __nccwpck_require__(1514);
 const io = __importStar(__nccwpck_require__(7436));
 const fs_1 = __nccwpck_require__(7147);
@@ -1071,21 +1217,19 @@ const path = __importStar(__nccwpck_require__(1017));
 const utils = __importStar(__nccwpck_require__(1518));
 const constants_1 = __nccwpck_require__(8840);
 const IS_WINDOWS = process.platform === 'win32';
-function getTarPath(args, compressionMethod) {
+// Returns tar path and type: BSD or GNU
+function getTarPath() {
     return __awaiter(this, void 0, void 0, function* () {
         switch (process.platform) {
             case 'win32': {
-                const systemTar = `${process.env['windir']}\\System32\\tar.exe`;
-                if (compressionMethod !== constants_1.CompressionMethod.Gzip) {
-                    // We only use zstandard compression on windows when gnu tar is installed due to
-                    // a bug with compressing large files with bsdtar + zstd
-                    args.push('--force-local');
+                const gnuTar = yield utils.getGnuTarPathOnWindows();
+                const systemTar = constants_1.SystemTarPathOnWindows;
+                if (gnuTar) {
+                    // Use GNUtar as default on windows
+                    return { path: gnuTar, type: constants_1.ArchiveToolType.GNU };
                 }
-                else if (fs_1.existsSync(systemTar)) {
-                    return systemTar;
-                }
-                else if (yield utils.isGnuTarInstalled()) {
-                    args.push('--force-local');
+                else if ((0, fs_1.existsSync)(systemTar)) {
+                    return { path: systemTar, type: constants_1.ArchiveToolType.BSD };
                 }
                 break;
             }
@@ -1093,25 +1237,92 @@ function getTarPath(args, compressionMethod) {
                 const gnuTar = yield io.which('gtar', false);
                 if (gnuTar) {
                     // fix permission denied errors when extracting BSD tar archive with GNU tar - https://github.com/actions/cache/issues/527
-                    args.push('--delay-directory-restore');
-                    return gnuTar;
+                    return { path: gnuTar, type: constants_1.ArchiveToolType.GNU };
                 }
-                break;
+                else {
+                    return {
+                        path: yield io.which('tar', true),
+                        type: constants_1.ArchiveToolType.BSD
+                    };
+                }
             }
             default:
                 break;
         }
-        return yield io.which('tar', true);
+        // Default assumption is GNU tar is present in path
+        return {
+            path: yield io.which('tar', true),
+            type: constants_1.ArchiveToolType.GNU
+        };
     });
 }
-function execTar(args, compressionMethod, cwd) {
+// Return arguments for tar as per tarPath, compressionMethod, method type and os
+function getTarArgs(tarPath, compressionMethod, type, archivePath = '') {
     return __awaiter(this, void 0, void 0, function* () {
-        try {
-            yield exec_1.exec(`"${yield getTarPath(args, compressionMethod)}"`, args, { cwd });
+        const args = [`"${tarPath.path}"`];
+        const cacheFileName = utils.getCacheFileName(compressionMethod);
+        const tarFile = 'cache.tar';
+        const workingDirectory = getWorkingDirectory();
+        // Speficic args for BSD tar on windows for workaround
+        const BSD_TAR_ZSTD = tarPath.type === constants_1.ArchiveToolType.BSD &&
+            compressionMethod !== constants_1.CompressionMethod.Gzip &&
+            IS_WINDOWS;
+        // Method specific args
+        switch (type) {
+            case 'create':
+                args.push('--posix', '-cf', BSD_TAR_ZSTD
+                    ? tarFile
+                    : cacheFileName.replace(new RegExp(`\\${path.sep}`, 'g'), '/'), '--exclude', BSD_TAR_ZSTD
+                    ? tarFile
+                    : cacheFileName.replace(new RegExp(`\\${path.sep}`, 'g'), '/'), '-P', '-C', workingDirectory.replace(new RegExp(`\\${path.sep}`, 'g'), '/'), '--files-from', constants_1.ManifestFilename);
+                break;
+            case 'extract':
+                args.push('-xf', BSD_TAR_ZSTD
+                    ? tarFile
+                    : archivePath.replace(new RegExp(`\\${path.sep}`, 'g'), '/'), '-P', '-C', workingDirectory.replace(new RegExp(`\\${path.sep}`, 'g'), '/'));
+                break;
+            case 'list':
+                args.push('-tf', BSD_TAR_ZSTD
+                    ? tarFile
+                    : archivePath.replace(new RegExp(`\\${path.sep}`, 'g'), '/'), '-P');
+                break;
         }
-        catch (error) {
-            throw new Error(`Tar failed with error: ${error === null || error === void 0 ? void 0 : error.message}`);
+        // Platform specific args
+        if (tarPath.type === constants_1.ArchiveToolType.GNU) {
+            switch (process.platform) {
+                case 'win32':
+                    args.push('--force-local');
+                    break;
+                case 'darwin':
+                    args.push('--delay-directory-restore');
+                    break;
+            }
         }
+        return args;
+    });
+}
+// Returns commands to run tar and compression program
+function getCommands(compressionMethod, type, archivePath = '') {
+    return __awaiter(this, void 0, void 0, function* () {
+        let args;
+        const tarPath = yield getTarPath();
+        const tarArgs = yield getTarArgs(tarPath, compressionMethod, type, archivePath);
+        const compressionArgs = type !== 'create'
+            ? yield getDecompressionProgram(tarPath, compressionMethod, archivePath)
+            : yield getCompressionProgram(tarPath, compressionMethod);
+        const BSD_TAR_ZSTD = tarPath.type === constants_1.ArchiveToolType.BSD &&
+            compressionMethod !== constants_1.CompressionMethod.Gzip &&
+            IS_WINDOWS;
+        if (BSD_TAR_ZSTD && type !== 'create') {
+            args = [[...compressionArgs].join(' '), [...tarArgs].join(' ')];
+        }
+        else {
+            args = [[...tarArgs].join(' '), [...compressionArgs].join(' ')];
+        }
+        if (BSD_TAR_ZSTD) {
+            return args;
+        }
+        return [args.join(' ')];
     });
 }
 function getWorkingDirectory() {
@@ -1119,91 +1330,119 @@ function getWorkingDirectory() {
     return (_a = process.env['GITHUB_WORKSPACE']) !== null && _a !== void 0 ? _a : process.cwd();
 }
 // Common function for extractTar and listTar to get the compression method
-function getCompressionProgram(compressionMethod) {
-    // -d: Decompress.
-    // unzstd is equivalent to 'zstd -d'
-    // --long=#: Enables long distance matching with # bits. Maximum is 30 (1GB) on 32-bit OS and 31 (2GB) on 64-bit.
-    // Using 30 here because we also support 32-bit self-hosted runners.
-    switch (compressionMethod) {
-        case constants_1.CompressionMethod.Zstd:
-            return [
-                '--use-compress-program',
-                IS_WINDOWS ? 'zstd -d --long=30' : 'unzstd --long=30'
-            ];
-        case constants_1.CompressionMethod.ZstdWithoutLong:
-            return ['--use-compress-program', IS_WINDOWS ? 'zstd -d' : 'unzstd'];
-        default:
-            return ['-z'];
-    }
+function getDecompressionProgram(tarPath, compressionMethod, archivePath) {
+    return __awaiter(this, void 0, void 0, function* () {
+        // -d: Decompress.
+        // unzstd is equivalent to 'zstd -d'
+        // --long=#: Enables long distance matching with # bits. Maximum is 30 (1GB) on 32-bit OS and 31 (2GB) on 64-bit.
+        // Using 30 here because we also support 32-bit self-hosted runners.
+        const BSD_TAR_ZSTD = tarPath.type === constants_1.ArchiveToolType.BSD &&
+            compressionMethod !== constants_1.CompressionMethod.Gzip &&
+            IS_WINDOWS;
+        switch (compressionMethod) {
+            case constants_1.CompressionMethod.Zstd:
+                return BSD_TAR_ZSTD
+                    ? [
+                        'zstd -d --long=30 --force -o',
+                        constants_1.TarFilename,
+                        archivePath.replace(new RegExp(`\\${path.sep}`, 'g'), '/')
+                    ]
+                    : [
+                        '--use-compress-program',
+                        IS_WINDOWS ? '"zstd -d --long=30"' : 'unzstd --long=30'
+                    ];
+            case constants_1.CompressionMethod.ZstdWithoutLong:
+                return BSD_TAR_ZSTD
+                    ? [
+                        'zstd -d --force -o',
+                        constants_1.TarFilename,
+                        archivePath.replace(new RegExp(`\\${path.sep}`, 'g'), '/')
+                    ]
+                    : ['--use-compress-program', IS_WINDOWS ? '"zstd -d"' : 'unzstd'];
+            default:
+                return ['-z'];
+        }
+    });
 }
+// Used for creating the archive
+// -T#: Compress using # working thread. If # is 0, attempt to detect and use the number of physical CPU cores.
+// zstdmt is equivalent to 'zstd -T0'
+// --long=#: Enables long distance matching with # bits. Maximum is 30 (1GB) on 32-bit OS and 31 (2GB) on 64-bit.
+// Using 30 here because we also support 32-bit self-hosted runners.
+// Long range mode is added to zstd in v1.3.2 release, so we will not use --long in older version of zstd.
+function getCompressionProgram(tarPath, compressionMethod) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const cacheFileName = utils.getCacheFileName(compressionMethod);
+        const BSD_TAR_ZSTD = tarPath.type === constants_1.ArchiveToolType.BSD &&
+            compressionMethod !== constants_1.CompressionMethod.Gzip &&
+            IS_WINDOWS;
+        switch (compressionMethod) {
+            case constants_1.CompressionMethod.Zstd:
+                return BSD_TAR_ZSTD
+                    ? [
+                        'zstd -T0 --long=30 --force -o',
+                        cacheFileName.replace(new RegExp(`\\${path.sep}`, 'g'), '/'),
+                        constants_1.TarFilename
+                    ]
+                    : [
+                        '--use-compress-program',
+                        IS_WINDOWS ? '"zstd -T0 --long=30"' : 'zstdmt --long=30'
+                    ];
+            case constants_1.CompressionMethod.ZstdWithoutLong:
+                return BSD_TAR_ZSTD
+                    ? [
+                        'zstd -T0 --force -o',
+                        cacheFileName.replace(new RegExp(`\\${path.sep}`, 'g'), '/'),
+                        constants_1.TarFilename
+                    ]
+                    : ['--use-compress-program', IS_WINDOWS ? '"zstd -T0"' : 'zstdmt'];
+            default:
+                return ['-z'];
+        }
+    });
+}
+// Executes all commands as separate processes
+function execCommands(commands, cwd) {
+    return __awaiter(this, void 0, void 0, function* () {
+        for (const command of commands) {
+            try {
+                yield (0, exec_1.exec)(command, undefined, {
+                    cwd,
+                    env: Object.assign(Object.assign({}, process.env), { MSYS: 'winsymlinks:nativestrict' })
+                });
+            }
+            catch (error) {
+                throw new Error(`${command.split(' ')[0]} failed with error: ${error === null || error === void 0 ? void 0 : error.message}`);
+            }
+        }
+    });
+}
+// List the contents of a tar
 function listTar(archivePath, compressionMethod) {
     return __awaiter(this, void 0, void 0, function* () {
-        const args = [
-            ...getCompressionProgram(compressionMethod),
-            '-tf',
-            archivePath.replace(new RegExp(`\\${path.sep}`, 'g'), '/'),
-            '-P'
-        ];
-        yield execTar(args, compressionMethod);
+        const commands = yield getCommands(compressionMethod, 'list', archivePath);
+        yield execCommands(commands);
     });
 }
 exports.listTar = listTar;
+// Extract a tar
 function extractTar(archivePath, compressionMethod) {
     return __awaiter(this, void 0, void 0, function* () {
         // Create directory to extract tar into
         const workingDirectory = getWorkingDirectory();
         yield io.mkdirP(workingDirectory);
-        const args = [
-            ...getCompressionProgram(compressionMethod),
-            '-xf',
-            archivePath.replace(new RegExp(`\\${path.sep}`, 'g'), '/'),
-            '-P',
-            '-C',
-            workingDirectory.replace(new RegExp(`\\${path.sep}`, 'g'), '/')
-        ];
-        yield execTar(args, compressionMethod);
+        const commands = yield getCommands(compressionMethod, 'extract', archivePath);
+        yield execCommands(commands);
     });
 }
 exports.extractTar = extractTar;
+// Create a tar
 function createTar(archiveFolder, sourceDirectories, compressionMethod) {
     return __awaiter(this, void 0, void 0, function* () {
         // Write source directories to manifest.txt to avoid command length limits
-        const manifestFilename = 'manifest.txt';
-        const cacheFileName = utils.getCacheFileName(compressionMethod);
-        fs_1.writeFileSync(path.join(archiveFolder, manifestFilename), sourceDirectories.join('\n'));
-        const workingDirectory = getWorkingDirectory();
-        // -T#: Compress using # working thread. If # is 0, attempt to detect and use the number of physical CPU cores.
-        // zstdmt is equivalent to 'zstd -T0'
-        // --long=#: Enables long distance matching with # bits. Maximum is 30 (1GB) on 32-bit OS and 31 (2GB) on 64-bit.
-        // Using 30 here because we also support 32-bit self-hosted runners.
-        // Long range mode is added to zstd in v1.3.2 release, so we will not use --long in older version of zstd.
-        function getCompressionProgram() {
-            switch (compressionMethod) {
-                case constants_1.CompressionMethod.Zstd:
-                    return [
-                        '--use-compress-program',
-                        IS_WINDOWS ? 'zstd -T0 --long=30' : 'zstdmt --long=30'
-                    ];
-                case constants_1.CompressionMethod.ZstdWithoutLong:
-                    return ['--use-compress-program', IS_WINDOWS ? 'zstd -T0' : 'zstdmt'];
-                default:
-                    return ['-z'];
-            }
-        }
-        const args = [
-            '--posix',
-            ...getCompressionProgram(),
-            '-cf',
-            cacheFileName.replace(new RegExp(`\\${path.sep}`, 'g'), '/'),
-            '--exclude',
-            cacheFileName.replace(new RegExp(`\\${path.sep}`, 'g'), '/'),
-            '-P',
-            '-C',
-            workingDirectory.replace(new RegExp(`\\${path.sep}`, 'g'), '/'),
-            '--files-from',
-            manifestFilename
-        ];
-        yield execTar(args, compressionMethod, archiveFolder);
+        (0, fs_1.writeFileSync)(path.join(archiveFolder, constants_1.ManifestFilename), sourceDirectories.join('\n'));
+        const commands = yield getCommands(compressionMethod, 'create');
+        yield execCommands(commands, archiveFolder);
     });
 }
 exports.createTar = createTar;
@@ -1216,14 +1455,31 @@ exports.createTar = createTar;
 
 "use strict";
 
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
 var __importStar = (this && this.__importStar) || function (mod) {
     if (mod && mod.__esModule) return mod;
     var result = {};
-    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
-    result["default"] = mod;
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
     return result;
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.getDownloadOptions = exports.getUploadOptions = void 0;
 const core = __importStar(__nccwpck_require__(2186));
 /**
  * Returns a copy of the upload options with defaults filled in.
@@ -1258,7 +1514,8 @@ function getDownloadOptions(copy) {
         useAzureSdk: true,
         downloadConcurrency: 8,
         timeoutInMs: 30000,
-        segmentTimeoutInMs: 3600000
+        segmentTimeoutInMs: 600000,
+        lookupOnly: false
     };
     if (copy) {
         if (typeof copy.useAzureSdk === 'boolean') {
@@ -1273,6 +1530,9 @@ function getDownloadOptions(copy) {
         if (typeof copy.segmentTimeoutInMs === 'number') {
             result.segmentTimeoutInMs = copy.segmentTimeoutInMs;
         }
+        if (typeof copy.lookupOnly === 'boolean') {
+            result.lookupOnly = copy.lookupOnly;
+        }
     }
     const segmentDownloadTimeoutMins = process.env['SEGMENT_DOWNLOAD_TIMEOUT_MINS'];
     if (segmentDownloadTimeoutMins &&
@@ -1285,6 +1545,7 @@ function getDownloadOptions(copy) {
     core.debug(`Request timeout (ms): ${result.timeoutInMs}`);
     core.debug(`Cache segment download timeout mins env var: ${process.env['SEGMENT_DOWNLOAD_TIMEOUT_MINS']}`);
     core.debug(`Segment download timeout (ms): ${result.segmentTimeoutInMs}`);
+    core.debug(`Lookup only: ${result.lookupOnly}`);
     return result;
 }
 exports.getDownloadOptions = getDownloadOptions;
@@ -8167,19 +8428,18 @@ function copyFile(srcFile, destFile, force) {
 /***/ }),
 
 /***/ 2557:
-/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+/***/ ((__unused_webpack_module, exports) => {
 
 "use strict";
 
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 
-var tslib = __nccwpck_require__(9268);
-
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
-var listenersMap = new WeakMap();
-var abortedMap = new WeakMap();
+/// <reference path="../shims-public.d.ts" />
+const listenersMap = new WeakMap();
+const abortedMap = new WeakMap();
 /**
  * An aborter instance implements AbortSignal interface, can abort HTTP requests.
  *
@@ -8193,8 +8453,8 @@ var abortedMap = new WeakMap();
  * await doAsyncWork(AbortSignal.none);
  * ```
  */
-var AbortSignal = /** @class */ (function () {
-    function AbortSignal() {
+class AbortSignal {
+    constructor() {
         /**
          * onabort event listener.
          */
@@ -8202,74 +8462,65 @@ var AbortSignal = /** @class */ (function () {
         listenersMap.set(this, []);
         abortedMap.set(this, false);
     }
-    Object.defineProperty(AbortSignal.prototype, "aborted", {
-        /**
-         * Status of whether aborted or not.
-         *
-         * @readonly
-         */
-        get: function () {
-            if (!abortedMap.has(this)) {
-                throw new TypeError("Expected `this` to be an instance of AbortSignal.");
-            }
-            return abortedMap.get(this);
-        },
-        enumerable: false,
-        configurable: true
-    });
-    Object.defineProperty(AbortSignal, "none", {
-        /**
-         * Creates a new AbortSignal instance that will never be aborted.
-         *
-         * @readonly
-         */
-        get: function () {
-            return new AbortSignal();
-        },
-        enumerable: false,
-        configurable: true
-    });
+    /**
+     * Status of whether aborted or not.
+     *
+     * @readonly
+     */
+    get aborted() {
+        if (!abortedMap.has(this)) {
+            throw new TypeError("Expected `this` to be an instance of AbortSignal.");
+        }
+        return abortedMap.get(this);
+    }
+    /**
+     * Creates a new AbortSignal instance that will never be aborted.
+     *
+     * @readonly
+     */
+    static get none() {
+        return new AbortSignal();
+    }
     /**
      * Added new "abort" event listener, only support "abort" event.
      *
      * @param _type - Only support "abort" event
      * @param listener - The listener to be added
      */
-    AbortSignal.prototype.addEventListener = function (
+    addEventListener(
     // tslint:disable-next-line:variable-name
     _type, listener) {
         if (!listenersMap.has(this)) {
             throw new TypeError("Expected `this` to be an instance of AbortSignal.");
         }
-        var listeners = listenersMap.get(this);
+        const listeners = listenersMap.get(this);
         listeners.push(listener);
-    };
+    }
     /**
      * Remove "abort" event listener, only support "abort" event.
      *
      * @param _type - Only support "abort" event
      * @param listener - The listener to be removed
      */
-    AbortSignal.prototype.removeEventListener = function (
+    removeEventListener(
     // tslint:disable-next-line:variable-name
     _type, listener) {
         if (!listenersMap.has(this)) {
             throw new TypeError("Expected `this` to be an instance of AbortSignal.");
         }
-        var listeners = listenersMap.get(this);
-        var index = listeners.indexOf(listener);
+        const listeners = listenersMap.get(this);
+        const index = listeners.indexOf(listener);
         if (index > -1) {
             listeners.splice(index, 1);
         }
-    };
+    }
     /**
      * Dispatches a synthetic event to the AbortSignal.
      */
-    AbortSignal.prototype.dispatchEvent = function (_event) {
+    dispatchEvent(_event) {
         throw new Error("This is a stub dispatchEvent implementation that should not be used.  It only exists for type-checking purposes.");
-    };
-    return AbortSignal;
-}());
+    }
+}
 /**
  * Helper to trigger an abort event immediately, the onabort and all abort event listeners will be triggered.
  * Will try to trigger abort event for all linked AbortSignal nodes.
@@ -8287,12 +8538,12 @@ function abortSignal(signal) {
     if (signal.onabort) {
         signal.onabort.call(signal);
     }
-    var listeners = listenersMap.get(signal);
+    const listeners = listenersMap.get(signal);
     if (listeners) {
         // Create a copy of listeners so mutations to the array
         // (e.g. via removeListener calls) don't affect the listeners
         // we invoke.
-        listeners.slice().forEach(function (listener) {
+        listeners.slice().forEach((listener) => {
             listener.call(signal, { type: "abort" });
         });
     }
@@ -8318,15 +8569,12 @@ function abortSignal(signal) {
  * }
  * ```
  */
-var AbortError = /** @class */ (function (_super) {
-    tslib.__extends(AbortError, _super);
-    function AbortError(message) {
-        var _this = _super.call(this, message) || this;
-        _this.name = "AbortError";
-        return _this;
+class AbortError extends Error {
+    constructor(message) {
+        super(message);
+        this.name = "AbortError";
     }
-    return AbortError;
-}(Error));
+}
 /**
  * An AbortController provides an AbortSignal and the associated controls to signal
  * that an asynchronous operation should be aborted.
@@ -8361,10 +8609,9 @@ var AbortError = /** @class */ (function (_super) {
  * await doAsyncWork(aborter.withTimeout(25 * 1000));
  * ```
  */
-var AbortController = /** @class */ (function () {
+class AbortController {
     // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
-    function AbortController(parentSignals) {
-        var _this = this;
+    constructor(parentSignals) {
         this._signal = new AbortSignal();
         if (!parentSignals) {
             return;
@@ -8374,8 +8621,7 @@ var AbortController = /** @class */ (function () {
             // eslint-disable-next-line prefer-rest-params
             parentSignals = arguments;
         }
-        for (var _i = 0, parentSignals_1 = parentSignals; _i < parentSignals_1.length; _i++) {
-            var parentSignal = parentSignals_1[_i];
+        for (const parentSignal of parentSignals) {
             // if the parent signal has already had abort() called,
             // then call abort on this signal as well.
             if (parentSignal.aborted) {
@@ -8383,365 +8629,47 @@ var AbortController = /** @class */ (function () {
             }
             else {
                 // when the parent signal aborts, this signal should as well.
-                parentSignal.addEventListener("abort", function () {
-                    _this.abort();
+                parentSignal.addEventListener("abort", () => {
+                    this.abort();
                 });
             }
         }
     }
-    Object.defineProperty(AbortController.prototype, "signal", {
-        /**
-         * The AbortSignal associated with this controller that will signal aborted
-         * when the abort method is called on this controller.
-         *
-         * @readonly
-         */
-        get: function () {
-            return this._signal;
-        },
-        enumerable: false,
-        configurable: true
-    });
+    /**
+     * The AbortSignal associated with this controller that will signal aborted
+     * when the abort method is called on this controller.
+     *
+     * @readonly
+     */
+    get signal() {
+        return this._signal;
+    }
     /**
      * Signal that any operations passed this controller's associated abort signal
      * to cancel any remaining work and throw an `AbortError`.
      */
-    AbortController.prototype.abort = function () {
+    abort() {
         abortSignal(this._signal);
-    };
+    }
     /**
      * Creates a new AbortSignal instance that will abort after the provided ms.
      * @param ms - Elapsed time in milliseconds to trigger an abort.
      */
-    AbortController.timeout = function (ms) {
-        var signal = new AbortSignal();
-        var timer = setTimeout(abortSignal, ms, signal);
+    static timeout(ms) {
+        const signal = new AbortSignal();
+        const timer = setTimeout(abortSignal, ms, signal);
         // Prevent the active Timer from keeping the Node.js event loop active.
         if (typeof timer.unref === "function") {
             timer.unref();
         }
         return signal;
-    };
-    return AbortController;
-}());
+    }
+}
 
 exports.AbortController = AbortController;
 exports.AbortError = AbortError;
 exports.AbortSignal = AbortSignal;
 //# sourceMappingURL=index.js.map
-
-
-/***/ }),
-
-/***/ 9268:
-/***/ ((module) => {
-
-/*! *****************************************************************************
-Copyright (c) Microsoft Corporation.
-
-Permission to use, copy, modify, and/or distribute this software for any
-purpose with or without fee is hereby granted.
-
-THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH
-REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY
-AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT,
-INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM
-LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR
-OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
-PERFORMANCE OF THIS SOFTWARE.
-***************************************************************************** */
-/* global global, define, System, Reflect, Promise */
-var __extends;
-var __assign;
-var __rest;
-var __decorate;
-var __param;
-var __metadata;
-var __awaiter;
-var __generator;
-var __exportStar;
-var __values;
-var __read;
-var __spread;
-var __spreadArrays;
-var __spreadArray;
-var __await;
-var __asyncGenerator;
-var __asyncDelegator;
-var __asyncValues;
-var __makeTemplateObject;
-var __importStar;
-var __importDefault;
-var __classPrivateFieldGet;
-var __classPrivateFieldSet;
-var __createBinding;
-(function (factory) {
-    var root = typeof global === "object" ? global : typeof self === "object" ? self : typeof this === "object" ? this : {};
-    if (typeof define === "function" && define.amd) {
-        define("tslib", ["exports"], function (exports) { factory(createExporter(root, createExporter(exports))); });
-    }
-    else if ( true && typeof module.exports === "object") {
-        factory(createExporter(root, createExporter(module.exports)));
-    }
-    else {
-        factory(createExporter(root));
-    }
-    function createExporter(exports, previous) {
-        if (exports !== root) {
-            if (typeof Object.create === "function") {
-                Object.defineProperty(exports, "__esModule", { value: true });
-            }
-            else {
-                exports.__esModule = true;
-            }
-        }
-        return function (id, v) { return exports[id] = previous ? previous(id, v) : v; };
-    }
-})
-(function (exporter) {
-    var extendStatics = Object.setPrototypeOf ||
-        ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-        function (d, b) { for (var p in b) if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p]; };
-
-    __extends = function (d, b) {
-        if (typeof b !== "function" && b !== null)
-            throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
-        extendStatics(d, b);
-        function __() { this.constructor = d; }
-        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-    };
-
-    __assign = Object.assign || function (t) {
-        for (var s, i = 1, n = arguments.length; i < n; i++) {
-            s = arguments[i];
-            for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p)) t[p] = s[p];
-        }
-        return t;
-    };
-
-    __rest = function (s, e) {
-        var t = {};
-        for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p) && e.indexOf(p) < 0)
-            t[p] = s[p];
-        if (s != null && typeof Object.getOwnPropertySymbols === "function")
-            for (var i = 0, p = Object.getOwnPropertySymbols(s); i < p.length; i++) {
-                if (e.indexOf(p[i]) < 0 && Object.prototype.propertyIsEnumerable.call(s, p[i]))
-                    t[p[i]] = s[p[i]];
-            }
-        return t;
-    };
-
-    __decorate = function (decorators, target, key, desc) {
-        var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
-        if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
-        else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
-        return c > 3 && r && Object.defineProperty(target, key, r), r;
-    };
-
-    __param = function (paramIndex, decorator) {
-        return function (target, key) { decorator(target, key, paramIndex); }
-    };
-
-    __metadata = function (metadataKey, metadataValue) {
-        if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(metadataKey, metadataValue);
-    };
-
-    __awaiter = function (thisArg, _arguments, P, generator) {
-        function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-        return new (P || (P = Promise))(function (resolve, reject) {
-            function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-            function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-            function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-            step((generator = generator.apply(thisArg, _arguments || [])).next());
-        });
-    };
-
-    __generator = function (thisArg, body) {
-        var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t, g;
-        return g = { next: verb(0), "throw": verb(1), "return": verb(2) }, typeof Symbol === "function" && (g[Symbol.iterator] = function() { return this; }), g;
-        function verb(n) { return function (v) { return step([n, v]); }; }
-        function step(op) {
-            if (f) throw new TypeError("Generator is already executing.");
-            while (_) try {
-                if (f = 1, y && (t = op[0] & 2 ? y["return"] : op[0] ? y["throw"] || ((t = y["return"]) && t.call(y), 0) : y.next) && !(t = t.call(y, op[1])).done) return t;
-                if (y = 0, t) op = [op[0] & 2, t.value];
-                switch (op[0]) {
-                    case 0: case 1: t = op; break;
-                    case 4: _.label++; return { value: op[1], done: false };
-                    case 5: _.label++; y = op[1]; op = [0]; continue;
-                    case 7: op = _.ops.pop(); _.trys.pop(); continue;
-                    default:
-                        if (!(t = _.trys, t = t.length > 0 && t[t.length - 1]) && (op[0] === 6 || op[0] === 2)) { _ = 0; continue; }
-                        if (op[0] === 3 && (!t || (op[1] > t[0] && op[1] < t[3]))) { _.label = op[1]; break; }
-                        if (op[0] === 6 && _.label < t[1]) { _.label = t[1]; t = op; break; }
-                        if (t && _.label < t[2]) { _.label = t[2]; _.ops.push(op); break; }
-                        if (t[2]) _.ops.pop();
-                        _.trys.pop(); continue;
-                }
-                op = body.call(thisArg, _);
-            } catch (e) { op = [6, e]; y = 0; } finally { f = t = 0; }
-            if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
-        }
-    };
-
-    __exportStar = function(m, o) {
-        for (var p in m) if (p !== "default" && !Object.prototype.hasOwnProperty.call(o, p)) __createBinding(o, m, p);
-    };
-
-    __createBinding = Object.create ? (function(o, m, k, k2) {
-        if (k2 === undefined) k2 = k;
-        Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
-    }) : (function(o, m, k, k2) {
-        if (k2 === undefined) k2 = k;
-        o[k2] = m[k];
-    });
-
-    __values = function (o) {
-        var s = typeof Symbol === "function" && Symbol.iterator, m = s && o[s], i = 0;
-        if (m) return m.call(o);
-        if (o && typeof o.length === "number") return {
-            next: function () {
-                if (o && i >= o.length) o = void 0;
-                return { value: o && o[i++], done: !o };
-            }
-        };
-        throw new TypeError(s ? "Object is not iterable." : "Symbol.iterator is not defined.");
-    };
-
-    __read = function (o, n) {
-        var m = typeof Symbol === "function" && o[Symbol.iterator];
-        if (!m) return o;
-        var i = m.call(o), r, ar = [], e;
-        try {
-            while ((n === void 0 || n-- > 0) && !(r = i.next()).done) ar.push(r.value);
-        }
-        catch (error) { e = { error: error }; }
-        finally {
-            try {
-                if (r && !r.done && (m = i["return"])) m.call(i);
-            }
-            finally { if (e) throw e.error; }
-        }
-        return ar;
-    };
-
-    /** @deprecated */
-    __spread = function () {
-        for (var ar = [], i = 0; i < arguments.length; i++)
-            ar = ar.concat(__read(arguments[i]));
-        return ar;
-    };
-
-    /** @deprecated */
-    __spreadArrays = function () {
-        for (var s = 0, i = 0, il = arguments.length; i < il; i++) s += arguments[i].length;
-        for (var r = Array(s), k = 0, i = 0; i < il; i++)
-            for (var a = arguments[i], j = 0, jl = a.length; j < jl; j++, k++)
-                r[k] = a[j];
-        return r;
-    };
-
-    __spreadArray = function (to, from, pack) {
-        if (pack || arguments.length === 2) for (var i = 0, l = from.length, ar; i < l; i++) {
-            if (ar || !(i in from)) {
-                if (!ar) ar = Array.prototype.slice.call(from, 0, i);
-                ar[i] = from[i];
-            }
-        }
-        return to.concat(ar || Array.prototype.slice.call(from));
-    };
-
-    __await = function (v) {
-        return this instanceof __await ? (this.v = v, this) : new __await(v);
-    };
-
-    __asyncGenerator = function (thisArg, _arguments, generator) {
-        if (!Symbol.asyncIterator) throw new TypeError("Symbol.asyncIterator is not defined.");
-        var g = generator.apply(thisArg, _arguments || []), i, q = [];
-        return i = {}, verb("next"), verb("throw"), verb("return"), i[Symbol.asyncIterator] = function () { return this; }, i;
-        function verb(n) { if (g[n]) i[n] = function (v) { return new Promise(function (a, b) { q.push([n, v, a, b]) > 1 || resume(n, v); }); }; }
-        function resume(n, v) { try { step(g[n](v)); } catch (e) { settle(q[0][3], e); } }
-        function step(r) { r.value instanceof __await ? Promise.resolve(r.value.v).then(fulfill, reject) : settle(q[0][2], r);  }
-        function fulfill(value) { resume("next", value); }
-        function reject(value) { resume("throw", value); }
-        function settle(f, v) { if (f(v), q.shift(), q.length) resume(q[0][0], q[0][1]); }
-    };
-
-    __asyncDelegator = function (o) {
-        var i, p;
-        return i = {}, verb("next"), verb("throw", function (e) { throw e; }), verb("return"), i[Symbol.iterator] = function () { return this; }, i;
-        function verb(n, f) { i[n] = o[n] ? function (v) { return (p = !p) ? { value: __await(o[n](v)), done: n === "return" } : f ? f(v) : v; } : f; }
-    };
-
-    __asyncValues = function (o) {
-        if (!Symbol.asyncIterator) throw new TypeError("Symbol.asyncIterator is not defined.");
-        var m = o[Symbol.asyncIterator], i;
-        return m ? m.call(o) : (o = typeof __values === "function" ? __values(o) : o[Symbol.iterator](), i = {}, verb("next"), verb("throw"), verb("return"), i[Symbol.asyncIterator] = function () { return this; }, i);
-        function verb(n) { i[n] = o[n] && function (v) { return new Promise(function (resolve, reject) { v = o[n](v), settle(resolve, reject, v.done, v.value); }); }; }
-        function settle(resolve, reject, d, v) { Promise.resolve(v).then(function(v) { resolve({ value: v, done: d }); }, reject); }
-    };
-
-    __makeTemplateObject = function (cooked, raw) {
-        if (Object.defineProperty) { Object.defineProperty(cooked, "raw", { value: raw }); } else { cooked.raw = raw; }
-        return cooked;
-    };
-
-    var __setModuleDefault = Object.create ? (function(o, v) {
-        Object.defineProperty(o, "default", { enumerable: true, value: v });
-    }) : function(o, v) {
-        o["default"] = v;
-    };
-
-    __importStar = function (mod) {
-        if (mod && mod.__esModule) return mod;
-        var result = {};
-        if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
-        __setModuleDefault(result, mod);
-        return result;
-    };
-
-    __importDefault = function (mod) {
-        return (mod && mod.__esModule) ? mod : { "default": mod };
-    };
-
-    __classPrivateFieldGet = function (receiver, state, kind, f) {
-        if (kind === "a" && !f) throw new TypeError("Private accessor was defined without a getter");
-        if (typeof state === "function" ? receiver !== state || !f : !state.has(receiver)) throw new TypeError("Cannot read private member from an object whose class did not declare it");
-        return kind === "m" ? f : kind === "a" ? f.call(receiver) : f ? f.value : state.get(receiver);
-    };
-
-    __classPrivateFieldSet = function (receiver, state, value, kind, f) {
-        if (kind === "m") throw new TypeError("Private method is not writable");
-        if (kind === "a" && !f) throw new TypeError("Private accessor was defined without a setter");
-        if (typeof state === "function" ? receiver !== state || !f : !state.has(receiver)) throw new TypeError("Cannot write private member to an object whose class did not declare it");
-        return (kind === "a" ? f.call(receiver, value) : f ? f.value = value : state.set(receiver, value)), value;
-    };
-
-    exporter("__extends", __extends);
-    exporter("__assign", __assign);
-    exporter("__rest", __rest);
-    exporter("__decorate", __decorate);
-    exporter("__param", __param);
-    exporter("__metadata", __metadata);
-    exporter("__awaiter", __awaiter);
-    exporter("__generator", __generator);
-    exporter("__exportStar", __exportStar);
-    exporter("__createBinding", __createBinding);
-    exporter("__values", __values);
-    exporter("__read", __read);
-    exporter("__spread", __spread);
-    exporter("__spreadArrays", __spreadArrays);
-    exporter("__spreadArray", __spreadArray);
-    exporter("__await", __await);
-    exporter("__asyncGenerator", __asyncGenerator);
-    exporter("__asyncDelegator", __asyncDelegator);
-    exporter("__asyncValues", __asyncValues);
-    exporter("__makeTemplateObject", __makeTemplateObject);
-    exporter("__importStar", __importStar);
-    exporter("__importDefault", __importDefault);
-    exporter("__classPrivateFieldGet", __classPrivateFieldGet);
-    exporter("__classPrivateFieldSet", __classPrivateFieldSet);
-});
 
 
 /***/ }),
