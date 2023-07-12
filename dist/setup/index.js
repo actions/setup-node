@@ -71675,7 +71675,7 @@ class BaseDistribution {
         return version;
     }
     findVersionInHostedToolCacheDirectory() {
-        return tc.find('node', this.nodeInfo.versionSpec, this.nodeInfo.arch);
+        return tc.find('node', this.nodeInfo.versionSpec, this.translateArchToDistUrl(this.nodeInfo.arch));
     }
     getNodeJsVersions() {
         return __awaiter(this, void 0, void 0, function* () {
