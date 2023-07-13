@@ -23,8 +23,10 @@ describe('cache-utils', () => {
   let isFeatureAvailable: jest.SpyInstance;
   let info: jest.SpyInstance;
   let warningSpy: jest.SpyInstance;
+  let fsRealPathSyncSpy: jest.SpyInstance;
 
   beforeEach(() => {
+    console.log('::stop-commands::stoptoken');
     process.env['GITHUB_WORKSPACE'] = path.join(__dirname, 'data');
     debugSpy = jest.spyOn(core, 'debug');
     debugSpy.mockImplementation(msg => {});
@@ -35,7 +37,23 @@ describe('cache-utils', () => {
     isFeatureAvailable = jest.spyOn(cache, 'isFeatureAvailable');
 
     getCommandOutputSpy = jest.spyOn(utils, 'getCommandOutput');
+
+    fsRealPathSyncSpy = jest.spyOn(fs, 'realpathSync');
+    fsRealPathSyncSpy.mockImplementation(dirName => {
+      return dirName;
+    });
   });
+
+  afterEach(() => {
+    jest.resetAllMocks();
+    jest.clearAllMocks();
+    //jest.restoreAllMocks();
+  });
+
+  afterAll(async () => {
+    console.log('::stoptoken::');
+    jest.restoreAllMocks();
+  }, 100000);
 
   describe('getPackageManagerInfo', () => {
     it.each<[string, PackageManagerInfo | null]>([
