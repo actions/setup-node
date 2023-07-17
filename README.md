@@ -99,7 +99,7 @@ For information regarding locally cached versions of Node.js on GitHub hosted ru
 
 ### Supported version syntax
 
-The `node-version` input supports the Semantic Versioning Specification, for more detailed examples please refer to the [documentation](https://github.com/npm/node-semver).
+The `node-version` input supports the Semantic Versioning Specification, for more detailed examples please refer to [the semver package documentation](https://github.com/npm/node-semver).
 
 Examples:
 

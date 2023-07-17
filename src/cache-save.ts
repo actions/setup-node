@@ -1,5 +1,8 @@
 import * as core from '@actions/core';
 import * as cache from '@actions/cache';
+
+import fs from 'fs';
+
 import {State} from './constants';
 import {getPackageManagerInfo} from './cache-utils';
 
@@ -23,7 +26,10 @@ export async function run() {
 const cachePackages = async (packageManager: string) => {
   const state = core.getState(State.CacheMatchedKey);
   const primaryKey = core.getState(State.CachePrimaryKey);
-  const cachePaths = JSON.parse(core.getState(State.CachePaths) || '[]');
+  let cachePaths = JSON.parse(
+    core.getState(State.CachePaths) || '[]'
+  ) as string[];
+  cachePaths = cachePaths.filter(fs.existsSync);
 
   const packageManagerInfo = await getPackageManagerInfo(packageManager);
   if (!packageManagerInfo) {
@@ -31,7 +37,7 @@ const cachePackages = async (packageManager: string) => {
     return;
   }
 
-  if (cachePaths.length === 0) {
+  if (!cachePaths.length) {
     // TODO: core.getInput has a bug - it can return undefined despite its definition (tests only?)
     //       export declare function getInput(name: string, options?: InputOptions): string;
     const cacheDependencyPath = core.getInput('cache-dependency-path') || '';

@@ -95,6 +95,8 @@ describe('setup-node', () => {
         res = <INodeVersion[]>nodeTestDistRc;
       } else if (url.includes('/nightly')) {
         res = <INodeVersion[]>nodeTestDistNightly;
+      } else if (url.includes('/v8-canary')) {
+        res = <INodeVersion[]>nodeV8CanaryTestDist;
       } else {
         res = <INodeVersion[]>nodeTestDist;
       }

@@ -173,7 +173,7 @@ jobs:
       - uses: actions/checkout@v3
 
       - name: prepare sub-projects
-        run: __tests__/prepare-yarn-subprojects.sh
+        run: __tests__/prepare-yarn-subprojects.sh keepcache keepcache
 
       # expect
       #  - no errors
