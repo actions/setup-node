@@ -13,7 +13,7 @@ export function parseNodeVersionFile(contents: string): string {
   }
 
   if (!nodeVersion) {
-    const found = contents.match(/^(?:nodejs\s+)?v?(?<version>[^\s]+)$/m);
+    const found = contents.match(/^(?:node(js)?\s+)?v?(?<version>[^\s]+)$/m);
     nodeVersion = found?.groups?.version;
   }
 
