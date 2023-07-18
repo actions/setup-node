@@ -60754,7 +60754,7 @@ function parseNodeVersionFile(contents) {
         core.info('Node version file is not JSON file');
     }
     if (!nodeVersion) {
-        const found = contents.match(/^(?:nodejs\s+)?v?(?<version>[^\s]+)$/m);
+        const found = contents.match(/^(?:node(js)?\s+)?v?(?<version>[^\s]+)$/m);
         nodeVersion = (_c = found === null || found === void 0 ? void 0 : found.groups) === null || _c === void 0 ? void 0 : _c.version;
     }
     // In the case of an unknown format,
