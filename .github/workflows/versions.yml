@@ -158,7 +158,8 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
-        node-version-file: [.nvmrc, .tool-versions, package.json]
+        node-version-file:
+          [.nvmrc, .tool-versions, .tool-versions-node, package.json]
     steps:
       - uses: actions/checkout@v3
       - name: Remove volta from package.json
