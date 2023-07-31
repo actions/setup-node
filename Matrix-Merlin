@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "714686467601",
+    "project_id": "rrlm-98e54",
+    "storage_bucket": "rrlm-98e54.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:714686467601:android:6255aacbd196945183ebb0",
+        "android_client_info": {
+          "package_name": "V1.Merlin_Matrix"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "714686467601-dhvu602l2nq6gi5s9j1uthjejeu4j4hb.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyATSxfEwt06O2KeQYxRGgwcwSMXWh7maYU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "714686467601-dhvu602l2nq6gi5s9j1uthjejeu4j4hb.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
