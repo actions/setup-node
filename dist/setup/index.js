@@ -71479,6 +71479,7 @@ var LockType;
 })(LockType = exports.LockType || (exports.LockType = {}));
 var State;
 (function (State) {
+    State["CachePackageManager"] = "SETUP_NODE_CACHE_PACKAGE_MANAGER";
     State["CachePrimaryKey"] = "CACHE_KEY";
     State["CacheMatchedKey"] = "CACHE_RESULT";
     State["CachePaths"] = "CACHE_PATHS";
@@ -72209,6 +72210,7 @@ const cache_restore_1 = __nccwpck_require__(9517);
 const cache_utils_1 = __nccwpck_require__(1678);
 const installer_factory_1 = __nccwpck_require__(5617);
 const util_1 = __nccwpck_require__(2629);
+const constants_1 = __nccwpck_require__(9042);
 function run() {
     return __awaiter(this, void 0, void 0, function* () {
         try {
@@ -72249,6 +72251,7 @@ function run() {
                 auth.configAuthentication(registryUrl, alwaysAuth);
             }
             if (cache && cache_utils_1.isCacheFeatureAvailable()) {
+                core.saveState(constants_1.State.CachePackageManager, cache);
                 const cacheDependencyPath = core.getInput('cache-dependency-path');
                 yield cache_restore_1.restoreCache(cache, cacheDependencyPath);
             }

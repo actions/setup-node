@@ -92,6 +92,9 @@ describe('run', () => {
 
     it('Package manager is not valid, skip caching', async () => {
       inputs['cache'] = 'yarn3';
+      getStateSpy.mockImplementation(key =>
+        key === State.CachePackageManager ? inputs['cache'] : ''
+      );
 
       await run();
 
@@ -108,7 +111,9 @@ describe('run', () => {
     it('should not save cache for yarn1', async () => {
       inputs['cache'] = 'yarn';
       getStateSpy.mockImplementation(key =>
-        key === State.CachePrimaryKey || key === State.CacheMatchedKey
+        key === State.CachePackageManager
+          ? inputs['cache']
+          : key === State.CachePrimaryKey || key === State.CacheMatchedKey
           ? yarnFileHash
           : key === State.CachePaths
           ? '["/foo/bar"]'
@@ -117,8 +122,8 @@ describe('run', () => {
 
       await run();
 
-      expect(getInputSpy).toHaveBeenCalled();
-      expect(getStateSpy).toHaveBeenCalledTimes(3);
+      expect(getInputSpy).not.toHaveBeenCalled();
+      expect(getStateSpy).toHaveBeenCalledTimes(4);
       expect(getCommandOutputSpy).toHaveBeenCalledTimes(0);
       expect(debugSpy).toHaveBeenCalledTimes(0);
       expect(infoSpy).toHaveBeenCalledWith(
@@ -130,7 +135,9 @@ describe('run', () => {
     it('should not save cache for yarn2', async () => {
       inputs['cache'] = 'yarn';
       getStateSpy.mockImplementation(key =>
-        key === State.CachePrimaryKey || key === State.CacheMatchedKey
+        key === State.CachePackageManager
+          ? inputs['cache']
+          : key === State.CachePrimaryKey || key === State.CacheMatchedKey
           ? yarnFileHash
           : key === State.CachePaths
           ? '["/foo/bar"]'
@@ -139,8 +146,8 @@ describe('run', () => {
 
       await run();
 
-      expect(getInputSpy).toHaveBeenCalled();
-      expect(getStateSpy).toHaveBeenCalledTimes(3);
+      expect(getInputSpy).not.toHaveBeenCalled();
+      expect(getStateSpy).toHaveBeenCalledTimes(4);
       expect(getCommandOutputSpy).toHaveBeenCalledTimes(0);
       expect(debugSpy).toHaveBeenCalledTimes(0);
       expect(infoSpy).toHaveBeenCalledWith(
@@ -152,7 +159,9 @@ describe('run', () => {
     it('should not save cache for npm', async () => {
       inputs['cache'] = 'npm';
       getStateSpy.mockImplementation(key =>
-        key === State.CachePrimaryKey || key === State.CacheMatchedKey
+        key === State.CachePackageManager
+          ? inputs['cache']
+          : key === State.CachePrimaryKey || key === State.CacheMatchedKey
           ? yarnFileHash
           : key === State.CachePaths
           ? '["/foo/bar"]'
@@ -162,8 +171,8 @@ describe('run', () => {
 
       await run();
 
-      expect(getInputSpy).toHaveBeenCalled();
-      expect(getStateSpy).toHaveBeenCalledTimes(3);
+      expect(getInputSpy).not.toHaveBeenCalled();
+      expect(getStateSpy).toHaveBeenCalledTimes(4);
       expect(getCommandOutputSpy).toHaveBeenCalledTimes(0);
       expect(debugSpy).toHaveBeenCalledTimes(0);
       expect(setFailedSpy).not.toHaveBeenCalled();
@@ -172,7 +181,9 @@ describe('run', () => {
     it('should not save cache for pnpm', async () => {
       inputs['cache'] = 'pnpm';
       getStateSpy.mockImplementation(key =>
-        key === State.CachePrimaryKey || key === State.CacheMatchedKey
+        key === State.CachePackageManager
+          ? inputs['cache']
+          : key === State.CachePrimaryKey || key === State.CacheMatchedKey
           ? yarnFileHash
           : key === State.CachePaths
           ? '["/foo/bar"]'
@@ -181,8 +192,8 @@ describe('run', () => {
 
       await run();
 
-      expect(getInputSpy).toHaveBeenCalled();
-      expect(getStateSpy).toHaveBeenCalledTimes(3);
+      expect(getInputSpy).not.toHaveBeenCalled();
+      expect(getStateSpy).toHaveBeenCalledTimes(4);
       expect(getCommandOutputSpy).toHaveBeenCalledTimes(0);
       expect(debugSpy).toHaveBeenCalledTimes(0);
       expect(setFailedSpy).not.toHaveBeenCalled();
@@ -193,7 +204,9 @@ describe('run', () => {
     it('saves cache from yarn 1', async () => {
       inputs['cache'] = 'yarn';
       getStateSpy.mockImplementation((key: string) =>
-        key === State.CacheMatchedKey
+        key === State.CachePackageManager
+          ? inputs['cache']
+          : key === State.CacheMatchedKey
           ? yarnFileHash
           : key === State.CachePrimaryKey
           ? npmFileHash
@@ -204,8 +217,8 @@ describe('run', () => {
 
       await run();
 
-      expect(getInputSpy).toHaveBeenCalled();
-      expect(getStateSpy).toHaveBeenCalledTimes(3);
+      expect(getInputSpy).not.toHaveBeenCalled();
+      expect(getStateSpy).toHaveBeenCalledTimes(4);
       expect(getCommandOutputSpy).toHaveBeenCalledTimes(0);
       expect(debugSpy).toHaveBeenCalledTimes(0);
       expect(infoSpy).not.toHaveBeenCalledWith(
@@ -221,7 +234,9 @@ describe('run', () => {
     it('saves cache from yarn 2', async () => {
       inputs['cache'] = 'yarn';
       getStateSpy.mockImplementation((key: string) =>
-        key === State.CacheMatchedKey
+        key === State.CachePackageManager
+          ? inputs['cache']
+          : key === State.CacheMatchedKey
           ? yarnFileHash
           : key === State.CachePrimaryKey
           ? npmFileHash
@@ -232,8 +247,8 @@ describe('run', () => {
 
       await run();
 
-      expect(getInputSpy).toHaveBeenCalled();
-      expect(getStateSpy).toHaveBeenCalledTimes(3);
+      expect(getInputSpy).not.toHaveBeenCalled();
+      expect(getStateSpy).toHaveBeenCalledTimes(4);
       expect(getCommandOutputSpy).toHaveBeenCalledTimes(0);
       expect(debugSpy).toHaveBeenCalledTimes(0);
       expect(infoSpy).not.toHaveBeenCalledWith(
@@ -249,7 +264,9 @@ describe('run', () => {
     it('saves cache from npm', async () => {
       inputs['cache'] = 'npm';
       getStateSpy.mockImplementation((key: string) =>
-        key === State.CacheMatchedKey
+        key === State.CachePackageManager
+          ? inputs['cache']
+          : key === State.CacheMatchedKey
           ? npmFileHash
           : key === State.CachePrimaryKey
           ? yarnFileHash
@@ -260,8 +277,8 @@ describe('run', () => {
 
       await run();
 
-      expect(getInputSpy).toHaveBeenCalled();
-      expect(getStateSpy).toHaveBeenCalledTimes(3);
+      expect(getInputSpy).not.toHaveBeenCalled();
+      expect(getStateSpy).toHaveBeenCalledTimes(4);
       expect(getCommandOutputSpy).toHaveBeenCalledTimes(0);
       expect(debugSpy).toHaveBeenCalledTimes(0);
       expect(infoSpy).not.toHaveBeenCalledWith(
@@ -277,7 +294,9 @@ describe('run', () => {
     it('saves cache from pnpm', async () => {
       inputs['cache'] = 'pnpm';
       getStateSpy.mockImplementation((key: string) =>
-        key === State.CacheMatchedKey
+        key === State.CachePackageManager
+          ? inputs['cache']
+          : key === State.CacheMatchedKey
           ? pnpmFileHash
           : key === State.CachePrimaryKey
           ? npmFileHash
@@ -288,8 +307,8 @@ describe('run', () => {
 
       await run();
 
-      expect(getInputSpy).toHaveBeenCalled();
-      expect(getStateSpy).toHaveBeenCalledTimes(3);
+      expect(getInputSpy).not.toHaveBeenCalled();
+      expect(getStateSpy).toHaveBeenCalledTimes(4);
       expect(getCommandOutputSpy).toHaveBeenCalledTimes(0);
       expect(debugSpy).toHaveBeenCalledTimes(0);
       expect(infoSpy).not.toHaveBeenCalledWith(
@@ -305,7 +324,9 @@ describe('run', () => {
     it('save with -1 cacheId , should not fail workflow', async () => {
       inputs['cache'] = 'npm';
       getStateSpy.mockImplementation((key: string) =>
-        key === State.CacheMatchedKey
+        key === State.CachePackageManager
+          ? inputs['cache']
+          : key === State.CacheMatchedKey
           ? npmFileHash
           : key === State.CachePrimaryKey
           ? yarnFileHash
@@ -319,8 +340,8 @@ describe('run', () => {
 
       await run();
 
-      expect(getInputSpy).toHaveBeenCalled();
-      expect(getStateSpy).toHaveBeenCalledTimes(3);
+      expect(getInputSpy).not.toHaveBeenCalled();
+      expect(getStateSpy).toHaveBeenCalledTimes(4);
       expect(getCommandOutputSpy).toHaveBeenCalledTimes(0);
       expect(debugSpy).toHaveBeenCalledTimes(0);
       expect(infoSpy).not.toHaveBeenCalledWith(
@@ -336,7 +357,9 @@ describe('run', () => {
     it('saves with error from toolkit, should fail workflow', async () => {
       inputs['cache'] = 'npm';
       getStateSpy.mockImplementation((key: string) =>
-        key === State.CacheMatchedKey
+        key === State.CachePackageManager
+          ? inputs['cache']
+          : key === State.CacheMatchedKey
           ? npmFileHash
           : key === State.CachePrimaryKey
           ? yarnFileHash
@@ -350,8 +373,8 @@ describe('run', () => {
 
       await run();
 
-      expect(getInputSpy).toHaveBeenCalled();
-      expect(getStateSpy).toHaveBeenCalledTimes(3);
+      expect(getInputSpy).not.toHaveBeenCalled();
+      expect(getStateSpy).toHaveBeenCalledTimes(4);
       expect(getCommandOutputSpy).toHaveBeenCalledTimes(0);
       expect(debugSpy).toHaveBeenCalledTimes(0);
       expect(infoSpy).not.toHaveBeenCalledWith(

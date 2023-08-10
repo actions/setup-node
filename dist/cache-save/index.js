@@ -60381,7 +60381,7 @@ process.on('uncaughtException', e => {
 function run() {
     return __awaiter(this, void 0, void 0, function* () {
         try {
-            const cacheLock = core.getInput('cache');
+            const cacheLock = core.getState(constants_1.State.CachePackageManager);
             yield cachePackages(cacheLock);
         }
         catch (error) {
@@ -60692,6 +60692,7 @@ var LockType;
 })(LockType = exports.LockType || (exports.LockType = {}));
 var State;
 (function (State) {
+    State["CachePackageManager"] = "SETUP_NODE_CACHE_PACKAGE_MANAGER";
     State["CachePrimaryKey"] = "CACHE_KEY";
     State["CacheMatchedKey"] = "CACHE_RESULT";
     State["CachePaths"] = "CACHE_PATHS";

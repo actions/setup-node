@@ -16,7 +16,7 @@ process.on('uncaughtException', e => {
 
 export async function run() {
   try {
-    const cacheLock = core.getInput('cache');
+    const cacheLock = core.getState(State.CachePackageManager);
     await cachePackages(cacheLock);
   } catch (error) {
     core.setFailed(error.message);
