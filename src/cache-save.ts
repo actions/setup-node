@@ -1,8 +1,6 @@
 import * as core from '@actions/core';
 import * as cache from '@actions/cache';
 
-import fs from 'fs';
-
 import {State} from './constants';
 import {getPackageManagerInfo} from './cache-utils';
 
