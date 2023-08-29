@@ -11,7 +11,11 @@ describe('cache-restore', () => {
   if (!process.env.RUNNER_OS) {
     process.env.RUNNER_OS = 'Linux';
   }
+  if (!process.env.RUNNER_ARCH) {
+    process.env.RUNNER_ARCH = 'X64';
+  }
   const platform = process.env.RUNNER_OS;
+  const arch = process.env.RUNNER_ARCH;
   const commonPath = '/some/random/path';
   const npmCachePath = `${commonPath}/npm`;
   const pnpmCachePath = `${commonPath}/pnpm`;
@@ -135,7 +139,7 @@ describe('cache-restore', () => {
         await restoreCache(packageManager, '');
         expect(hashFilesSpy).toHaveBeenCalled();
         expect(infoSpy).toHaveBeenCalledWith(
-          `Cache restored from key: node-cache-${platform}-${packageManager}-${fileHash}`
+          `Cache restored from key: node-cache-${platform}-${arch}-${packageManager}-${fileHash}`
         );
         expect(infoSpy).not.toHaveBeenCalledWith(
           `${packageManager} cache is not found`
