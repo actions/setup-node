@@ -33,6 +33,10 @@ const cachePackages = async (packageManager: string) => {
     core.debug(`Caching for '${packageManager}' is not supported`);
     return;
   }
+  if (core.getInput('cache-restore-only') == true ){
+    core.info(`Cache was not saved since 'cache-restore-only' was set }`);
+    return;
+  }
 
   if (!cachePaths.length) {
     // TODO: core.getInput has a bug - it can return undefined despite its definition (tests only?)
