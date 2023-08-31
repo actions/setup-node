@@ -2,6 +2,7 @@ import * as core from '@actions/core';
 import * as exec from '@actions/exec';
 import * as cache from '@actions/cache';
 import * as glob from '@actions/glob';
+import memoize from 'lodash.memoize';
 import path from 'path';
 import fs from 'fs';
 import {unique} from './util';
@@ -111,50 +112,38 @@ export const getPackageManagerInfo = async (packageManager: string) => {
 };
 
 /**
+ * Expands (converts) the string input `cache-dependency-path` to list of directories that
+ * may be project roots
+ *
  * getProjectDirectoriesFromCacheDependencyPath is called twice during `restoreCache`
  *  - first through `getCacheDirectories`
  *  - second from `repoHasYarn3ManagedCache`
  *
- *  it contains expensive IO operation and thus should be memoized
- */
-
-let projectDirectoriesMemoized: string[] | null = null;
-/**
- * unit test must reset memoized variables
- */
-export const resetProjectDirectoriesMemoized = () =>
-  (projectDirectoriesMemoized = null);
-/**
- * Expands (converts) the string input `cache-dependency-path` to list of directories that
- * may be project roots
+ * it contains expensive IO operation and thus should be memoized
+ *
  * @param cacheDependencyPath - either a single string or multiline string with possible glob patterns
  *                              expected to be the result of `core.getInput('cache-dependency-path')`
  * @return list of directories and possible
  */
-const getProjectDirectoriesFromCacheDependencyPath = async (
-  cacheDependencyPath: string
-): Promise<string[]> => {
-  if (projectDirectoriesMemoized !== null) {
-    return projectDirectoriesMemoized;
+export const getProjectDirectoriesFromCacheDependencyPath = memoize(
+  async (cacheDependencyPath: string): Promise<string[]> => {
+    const globber = await glob.create(cacheDependencyPath);
+    const cacheDependenciesPaths = await globber.glob();
+
+    const existingDirectories: string[] = cacheDependenciesPaths
+      .map(path.dirname)
+      .filter(unique())
+      .map(dirName => fs.realpathSync(dirName))
+      .filter(directory => fs.lstatSync(directory).isDirectory());
+
+    if (!existingDirectories.length)
+      core.warning(
+        `No existing directories found containing cache-dependency-path="${cacheDependencyPath}"`
+      );
+
+    return existingDirectories;
   }
-
-  const globber = await glob.create(cacheDependencyPath);
-  const cacheDependenciesPaths = await globber.glob();
-
-  const existingDirectories: string[] = cacheDependenciesPaths
-    .map(path.dirname)
-    .filter(unique())
-    .map(dirName => fs.realpathSync(dirName))
-    .filter(directory => fs.lstatSync(directory).isDirectory());
-
-  if (!existingDirectories.length)
-    core.warning(
-      `No existing directories found containing cache-dependency-path="${cacheDependencyPath}"`
-    );
-
-  projectDirectoriesMemoized = existingDirectories;
-  return existingDirectories;
-};
+);
 
 /**
  * Finds the cache directories configured for the repo if cache-dependency-path is not empty
