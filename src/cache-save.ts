@@ -33,8 +33,10 @@ const cachePackages = async (packageManager: string) => {
     core.debug(`Caching for '${packageManager}' is not supported`);
     return;
   }
-  if (core.getInput('cache-restore-only') == true ){
-    core.info(`Cache was not saved since 'cache-restore-only' was set }`);
+  if (core.getInput('cache-restore-only') == 'true') {
+    core.info(
+      `Cache was not saved since 'cache-restore-only' was set to true}`
+    );
     return;
   }
 

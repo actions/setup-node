@@ -60395,6 +60395,10 @@ const cachePackages = (packageManager) => __awaiter(void 0, void 0, void 0, func
         core.debug(`Caching for '${packageManager}' is not supported`);
         return;
     }
+    if (core.getInput('cache-restore-only') == 'true') {
+        core.info(`Cache was not saved since 'cache-restore-only' was set to true}`);
+        return;
+    }
     if (!cachePaths.length) {
         // TODO: core.getInput has a bug - it can return undefined despite its definition (tests only?)
         //       export declare function getInput(name: string, options?: InputOptions): string;
