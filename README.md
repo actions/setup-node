@@ -63,6 +63,10 @@ See [action.yml](action.yml)
     # Default: ''
     cache-dependency-path: ''
 
+    # Set this option if you dont want the action to save the cache if it couldnt be restored
+    # Default: false
+    cache-restore-only: ''
+
     # Optional registry to set up for auth. Will set the registry in a project level .npmrc and .yarnrc file, 
     # and set up auth to read in from env.NODE_AUTH_TOKEN.
     # Default: ''
