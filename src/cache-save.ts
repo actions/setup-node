@@ -34,9 +34,7 @@ const cachePackages = async (packageManager: string) => {
     return;
   }
   if (core.getInput('cache-restore-only') == 'true') {
-    core.info(
-      `Cache was not saved since 'cache-restore-only' was set to true}`
-    );
+    core.info(`Cache was not saved since 'cache-restore-only' was set to true`);
     return;
   }
 

@@ -60396,7 +60396,7 @@ const cachePackages = (packageManager) => __awaiter(void 0, void 0, void 0, func
         return;
     }
     if (core.getInput('cache-restore-only') == 'true') {
-        core.info(`Cache was not saved since 'cache-restore-only' was set to true}`);
+        core.info(`Cache was not saved since 'cache-restore-only' was set to true`);
         return;
     }
     if (!cachePaths.length) {
