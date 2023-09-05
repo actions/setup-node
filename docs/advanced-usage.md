@@ -45,7 +45,7 @@ If `check-latest` is set to `true`, the action first checks if the cached versio
 
 ```yaml
 steps:
-- uses: actions/checkout@v3
+- uses: actions/checkout@v4
 - uses: actions/setup-node@v3
   with:
     node-version: '16'
@@ -63,7 +63,7 @@ See [supported version syntax](https://github.com/actions/setup-node#supported-v
 
 ```yaml
 steps:
-- uses: actions/checkout@v3
+- uses: actions/checkout@v4
 - uses: actions/setup-node@v3
   with:
     node-version-file: '.nvmrc'
@@ -95,7 +95,7 @@ jobs:
     runs-on: windows-latest
     name: Node sample
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: actions/setup-node@v3
         with:
           node-version: '14'
@@ -116,7 +116,7 @@ jobs:
     runs-on: ubuntu-latest
     name: Node sample
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: actions/setup-node@v3
         with:
           node-version: '20.0.0-v8-canary' # it will install the latest v8 canary release for node 20.0.0
@@ -131,7 +131,7 @@ jobs:
     runs-on: ubuntu-latest
     name: Node sample
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: actions/setup-node@v3
         with:
           node-version: '20-v8-canary' # it will install the latest v8 canary release for node 20
@@ -147,7 +147,7 @@ jobs:
     runs-on: ubuntu-latest
     name: Node sample
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: actions/setup-node@v3
         with:
           node-version: 'v20.1.1-v8-canary20221103f7e2421e91'
@@ -167,7 +167,7 @@ jobs:
     runs-on: ubuntu-latest
     name: Node sample
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: actions/setup-node@v3
         with:
           node-version: '16-nightly' # it will install the latest nightly release for node 16
@@ -183,7 +183,7 @@ jobs:
     runs-on: ubuntu-latest
     name: Node sample
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: actions/setup-node@v3
         with:
           node-version: '16.0.0-nightly' # it will install the latest nightly release for node 16.0.0
@@ -199,7 +199,7 @@ jobs:
     runs-on: ubuntu-latest
     name: Node sample
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: actions/setup-node@v3
         with:
           node-version: '16.0.0-nightly20210420a0261d231c'
@@ -217,7 +217,7 @@ jobs:
     runs-on: ubuntu-latest
     name: Node sample
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: actions/setup-node@v3
         with:
           node-version: '16.0.0-rc.1'
@@ -234,7 +234,7 @@ The action follows [actions/cache](https://github.com/actions/cache/blob/main/ex
 Yarn caching handles both yarn versions: 1 or 2.
 ```yaml
 steps:
-- uses: actions/checkout@v3
+- uses: actions/checkout@v4
 - uses: actions/setup-node@v3
   with:
     node-version: '14'
@@ -253,7 +253,7 @@ steps:
 # NOTE: pnpm caching support requires pnpm version >= 6.10.0
 
 steps:
-- uses: actions/checkout@v3
+- uses: actions/checkout@v4
 - uses: pnpm/action-setup@v2
   with:
     version: 6.32.9
@@ -272,7 +272,7 @@ steps:
 **Using wildcard patterns to cache dependencies**
 ```yaml
 steps:
-- uses: actions/checkout@v3
+- uses: actions/checkout@v4
 - uses: actions/setup-node@v3
   with:
     node-version: '14'
@@ -285,7 +285,7 @@ steps:
 **Using a list of file paths to cache dependencies**
 ```yaml
 steps:
-- uses: actions/checkout@v3
+- uses: actions/checkout@v4
 - uses: actions/setup-node@v3
   with:
     node-version: '14'
@@ -322,7 +322,7 @@ jobs:
             architecture: x86
     name: Node ${{ matrix.node_version }} - ${{ matrix.architecture }} on ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Setup node
         uses: actions/setup-node@v3
         with:
@@ -335,7 +335,7 @@ jobs:
 ## Publish to npmjs and GPR with npm
 ```yaml
 steps:
-- uses: actions/checkout@v3
+- uses: actions/checkout@v4
 - uses: actions/setup-node@v3
   with:
     node-version: '14.x'
@@ -355,7 +355,7 @@ steps:
 ## Publish to npmjs and GPR with yarn
 ```yaml
 steps:
-- uses: actions/checkout@v3
+- uses: actions/checkout@v4
 - uses: actions/setup-node@v3
   with:
     node-version: '14.x'
@@ -375,7 +375,7 @@ steps:
 ## Use private packages
 ```yaml
 steps:
-- uses: actions/checkout@v3
+- uses: actions/checkout@v4
 - uses: actions/setup-node@v3
   with:
     node-version: '14.x'
@@ -395,7 +395,7 @@ Below you can find a sample "Setup .yarnrc.yml" step, that is going to allow you
 
 ```yaml
 steps:
-- uses: actions/checkout@v3
+- uses: actions/checkout@v4
 - uses: actions/setup-node@v3
   with:
     node-version: '14.x'

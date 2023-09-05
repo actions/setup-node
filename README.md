@@ -83,7 +83,7 @@ See [action.yml](action.yml)
 
 ```yaml
 steps:
-- uses: actions/checkout@v3
+- uses: actions/checkout@v4
 - uses: actions/setup-node@v3
   with:
     node-version: 18
@@ -132,7 +132,7 @@ See the examples of using cache for `yarn`/`pnpm` and `cache-dependency-path` in
 
 ```yaml
 steps:
-- uses: actions/checkout@v3
+- uses: actions/checkout@v4
 - uses: actions/setup-node@v3
   with:
     node-version: 16
@@ -145,7 +145,7 @@ steps:
 
 ```yaml
 steps:
-- uses: actions/checkout@v3
+- uses: actions/checkout@v4
 - uses: actions/setup-node@v3
   with:
     node-version: 16
@@ -166,7 +166,7 @@ jobs:
         node: [ 14, 16, 18 ]
     name: Node ${{ matrix.node }} sample
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Setup node
         uses: actions/setup-node@v3
         with:
