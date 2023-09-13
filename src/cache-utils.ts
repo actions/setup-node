@@ -123,7 +123,7 @@ export const getPackageManagerInfo = async (packageManager: string) => {
  *
  * @param cacheDependencyPath - either a single string or multiline string with possible glob patterns
  *                              expected to be the result of `core.getInput('cache-dependency-path')`
- * @return list of directories and possible
+ * @return list of directories
  */
 export const getProjectDirectoriesFromCacheDependencyPath = memoize(
   async (cacheDependencyPath: string): Promise<string[]> => {
