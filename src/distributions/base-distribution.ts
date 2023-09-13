@@ -167,7 +167,7 @@ export default abstract class BaseDistribution {
     const initialUrl = this.getDistributionUrl();
     const osArch: string = this.translateArchToDistUrl(arch);
 
-    // Create temporary folder to download in to
+    // Create temporary folder to download to
     const tempDownloadFolder = `temp_${uuidv4()}`;
     const tempDirectory = process.env['RUNNER_TEMP'] || '';
     assert.ok(tempDirectory, 'Expected RUNNER_TEMP to be defined');
