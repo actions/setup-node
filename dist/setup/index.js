@@ -72010,7 +72010,7 @@ exports.getPackageManagerInfo = getPackageManagerInfo;
  *
  * @param cacheDependencyPath - either a single string or multiline string with possible glob patterns
  *                              expected to be the result of `core.getInput('cache-dependency-path')`
- * @return list of directories and possible
+ * @return list of directories
  */
 exports.getProjectDirectoriesFromCacheDependencyPath = lodash_memoize_1.default((cacheDependencyPath) => __awaiter(void 0, void 0, void 0, function* () {
     const globber = yield glob.create(cacheDependencyPath);
