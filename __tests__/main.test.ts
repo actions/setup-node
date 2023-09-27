@@ -155,14 +155,6 @@ describe('main tests', () => {
       expect(parseNodeVersionSpy).toHaveBeenCalledTimes(0);
     }, 10000);
 
-    it('not used if node-version-file not provided', async () => {
-      // Act
-      await main.run();
-
-      // Assert
-      expect(parseNodeVersionSpy).toHaveBeenCalledTimes(0);
-    });
-
     it('reads node-version-file if provided', async () => {
       // Arrange
       const versionSpec = 'v14';
@@ -209,6 +201,53 @@ describe('main tests', () => {
       // Assert
       expect(existsSpy).toHaveBeenCalledTimes(1);
       expect(existsSpy).toHaveReturnedWith(true);
+      expect(parseNodeVersionSpy).toHaveBeenCalledWith(versionSpec);
+      expect(infoSpy).toHaveBeenCalledWith(
+        `Resolved ${versionFile} as ${expectedVersionSpec}`
+      );
+    }, 10000);
+
+    it('reads .node-version if node-version and node-version-file were not provided', async () => {
+      // Arrange
+      const versionSpec = 'v16';
+      const versionFile = '.node-version';
+      const expectedVersionSpec = '16';
+      process.env['GITHUB_WORKSPACE'] = path.join(__dirname, 'data');
+
+      parseNodeVersionSpy.mockImplementation(() => expectedVersionSpec);
+      existsSpy.mockImplementationOnce(
+        input => input === path.join(__dirname, 'data', versionFile)
+      );
+
+      // Act
+      await main.run();
+
+      // Assert
+      expect(existsSpy).toHaveBeenCalledTimes(1);
+      expect(existsSpy).toHaveReturnedWith(true);
+      expect(parseNodeVersionSpy).toHaveBeenCalledWith(versionSpec);
+      expect(infoSpy).toHaveBeenCalledWith(
+        `Resolved ${versionFile} as ${expectedVersionSpec}`
+      );
+    }, 10000);
+
+    it('reads .nvmrc if node-version and node-version-file were not provided', async () => {
+      // Arrange
+      const versionSpec = 'v14';
+      const versionFile = '.nvmrc';
+      const expectedVersionSpec = '14';
+      process.env['GITHUB_WORKSPACE'] = path.join(__dirname, 'data');
+
+      parseNodeVersionSpy.mockImplementation(() => expectedVersionSpec);
+      existsSpy.mockImplementation(
+        input => input === path.join(__dirname, 'data', versionFile)
+      );
+
+      // Act
+      await main.run();
+
+      // Assert
+      expect(existsSpy).toHaveBeenCalledTimes(2);
       expect(parseNodeVersionSpy).toHaveBeenCalledWith(versionSpec);
       expect(infoSpy).toHaveBeenCalledWith(
         `Resolved ${versionFile} as ${expectedVersionSpec}`
