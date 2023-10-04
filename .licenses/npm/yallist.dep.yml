@@ -1,8 +1,8 @@
 ---
-name: semver
-version: 5.7.2
+name: yallist
+version: 4.0.0
 type: npm
-summary: The semantic version parser used by npm.
+summary: Yet Another Linked List
 homepage: 
 license: isc
 licenses:

@@ -1,6 +1,6 @@
 ---
 name: "@types/node"
-version: 16.11.25
+version: 20.8.2
 type: npm
 summary: TypeScript definitions for Node.js
 homepage: https://github.com/DefinitelyTyped/DefinitelyTyped/tree/master/types/node

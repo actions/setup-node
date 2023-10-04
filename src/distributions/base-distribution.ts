@@ -152,7 +152,7 @@ export default abstract class BaseDistribution {
   }
 
   protected validRange(versionSpec: string) {
-    let options: semver.Options | undefined;
+    let options: semver.RangeOptions | undefined;
     const c = semver.clean(versionSpec) || '';
     const valid = semver.valid(c) ?? versionSpec;
 

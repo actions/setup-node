@@ -1,9 +1,9 @@
 ---
-name: isexe
-version: 2.0.0
+name: lru-cache
+version: 6.0.0
 type: npm
-summary: Minimal module to check if a file is executable.
-homepage: https://github.com/isaacs/isexe#readme
+summary: A cache object that deletes the least-recently-used items.
+homepage: 
 license: isc
 licenses:
 - sources: LICENSE
