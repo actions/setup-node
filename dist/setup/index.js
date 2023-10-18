@@ -65297,158 +65297,203 @@ module.exports = /^#!.*/;
 // Note: since nyc uses this module to output coverage, any lines
 // that are in the direct sync flow of nyc's outputCoverage are
 // ignored, since we can never get coverage for them.
-var assert = __nccwpck_require__(9491)
-var signals = __nccwpck_require__(3710)
+// grab a reference to node's real process object right away
+var process = global.process
 
-var EE = __nccwpck_require__(2361)
+const processOk = function (process) {
+  return process &&
+    typeof process === 'object' &&
+    typeof process.removeListener === 'function' &&
+    typeof process.emit === 'function' &&
+    typeof process.reallyExit === 'function' &&
+    typeof process.listeners === 'function' &&
+    typeof process.kill === 'function' &&
+    typeof process.pid === 'number' &&
+    typeof process.on === 'function'
+}
+
+// some kind of non-node environment, just no-op
 /* istanbul ignore if */
-if (typeof EE !== 'function') {
-  EE = EE.EventEmitter
-}
-
-var emitter
-if (process.__signal_exit_emitter__) {
-  emitter = process.__signal_exit_emitter__
+if (!processOk(process)) {
+  module.exports = function () {
+    return function () {}
+  }
 } else {
-  emitter = process.__signal_exit_emitter__ = new EE()
-  emitter.count = 0
-  emitter.emitted = {}
-}
+  var assert = __nccwpck_require__(9491)
+  var signals = __nccwpck_require__(3710)
+  var isWin = /^win/i.test(process.platform)
 
-// Because this emitter is a global, we have to check to see if a
-// previous version of this library failed to enable infinite listeners.
-// I know what you're about to say.  But literally everything about
-// signal-exit is a compromise with evil.  Get used to it.
-if (!emitter.infinite) {
-  emitter.setMaxListeners(Infinity)
-  emitter.infinite = true
-}
-
-module.exports = function (cb, opts) {
-  assert.equal(typeof cb, 'function', 'a callback must be provided for exit handler')
-
-  if (loaded === false) {
-    load()
+  var EE = __nccwpck_require__(2361)
+  /* istanbul ignore if */
+  if (typeof EE !== 'function') {
+    EE = EE.EventEmitter
   }
 
-  var ev = 'exit'
-  if (opts && opts.alwaysLast) {
-    ev = 'afterexit'
+  var emitter
+  if (process.__signal_exit_emitter__) {
+    emitter = process.__signal_exit_emitter__
+  } else {
+    emitter = process.__signal_exit_emitter__ = new EE()
+    emitter.count = 0
+    emitter.emitted = {}
   }
 
-  var remove = function () {
-    emitter.removeListener(ev, cb)
-    if (emitter.listeners('exit').length === 0 &&
-        emitter.listeners('afterexit').length === 0) {
-      unload()
+  // Because this emitter is a global, we have to check to see if a
+  // previous version of this library failed to enable infinite listeners.
+  // I know what you're about to say.  But literally everything about
+  // signal-exit is a compromise with evil.  Get used to it.
+  if (!emitter.infinite) {
+    emitter.setMaxListeners(Infinity)
+    emitter.infinite = true
+  }
+
+  module.exports = function (cb, opts) {
+    /* istanbul ignore if */
+    if (!processOk(global.process)) {
+      return function () {}
     }
+    assert.equal(typeof cb, 'function', 'a callback must be provided for exit handler')
+
+    if (loaded === false) {
+      load()
+    }
+
+    var ev = 'exit'
+    if (opts && opts.alwaysLast) {
+      ev = 'afterexit'
+    }
+
+    var remove = function () {
+      emitter.removeListener(ev, cb)
+      if (emitter.listeners('exit').length === 0 &&
+          emitter.listeners('afterexit').length === 0) {
+        unload()
+      }
+    }
+    emitter.on(ev, cb)
+
+    return remove
   }
-  emitter.on(ev, cb)
 
-  return remove
-}
+  var unload = function unload () {
+    if (!loaded || !processOk(global.process)) {
+      return
+    }
+    loaded = false
 
-module.exports.unload = unload
-function unload () {
-  if (!loaded) {
-    return
+    signals.forEach(function (sig) {
+      try {
+        process.removeListener(sig, sigListeners[sig])
+      } catch (er) {}
+    })
+    process.emit = originalProcessEmit
+    process.reallyExit = originalProcessReallyExit
+    emitter.count -= 1
   }
-  loaded = false
+  module.exports.unload = unload
 
+  var emit = function emit (event, code, signal) {
+    /* istanbul ignore if */
+    if (emitter.emitted[event]) {
+      return
+    }
+    emitter.emitted[event] = true
+    emitter.emit(event, code, signal)
+  }
+
+  // { <signal>: <listener fn>, ... }
+  var sigListeners = {}
   signals.forEach(function (sig) {
-    try {
-      process.removeListener(sig, sigListeners[sig])
-    } catch (er) {}
-  })
-  process.emit = originalProcessEmit
-  process.reallyExit = originalProcessReallyExit
-  emitter.count -= 1
-}
-
-function emit (event, code, signal) {
-  if (emitter.emitted[event]) {
-    return
-  }
-  emitter.emitted[event] = true
-  emitter.emit(event, code, signal)
-}
-
-// { <signal>: <listener fn>, ... }
-var sigListeners = {}
-signals.forEach(function (sig) {
-  sigListeners[sig] = function listener () {
-    // If there are no other listeners, an exit is coming!
-    // Simplest way: remove us and then re-send the signal.
-    // We know that this will kill the process, so we can
-    // safely emit now.
-    var listeners = process.listeners(sig)
-    if (listeners.length === emitter.count) {
-      unload()
-      emit('exit', null, sig)
-      /* istanbul ignore next */
-      emit('afterexit', null, sig)
-      /* istanbul ignore next */
-      process.kill(process.pid, sig)
-    }
-  }
-})
-
-module.exports.signals = function () {
-  return signals
-}
-
-module.exports.load = load
-
-var loaded = false
-
-function load () {
-  if (loaded) {
-    return
-  }
-  loaded = true
-
-  // This is the number of onSignalExit's that are in play.
-  // It's important so that we can count the correct number of
-  // listeners on signals, and don't wait for the other one to
-  // handle it instead of us.
-  emitter.count += 1
-
-  signals = signals.filter(function (sig) {
-    try {
-      process.on(sig, sigListeners[sig])
-      return true
-    } catch (er) {
-      return false
+    sigListeners[sig] = function listener () {
+      /* istanbul ignore if */
+      if (!processOk(global.process)) {
+        return
+      }
+      // If there are no other listeners, an exit is coming!
+      // Simplest way: remove us and then re-send the signal.
+      // We know that this will kill the process, so we can
+      // safely emit now.
+      var listeners = process.listeners(sig)
+      if (listeners.length === emitter.count) {
+        unload()
+        emit('exit', null, sig)
+        /* istanbul ignore next */
+        emit('afterexit', null, sig)
+        /* istanbul ignore next */
+        if (isWin && sig === 'SIGHUP') {
+          // "SIGHUP" throws an `ENOSYS` error on Windows,
+          // so use a supported signal instead
+          sig = 'SIGINT'
+        }
+        /* istanbul ignore next */
+        process.kill(process.pid, sig)
+      }
     }
   })
 
-  process.emit = processEmit
-  process.reallyExit = processReallyExit
-}
+  module.exports.signals = function () {
+    return signals
+  }
 
-var originalProcessReallyExit = process.reallyExit
-function processReallyExit (code) {
-  process.exitCode = code || 0
-  emit('exit', process.exitCode, null)
-  /* istanbul ignore next */
-  emit('afterexit', process.exitCode, null)
-  /* istanbul ignore next */
-  originalProcessReallyExit.call(process, process.exitCode)
-}
+  var loaded = false
 
-var originalProcessEmit = process.emit
-function processEmit (ev, arg) {
-  if (ev === 'exit') {
-    if (arg !== undefined) {
-      process.exitCode = arg
+  var load = function load () {
+    if (loaded || !processOk(global.process)) {
+      return
     }
-    var ret = originalProcessEmit.apply(this, arguments)
+    loaded = true
+
+    // This is the number of onSignalExit's that are in play.
+    // It's important so that we can count the correct number of
+    // listeners on signals, and don't wait for the other one to
+    // handle it instead of us.
+    emitter.count += 1
+
+    signals = signals.filter(function (sig) {
+      try {
+        process.on(sig, sigListeners[sig])
+        return true
+      } catch (er) {
+        return false
+      }
+    })
+
+    process.emit = processEmit
+    process.reallyExit = processReallyExit
+  }
+  module.exports.load = load
+
+  var originalProcessReallyExit = process.reallyExit
+  var processReallyExit = function processReallyExit (code) {
+    /* istanbul ignore if */
+    if (!processOk(global.process)) {
+      return
+    }
+    process.exitCode = code || /* istanbul ignore next */ 0
     emit('exit', process.exitCode, null)
     /* istanbul ignore next */
     emit('afterexit', process.exitCode, null)
-    return ret
-  } else {
-    return originalProcessEmit.apply(this, arguments)
+    /* istanbul ignore next */
+    originalProcessReallyExit.call(process, process.exitCode)
+  }
+
+  var originalProcessEmit = process.emit
+  var processEmit = function processEmit (ev, arg) {
+    if (ev === 'exit' && processOk(global.process)) {
+      /* istanbul ignore else */
+      if (arg !== undefined) {
+        process.exitCode = arg
+      }
+      var ret = originalProcessEmit.apply(this, arguments)
+      /* istanbul ignore next */
+      emit('exit', process.exitCode, null)
+      /* istanbul ignore next */
+      emit('afterexit', process.exitCode, null)
+      /* istanbul ignore next */
+      return ret
+    } else {
+      return originalProcessEmit.apply(this, arguments)
+    }
   }
 }
 
@@ -71769,7 +71814,11 @@ function wrappy (fn, cb) {
 
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
-    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
 }) : (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
     o[k2] = m[k];
@@ -71844,7 +71893,11 @@ function writeRegistryToFile(registryUrl, fileLocation, alwaysAuth) {
 
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
-    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
 }) : (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
     o[k2] = m[k];
@@ -71883,12 +71936,12 @@ const fs_1 = __importDefault(__nccwpck_require__(7147));
 const constants_1 = __nccwpck_require__(9042);
 const cache_utils_1 = __nccwpck_require__(1678);
 const restoreCache = (packageManager, cacheDependencyPath) => __awaiter(void 0, void 0, void 0, function* () {
-    const packageManagerInfo = yield cache_utils_1.getPackageManagerInfo(packageManager);
+    const packageManagerInfo = yield (0, cache_utils_1.getPackageManagerInfo)(packageManager);
     if (!packageManagerInfo) {
         throw new Error(`Caching for '${packageManager}' is not supported`);
     }
     const platform = process.env.RUNNER_OS;
-    const cachePaths = yield cache_utils_1.getCacheDirectories(packageManagerInfo, cacheDependencyPath);
+    const cachePaths = yield (0, cache_utils_1.getCacheDirectories)(packageManagerInfo, cacheDependencyPath);
     core.saveState(constants_1.State.CachePaths, cachePaths);
     const lockFilePath = cacheDependencyPath
         ? cacheDependencyPath
@@ -71901,7 +71954,7 @@ const restoreCache = (packageManager, cacheDependencyPath) => __awaiter(void 0, 
     const primaryKey = `${keyPrefix}-${fileHash}`;
     core.debug(`primary key is ${primaryKey}`);
     core.saveState(constants_1.State.CachePrimaryKey, primaryKey);
-    const isManagedByYarnBerry = yield cache_utils_1.repoHasYarnBerryManagedDependencies(packageManagerInfo, cacheDependencyPath);
+    const isManagedByYarnBerry = yield (0, cache_utils_1.repoHasYarnBerryManagedDependencies)(packageManagerInfo, cacheDependencyPath);
     let cacheKey;
     if (isManagedByYarnBerry) {
         core.info('All dependencies are managed locally by yarn3, the previous cache can be used');
@@ -71940,7 +71993,11 @@ const findLockFile = (packageManager) => {
 
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
-    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
 }) : (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
     o[k2] = m[k];
@@ -71982,22 +72039,22 @@ exports.supportedPackageManagers = {
     npm: {
         name: 'npm',
         lockFilePatterns: ['package-lock.json', 'npm-shrinkwrap.json', 'yarn.lock'],
-        getCacheFolderPath: () => exports.getCommandOutputNotEmpty('npm config get cache', 'Could not get npm cache folder path')
+        getCacheFolderPath: () => (0, exports.getCommandOutputNotEmpty)('npm config get cache', 'Could not get npm cache folder path')
     },
     pnpm: {
         name: 'pnpm',
         lockFilePatterns: ['pnpm-lock.yaml'],
-        getCacheFolderPath: () => exports.getCommandOutputNotEmpty('pnpm store path --silent', 'Could not get pnpm cache folder path')
+        getCacheFolderPath: () => (0, exports.getCommandOutputNotEmpty)('pnpm store path --silent', 'Could not get pnpm cache folder path')
     },
     yarn: {
         name: 'yarn',
         lockFilePatterns: ['yarn.lock'],
         getCacheFolderPath: (projectDir) => __awaiter(void 0, void 0, void 0, function* () {
-            const yarnVersion = yield exports.getCommandOutputNotEmpty(`yarn --version`, 'Could not retrieve version of yarn', projectDir);
+            const yarnVersion = yield (0, exports.getCommandOutputNotEmpty)(`yarn --version`, 'Could not retrieve version of yarn', projectDir);
             core.debug(`Consumed yarn version is ${yarnVersion} (working dir: "${projectDir || ''}")`);
             const stdOut = yarnVersion.startsWith('1.')
-                ? yield exports.getCommandOutput('yarn cache dir', projectDir)
-                : yield exports.getCommandOutput('yarn config get cacheFolder', projectDir);
+                ? yield (0, exports.getCommandOutput)('yarn cache dir', projectDir)
+                : yield (0, exports.getCommandOutput)('yarn config get cacheFolder', projectDir);
             if (!stdOut) {
                 throw new Error(`Could not get yarn cache folder path for ${projectDir}`);
             }
@@ -72017,7 +72074,7 @@ const getCommandOutput = (toolCommand, cwd) => __awaiter(void 0, void 0, void 0,
 });
 exports.getCommandOutput = getCommandOutput;
 const getCommandOutputNotEmpty = (toolCommand, error, cwd) => __awaiter(void 0, void 0, void 0, function* () {
-    const stdOut = exports.getCommandOutput(toolCommand, cwd);
+    const stdOut = (0, exports.getCommandOutput)(toolCommand, cwd);
     if (!stdOut) {
         throw new Error(error);
     }
@@ -72067,7 +72124,7 @@ const getProjectDirectoriesFromCacheDependencyPath = (cacheDependencyPath) => __
     const cacheDependenciesPaths = yield globber.glob();
     const existingDirectories = cacheDependenciesPaths
         .map(path_1.default.dirname)
-        .filter(util_1.unique())
+        .filter((0, util_1.unique)())
         .map(dirName => fs_1.default.realpathSync(dirName))
         .filter(directory => fs_1.default.lstatSync(directory).isDirectory());
     if (!existingDirectories.length)
@@ -72090,7 +72147,7 @@ const getCacheDirectoriesFromCacheDependencyPath = (packageManagerInfo, cacheDep
         return cacheFolderPath;
     })));
     // uniq in order to do not cache the same directories twice
-    return cacheFoldersPaths.filter(util_1.unique());
+    return cacheFoldersPaths.filter((0, util_1.unique)());
 });
 /**
  * Finds the cache directories configured for the repo ignoring cache-dependency-path
@@ -72140,7 +72197,7 @@ const projectHasYarnBerryManagedDependencies = (directory) => __awaiter(void 0, 
         return Promise.resolve(false);
     }
     // NOTE: yarn1 returns 'undefined' with return code = 0
-    const enableGlobalCache = yield exports.getCommandOutput('yarn config get enableGlobalCache', workDir);
+    const enableGlobalCache = yield (0, exports.getCommandOutput)('yarn config get enableGlobalCache', workDir);
     // only local cache is not managed by yarn
     const managed = enableGlobalCache.includes('false');
     if (managed) {
@@ -72224,7 +72281,11 @@ var Outputs;
 
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
-    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
 }) : (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
     o[k2] = m[k];
@@ -72299,7 +72360,11 @@ exports["default"] = BasePrereleaseNodejs;
 
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
-    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
 }) : (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
     o[k2] = m[k];
@@ -72461,7 +72526,7 @@ class BaseDistribution {
             const initialUrl = this.getDistributionUrl();
             const osArch = this.translateArchToDistUrl(arch);
             // Create temporary folder to download to
-            const tempDownloadFolder = `temp_${uuid_1.v4()}`;
+            const tempDownloadFolder = `temp_${(0, uuid_1.v4)()}`;
             const tempDirectory = process.env['RUNNER_TEMP'] || '';
             assert.ok(tempDirectory, 'Expected RUNNER_TEMP to be defined');
             const tempDir = path.join(tempDirectory, tempDownloadFolder);
@@ -72644,7 +72709,11 @@ exports["default"] = NightlyNodejs;
 
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
-    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
 }) : (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
     o[k2] = m[k];
@@ -72683,6 +72752,7 @@ class OfficialBuilds extends base_distribution_1.default {
         super(nodeInfo);
     }
     setupNodeJs() {
+        var _a;
         return __awaiter(this, void 0, void 0, function* () {
             let manifest;
             let nodeJsVersions;
@@ -72739,7 +72809,7 @@ class OfficialBuilds extends base_distribution_1.default {
                     else {
                         core.info(err.message);
                     }
-                    core.debug(err.stack);
+                    core.debug((_a = err.stack) !== null && _a !== void 0 ? _a : 'empty stack');
                     core.info('Falling back to download directly from Node');
                 }
                 if (!toolPath) {
@@ -72896,7 +72966,11 @@ exports["default"] = CanaryBuild;
 
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
-    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
 }) : (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
     o[k2] = m[k];
@@ -72967,19 +73041,19 @@ function run() {
                     stable,
                     arch
                 };
-                const nodeDistribution = installer_factory_1.getNodejsDistribution(nodejsInfo);
+                const nodeDistribution = (0, installer_factory_1.getNodejsDistribution)(nodejsInfo);
                 yield nodeDistribution.setupNodeJs();
             }
-            yield util_1.printEnvDetailsAndSetOutput();
+            yield (0, util_1.printEnvDetailsAndSetOutput)();
             const registryUrl = core.getInput('registry-url');
             const alwaysAuth = core.getInput('always-auth');
             if (registryUrl) {
                 auth.configAuthentication(registryUrl, alwaysAuth);
             }
-            if (cache && cache_utils_1.isCacheFeatureAvailable()) {
+            if (cache && (0, cache_utils_1.isCacheFeatureAvailable)()) {
                 core.saveState(constants_1.State.CachePackageManager, cache);
                 const cacheDependencyPath = core.getInput('cache-dependency-path');
-                yield cache_restore_1.restoreCache(cache, cacheDependencyPath);
+                yield (0, cache_restore_1.restoreCache)(cache, cacheDependencyPath);
             }
             const matchersPath = path.join(__dirname, '../..', '.github');
             core.info(`##[add-matcher]${path.join(matchersPath, 'tsc.json')}`);
@@ -73006,7 +73080,7 @@ function resolveVersionInput() {
         if (!fs_1.default.existsSync(versionFilePath)) {
             throw new Error(`The specified node version file at: ${versionFilePath} does not exist`);
         }
-        version = util_1.parseNodeVersionFile(fs_1.default.readFileSync(versionFilePath, 'utf8'));
+        version = (0, util_1.parseNodeVersionFile)(fs_1.default.readFileSync(versionFilePath, 'utf8'));
         core.info(`Resolved ${versionFileInput} as ${version}`);
     }
     return version;
@@ -73022,7 +73096,11 @@ function resolveVersionInput() {
 
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
-    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
 }) : (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
     o[k2] = m[k];
@@ -73371,7 +73449,7 @@ var exports = __webpack_exports__;
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 const main_1 = __nccwpck_require__(399);
-main_1.run();
+(0, main_1.run)();
 
 })();
 
