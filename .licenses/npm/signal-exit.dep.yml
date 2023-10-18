@@ -1,6 +1,6 @@
 ---
 name: signal-exit
-version: 3.0.2
+version: 3.0.7
 type: npm
 summary: when you want to fire an event no matter how a process exits.
 homepage: https://github.com/tapjs/signal-exit
