@@ -148,7 +148,7 @@ export default class OfficialBuilds extends BaseDistribution {
       return toolPath;
     } catch (error) {
       if (error instanceof tc.HTTPError && error.httpStatusCode === 404) {
-        core.info(
+        core.warning(
           `Node version ${this.nodeInfo.versionSpec} for platform ${this.osPlat} and architecture ${this.nodeInfo.arch} was found but failed to download. ` +
             'This usually happens when downloadable binaries are not fully updated at https://nodejs.org/. ' +
             'To resolve this issue you may either fall back to the older version or try again later.'
