@@ -17,7 +17,7 @@ export async function run() {
     const cacheLock = core.getState(State.CachePackageManager);
     await cachePackages(cacheLock);
   } catch (error) {
-    core.setFailed(error.message);
+    core.setFailed((error as Error).message);
   }
 }
 
