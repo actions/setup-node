@@ -385,7 +385,7 @@ describe('setup-node', () => {
       'Not found in manifest. Falling back to download directly from Node'
     );
     expect(dlSpy).toHaveBeenCalled();
-    expect(logSpy).toHaveBeenCalledWith(
+    expect(warningSpy).toHaveBeenCalledWith(
       `Node version ${versionSpec} for platform ${os.platform} and architecture ${os.arch} was found but failed to download. ` +
         'This usually happens when downloadable binaries are not fully updated at https://nodejs.org/. ' +
         'To resolve this issue you may either fall back to the older version or try again later.'
