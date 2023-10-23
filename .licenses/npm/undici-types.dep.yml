@@ -1,16 +1,14 @@
 ---
-name: undici
-version: 5.26.3
+name: undici-types
+version: 5.25.3
 type: npm
-summary: An HTTP/1.1 client, written from scratch for Node.js
+summary: A stand-alone types package for Undici
 homepage: https://undici.nodejs.org
 license: mit
 licenses:
-- sources: LICENSE
+- sources: Auto-generated MIT license text
   text: |
     MIT License
-
-    Copyright (c) Matteo Collina and Undici contributors
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
     of this software and associated documentation files (the "Software"), to deal
@@ -29,6 +27,4 @@ licenses:
     LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
     OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
     SOFTWARE.
-- sources: README.md
-  text: MIT
 notices: []
