@@ -1,10 +1,6 @@
 ---
 name: undici
-<<<<<<< HEAD
-version: 5.26.3
-=======
 version: 5.26.5
->>>>>>> main
 type: npm
 summary: An HTTP/1.1 client, written from scratch for Node.js
 homepage: https://undici.nodejs.org
