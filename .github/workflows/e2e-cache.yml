@@ -98,8 +98,8 @@ jobs:
         run: __tests__/verify-node.sh "${{ matrix.node-version }}"
         shell: bash
 
-  node-yarn2-depencies-caching:
-    name: Test yarn 2 (Node ${{ matrix.node-version}}, ${{ matrix.os }})
+  node-yarn3-depencies-caching:
+    name: Test yarn 3 (Node ${{ matrix.node-version}}, ${{ matrix.os }})
     runs-on: ${{ matrix.os }}
     env:
       YARN_ENABLE_IMMUTABLE_INSTALLS: false
@@ -111,7 +111,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Update yarn
-        run: yarn set version berry
+        run: yarn set version 3.6.4
       - name: Yarn version
         run: yarn --version
       - name: Generate simple .yarnrc.yml

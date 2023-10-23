@@ -357,6 +357,41 @@ describe('setup-node', () => {
     expect(cnSpy).toHaveBeenCalledWith(`::error::${errMsg}${osm.EOL}`);
   });
 
+  it('reports when download failed but version exists', async () => {
+    os.platform = 'linux';
+    os.arch = 'x64';
+
+    // a version which is not in the manifest but is in node dist
+    const versionSpec = '11.15.0';
+
+    inputs['node-version'] = versionSpec;
+    inputs['always-auth'] = false;
+    inputs['token'] = 'faketoken';
+
+    // ... but not in the local cache
+    findSpy.mockImplementation(() => '');
+
+    dlSpy.mockImplementationOnce(async () => {
+      throw new tc.HTTPError(404);
+    });
+
+    await main.run();
+
+    expect(getManifestSpy).toHaveBeenCalled();
+    expect(logSpy).toHaveBeenCalledWith(
+      `Attempting to download ${versionSpec}...`
+    );
+    expect(logSpy).toHaveBeenCalledWith(
+      'Not found in manifest. Falling back to download directly from Node'
+    );
+    expect(dlSpy).toHaveBeenCalled();
+    expect(warningSpy).toHaveBeenCalledWith(
+      `Node version ${versionSpec} for platform ${os.platform} and architecture ${os.arch} was found but failed to download. ` +
+        'This usually happens when downloadable binaries are not fully updated at https://nodejs.org/. ' +
+        'To resolve this issue you may either fall back to the older version or try again later.'
+    );
+  });
+
   it('acquires specified architecture of node', async () => {
     for (const {arch, version, osSpec} of [
       {arch: 'x86', version: '12.16.2', osSpec: 'win32'},
