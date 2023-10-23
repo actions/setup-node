@@ -1,8 +1,8 @@
 ---
 name: "@types/node"
-version: 16.11.25
+version: 20.8.7
 type: npm
-summary: TypeScript definitions for Node.js
+summary: TypeScript definitions for node
 homepage: https://github.com/DefinitelyTyped/DefinitelyTyped/tree/master/types/node
 license: mit
 licenses:

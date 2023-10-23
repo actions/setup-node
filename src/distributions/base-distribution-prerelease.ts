@@ -16,12 +16,12 @@ export default abstract class BasePrereleaseNodejs extends BaseDistribution {
     const localVersionPaths = tc
       .findAllVersions('node', this.nodeInfo.arch)
       .filter(i => {
-        const prerelease = semver.prerelease(i);
+        const prerelease = semver.prerelease(i, {});
         if (!prerelease) {
           return false;
         }
 
-        return prerelease[0].includes(this.distribution);
+        return prerelease[0].toString().includes(this.distribution);
       });
     localVersionPaths.sort(semver.rcompare);
     const localVersion = this.evaluateVersions(localVersionPaths);
