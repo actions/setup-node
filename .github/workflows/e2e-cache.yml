@@ -111,7 +111,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Update yarn
-        run: yarn set version berry
+        run: yarn set version 2.x
       - name: Yarn version
         run: yarn --version
       - name: Generate simple .yarnrc.yml
