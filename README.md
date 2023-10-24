@@ -25,7 +25,7 @@ See [action.yml](action.yml)
     # Examples: 12.x, 10.15.1, >=10.15.0, lts/Hydrogen, 16-nightly, latest, node
     node-version: ''
 
-    # File containing the version Spec of the version to use.  Examples: .nvmrc, .node-version, .tool-versions.
+    # File containing the version Spec of the version to use.  Examples: package.json, .nvmrc, .node-version, .tool-versions.
     # If node-version and node-version-file are both provided the action will use version from node-version. 
     node-version-file: ''
 
