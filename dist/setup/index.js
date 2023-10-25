@@ -93728,7 +93728,13 @@ function resolveVersionInput() {
         if (!fs_1.default.existsSync(versionFilePath)) {
             throw new Error(`The specified node version file at: ${versionFilePath} does not exist`);
         }
-        version = (0, util_1.parseNodeVersionFile)(fs_1.default.readFileSync(versionFilePath, 'utf8'));
+        const parsedVersion = (0, util_1.parseNodeVersionFile)(fs_1.default.readFileSync(versionFilePath, 'utf8'));
+        if (parsedVersion) {
+            version = parsedVersion;
+        }
+        else {
+            core.warning(`Could not determine node version from ${versionFilePath}. Falling back`);
+        }
         core.info(`Resolved ${versionFileInput} as ${version}`);
     }
     return version;
@@ -93783,9 +93789,25 @@ function parseNodeVersionFile(contents) {
     let nodeVersion;
     // Try parsing the file as an NPM `package.json` file.
     try {
-        nodeVersion = (_a = JSON.parse(contents).volta) === null || _a === void 0 ? void 0 : _a.node;
-        if (!nodeVersion)
-            nodeVersion = (_b = JSON.parse(contents).engines) === null || _b === void 0 ? void 0 : _b.node;
+        const manifest = JSON.parse(contents);
+        // JSON can parse numbers, but that's handled later
+        if (typeof manifest === 'object') {
+            nodeVersion = (_a = manifest.volta) === null || _a === void 0 ? void 0 : _a.node;
+            if (!nodeVersion)
+                nodeVersion = (_b = manifest.engines) === null || _b === void 0 ? void 0 : _b.node;
+            // if contents are an object, we parsed JSON
+            // this can happen if node-version-file is a package.json
+            // yet contains no volta.node or engines.node
+            //
+            // if node-version file is _not_ json, control flow
+            // will not have reached these lines.
+            //
+            // And because we've reached here, we know the contents
+            // *are* JSON, so no further string parsing makes sense.
+            if (!nodeVersion) {
+                return null;
+            }
+        }
     }
     catch (_d) {
         core.info('Node version file is not JSON file');
