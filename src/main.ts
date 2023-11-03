@@ -58,6 +58,11 @@ export async function run() {
     const alwaysAuth: string = core.getInput('always-auth');
     if (registryUrl) {
       auth.configAuthentication(registryUrl, alwaysAuth);
+      const registryUrl2: string = core.getInput('registry-url2');
+      if (registryUrl2) {
+        const alwaysAuth2: string = core.getInput('always-auth2');
+        auth.configAuthentication2(registryUrl2, alwaysAuth2);
+      }
     }
 
     if (cache && isCacheFeatureAvailable()) {

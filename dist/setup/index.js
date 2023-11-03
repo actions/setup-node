@@ -92462,31 +92462,25 @@ var __importStar = (this && this.__importStar) || function (mod) {
     return result;
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.configAuthentication = void 0;
+exports.configAuthentication2 = exports.configAuthentication = void 0;
 const fs = __importStar(__nccwpck_require__(7147));
 const os = __importStar(__nccwpck_require__(2037));
 const path = __importStar(__nccwpck_require__(1017));
 const core = __importStar(__nccwpck_require__(2186));
 const github = __importStar(__nccwpck_require__(5438));
 function configAuthentication(registryUrl, alwaysAuth) {
-    const npmrc = path.resolve(process.env['RUNNER_TEMP'] || process.cwd(), '.npmrc');
+    writeRegistryToFile(registryUrl, alwaysAuth, 'NODE_AUTH_TOKEN');
+}
+exports.configAuthentication = configAuthentication;
+function getFileLocation() {
+    return path.resolve(process.env['RUNNER_TEMP'] || process.cwd(), '.npmrc');
+}
+function writeRegistryToFile(registryUrl, alwaysAuth, tokenEnvVar) {
+    const fileLocation = getFileLocation();
     if (!registryUrl.endsWith('/')) {
         registryUrl += '/';
     }
-    writeRegistryToFile(registryUrl, npmrc, alwaysAuth);
-}
-exports.configAuthentication = configAuthentication;
-function writeRegistryToFile(registryUrl, fileLocation, alwaysAuth) {
-    let scope = core.getInput('scope');
-    if (!scope && registryUrl.indexOf('npm.pkg.github.com') > -1) {
-        scope = github.context.repo.owner;
-    }
-    if (scope && scope[0] != '@') {
-        scope = '@' + scope;
-    }
-    if (scope) {
-        scope = scope.toLowerCase() + ':';
-    }
+    const scope = getScope('scope', registryUrl);
     core.debug(`Setting auth in ${fileLocation}`);
     let newContents = '';
     if (fs.existsSync(fileLocation)) {
@@ -92499,15 +92493,32 @@ function writeRegistryToFile(registryUrl, fileLocation, alwaysAuth) {
         });
     }
     // Remove http: or https: from front of registry.
-    const authString = registryUrl.replace(/(^\w+:|^)/, '') + ':_authToken=${NODE_AUTH_TOKEN}';
+    const authString = registryUrl.replace(/(^\w+:|^)/, '') + ':_authToken=${' + tokenEnvVar + '}';
     const registryString = `${scope}registry=${registryUrl}`;
     const alwaysAuthString = `always-auth=${alwaysAuth}`;
     newContents += `${authString}${os.EOL}${registryString}${os.EOL}${alwaysAuthString}`;
     fs.writeFileSync(fileLocation, newContents);
     core.exportVariable('NPM_CONFIG_USERCONFIG', fileLocation);
     // Export empty node_auth_token if didn't exist so npm doesn't complain about not being able to find it
-    core.exportVariable('NODE_AUTH_TOKEN', process.env.NODE_AUTH_TOKEN || 'XXXXX-XXXXX-XXXXX-XXXXX');
+    core.exportVariable(tokenEnvVar, process.env[tokenEnvVar] || 'XXXXX-XXXXX-XXXXX-XXXXX');
 }
+function getScope(scopeKey, registryUrl) {
+    let scope = core.getInput(scopeKey);
+    if (!scope && registryUrl.indexOf('npm.pkg.github.com') > -1) {
+        scope = github.context.repo.owner;
+    }
+    if (scope && scope[0] != '@') {
+        scope = '@' + scope;
+    }
+    if (scope) {
+        scope = scope.toLowerCase() + ':';
+    }
+    return scope;
+}
+function configAuthentication2(registryUrl2, alwaysAuth2) {
+    writeRegistryToFile(registryUrl2, alwaysAuth2, 'NODE_AUTH_TOKEN2');
+}
+exports.configAuthentication2 = configAuthentication2;
 
 
 /***/ }),
@@ -93697,6 +93708,11 @@ function run() {
             const alwaysAuth = core.getInput('always-auth');
             if (registryUrl) {
                 auth.configAuthentication(registryUrl, alwaysAuth);
+                const registryUrl2 = core.getInput('registry-url2');
+                if (registryUrl2) {
+                    const alwaysAuth2 = core.getInput('always-auth2');
+                    auth.configAuthentication2(registryUrl2, alwaysAuth2);
+                }
             }
             if (cache && (0, cache_utils_1.isCacheFeatureAvailable)()) {
                 core.saveState(constants_1.State.CachePackageManager, cache);

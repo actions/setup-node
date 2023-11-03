@@ -5,32 +5,28 @@ import * as core from '@actions/core';
 import * as github from '@actions/github';
 
 export function configAuthentication(registryUrl: string, alwaysAuth: string) {
-  const npmrc: string = path.resolve(
+
+  writeRegistryToFile(registryUrl, alwaysAuth, 'NODE_AUTH_TOKEN');
+}
+
+function getFileLocation(): string {
+  return path.resolve(
     process.env['RUNNER_TEMP'] || process.cwd(),
     '.npmrc'
   );
-  if (!registryUrl.endsWith('/')) {
-    registryUrl += '/';
-  }
-
-  writeRegistryToFile(registryUrl, npmrc, alwaysAuth);
 }
 
 function writeRegistryToFile(
   registryUrl: string,
-  fileLocation: string,
-  alwaysAuth: string
+  alwaysAuth: string,
+  tokenEnvVar: string
 ) {
-  let scope: string = core.getInput('scope');
-  if (!scope && registryUrl.indexOf('npm.pkg.github.com') > -1) {
-    scope = github.context.repo.owner;
+  const fileLocation: string = getFileLocation();
+  if (!registryUrl.endsWith('/')) {
+    registryUrl += '/';
   }
-  if (scope && scope[0] != '@') {
-    scope = '@' + scope;
-  }
-  if (scope) {
-    scope = scope.toLowerCase() + ':';
-  }
+
+  const scope: string = getScope('scope', registryUrl);
 
   core.debug(`Setting auth in ${fileLocation}`);
   let newContents = '';
@@ -45,7 +41,7 @@ function writeRegistryToFile(
   }
   // Remove http: or https: from front of registry.
   const authString: string =
-    registryUrl.replace(/(^\w+:|^)/, '') + ':_authToken=${NODE_AUTH_TOKEN}';
+    registryUrl.replace(/(^\w+:|^)/, '') + ':_authToken=${' + tokenEnvVar + '}';
   const registryString = `${scope}registry=${registryUrl}`;
   const alwaysAuthString = `always-auth=${alwaysAuth}`;
   newContents += `${authString}${os.EOL}${registryString}${os.EOL}${alwaysAuthString}`;
@@ -53,7 +49,24 @@ function writeRegistryToFile(
   core.exportVariable('NPM_CONFIG_USERCONFIG', fileLocation);
   // Export empty node_auth_token if didn't exist so npm doesn't complain about not being able to find it
   core.exportVariable(
-    'NODE_AUTH_TOKEN',
-    process.env.NODE_AUTH_TOKEN || 'XXXXX-XXXXX-XXXXX-XXXXX'
+    tokenEnvVar, process.env[tokenEnvVar] || 'XXXXX-XXXXX-XXXXX-XXXXX'
   );
+}
+function getScope(scopeKey: string, registryUrl: string) {
+  let scope: string = core.getInput(scopeKey);
+  if (!scope && registryUrl.indexOf('npm.pkg.github.com') > -1) {
+    scope = github.context.repo.owner;
+  }
+  if (scope && scope[0] != '@') {
+    scope = '@' + scope;
+  }
+  if (scope) {
+    scope = scope.toLowerCase() + ':';
+  }
+  return scope;
+}
+
+export function configAuthentication2(registryUrl2: string, alwaysAuth2: string) {
+
+  writeRegistryToFile(registryUrl2, alwaysAuth2, 'NODE_AUTH_TOKEN2');
 }
