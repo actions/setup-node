@@ -93,7 +93,7 @@ jobs:
           node-version: ${{ matrix.node-version }}
           cache: 'yarn'
       - name: Install dependencies
-        run: yarn install
+        run: yarn install --ignore-engines
       - name: Verify node and yarn
         run: __tests__/verify-node.sh "${{ matrix.node-version }}"
         shell: bash
