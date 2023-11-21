@@ -443,5 +443,3 @@ steps:
 - name: Install dependencies
   run: yarn install --immutable
 ```
-
-This option by default is `false` as Corepack is still in experimental phase.
