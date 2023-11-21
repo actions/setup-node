@@ -157,7 +157,7 @@ jobs:
 
 ## Nightly versions
 
-You can specify a nightly version to download it from https://nodejs.org/download/nightly. 
+You can specify a nightly version to download it from https://nodejs.org/download/nightly.
 
 ### Install the nightly build for a major version
 
@@ -265,7 +265,7 @@ steps:
 - run: pnpm test
 ```
 
-> **Note**: By default `--frozen-lockfile` option is passed starting from pnpm `6.10.x`. It will be automatically added if you run it on [CI](https://pnpm.io/cli/install#--frozen-lockfile). 
+> **Note**: By default `--frozen-lockfile` option is passed starting from pnpm `6.10.x`. It will be automatically added if you run it on [CI](https://pnpm.io/cli/install#--frozen-lockfile).
 > If the `pnpm-lock.yaml` file changes then pass `--frozen-lockfile` option.
 
 
@@ -425,7 +425,7 @@ steps:
 - uses: actions/checkout@v3
 - uses: actions/setup-node@v3
   with:
-    node-version: '16.x'
+    node-version: '18.x'
     corepack: true
 - name: Install dependencies
   run: yarn install --immutable
@@ -438,7 +438,7 @@ steps:
 - uses: actions/checkout@v3
 - uses: actions/setup-node@v3
   with:
-    node-version: '16.x'
+    node-version: '18.x'
     corepack: yarn pnpm
 - name: Install dependencies
   run: yarn install --immutable
