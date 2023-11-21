@@ -26,22 +26,22 @@ See [action.yml](action.yml)
     node-version: ''
 
     # File containing the version Spec of the version to use.  Examples: .nvmrc, .node-version, .tool-versions.
-    # If node-version and node-version-file are both provided the action will use version from node-version. 
+    # If node-version and node-version-file are both provided the action will use version from node-version.
     node-version-file: ''
 
-    # Set this option if you want the action to check for the latest available version 
+    # Set this option if you want the action to check for the latest available version
     # that satisfies the version spec.
-    # It will only get affect for lts Nodejs versions (12.x, >=10.15.0, lts/Hydrogen). 
+    # It will only get affect for lts Nodejs versions (12.x, >=10.15.0, lts/Hydrogen).
     # Default: false
     check-latest: false
 
     # Target architecture for Node to use. Examples: x86, x64. Will use system architecture by default.
-    # Default: ''. The action use system architecture by default 
+    # Default: ''. The action use system architecture by default
     architecture: ''
 
-    # Used to pull node distributions from https://github.com/actions/node-versions. 
-    # Since there's a default, this is typically not supplied by the user. 
-    # When running this action on github.com, the default value is sufficient. 
+    # Used to pull node distributions from https://github.com/actions/node-versions.
+    # Since there's a default, this is typically not supplied by the user.
+    # When running this action on github.com, the default value is sufficient.
     # When running on GHES, you can pass a personal access token for github.com if you are experiencing rate limiting.
     #
     # We recommend using a service account with the least permissions necessary. Also
@@ -57,18 +57,18 @@ See [action.yml](action.yml)
     # Default: ''
     cache: ''
 
-    # Used to specify the path to a dependency file: package-lock.json, yarn.lock, etc. 
-    # It will generate hash from the target file for primary key. It works only If cache is specified.  
+    # Used to specify the path to a dependency file: package-lock.json, yarn.lock, etc.
+    # It will generate hash from the target file for primary key. It works only If cache is specified.
     # Supports wildcards or a list of file names for caching multiple dependencies.
     # Default: ''
     cache-dependency-path: ''
 
-    # Optional registry to set up for auth. Will set the registry in a project level .npmrc and .yarnrc file, 
+    # Optional registry to set up for auth. Will set the registry in a project level .npmrc and .yarnrc file,
     # and set up auth to read in from env.NODE_AUTH_TOKEN.
     # Default: ''
     registry-url: ''
 
-    # Optional scope for authenticating against scoped registries. 
+    # Optional scope for authenticating against scoped registries.
     # Will fall back to the repository owner when using the GitHub Packages registry (https://npm.pkg.github.com/).
     # Default: ''
     scope: ''
@@ -203,6 +203,7 @@ If the runner is not able to access github.com, any Nodejs versions requested du
  - [Publishing to npmjs and GPR with npm](docs/advanced-usage.md#publish-to-npmjs-and-gpr-with-npm)
  - [Publishing to npmjs and GPR with yarn](docs/advanced-usage.md#publish-to-npmjs-and-gpr-with-yarn)
  - [Using private packages](docs/advanced-usage.md#use-private-packages)
+ - [Enabling Corepack](docs/advanced-usage.md#enabling-corepack)
 
 ## License
 

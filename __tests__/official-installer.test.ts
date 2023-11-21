@@ -825,4 +825,36 @@ describe('setup-node', () => {
       }
     );
   });
+
+  describe('corepack flag', () => {
+    it('use corepack if specified', async () => {
+      inputs['corepack'] = 'true';
+      await main.run();
+      expect(getExecOutputSpy).toHaveBeenCalledWith(
+        'corepack',
+        ['enable'],
+        expect.anything()
+      );
+    });
+
+    it('use corepack with given package manager', async () => {
+      inputs['corepack'] = 'npm';
+      await main.run();
+      expect(getExecOutputSpy).toHaveBeenCalledWith(
+        'corepack',
+        ['enable', 'npm'],
+        expect.anything()
+      );
+    });
+
+    it('use corepack with multiple package managers', async () => {
+      inputs['corepack'] = 'npm yarn';
+      await main.run();
+      expect(getExecOutputSpy).toHaveBeenCalledWith(
+        'corepack',
+        ['enable', 'npm', 'yarn'],
+        expect.anything()
+      );
+    });
+  });
 });

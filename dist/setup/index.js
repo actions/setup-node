@@ -93698,6 +93698,8 @@ function run() {
             if (registryUrl) {
                 auth.configAuthentication(registryUrl, alwaysAuth);
             }
+            const corepack = core.getInput('corepack') || 'false';
+            yield (0, util_1.enableCorepack)(corepack);
             if (cache && (0, cache_utils_1.isCacheFeatureAvailable)()) {
                 core.saveState(constants_1.State.CachePackageManager, cache);
                 const cacheDependencyPath = core.getInput('cache-dependency-path');
@@ -93775,7 +93777,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.unique = exports.printEnvDetailsAndSetOutput = exports.parseNodeVersionFile = void 0;
+exports.enableCorepack = exports.unique = exports.printEnvDetailsAndSetOutput = exports.parseNodeVersionFile = void 0;
 const core = __importStar(__nccwpck_require__(2186));
 const exec = __importStar(__nccwpck_require__(1514));
 function parseNodeVersionFile(contents) {
@@ -93847,6 +93849,21 @@ const unique = () => {
     };
 };
 exports.unique = unique;
+function enableCorepack(input) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const corepackArgs = ['enable'];
+        if (input.length > 0 && input !== 'false') {
+            if (input !== 'true') {
+                const packageManagers = input.split(' ');
+                corepackArgs.push(...packageManagers);
+            }
+            yield exec.getExecOutput('corepack', corepackArgs, {
+                ignoreReturnCode: true
+            });
+        }
+    });
+}
+exports.enableCorepack = enableCorepack;
 
 
 /***/ }),

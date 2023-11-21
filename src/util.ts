@@ -70,3 +70,16 @@ export const unique = () => {
     return true;
   };
 };
+
+export async function enableCorepack(input: string): Promise<void> {
+  const corepackArgs = ['enable'];
+  if (input.length > 0 && input !== 'false') {
+    if (input !== 'true') {
+      const packageManagers = input.split(' ');
+      corepackArgs.push(...packageManagers);
+    }
+    await exec.getExecOutput('corepack', corepackArgs, {
+      ignoreReturnCode: true
+    });
+  }
+}
