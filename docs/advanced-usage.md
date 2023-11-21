@@ -422,8 +422,8 @@ You can enable [Corepack](https://github.com/nodejs/corepack) by using the `core
 
 ```yaml
 steps:
-- uses: actions/checkout@v3
-- uses: actions/setup-node@v3
+- uses: actions/checkout@v4
+- uses: actions/setup-node@v4
   with:
     node-version: '18.x'
     corepack: true
@@ -435,8 +435,8 @@ You can also pass package manager names separated by a space to enable corepack 
 
 ```yaml
 steps:
-- uses: actions/checkout@v3
-- uses: actions/setup-node@v3
+- uses: actions/checkout@v4
+- uses: actions/setup-node@v4
   with:
     node-version: '18.x'
     corepack: yarn pnpm
