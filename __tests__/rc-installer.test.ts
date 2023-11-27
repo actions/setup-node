@@ -41,6 +41,7 @@ describe('setup-node', () => {
   let isCacheActionAvailable: jest.SpyInstance;
   let getExecOutputSpy: jest.SpyInstance;
   let getJsonSpy: jest.SpyInstance;
+  let processExitSpy: jest.SpyInstance;
 
   beforeEach(() => {
     // @actions/core
@@ -58,6 +59,9 @@ describe('setup-node', () => {
     archSpy = jest.spyOn(osm, 'arch');
     archSpy.mockImplementation(() => os['arch']);
     execSpy = jest.spyOn(cp, 'execSync');
+    processExitSpy = jest
+      .spyOn(process, 'exit')
+      .mockImplementation((() => {}) as () => never);
 
     // @actions/tool-cache
     findSpy = jest.spyOn(tc, 'find');
