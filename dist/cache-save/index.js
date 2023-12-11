@@ -83324,14 +83324,33 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.unique = exports.printEnvDetailsAndSetOutput = exports.parseNodeVersionFile = void 0;
 const core = __importStar(__nccwpck_require__(2186));
 const exec = __importStar(__nccwpck_require__(1514));
+//export function parseNodeVersionFile(contents: string): string {
 function parseNodeVersionFile(contents) {
     var _a, _b, _c;
     let nodeVersion;
     // Try parsing the file as an NPM `package.json` file.
     try {
-        nodeVersion = (_a = JSON.parse(contents).volta) === null || _a === void 0 ? void 0 : _a.node;
-        if (!nodeVersion)
-            nodeVersion = (_b = JSON.parse(contents).engines) === null || _b === void 0 ? void 0 : _b.node;
+        //nodeVersion = JSON.parse(contents).volta?.node;
+        //if (!nodeVersion) nodeVersion = JSON.parse(contents).engines?.node;
+        const manifest = JSON.parse(contents);
+        // JSON can parse numbers, but that's handled later
+        if (typeof manifest === 'object') {
+            nodeVersion = (_a = manifest.volta) === null || _a === void 0 ? void 0 : _a.node;
+            if (!nodeVersion)
+                nodeVersion = (_b = manifest.engines) === null || _b === void 0 ? void 0 : _b.node;
+            // if contents are an object, we parsed JSON
+            // this can happen if node-version-file is a package.json
+            // yet contains no volta.node or engines.node
+            //
+            // if node-version file is _not_ json, control flow
+            // will not have reached these lines.
+            //
+            // And because we've reached here, we know the contents
+            // *are* JSON, so no further string parsing makes sense.
+            if (!nodeVersion) {
+                return null;
+            }
+        }
     }
     catch (_d) {
         core.info('Node version file is not JSON file');
