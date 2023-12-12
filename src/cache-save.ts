@@ -12,10 +12,16 @@ process.on('uncaughtException', e => {
   core.info(`${warningPrefix}${e.message}`);
 });
 
-export async function run() {
+export async function run(earlyExit?: boolean) {
   try {
-    const cacheLock = core.getState(State.CachePackageManager);
-    await cachePackages(cacheLock);
+    const cacheInput = core.getBooleanInput('cache');
+    if (cacheInput) {
+      await cachePackages();
+
+      if (earlyExit) {
+        process.exit(0);
+      }
+    }
   } catch (error) {
     core.setFailed((error as Error).message);
   }
@@ -29,10 +35,7 @@ const cachePackages = async (packageManager: string) => {
   ) as string[];
 
   const packageManagerInfo = await getPackageManagerInfo(packageManager);
-  if (!packageManagerInfo) {
-    core.debug(`Caching for '${packageManager}' is not supported`);
-    return;
-  }
+  
 
   if (!cachePaths.length) {
     // TODO: core.getInput has a bug - it can return undefined despite its definition (tests only?)
