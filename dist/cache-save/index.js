@@ -82953,11 +82953,20 @@ process.on('uncaughtException', e => {
     const warningPrefix = '[warning]';
     core.info(`${warningPrefix}${e.message}`);
 });
-function run() {
+// Added early exit to resolve issue with slow post action step:
+function run(earlyExit) {
     return __awaiter(this, void 0, void 0, function* () {
         try {
             const cacheLock = core.getState(constants_1.State.CachePackageManager);
-            yield cachePackages(cacheLock);
+            if (cacheLock) {
+                yield cachePackages(cacheLock);
+                if (earlyExit) {
+                    process.exit(0);
+                }
+            }
+            else {
+                core.debug(`Caching for '${cacheLock}' is not supported`);
+            }
         }
         catch (error) {
             core.setFailed(error.message);
@@ -82990,7 +82999,7 @@ const cachePackages = (packageManager) => __awaiter(void 0, void 0, void 0, func
     }
     core.info(`Cache saved with the key: ${primaryKey}`);
 });
-run();
+run(true);
 
 
 /***/ }),

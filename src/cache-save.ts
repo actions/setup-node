@@ -12,10 +12,20 @@ process.on('uncaughtException', e => {
   core.info(`${warningPrefix}${e.message}`);
 });
 
-export async function run() {
+// Added early exit to resolve issue with slow post action step:
+export async function run(earlyExit?: boolean) {
   try {
     const cacheLock = core.getState(State.CachePackageManager);
-    await cachePackages(cacheLock);
+
+    if (cacheLock) {
+      await cachePackages(cacheLock);
+
+      if (earlyExit) {
+        process.exit(0);
+      }
+    } else {
+      core.debug(`Caching for '${cacheLock}' is not supported`);
+    }
   } catch (error) {
     core.setFailed((error as Error).message);
   }
@@ -58,4 +68,4 @@ const cachePackages = async (packageManager: string) => {
   core.info(`Cache saved with the key: ${primaryKey}`);
 };
 
-run();
+run(true);
