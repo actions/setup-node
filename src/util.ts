@@ -1,13 +1,31 @@
 import * as core from '@actions/core';
 import * as exec from '@actions/exec';
 
-export function parseNodeVersionFile(contents: string): string {
+export function parseNodeVersionFile(contents: string): string | null {
   let nodeVersion: string | undefined;
 
   // Try parsing the file as an NPM `package.json` file.
   try {
-    nodeVersion = JSON.parse(contents).volta?.node;
-    if (!nodeVersion) nodeVersion = JSON.parse(contents).engines?.node;
+    const manifest = JSON.parse(contents);
+
+    // JSON can parse numbers, but that's handled later
+    if (typeof manifest === 'object') {
+      nodeVersion = manifest.volta?.node;
+      if (!nodeVersion) nodeVersion = manifest.engines?.node;
+
+      // if contents are an object, we parsed JSON
+      // this can happen if node-version-file is a package.json
+      // yet contains no volta.node or engines.node
+      //
+      // if node-version file is _not_ json, control flow
+      // will not have reached these lines.
+      //
+      // And because we've reached here, we know the contents
+      // *are* JSON, so no further string parsing makes sense.
+      if (!nodeVersion) {
+        return null;
+      }
+    }
   } catch {
     core.info('Node version file is not JSON file');
   }

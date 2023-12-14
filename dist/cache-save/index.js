@@ -82953,11 +82953,20 @@ process.on('uncaughtException', e => {
     const warningPrefix = '[warning]';
     core.info(`${warningPrefix}${e.message}`);
 });
-function run() {
+// Added early exit to resolve issue with slow post action step:
+function run(earlyExit) {
     return __awaiter(this, void 0, void 0, function* () {
         try {
             const cacheLock = core.getState(constants_1.State.CachePackageManager);
-            yield cachePackages(cacheLock);
+            if (cacheLock) {
+                yield cachePackages(cacheLock);
+                if (earlyExit) {
+                    process.exit(0);
+                }
+            }
+            else {
+                core.debug(`Caching for '${cacheLock}' is not supported`);
+            }
         }
         catch (error) {
             core.setFailed(error.message);
@@ -82990,7 +82999,7 @@ const cachePackages = (packageManager) => __awaiter(void 0, void 0, void 0, func
     }
     core.info(`Cache saved with the key: ${primaryKey}`);
 });
-run();
+run(true);
 
 
 /***/ }),
@@ -83329,9 +83338,25 @@ function parseNodeVersionFile(contents) {
     let nodeVersion;
     // Try parsing the file as an NPM `package.json` file.
     try {
-        nodeVersion = (_a = JSON.parse(contents).volta) === null || _a === void 0 ? void 0 : _a.node;
-        if (!nodeVersion)
-            nodeVersion = (_b = JSON.parse(contents).engines) === null || _b === void 0 ? void 0 : _b.node;
+        const manifest = JSON.parse(contents);
+        // JSON can parse numbers, but that's handled later
+        if (typeof manifest === 'object') {
+            nodeVersion = (_a = manifest.volta) === null || _a === void 0 ? void 0 : _a.node;
+            if (!nodeVersion)
+                nodeVersion = (_b = manifest.engines) === null || _b === void 0 ? void 0 : _b.node;
+            // if contents are an object, we parsed JSON
+            // this can happen if node-version-file is a package.json
+            // yet contains no volta.node or engines.node
+            //
+            // if node-version file is _not_ json, control flow
+            // will not have reached these lines.
+            //
+            // And because we've reached here, we know the contents
+            // *are* JSON, so no further string parsing makes sense.
+            if (!nodeVersion) {
+                return null;
+            }
+        }
     }
     catch (_d) {
         core.info('Node version file is not JSON file');

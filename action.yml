@@ -8,7 +8,7 @@ inputs:
   node-version:
     description: 'Version Spec of the version to use. Examples: 12.x, 10.15.1, >=10.15.0.'
   node-version-file:
-    description: 'File containing the version Spec of the version to use.  Examples: .nvmrc, .node-version, .tool-versions.'
+    description: 'File containing the version Spec of the version to use.  Examples: package.json, .nvmrc, .node-version, .tool-versions.'
   architecture:
     description: 'Target architecture for Node to use. Examples: x86, x64. Will use system architecture by default.'
   check-latest:

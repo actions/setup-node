@@ -101,6 +101,7 @@ describe('main tests', () => {
       ${'  14.1.0  '}                              | ${'14.1.0'}
       ${'{"volta": {"node": ">=14.0.0 <=17.0.0"}}'}| ${'>=14.0.0 <=17.0.0'}
       ${'{"engines": {"node": "17.0.0"}}'}         | ${'17.0.0'}
+      ${'{}'}                                      | ${null}
     `.it('parses "$contents"', ({contents, expected}) => {
       expect(util.parseNodeVersionFile(contents)).toBe(expected);
     });
