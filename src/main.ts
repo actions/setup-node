@@ -105,7 +105,17 @@ function resolveVersionInput(): string {
       );
     }
 
-    version = parseNodeVersionFile(fs.readFileSync(versionFilePath, 'utf8'));
+    const parsedVersion = parseNodeVersionFile(
+      fs.readFileSync(versionFilePath, 'utf8')
+    );
+
+    if (parsedVersion) {
+      version = parsedVersion;
+    } else {
+      core.warning(
+        `Could not determine node version from ${versionFilePath}. Falling back`
+      );
+    }
 
     core.info(`Resolved ${versionFileInput} as ${version}`);
   }
