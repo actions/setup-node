@@ -93245,7 +93245,7 @@ class BaseDistribution {
                     dataFileName = `win-${osArch}-zip`;
                 }
                 else {
-                    dataFileName = `win-${osArch}-7z`;
+                    dataFileName = `win-${osArch}-exe`;
                 }
                 break;
             default:

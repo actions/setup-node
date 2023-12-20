@@ -274,7 +274,7 @@ export default abstract class BaseDistribution {
         if (this.nodeInfo.arch === 'arm64') {
           dataFileName = `win-${osArch}-zip`;
         } else {
-          dataFileName = `win-${osArch}-7z`;
+          dataFileName = `win-${osArch}-exe`;
         }
         break;
       default:
