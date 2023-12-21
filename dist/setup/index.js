@@ -93199,6 +93199,11 @@ class BaseDistribution {
             info = info || {}; // satisfy compiler, never null when reaches here
             if (this.osPlat == 'win32') {
                 const extension = this.nodeInfo.arch === 'arm64' ? '.zip' : '.7z';
+                // Rename archive to add extension because after downloading
+                // archive does not contain extension type and it leads to some issues
+                // on Windows runners without PowerShell Core.
+                //
+                // For default PowerShell Windows it should contain extension type to unpack it.
                 if (extension === '.zip') {
                     const renamedArchive = `${downloadPath}.zip`;
                     fs_1.default.renameSync(downloadPath, renamedArchive);
