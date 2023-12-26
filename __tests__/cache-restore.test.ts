@@ -2,20 +2,15 @@ import * as core from '@actions/core';
 import * as cache from '@actions/cache';
 import * as path from 'path';
 import * as glob from '@actions/glob';
+import osm from 'os';
 
 import * as utils from '../src/cache-utils';
 import {restoreCache} from '../src/cache-restore';
 
 describe('cache-restore', () => {
   process.env['GITHUB_WORKSPACE'] = path.join(__dirname, 'data');
-  if (!process.env.RUNNER_OS) {
-    process.env.RUNNER_OS = 'Linux';
-  }
-  if (!process.env.RUNNER_ARCH) {
-    process.env.RUNNER_ARCH = 'X64';
-  }
-  const platform = process.env.RUNNER_OS;
-  const arch = process.env.RUNNER_ARCH;
+  const platform = 'Linux';
+  const arch = 'arm64';
   const commonPath = '/some/random/path';
   const npmCachePath = `${commonPath}/npm`;
   const pnpmCachePath = `${commonPath}/pnpm`;
@@ -56,6 +51,8 @@ describe('cache-restore', () => {
   let getCommandOutputSpy: jest.SpyInstance;
   let restoreCacheSpy: jest.SpyInstance;
   let hashFilesSpy: jest.SpyInstance;
+  let archSpy: jest.SpyInstance;
+  let platformSpy: jest.SpyInstance;
 
   beforeEach(() => {
     // core
@@ -106,6 +103,13 @@ describe('cache-restore', () => {
 
     // cache-utils
     getCommandOutputSpy = jest.spyOn(utils, 'getCommandOutput');
+
+    // os
+    archSpy = jest.spyOn(osm, 'arch');
+    archSpy.mockImplementation(() => arch);
+
+    platformSpy = jest.spyOn(osm, 'platform');
+    platformSpy.mockImplementation(() => platform);
   });
 
   describe('Validate provided package manager', () => {
