@@ -18,7 +18,7 @@ export function getNodeVersionFromFile(versionFilePath: string): string | null {
     const manifest = JSON.parse(contents);
 
     // Presume package.json file.
-    if (typeof manifest === 'object' && manifest !== null) {
+    if (typeof manifest === 'object' && !!manifest) {
       // Support Volta.
       // See https://docs.volta.sh/guide/understanding#managing-your-project
       if (manifest.volta?.node) {
