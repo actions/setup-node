@@ -24,11 +24,9 @@ describe('main tests', () => {
   let startGroupSpy: jest.SpyInstance;
   let endGroupSpy: jest.SpyInstance;
 
-  let existsSpy: jest.SpyInstance;
-
   let getExecOutputSpy: jest.SpyInstance;
 
-  let parseNodeVersionSpy: jest.SpyInstance;
+  let getNodeVersionFromFileSpy: jest.SpyInstance;
   let cnSpy: jest.SpyInstance;
   let findSpy: jest.SpyInstance;
   let isCacheActionAvailable: jest.SpyInstance;
@@ -41,6 +39,7 @@ describe('main tests', () => {
     // node
     os = {};
     console.log('::stop-commands::stoptoken');
+    process.env['GITHUB_WORKSPACE'] = path.join(__dirname, 'data');
     process.env['GITHUB_PATH'] = ''; // Stub out ENV file functionality so we can verify it writes to standard out
     process.env['GITHUB_OUTPUT'] = ''; // Stub out ENV file functionality so we can verify it writes to standard out
     infoSpy = jest.spyOn(core, 'info');
@@ -62,12 +61,10 @@ describe('main tests', () => {
 
     isCacheActionAvailable = jest.spyOn(cache, 'isFeatureAvailable');
 
-    existsSpy = jest.spyOn(fs, 'existsSync');
-
     cnSpy = jest.spyOn(process.stdout, 'write');
     cnSpy.mockImplementation(line => {
       // uncomment to debug
-      // process.stderr.write('write:' + line + '\n');
+      process.stderr.write('write:' + line + '\n');
     });
 
     setupNodeJsSpy = jest.spyOn(OfficialBuilds.prototype, 'setupNodeJs');
@@ -85,7 +82,7 @@ describe('main tests', () => {
     jest.restoreAllMocks();
   }, 100000);
 
-  describe('parseNodeVersionFile', () => {
+  describe('getNodeVersionFromFile', () => {
     each`
       contents                                     | expected
       ${'12'}                                      | ${'12'}
@@ -100,10 +97,27 @@ describe('main tests', () => {
       ${'unknown format'}                          | ${'unknown format'}
       ${'  14.1.0  '}                              | ${'14.1.0'}
       ${'{"volta": {"node": ">=14.0.0 <=17.0.0"}}'}| ${'>=14.0.0 <=17.0.0'}
+      ${'{"volta": {"extends": "./package.json"}}'}| ${'18.0.0'}
       ${'{"engines": {"node": "17.0.0"}}'}         | ${'17.0.0'}
       ${'{}'}                                      | ${null}
     `.it('parses "$contents"', ({contents, expected}) => {
-      expect(util.parseNodeVersionFile(contents)).toBe(expected);
+      const existsSpy = jest.spyOn(fs, 'existsSync');
+      existsSpy.mockImplementation(() => true);
+
+      const readFileSpy = jest.spyOn(fs, 'readFileSync');
+      readFileSpy.mockImplementation(filePath => {
+        if (
+          typeof filePath === 'string' &&
+          path.basename(filePath) === 'package.json'
+        ) {
+          // Special case for volta.extends
+          return '{"volta": {"node": "18.0.0"}}';
+        }
+
+        return contents;
+      });
+
+      expect(util.getNodeVersionFromFile('file')).toBe(expected);
     });
   });
 
@@ -142,10 +156,17 @@ describe('main tests', () => {
 
   describe('node-version-file flag', () => {
     beforeEach(() => {
-      parseNodeVersionSpy = jest.spyOn(util, 'parseNodeVersionFile');
+      delete inputs['node-version'];
+      inputs['node-version-file'] = '.nvmrc';
+
+      getNodeVersionFromFileSpy = jest.spyOn(util, 'getNodeVersionFromFile');
     });
 
-    it('not used if node-version is provided', async () => {
+    afterEach(() => {
+      getNodeVersionFromFileSpy.mockRestore();
+    });
+
+    it('does not read node-version-file if node-version is provided', async () => {
       // Arrange
       inputs['node-version'] = '12';
 
@@ -153,107 +174,54 @@ describe('main tests', () => {
       await main.run();
 
       // Assert
-      expect(parseNodeVersionSpy).toHaveBeenCalledTimes(0);
-    }, 10000);
-
-    it('not used if node-version-file not provided', async () => {
-      // Act
-      await main.run();
-
-      // Assert
-      expect(parseNodeVersionSpy).toHaveBeenCalledTimes(0);
-    });
-
-    it('reads node-version-file if provided', async () => {
-      // Arrange
-      const versionSpec = 'v14';
-      const versionFile = '.nvmrc';
-      const expectedVersionSpec = '14';
-      process.env['GITHUB_WORKSPACE'] = path.join(__dirname, 'data');
-      inputs['node-version-file'] = versionFile;
-
-      parseNodeVersionSpy.mockImplementation(() => expectedVersionSpec);
-      existsSpy.mockImplementationOnce(
-        input => input === path.join(__dirname, 'data', versionFile)
-      );
-
-      // Act
-      await main.run();
-
-      // Assert
-      expect(existsSpy).toHaveBeenCalledTimes(1);
-      expect(existsSpy).toHaveReturnedWith(true);
-      expect(parseNodeVersionSpy).toHaveBeenCalledWith(versionSpec);
-      expect(infoSpy).toHaveBeenCalledWith(
-        `Resolved ${versionFile} as ${expectedVersionSpec}`
-      );
-    }, 10000);
-
-    it('reads package.json as node-version-file if provided', async () => {
-      // Arrange
-      const versionSpec = fs.readFileSync(
-        path.join(__dirname, 'data/package.json'),
-        'utf-8'
-      );
-      const versionFile = 'package.json';
-      const expectedVersionSpec = '14';
-      process.env['GITHUB_WORKSPACE'] = path.join(__dirname, 'data');
-      inputs['node-version-file'] = versionFile;
-
-      parseNodeVersionSpy.mockImplementation(() => expectedVersionSpec);
-      existsSpy.mockImplementationOnce(
-        input => input === path.join(__dirname, 'data', versionFile)
-      );
-      // Act
-      await main.run();
-
-      // Assert
-      expect(existsSpy).toHaveBeenCalledTimes(1);
-      expect(existsSpy).toHaveReturnedWith(true);
-      expect(parseNodeVersionSpy).toHaveBeenCalledWith(versionSpec);
-      expect(infoSpy).toHaveBeenCalledWith(
-        `Resolved ${versionFile} as ${expectedVersionSpec}`
-      );
-    }, 10000);
-
-    it('both node-version-file and node-version are provided', async () => {
-      inputs['node-version'] = '12';
-      const versionSpec = 'v14';
-      const versionFile = '.nvmrc';
-      const expectedVersionSpec = '14';
-      process.env['GITHUB_WORKSPACE'] = path.join(__dirname, '..');
-      inputs['node-version-file'] = versionFile;
-
-      parseNodeVersionSpy.mockImplementation(() => expectedVersionSpec);
-
-      // Act
-      await main.run();
-
-      // Assert
-      expect(existsSpy).toHaveBeenCalledTimes(0);
-      expect(parseNodeVersionSpy).not.toHaveBeenCalled();
+      expect(inputs['node-version']).toBeDefined();
+      expect(inputs['node-version-file']).toBeDefined();
+      expect(getNodeVersionFromFileSpy).not.toHaveBeenCalled();
       expect(warningSpy).toHaveBeenCalledWith(
         'Both node-version and node-version-file inputs are specified, only node-version will be used'
       );
     });
 
-    it('should throw an error if node-version-file is not found', async () => {
-      const versionFile = '.nvmrc';
-      const versionFilePath = path.join(__dirname, '..', versionFile);
-      inputs['node-version-file'] = versionFile;
+    it('does not read node-version-file if node-version-file is not provided', async () => {
+      // Arrange
+      delete inputs['node-version-file'];
 
-      inSpy.mockImplementation(name => inputs[name]);
-      existsSpy.mockImplementationOnce(
-        input => input === path.join(__dirname, 'data', versionFile)
+      // Act
+      await main.run();
+
+      // Assert
+      expect(getNodeVersionFromFileSpy).not.toHaveBeenCalled();
+    });
+
+    it('reads node-version-file', async () => {
+      // Arrange
+      const expectedVersionSpec = '14';
+      getNodeVersionFromFileSpy.mockImplementation(() => expectedVersionSpec);
+
+      // Act
+      await main.run();
+
+      // Assert
+      expect(getNodeVersionFromFileSpy).toHaveBeenCalled();
+      expect(infoSpy).toHaveBeenCalledWith(
+        `Resolved ${inputs['node-version-file']} as ${expectedVersionSpec}`
+      );
+    }, 10000);
+
+    it('should throw an error if node-version-file is not accessible', async () => {
+      // Arrange
+      inputs['node-version-file'] = 'non-existing-file';
+      const versionFilePath = path.join(
+        __dirname,
+        'data',
+        inputs['node-version-file']
       );
 
       // Act
       await main.run();
 
       // Assert
-      expect(existsSpy).toHaveBeenCalled();
-      expect(existsSpy).toHaveReturnedWith(false);
-      expect(parseNodeVersionSpy).not.toHaveBeenCalled();
+      expect(getNodeVersionFromFileSpy).toHaveBeenCalled();
       expect(cnSpy).toHaveBeenCalledWith(
         `::error::The specified node version file at: ${versionFilePath} does not exist${osm.EOL}`
       );

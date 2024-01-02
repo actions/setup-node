@@ -1,45 +1,62 @@
 import * as core from '@actions/core';
 import * as exec from '@actions/exec';
 
-export function parseNodeVersionFile(contents: string): string | null {
-  let nodeVersion: string | undefined;
+import fs from 'fs';
+import path from 'path';
+
+export function getNodeVersionFromFile(versionFilePath: string): string | null {
+  if (!fs.existsSync(versionFilePath)) {
+    throw new Error(
+      `The specified node version file at: ${versionFilePath} does not exist`
+    );
+  }
+
+  const contents = fs.readFileSync(versionFilePath, 'utf8');
 
   // Try parsing the file as an NPM `package.json` file.
   try {
     const manifest = JSON.parse(contents);
 
-    // JSON can parse numbers, but that's handled later
-    if (typeof manifest === 'object') {
-      nodeVersion = manifest.volta?.node;
-      if (!nodeVersion) nodeVersion = manifest.engines?.node;
+    // Presume package.json file.
+    if (typeof manifest === 'object' && !!manifest) {
+      // Support Volta.
+      // See https://docs.volta.sh/guide/understanding#managing-your-project
+      if (manifest.volta?.node) {
+        return manifest.volta.node;
+      }
 
-      // if contents are an object, we parsed JSON
+      if (manifest.engines?.node) {
+        return manifest.engines.node;
+      }
+
+      // Support Volta workspaces.
+      // See https://docs.volta.sh/advanced/workspaces
+      if (manifest.volta?.extends) {
+        const extendedFilePath = path.resolve(
+          path.dirname(versionFilePath),
+          manifest.volta.extends
+        );
+        core.info('Resolving node version from ' + extendedFilePath);
+        return getNodeVersionFromFile(extendedFilePath);
+      }
+
+      // If contents are an object, we parsed JSON
       // this can happen if node-version-file is a package.json
       // yet contains no volta.node or engines.node
       //
-      // if node-version file is _not_ json, control flow
+      // If node-version file is _not_ JSON, control flow
       // will not have reached these lines.
       //
       // And because we've reached here, we know the contents
       // *are* JSON, so no further string parsing makes sense.
-      if (!nodeVersion) {
-        return null;
-      }
+      return null;
     }
   } catch {
     core.info('Node version file is not JSON file');
   }
 
-  if (!nodeVersion) {
-    const found = contents.match(/^(?:node(js)?\s+)?v?(?<version>[^\s]+)$/m);
-    nodeVersion = found?.groups?.version;
-  }
-
-  // In the case of an unknown format,
-  // return as is and evaluate the version separately.
-  if (!nodeVersion) nodeVersion = contents.trim();
-
-  return nodeVersion as string;
+  const found = contents.match(/^(?:node(js)?\s+)?v?(?<version>[^\s]+)$/m);
+  return found?.groups?.version ?? contents.trim();
 }
 
 export async function printEnvDetailsAndSetOutput() {
