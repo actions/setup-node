@@ -7,11 +7,7 @@ import * as path from 'path';
 import {restoreCache} from './cache-restore';
 import {isCacheFeatureAvailable} from './cache-utils';
 import {getNodejsDistribution} from './distributions/installer-factory';
-import {
-  defaultIfEmpty,
-  getNodeVersionFromFile,
-  printEnvDetailsAndSetOutput
-} from './util';
+import {getNodeVersionFromFile, printEnvDetailsAndSetOutput} from './util';
 import {State} from './constants';
 import {ignoreScriptsInNpmConfig} from './ignore-scripts';
 
