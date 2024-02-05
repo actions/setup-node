@@ -93607,6 +93607,29 @@ exports["default"] = CanaryBuild;
 
 /***/ }),
 
+/***/ 6572:
+/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.ignoreScriptsInNpmConfig = void 0;
+const fs_1 = __nccwpck_require__(7147);
+const util_1 = __nccwpck_require__(2629);
+const ignoreScriptsInNpmConfig = (ignore) => {
+    const nonEmptyInput = (0, util_1.defaultIfEmpty)(ignore, 'false');
+    const ignored = JSON.parse(nonEmptyInput);
+    appendToNpmrc(ignored);
+};
+exports.ignoreScriptsInNpmConfig = ignoreScriptsInNpmConfig;
+const appendToNpmrc = (ignoreScripts) => {
+    const npmrc = (0, util_1.getNpmrcLocation)();
+    (0, fs_1.writeFileSync)(npmrc, `\nignore-scripts=${ignoreScripts}\n`, { flag: 'a' });
+};
+
+
+/***/ }),
+
 /***/ 399:
 /***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
@@ -93658,6 +93681,7 @@ const cache_utils_1 = __nccwpck_require__(1678);
 const installer_factory_1 = __nccwpck_require__(5617);
 const util_1 = __nccwpck_require__(2629);
 const constants_1 = __nccwpck_require__(9042);
+const ignore_scripts_1 = __nccwpck_require__(6572);
 function run() {
     return __awaiter(this, void 0, void 0, function* () {
         try {
@@ -93697,6 +93721,8 @@ function run() {
             if (registryUrl) {
                 auth.configAuthentication(registryUrl, alwaysAuth);
             }
+            const ignoreScripts = core.getInput('ignore-scripts');
+            (0, ignore_scripts_1.ignoreScriptsInNpmConfig)(ignoreScripts);
             if (cache && (0, cache_utils_1.isCacheFeatureAvailable)()) {
                 core.saveState(constants_1.State.CachePackageManager, cache);
                 const cacheDependencyPath = core.getInput('cache-dependency-path');
@@ -93780,7 +93806,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.unique = exports.printEnvDetailsAndSetOutput = exports.getNodeVersionFromFile = void 0;
+exports.defaultIfEmpty = exports.getNpmrcLocation = exports.unique = exports.printEnvDetailsAndSetOutput = exports.getNodeVersionFromFile = void 0;
 const core = __importStar(__nccwpck_require__(2186));
 const exec = __importStar(__nccwpck_require__(1514));
 const fs_1 = __importDefault(__nccwpck_require__(7147));
@@ -93876,6 +93902,12 @@ const unique = () => {
     };
 };
 exports.unique = unique;
+const getNpmrcLocation = () => {
+    return path_1.default.resolve(process.env['RUNNER_TEMP'] || process.cwd(), '.npmrc');
+};
+exports.getNpmrcLocation = getNpmrcLocation;
+const defaultIfEmpty = (input, defaultValue) => input.length === 0 ? defaultValue : input;
+exports.defaultIfEmpty = defaultIfEmpty;
 
 
 /***/ }),
