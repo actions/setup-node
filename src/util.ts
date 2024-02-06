@@ -3,6 +3,7 @@ import * as exec from '@actions/exec';
 
 import fs from 'fs';
 import path from 'path';
+import {getCommandOutput} from './cache-utils';
 
 export function getNodeVersionFromFile(versionFilePath: string): string | null {
   if (!fs.existsSync(versionFilePath)) {
@@ -107,14 +108,12 @@ export const unique = () => {
 };
 
 export async function enableCorepack(input: string): Promise<void> {
-  const corepackArgs = ['enable'];
-  if (input.length > 0 && input !== 'false') {
+  if (input.length && input !== 'false') {
+    const corepackArgs = ['enable'];
     if (input !== 'true') {
       const packageManagers = input.split(' ');
       corepackArgs.push(...packageManagers);
     }
-    await exec.getExecOutput('corepack', corepackArgs, {
-      ignoreReturnCode: true
-    });
+    await getCommandOutput(`corepack ${corepackArgs.join(' ')}`);
   }
 }

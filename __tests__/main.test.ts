@@ -11,6 +11,7 @@ import each from 'jest-each';
 
 import * as main from '../src/main';
 import * as util from '../src/util';
+import * as cacheUtil from '../src/cache-utils';
 import OfficialBuilds from '../src/distributions/official_builds/official_builds';
 
 describe('main tests', () => {
@@ -25,6 +26,7 @@ describe('main tests', () => {
   let endGroupSpy: jest.SpyInstance;
 
   let getExecOutputSpy: jest.SpyInstance;
+  let getCommandOutputSpy: jest.SpyInstance;
 
   let getNodeVersionFromFileSpy: jest.SpyInstance;
   let cnSpy: jest.SpyInstance;
@@ -56,6 +58,7 @@ describe('main tests', () => {
     inSpy.mockImplementation(name => inputs[name]);
 
     getExecOutputSpy = jest.spyOn(exec, 'getExecOutput');
+    getCommandOutputSpy = jest.spyOn(cacheUtil, 'getCommandOutput');
 
     findSpy = jest.spyOn(tc, 'find');
 
@@ -274,50 +277,32 @@ describe('main tests', () => {
     it('should not enable corepack when no input', async () => {
       inputs['corepack'] = '';
       await main.run();
-      expect(getExecOutputSpy).not.toHaveBeenCalledWith(
-        'corepack',
-        expect.anything(),
-        expect.anything()
-      );
+      expect(getCommandOutputSpy).not.toHaveBeenCalledWith('corepack');
     });
 
     it('should not enable corepack when input is "false"', async () => {
       inputs['corepack'] = 'false';
       await main.run();
-      expect(getExecOutputSpy).not.toHaveBeenCalledWith(
-        'corepack',
-        expect.anything(),
-        expect.anything()
-      );
+      expect(getCommandOutputSpy).not.toHaveBeenCalledWith('corepack');
     });
 
     it('should enable corepack when input is "true"', async () => {
       inputs['corepack'] = 'true';
       await main.run();
-      expect(getExecOutputSpy).toHaveBeenCalledWith(
-        'corepack',
-        ['enable'],
-        expect.anything()
-      );
+      expect(getCommandOutputSpy).toHaveBeenCalledWith('corepack enable');
     });
 
     it('should enable corepack with a single package manager', async () => {
       inputs['corepack'] = 'npm';
       await main.run();
-      expect(getExecOutputSpy).toHaveBeenCalledWith(
-        'corepack',
-        ['enable', 'npm'],
-        expect.anything()
-      );
+      expect(getCommandOutputSpy).toHaveBeenCalledWith('corepack enable npm');
     });
 
     it('should enable corepack with multiple package managers', async () => {
       inputs['corepack'] = 'npm yarn';
       await main.run();
-      expect(getExecOutputSpy).toHaveBeenCalledWith(
-        'corepack',
-        ['enable', 'npm', 'yarn'],
-        expect.anything()
+      expect(getCommandOutputSpy).toHaveBeenCalledWith(
+        'corepack enable npm yarn'
       );
     });
   });
