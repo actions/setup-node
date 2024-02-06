@@ -277,13 +277,13 @@ describe('main tests', () => {
     it('should not enable corepack when no input', async () => {
       inputs['corepack'] = '';
       await main.run();
-      expect(getCommandOutputSpy).not.toHaveBeenCalledWith('corepack');
+      expect(getCommandOutputSpy).not.toHaveBeenCalledWith(expect.stringContaining('corepack'));
     });
 
     it('should not enable corepack when input is "false"', async () => {
       inputs['corepack'] = 'false';
       await main.run();
-      expect(getCommandOutputSpy).not.toHaveBeenCalledWith('corepack');
+      expect(getCommandOutputSpy).not.toHaveBeenCalledWith(expect.stringContaining('corepack'));
     });
 
     it('should enable corepack when input is "true"', async () => {
