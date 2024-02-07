@@ -93110,7 +93110,11 @@ class BaseDistribution {
         const fileName = this.osPlat == 'win32'
             ? `node-v${version}-win-${osArch}`
             : `node-v${version}-${this.osPlat}-${osArch}`;
-        const urlFileName = this.osPlat == 'win32' ? `${fileName}.7z` : `${fileName}.tar.gz`;
+        const urlFileName = this.osPlat == 'win32'
+            ? this.nodeInfo.arch === 'arm64'
+                ? `${fileName}.zip`
+                : `${fileName}.7z`
+            : `${fileName}.tar.gz`;
         const initialUrl = this.getDistributionUrl();
         const url = `${initialUrl}/v${version}/${urlFileName}`;
         return {
@@ -93194,10 +93198,23 @@ class BaseDistribution {
             let extPath;
             info = info || {}; // satisfy compiler, never null when reaches here
             if (this.osPlat == 'win32') {
-                const _7zPath = path.join(__dirname, '../..', 'externals', '7zr.exe');
-                extPath = yield tc.extract7z(downloadPath, undefined, _7zPath);
+                const extension = this.nodeInfo.arch === 'arm64' ? '.zip' : '.7z';
+                // Rename archive to add extension because after downloading
+                // archive does not contain extension type and it leads to some issues
+                // on Windows runners without PowerShell Core.
+                //
+                // For default PowerShell Windows it should contain extension type to unpack it.
+                if (extension === '.zip') {
+                    const renamedArchive = `${downloadPath}.zip`;
+                    fs_1.default.renameSync(downloadPath, renamedArchive);
+                    extPath = yield tc.extractZip(renamedArchive);
+                }
+                else {
+                    const _7zPath = path.join(__dirname, '../..', 'externals', '7zr.exe');
+                    extPath = yield tc.extract7z(downloadPath, undefined, _7zPath);
+                }
                 // 7z extracts to folder matching file name
-                const nestedPath = path.join(extPath, path.basename(info.fileName, '.7z'));
+                const nestedPath = path.join(extPath, path.basename(info.fileName, extension));
                 if (fs_1.default.existsSync(nestedPath)) {
                     extPath = nestedPath;
                 }
@@ -93229,7 +93246,12 @@ class BaseDistribution {
                 dataFileName = `osx-${osArch}-tar`;
                 break;
             case 'win32':
-                dataFileName = `win-${osArch}-exe`;
+                if (this.nodeInfo.arch === 'arm64') {
+                    dataFileName = `win-${osArch}-zip`;
+                }
+                else {
+                    dataFileName = `win-${osArch}-exe`;
+                }
                 break;
             default:
                 throw new Error(`Unexpected OS '${this.osPlat}'`);
@@ -93783,6 +93805,7 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.unique = exports.printEnvDetailsAndSetOutput = exports.getNodeVersionFromFile = void 0;
 const core = __importStar(__nccwpck_require__(2186));
 const exec = __importStar(__nccwpck_require__(1514));
+const io = __importStar(__nccwpck_require__(7436));
 const fs_1 = __importDefault(__nccwpck_require__(7147));
 const path_1 = __importDefault(__nccwpck_require__(1017));
 function getNodeVersionFromFile(versionFilePath) {
@@ -93834,7 +93857,8 @@ function printEnvDetailsAndSetOutput() {
     return __awaiter(this, void 0, void 0, function* () {
         core.startGroup('Environment details');
         const promises = ['node', 'npm', 'yarn'].map((tool) => __awaiter(this, void 0, void 0, function* () {
-            const output = yield getToolVersion(tool, ['--version']);
+            const pathTool = yield io.which(tool, false);
+            const output = pathTool ? yield getToolVersion(tool, ['--version']) : '';
             return { tool, output };
         }));
         const tools = yield Promise.all(promises);

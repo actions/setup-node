@@ -83336,6 +83336,7 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.unique = exports.printEnvDetailsAndSetOutput = exports.getNodeVersionFromFile = void 0;
 const core = __importStar(__nccwpck_require__(2186));
 const exec = __importStar(__nccwpck_require__(1514));
+const io = __importStar(__nccwpck_require__(7436));
 const fs_1 = __importDefault(__nccwpck_require__(7147));
 const path_1 = __importDefault(__nccwpck_require__(1017));
 function getNodeVersionFromFile(versionFilePath) {
@@ -83387,7 +83388,8 @@ function printEnvDetailsAndSetOutput() {
     return __awaiter(this, void 0, void 0, function* () {
         core.startGroup('Environment details');
         const promises = ['node', 'npm', 'yarn'].map((tool) => __awaiter(this, void 0, void 0, function* () {
-            const output = yield getToolVersion(tool, ['--version']);
+            const pathTool = yield io.which(tool, false);
+            const output = pathTool ? yield getToolVersion(tool, ['--version']) : '';
             return { tool, output };
         }));
         const tools = yield Promise.all(promises);

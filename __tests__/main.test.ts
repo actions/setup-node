@@ -2,6 +2,7 @@ import * as core from '@actions/core';
 import * as exec from '@actions/exec';
 import * as tc from '@actions/tool-cache';
 import * as cache from '@actions/cache';
+import * as io from '@actions/io';
 
 import fs from 'fs';
 import path from 'path';
@@ -23,6 +24,10 @@ describe('main tests', () => {
   let setOutputSpy: jest.SpyInstance;
   let startGroupSpy: jest.SpyInstance;
   let endGroupSpy: jest.SpyInstance;
+
+  let whichSpy: jest.SpyInstance;
+
+  let existsSpy: jest.SpyInstance;
 
   let getExecOutputSpy: jest.SpyInstance;
 
@@ -54,6 +59,8 @@ describe('main tests', () => {
     endGroupSpy.mockImplementation(() => {});
     inSpy = jest.spyOn(core, 'getInput');
     inSpy.mockImplementation(name => inputs[name]);
+
+    whichSpy = jest.spyOn(io, 'which');
 
     getExecOutputSpy = jest.spyOn(exec, 'getExecOutput');
 
@@ -138,6 +145,10 @@ describe('main tests', () => {
         }
 
         return {stdout: obj[command], stderr: '', exitCode: 0};
+      });
+
+      whichSpy.mockImplementation(cmd => {
+        return `some/${cmd}/path`;
       });
 
       await util.printEnvDetailsAndSetOutput();

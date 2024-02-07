@@ -112,7 +112,11 @@ export default abstract class BaseDistribution {
         ? `node-v${version}-win-${osArch}`
         : `node-v${version}-${this.osPlat}-${osArch}`;
     const urlFileName: string =
-      this.osPlat == 'win32' ? `${fileName}.7z` : `${fileName}.tar.gz`;
+      this.osPlat == 'win32'
+        ? this.nodeInfo.arch === 'arm64'
+          ? `${fileName}.zip`
+          : `${fileName}.7z`
+        : `${fileName}.tar.gz`;
     const initialUrl = this.getDistributionUrl();
     const url = `${initialUrl}/v${version}/${urlFileName}`;
 
@@ -215,12 +219,24 @@ export default abstract class BaseDistribution {
     let extPath: string;
     info = info || ({} as INodeVersionInfo); // satisfy compiler, never null when reaches here
     if (this.osPlat == 'win32') {
-      const _7zPath = path.join(__dirname, '../..', 'externals', '7zr.exe');
-      extPath = await tc.extract7z(downloadPath, undefined, _7zPath);
+      const extension = this.nodeInfo.arch === 'arm64' ? '.zip' : '.7z';
+      // Rename archive to add extension because after downloading
+      // archive does not contain extension type and it leads to some issues
+      // on Windows runners without PowerShell Core.
+      //
+      // For default PowerShell Windows it should contain extension type to unpack it.
+      if (extension === '.zip') {
+        const renamedArchive = `${downloadPath}.zip`;
+        fs.renameSync(downloadPath, renamedArchive);
+        extPath = await tc.extractZip(renamedArchive);
+      } else {
+        const _7zPath = path.join(__dirname, '../..', 'externals', '7zr.exe');
+        extPath = await tc.extract7z(downloadPath, undefined, _7zPath);
+      }
       // 7z extracts to folder matching file name
       const nestedPath = path.join(
         extPath,
-        path.basename(info.fileName, '.7z')
+        path.basename(info.fileName, extension)
       );
       if (fs.existsSync(nestedPath)) {
         extPath = nestedPath;
@@ -260,7 +276,11 @@ export default abstract class BaseDistribution {
         dataFileName = `osx-${osArch}-tar`;
         break;
       case 'win32':
-        dataFileName = `win-${osArch}-exe`;
+        if (this.nodeInfo.arch === 'arm64') {
+          dataFileName = `win-${osArch}-zip`;
+        } else {
+          dataFileName = `win-${osArch}-exe`;
+        }
         break;
       default:
         throw new Error(`Unexpected OS '${this.osPlat}'`);
