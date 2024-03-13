@@ -1,6 +1,6 @@
 ---
 name: undici-types
-version: 5.25.3
+version: 5.26.5
 type: npm
 summary: A stand-alone types package for Undici
 homepage: https://undici.nodejs.org
