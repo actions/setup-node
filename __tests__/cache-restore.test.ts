@@ -132,13 +132,13 @@ describe('cache-restore', () => {
           }
         });
 
-        await restoreCache(packageManager, '');
+        await restoreCache(packageManager, '', '0');
         expect(hashFilesSpy).toHaveBeenCalled();
         expect(infoSpy).toHaveBeenCalledWith(
-          `Cache restored from key: node-cache-${platform}-${packageManager}-${fileHash}`
+          `Cache restored from key: ${platform}-0-setup-node-${packageManager}-${fileHash}`
         );
         expect(infoSpy).not.toHaveBeenCalledWith(
-          `${packageManager} cache is not found`
+          `Cache not found for input keys: ${platform}-0-setup-node-${packageManager}-${fileHash}, ${platform}-0-setup-node-${packageManager}-`
         );
         expect(setOutputSpy).toHaveBeenCalledWith('cache-hit', true);
       }
@@ -163,10 +163,10 @@ describe('cache-restore', () => {
         });
 
         restoreCacheSpy.mockImplementationOnce(() => undefined);
-        await restoreCache(packageManager, '');
+        await restoreCache(packageManager, '', '0');
         expect(hashFilesSpy).toHaveBeenCalled();
         expect(infoSpy).toHaveBeenCalledWith(
-          `${packageManager} cache is not found`
+          `Cache not found for input keys: ${platform}-0-setup-node-${packageManager}-${fileHash}, ${platform}-0-setup-node-${packageManager}-`
         );
         expect(setOutputSpy).toHaveBeenCalledWith('cache-hit', false);
       }

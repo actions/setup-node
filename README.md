@@ -126,6 +126,8 @@ The action defaults to search for the dependency file (`package-lock.json`, `npm
 
 **Note:** The action does not cache `node_modules`
 
+Use `cache-invalidate-after-days` to change the default fallback cache invalidation of every 120 days. Set to 0 to deactivate.
+
 See the examples of using cache for `yarn`/`pnpm` and `cache-dependency-path` input in the [Advanced usage](docs/advanced-usage.md#caching-packages-data) guide.
 
 **Caching npm dependencies:**
