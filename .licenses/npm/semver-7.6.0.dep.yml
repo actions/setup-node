@@ -1,9 +1,9 @@
 ---
 name: semver
-version: 7.5.4
+version: 7.6.0
 type: npm
 summary: The semantic version parser used by npm.
-homepage: 
+homepage:
 license: isc
 licenses:
 - sources: LICENSE
