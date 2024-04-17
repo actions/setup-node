@@ -1,6 +1,6 @@
 import * as core from '@actions/core';
 import * as exec from '@actions/exec';
-import * as cache from '@actions/cache';
+import * as cache from '@ambi-robotics/cache';
 import * as glob from '@actions/glob';
 import path from 'path';
 import fs from 'fs';

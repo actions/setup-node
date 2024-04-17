@@ -1,6 +1,6 @@
-name: 'Setup Node.js environment'
+name: 'Setup Node.js Environment with S3 Caching'
 description: 'Setup a Node.js environment by adding problem matchers and optionally downloading and adding it to the PATH.'
-author: 'GitHub'
+author: 'Ambi Robotics'
 inputs:
   always-auth:
     description: 'Set always-auth in npmrc.'
