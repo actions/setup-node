@@ -11,6 +11,14 @@
         "request": "launch",
         "projectPath": "${workspaceFolder}/<relative-path-to-project-folder><project-name>.csproj"
       },
+
+
+      {
+        "name": "C#: <swift> Debug",
+        "type": "dotnet",
+        "request": "launch",
+        "projectPath": "${workspaceFolder}/<relative-path-to-project-folder><project-name>.csproj"
+      },
         {
             "name": "Debug Jest Tests on Nix",
             "type": "node",
