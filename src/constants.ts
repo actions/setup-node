@@ -1,7 +1,8 @@
 export enum LockType {
   Npm = 'npm',
   Pnpm = 'pnpm',
-  Yarn = 'yarn'
+  Yarn = 'yarn',
+  Bun = 'bun'
 }
 
 export enum State {

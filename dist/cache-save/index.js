@@ -83594,6 +83594,11 @@ exports.supportedPackageManagers = {
             }
             return stdOut;
         })
+    },
+    bun: {
+        name: 'bun',
+        lockFilePatterns: ['bun.lockb'],
+        getCacheFolderPath: () => (0, exports.getCommandOutputNotEmpty)('bun pm cache', 'Could not get bun cache folder path')
     }
 };
 const getCommandOutput = (toolCommand, cwd) => __awaiter(void 0, void 0, void 0, function* () {
@@ -83624,6 +83629,9 @@ const getPackageManagerInfo = (packageManager) => __awaiter(void 0, void 0, void
     }
     else if (packageManager === 'yarn') {
         return exports.supportedPackageManagers.yarn;
+    }
+    else if (packageManager === 'bun') {
+        return exports.supportedPackageManagers.bun;
     }
     else {
         return null;
@@ -83792,6 +83800,7 @@ var LockType;
     LockType["Npm"] = "npm";
     LockType["Pnpm"] = "pnpm";
     LockType["Yarn"] = "yarn";
+    LockType["Bun"] = "bun";
 })(LockType || (exports.LockType = LockType = {}));
 var State;
 (function (State) {

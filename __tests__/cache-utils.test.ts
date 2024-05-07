@@ -60,6 +60,7 @@ describe('cache-utils', () => {
       ['npm', utils.supportedPackageManagers.npm],
       ['pnpm', utils.supportedPackageManagers.pnpm],
       ['yarn', utils.supportedPackageManagers.yarn],
+      ['bun', utils.supportedPackageManagers.bun],
       ['yarn1', null],
       ['yarn2', null],
       ['npm7', null]

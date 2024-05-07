@@ -26,22 +26,22 @@ See [action.yml](action.yml)
     node-version: ''
 
     # File containing the version Spec of the version to use.  Examples: package.json, .nvmrc, .node-version, .tool-versions.
-    # If node-version and node-version-file are both provided the action will use version from node-version. 
+    # If node-version and node-version-file are both provided the action will use version from node-version.
     node-version-file: ''
 
-    # Set this option if you want the action to check for the latest available version 
+    # Set this option if you want the action to check for the latest available version
     # that satisfies the version spec.
-    # It will only get affect for lts Nodejs versions (12.x, >=10.15.0, lts/Hydrogen). 
+    # It will only get affect for lts Nodejs versions (12.x, >=10.15.0, lts/Hydrogen).
     # Default: false
     check-latest: false
 
     # Target architecture for Node to use. Examples: x86, x64. Will use system architecture by default.
-    # Default: ''. The action use system architecture by default 
+    # Default: ''. The action use system architecture by default
     architecture: ''
 
-    # Used to pull node distributions from https://github.com/actions/node-versions. 
-    # Since there's a default, this is typically not supplied by the user. 
-    # When running this action on github.com, the default value is sufficient. 
+    # Used to pull node distributions from https://github.com/actions/node-versions.
+    # Since there's a default, this is typically not supplied by the user.
+    # When running this action on github.com, the default value is sufficient.
     # When running on GHES, you can pass a personal access token for github.com if you are experiencing rate limiting.
     #
     # We recommend using a service account with the least permissions necessary. Also
@@ -52,23 +52,23 @@ See [action.yml](action.yml)
     # Default: ${{ github.server_url == 'https://github.com' && github.token || '' }}
     token: ''
 
-    # Used to specify a package manager for caching in the default directory. Supported values: npm, yarn, pnpm.
+    # Used to specify a package manager for caching in the default directory. Supported values: npm, yarn, pnpm, bun.
     # Package manager should be pre-installed
     # Default: ''
     cache: ''
 
-    # Used to specify the path to a dependency file: package-lock.json, yarn.lock, etc. 
-    # It will generate hash from the target file for primary key. It works only If cache is specified.  
+    # Used to specify the path to a dependency file: package-lock.json, yarn.lock, etc.
+    # It will generate hash from the target file for primary key. It works only If cache is specified.
     # Supports wildcards or a list of file names for caching multiple dependencies.
     # Default: ''
     cache-dependency-path: ''
 
-    # Optional registry to set up for auth. Will set the registry in a project level .npmrc and .yarnrc file, 
+    # Optional registry to set up for auth. Will set the registry in a project level .npmrc and .yarnrc file,
     # and set up auth to read in from env.NODE_AUTH_TOKEN.
     # Default: ''
     registry-url: ''
 
-    # Optional scope for authenticating against scoped registries. 
+    # Optional scope for authenticating against scoped registries.
     # Will fall back to the repository owner when using the GitHub Packages registry (https://npm.pkg.github.com/).
     # Default: ''
     scope: ''
@@ -120,7 +120,7 @@ It's **always** recommended to commit the lockfile of your package manager for s
 
 ## Caching global packages data
 
-The action has a built-in functionality for caching and restoring dependencies. It uses [actions/cache](https://github.com/actions/cache) under the hood for caching global packages data but requires less configuration settings. Supported package managers are `npm`, `yarn`, `pnpm` (v6.10+). The `cache` input is optional, and caching is turned off by default.
+The action has a built-in functionality for caching and restoring dependencies. It uses [actions/cache](https://github.com/actions/cache) under the hood for caching global packages data but requires less configuration settings. Supported package managers are `npm`, `yarn`, `pnpm` (v6.10+), `bun`. The `cache` input is optional, and caching is turned off by default.
 
 The action defaults to search for the dependency file (`package-lock.json`, `npm-shrinkwrap.json` or `yarn.lock`) in the repository root, and uses its hash as a part of the cache key. Use `cache-dependency-path` for cases when multiple dependency files are used, or they are located in different subdirectories.
 

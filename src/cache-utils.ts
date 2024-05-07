@@ -16,6 +16,7 @@ interface SupportedPackageManagers {
   npm: PackageManagerInfo;
   pnpm: PackageManagerInfo;
   yarn: PackageManagerInfo;
+  bun: PackageManagerInfo;
 }
 export const supportedPackageManagers: SupportedPackageManagers = {
   npm: {
@@ -63,6 +64,15 @@ export const supportedPackageManagers: SupportedPackageManagers = {
       }
       return stdOut;
     }
+  },
+  bun: {
+    name: 'bun',
+    lockFilePatterns: ['bun.lockb'],
+    getCacheFolderPath: () =>
+      getCommandOutputNotEmpty(
+        'bun pm cache',
+        'Could not get bun cache folder path'
+      )
   }
 };
 
@@ -105,6 +115,8 @@ export const getPackageManagerInfo = async (packageManager: string) => {
     return supportedPackageManagers.pnpm;
   } else if (packageManager === 'yarn') {
     return supportedPackageManagers.yarn;
+  } else if (packageManager === 'bun') {
+    return supportedPackageManagers.bun;
   } else {
     return null;
   }
