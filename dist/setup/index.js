@@ -94211,6 +94211,7 @@ const util_1 = __nccwpck_require__(2629);
 const constants_1 = __nccwpck_require__(9042);
 function run() {
     return __awaiter(this, void 0, void 0, function* () {
+        var _a;
         try {
             //
             // Version is optional.  If supplied, install / use from the tool cache
@@ -94227,6 +94228,10 @@ function run() {
             if (!arch) {
                 arch = os_1.default.arch();
             }
+            if ((_a = process.env.AGENT_TOOLSDIRECTORY) === null || _a === void 0 ? void 0 : _a.trim()) {
+                process.env['RUNNER_TOOL_CACHE'] = process.env['AGENT_TOOLSDIRECTORY'];
+            }
+            core.debug(`Node is expected to be installed into ${process.env['RUNNER_TOOL_CACHE']}`);
             if (version) {
                 const token = core.getInput('token');
                 const auth = !token ? undefined : `token ${token}`;
