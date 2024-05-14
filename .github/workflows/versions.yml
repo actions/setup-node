@@ -43,7 +43,7 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
           check-latest: true
-      - if: runner.os != 'Windows'
+      - if: runner.os != 'Windows' && runner.os != 'macOS'
         name: Verify node and npm
         run: |
           . "$NVM_DIR/nvm.sh"
