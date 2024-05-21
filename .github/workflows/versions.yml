@@ -34,7 +34,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest-large]
+        os: [ubuntu-latest, windows-latest, macos-13]
         node-version: [lts/dubnium, lts/erbium, lts/fermium, lts/*, lts/-1]
     steps:
       - uses: actions/checkout@v4
@@ -221,7 +221,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest-large]
+        os: [ubuntu-latest, windows-latest, macos-13]
     steps:
       - uses: actions/checkout@v4
       # test old versions which didn't have npm and layout different
