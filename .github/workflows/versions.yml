@@ -18,7 +18,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
-        node-version: [10, 12, 14]
+        node-version: [18, 20, 22]
     steps:
       - uses: actions/checkout@v4
       - name: Setup Node
@@ -34,7 +34,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
+        os: [ubuntu-latest, windows-latest, macos-13]
         node-version: [lts/dubnium, lts/erbium, lts/fermium, lts/*, lts/-1]
     steps:
       - uses: actions/checkout@v4
@@ -43,7 +43,7 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
           check-latest: true
-      - if: runner.os != 'Windows'
+      - if: runner.os != 'Windows' && runner.os != 'macOS'
         name: Verify node and npm
         run: |
           . "$NVM_DIR/nvm.sh"
@@ -83,7 +83,7 @@ jobs:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
         node-version:
-          [16.0.0-nightly20210420a0261d231c, 17-nightly, 18.0.0-nightly]
+          [20.11.0-nightly202312211a0be537da, 21-nightly, 18.0.0-nightly]
     steps:
       - uses: actions/checkout@v4
       - name: Setup Node
@@ -103,7 +103,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
-        node-version: [16.0.0-rc.1, 18.0.0-rc.2, 19.0.0-rc.0]
+        node-version: [20.0.0-rc.1, 18.0.0-rc.2, 19.0.0-rc.0]
     steps:
       - uses: actions/checkout@v4
       - name: Setup Node
@@ -123,7 +123,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
-        node-version: [10.15, 12.16.0, 14.2.0, 16.3.0]
+        node-version: [18.20.0, 20.10.0, 22.0.0]
     steps:
       - uses: actions/checkout@v4
       - name: Setup Node
@@ -140,7 +140,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
-        node-version: [10, 12, 14]
+        node-version: [18, 20, 22]
     steps:
       - uses: actions/checkout@v4
       - name: Setup Node and check latest
@@ -167,7 +167,7 @@ jobs:
         with:
           node-version-file: '__tests__/data/${{ matrix.node-version-file }}'
       - name: Verify node
-        run: __tests__/verify-node.sh 14
+        run: __tests__/verify-node.sh 20
 
   version-file-volta:
     runs-on: ${{ matrix.os }}
@@ -182,7 +182,7 @@ jobs:
         with:
           node-version-file: '__tests__/data/package-volta.json'
       - name: Verify node
-        run: __tests__/verify-node.sh 16
+        run: __tests__/verify-node.sh 20
 
   version-file-volta-extends:
     runs-on: ${{ matrix.os }}
@@ -197,7 +197,7 @@ jobs:
         with:
           node-version-file: '__tests__/data/package-volta-extends.json'
       - name: Verify node
-        run: __tests__/verify-node.sh 16
+        run: __tests__/verify-node.sh 20
 
   node-dist:
     runs-on: ${{ matrix.os }}
@@ -205,7 +205,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
-        node-version: [11, 13]
+        node-version: [17, 19]
     steps:
       - uses: actions/checkout@v4
       - name: Setup Node from dist
@@ -221,7 +221,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
+        os: [ubuntu-latest, windows-latest, macos-13]
     steps:
       - uses: actions/checkout@v4
       # test old versions which didn't have npm and layout different
@@ -237,10 +237,10 @@ jobs:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Setup node 14 x86 from dist
+      - name: Setup node 20 x86 from dist
         uses: ./
         with:
-          node-version: '14'
+          node-version: '20'
           architecture: 'x86'
       - name: Verify node
         run: __tests__/verify-arch.sh "ia32"
