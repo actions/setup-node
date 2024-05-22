@@ -29,7 +29,7 @@ Specify the action version
 <!--- Please specify versions of node and package manager (npm, yarn, pnpm and etc)-->
 
 **Repro steps:**  
-A description with steps to reproduce the issue. If you have a public example or repo to share, please provide the link.
+A description with steps to reproduce the issue. If your have a public example or repo to share, please provide the link.
 
 **Expected behavior:**
 A description of what you expected to happen.
