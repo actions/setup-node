@@ -26,9 +26,9 @@ function writeRegistryToFile(
     scope = github.context.repo.owner;
   }
   if (!scope) {
-    let namePrefix = require('./package').name.match('@[^/]+');
+    const namePrefix = packageJson('name')?.match(/^(@[^/]+)\//);
     if (namePrefix) {
-      scope = namePrefix[0];
+      scope = namePrefix[1];
     }
   }
   if (scope && scope[0] != '@') {
@@ -62,4 +62,15 @@ function writeRegistryToFile(
     'NODE_AUTH_TOKEN',
     process.env.NODE_AUTH_TOKEN || 'XXXXX-XXXXX-XXXXX-XXXXX'
   );
+}
+
+function packageJson(prop: string){
+  const pkgPath: string = path.resolve(process.env['RUNNER_TEMP'] || process.cwd(), 'package.json');
+  try {
+    const json = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
+
+    return prop ? json[prop] : json;
+  } catch(e) {
+    core.debug(`Unable to read from package.json`);
+  }
 }
