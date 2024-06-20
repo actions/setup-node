@@ -1,0 +1,22 @@
+﻿name: Deploy to npm
+on:
+  push:
+    branches: [ 1068-test ]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '21.x'  # Update this to the Node.js version you want to use
+          registry-url: 'https://registry.npmjs.org'
+      - name: Install dependencies
+        run: |
+          npm install
+          npm run build
+      - name: Publish
+        run: npm publish
+        env:
+          NODE_AUTH_TOKEN: ${{secrets.NPM_TOKEN}}  # Ensure NPM_TOKEN is set in your repository secrets
