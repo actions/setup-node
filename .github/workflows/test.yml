@@ -19,4 +19,4 @@ jobs:
       - name: Publish
         run: npm publish
         env:
-          NODE_AUTH_TOKEN: ${{secrets.NPM_TOKEN}}  # Ensure NPM_TOKEN is set in your repository secrets
+          NODE_AUTH_TOKEN: ${{secrets.NPM_TOKEN}}
