@@ -33,12 +33,14 @@
     "@actions/http-client": "^2.2.1",
     "@actions/io": "^1.0.2",
     "@actions/tool-cache": "^2.0.1",
-    "semver": "^7.6.0",
+    "braces": "^3.0.3",
+    "semver": "^7.6.2",
+    "undici": "^5.28.4",
     "uuid": "^9.0.1"
   },
   "devDependencies": {
     "@types/jest": "^29.5.12",
-    "@types/node": "^20.11.25",
+    "@types/node": "^20.14.6",
     "@types/semver": "^7.5.8",
     "@typescript-eslint/eslint-plugin": "^5.54.0",
     "@typescript-eslint/parser": "^5.54.0",
@@ -51,7 +53,7 @@
     "jest-circus": "^29.7.0",
     "jest-each": "^29.7.0",
     "prettier": "^2.8.4",
-    "ts-jest": "^29.1.2",
-    "typescript": "^5.4.2"
+    "ts-jest": "^29.1.5",
+    "typescript": "^5.4.5"
   }
 }
