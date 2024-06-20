@@ -1,7 +1,7 @@
 {
   "name": "setup-node",
   "version": "4.0.0",
-  "private": true,
+  "private": false,
   "description": "setup node action",
   "main": "lib/setup-node.js",
   "scripts": {
