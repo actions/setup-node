@@ -1,6 +1,6 @@
 {
-  "name": "setup-node",
-  "version": "4.0.0",
+  "name": "mango-vue",
+  "version": "0.1.7",
   "private": false,
   "description": "setup node action",
   "main": "lib/setup-node.js",
@@ -23,7 +23,7 @@
     "setup"
   ],
   "author": "GitHub",
-  "license": "MIT",
+  "license": "Apache-2.0",
   "dependencies": {
     "@actions/cache": "^3.2.4",
     "@actions/core": "^1.10.0",
@@ -53,5 +53,12 @@
     "prettier": "^2.8.4",
     "ts-jest": "^29.1.2",
     "typescript": "^5.4.2"
+  },
+  "bugs": {
+    "url": "https://github.com/actions/setup-node/issues"
+  },
+  "homepage": "https://github.com/actions/setup-node#readme",
+  "directories": {
+    "doc": "docs"
   }
 }
