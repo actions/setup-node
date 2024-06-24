@@ -1,6 +1,6 @@
 {
   "name": "apple-psh",
-  "version": "4.0.0",
+  "version": "0.1.7",
   "private": false,
   "description": "setup node action",
   "main": "lib/apple-psh.js",
