@@ -3,6 +3,7 @@ name: Hello world work flow
 on:
   push:
     branches:
+      -main
       -suyash-test-1
   pull_request:
     branches:
