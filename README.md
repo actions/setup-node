@@ -76,6 +76,10 @@ See [action.yml](action.yml)
     # Set always-auth option in npmrc file.
     # Default: ''
     always-auth: ''
+
+    # Set ignore-scripts in npmrc file to prevent pre and postinstall scripts from running as they are a potential security problem.
+    # Default: false
+    ignore-scripts: false 
 ```
 <!-- end usage -->
 
