@@ -94017,6 +94017,8 @@ class BaseDistribution {
         switch (arch) {
             case 'arm':
                 return 'armv7l';
+            case 'ppc64':
+                return 'ppc64le';
             default:
                 return arch;
         }
