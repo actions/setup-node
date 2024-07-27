@@ -105,8 +105,10 @@ Examples:
 
  - Major versions: `18`, `20`
  - More specific versions: `10.15`, `16.15.1` , `18.4.0`
- - NVM LTS syntax: `lts/erbium`, `lts/fermium`, `lts/*`, `lts/-n`
+ - NVM LTS syntax (beware of caveat below): `lts/erbium`, `lts/fermium`, `lts/*`, `lts/-n`
  - Latest release: `*` or `latest`/`current`/`node`
+
+**Caveat for NVM syntax:** There is currently no way to ensure that NVM version syntax like `lts/*` will receive the latest LTS release immediately - it can take days to update to the latest LTS because of cache implementation details (see [this issue]([https://github.com/actions/setup-node](https://github.com/actions/setup-node/issues/940#issuecomment-2029638604))). If you need the latest LTS versions in a timely manner, it is recommended to use a different action than `actions/setup-node`.
 
 **Note:** Like the other values, `*` will get the latest [locally-cached Node.js version](https://github.com/actions/runner-images/blob/main/images/ubuntu/Ubuntu2204-Readme.md#nodejs), or the latest version from [actions/node-versions](https://github.com/actions/node-versions/blob/main/versions-manifest.json), depending on the [`check-latest`](docs/advanced-usage.md#check-latest-version) input.
 
