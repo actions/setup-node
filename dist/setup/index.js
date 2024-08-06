@@ -93311,6 +93311,7 @@ const restoreCache = (packageManager, cacheDependencyPath) => __awaiter(void 0, 
         throw new Error(`Caching for '${packageManager}' is not supported`);
     }
     const platform = process.env.RUNNER_OS;
+    core.info(`platform runner.os: ${platform}`);
     const cachePaths = yield (0, cache_utils_1.getCacheDirectories)(packageManagerInfo, cacheDependencyPath);
     core.saveState(constants_1.State.CachePaths, cachePaths);
     const lockFilePath = cacheDependencyPath
