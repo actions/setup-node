@@ -150,7 +150,7 @@ export default abstract class BaseDistribution {
       throw err;
     }
 
-    const toolPath = await this.extractArchive(downloadPath, info);
+    const toolPath = await this.extractArchive(downloadPath, info, true);
     core.info('Done');
 
     return toolPath;
@@ -210,7 +210,8 @@ export default abstract class BaseDistribution {
 
   protected async extractArchive(
     downloadPath: string,
-    info: INodeVersionInfo | null
+    info: INodeVersionInfo | null,
+    isOfficialArchive?: boolean
   ) {
     //
     // Extract
@@ -225,7 +226,7 @@ export default abstract class BaseDistribution {
       // on Windows runners without PowerShell Core.
       //
       // For default PowerShell Windows it should contain extension type to unpack it.
-      if (extension === '.zip') {
+      if (extension === '.zip' && isOfficialArchive) {
         const renamedArchive = `${downloadPath}.zip`;
         fs.renameSync(downloadPath, renamedArchive);
         extPath = await tc.extractZip(renamedArchive);
