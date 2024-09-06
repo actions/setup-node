@@ -93883,7 +93883,7 @@ class BaseDistribution {
                 }
                 throw err;
             }
-            const toolPath = yield this.extractArchive(downloadPath, info);
+            const toolPath = yield this.extractArchive(downloadPath, info, true);
             core.info('Done');
             return toolPath;
         });
@@ -93933,7 +93933,7 @@ class BaseDistribution {
             return toolPath;
         });
     }
-    extractArchive(downloadPath, info) {
+    extractArchive(downloadPath, info, isOfficialArchive) {
         return __awaiter(this, void 0, void 0, function* () {
             //
             // Extract
@@ -93948,7 +93948,7 @@ class BaseDistribution {
                 // on Windows runners without PowerShell Core.
                 //
                 // For default PowerShell Windows it should contain extension type to unpack it.
-                if (extension === '.zip') {
+                if (extension === '.zip' && isOfficialArchive) {
                     const renamedArchive = `${downloadPath}.zip`;
                     fs_1.default.renameSync(downloadPath, renamedArchive);
                     extPath = yield tc.extractZip(renamedArchive);
@@ -94186,7 +94186,7 @@ class OfficialBuilds extends base_distribution_1.default {
                     core.info(`Acquiring ${versionInfo.resolvedVersion} - ${versionInfo.arch} from ${versionInfo.downloadUrl}`);
                     downloadPath = yield tc.downloadTool(versionInfo.downloadUrl, undefined, this.nodeInfo.auth);
                     if (downloadPath) {
-                        toolPath = yield this.extractArchive(downloadPath, versionInfo);
+                        toolPath = yield this.extractArchive(downloadPath, versionInfo, false);
                     }
                 }
                 else {
