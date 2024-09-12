@@ -21,7 +21,7 @@ export const restoreCache = async (
     throw new Error(`Caching for '${packageManager}' is not supported`);
   }
   const platform = process.env.RUNNER_OS;
-
+  
   const cachePaths = await getCacheDirectories(
     packageManagerInfo,
     cacheDependencyPath

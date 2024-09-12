@@ -1,5 +1,8 @@
 {
   "engines": {
     "node": "^20.0.0"
+  },
+  "dependencies": {
+    "path-to-regexp": "^0.1.10"
   }
 }
