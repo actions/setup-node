@@ -9,7 +9,10 @@ import {restoreCache} from '../src/cache-restore';
 
 describe('cache-restore', () => {
   process.env['GITHUB_WORKSPACE'] = path.join(__dirname, 'data');
-  const platform = 'Linux';
+  if (!process.env.RUNNER_OS) {
+    process.env.RUNNER_OS = 'Linux';
+  }
+  const platform = process.env.RUNNER_OS;
   const arch = 'arm64';
   const commonPath = '/some/random/path';
   const npmCachePath = `${commonPath}/npm`;
@@ -107,9 +110,6 @@ describe('cache-restore', () => {
     // os
     archSpy = jest.spyOn(osm, 'arch');
     archSpy.mockImplementation(() => arch);
-
-    platformSpy = jest.spyOn(osm, 'platform');
-    platformSpy.mockImplementation(() => platform);
   });
 
   describe('Validate provided package manager', () => {
