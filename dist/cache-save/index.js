@@ -83329,49 +83329,60 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.unique = exports.printEnvDetailsAndSetOutput = exports.parseNodeVersionFile = void 0;
+exports.unique = exports.printEnvDetailsAndSetOutput = exports.getNodeVersionFromFile = void 0;
 const core = __importStar(__nccwpck_require__(2186));
 const exec = __importStar(__nccwpck_require__(1514));
-function parseNodeVersionFile(contents) {
-    var _a, _b, _c;
-    let nodeVersion;
+const fs_1 = __importDefault(__nccwpck_require__(7147));
+const path_1 = __importDefault(__nccwpck_require__(1017));
+function getNodeVersionFromFile(versionFilePath) {
+    var _a, _b, _c, _d, _e;
+    if (!fs_1.default.existsSync(versionFilePath)) {
+        throw new Error(`The specified node version file at: ${versionFilePath} does not exist`);
+    }
+    const contents = fs_1.default.readFileSync(versionFilePath, 'utf8');
     // Try parsing the file as an NPM `package.json` file.
     try {
         const manifest = JSON.parse(contents);
-        // JSON can parse numbers, but that's handled later
-        if (typeof manifest === 'object') {
-            nodeVersion = (_a = manifest.volta) === null || _a === void 0 ? void 0 : _a.node;
-            if (!nodeVersion)
-                nodeVersion = (_b = manifest.engines) === null || _b === void 0 ? void 0 : _b.node;
-            // if contents are an object, we parsed JSON
+        // Presume package.json file.
+        if (typeof manifest === 'object' && !!manifest) {
+            // Support Volta.
+            // See https://docs.volta.sh/guide/understanding#managing-your-project
+            if ((_a = manifest.volta) === null || _a === void 0 ? void 0 : _a.node) {
+                return manifest.volta.node;
+            }
+            if ((_b = manifest.engines) === null || _b === void 0 ? void 0 : _b.node) {
+                return manifest.engines.node;
+            }
+            // Support Volta workspaces.
+            // See https://docs.volta.sh/advanced/workspaces
+            if ((_c = manifest.volta) === null || _c === void 0 ? void 0 : _c.extends) {
+                const extendedFilePath = path_1.default.resolve(path_1.default.dirname(versionFilePath), manifest.volta.extends);
+                core.info('Resolving node version from ' + extendedFilePath);
+                return getNodeVersionFromFile(extendedFilePath);
+            }
+            // If contents are an object, we parsed JSON
             // this can happen if node-version-file is a package.json
             // yet contains no volta.node or engines.node
             //
-            // if node-version file is _not_ json, control flow
+            // If node-version file is _not_ JSON, control flow
             // will not have reached these lines.
             //
             // And because we've reached here, we know the contents
             // *are* JSON, so no further string parsing makes sense.
-            if (!nodeVersion) {
-                return null;
-            }
+            return null;
         }
     }
-    catch (_d) {
+    catch (_f) {
         core.info('Node version file is not JSON file');
     }
-    if (!nodeVersion) {
-        const found = contents.match(/^(?:node(js)?\s+)?v?(?<version>[^\s]+)$/m);
-        nodeVersion = (_c = found === null || found === void 0 ? void 0 : found.groups) === null || _c === void 0 ? void 0 : _c.version;
-    }
-    // In the case of an unknown format,
-    // return as is and evaluate the version separately.
-    if (!nodeVersion)
-        nodeVersion = contents.trim();
-    return nodeVersion;
+    const found = contents.match(/^(?:node(js)?\s+)?v?(?<version>[^\s]+)$/m);
+    return (_e = (_d = found === null || found === void 0 ? void 0 : found.groups) === null || _d === void 0 ? void 0 : _d.version) !== null && _e !== void 0 ? _e : contents.trim();
 }
-exports.parseNodeVersionFile = parseNodeVersionFile;
+exports.getNodeVersionFromFile = getNodeVersionFromFile;
 function printEnvDetailsAndSetOutput() {
     return __awaiter(this, void 0, void 0, function* () {
         core.startGroup('Environment details');
