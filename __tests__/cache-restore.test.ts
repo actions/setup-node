@@ -55,7 +55,6 @@ describe('cache-restore', () => {
   let restoreCacheSpy: jest.SpyInstance;
   let hashFilesSpy: jest.SpyInstance;
   let archSpy: jest.SpyInstance;
-  let platformSpy: jest.SpyInstance;
 
   beforeEach(() => {
     // core
