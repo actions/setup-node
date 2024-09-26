@@ -14,7 +14,8 @@ import {
 
 export const restoreCache = async (
   packageManager: string,
-  cacheDependencyPath: string
+  cacheDependencyPath: string,
+  cacheInvalidateAfterDays?: string
 ) => {
   const packageManagerInfo = await getPackageManagerInfo(packageManager);
   if (!packageManagerInfo) {
@@ -37,9 +38,17 @@ export const restoreCache = async (
       'Some specified paths were not resolved, unable to cache dependencies.'
     );
   }
+  const numericCacheInvalidateAfterDays = cacheInvalidateAfterDays && cacheInvalidateAfterDays === '0'
+    ? 0
+    : (parseInt(cacheInvalidateAfterDays || '', 10) || 120)
+  const timedInvalidationPrefix = numericCacheInvalidateAfterDays
+    ? Math.floor(Date.now() / (1000 * 60 * 60 * 24 * numericCacheInvalidateAfterDays)) % 1000 // % 1000 to get a rolling prefix between 0 and 999 rather than a possibly infinitely large
+    : 0;
 
-  const keyPrefix = `node-cache-${platform}-${packageManager}`;
+  const keyPrefixBase = `node-cache-${platform}-${packageManager}`;
+  const keyPrefix = `${keyPrefixBase}-${timedInvalidationPrefix}`;
   const primaryKey = `${keyPrefix}-${fileHash}`;
+  const restoreKeys = [`${keyPrefix}-`];
   core.debug(`primary key is ${primaryKey}`);
 
   core.saveState(State.CachePrimaryKey, primaryKey);
@@ -53,15 +62,15 @@ export const restoreCache = async (
     core.info(
       'All dependencies are managed locally by yarn3, the previous cache can be used'
     );
-    cacheKey = await cache.restoreCache(cachePaths, primaryKey, [keyPrefix]);
+    cacheKey = await cache.restoreCache(cachePaths, primaryKey, [keyPrefixBase]);
   } else {
-    cacheKey = await cache.restoreCache(cachePaths, primaryKey);
+    cacheKey = await cache.restoreCache(cachePaths, primaryKey, restoreKeys);
   }
 
   core.setOutput('cache-hit', Boolean(cacheKey));
 
   if (!cacheKey) {
-    core.info(`${packageManager} cache is not found`);
+    core.info(`Cache not found for input keys: ${[primaryKey, ...restoreKeys].join(', ')}`);
     return;
   }
 
