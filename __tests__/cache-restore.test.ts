@@ -2,6 +2,7 @@ import * as core from '@actions/core';
 import * as cache from '@actions/cache';
 import * as path from 'path';
 import * as glob from '@actions/glob';
+import osm from 'os';
 
 import * as utils from '../src/cache-utils';
 import {restoreCache} from '../src/cache-restore';
@@ -12,6 +13,7 @@ describe('cache-restore', () => {
     process.env.RUNNER_OS = 'Linux';
   }
   const platform = process.env.RUNNER_OS;
+  const arch = 'arm64';
   const commonPath = '/some/random/path';
   const npmCachePath = `${commonPath}/npm`;
   const pnpmCachePath = `${commonPath}/pnpm`;
@@ -52,6 +54,7 @@ describe('cache-restore', () => {
   let getCommandOutputSpy: jest.SpyInstance;
   let restoreCacheSpy: jest.SpyInstance;
   let hashFilesSpy: jest.SpyInstance;
+  let archSpy: jest.SpyInstance;
 
   beforeEach(() => {
     // core
@@ -102,6 +105,10 @@ describe('cache-restore', () => {
 
     // cache-utils
     getCommandOutputSpy = jest.spyOn(utils, 'getCommandOutput');
+
+    // os
+    archSpy = jest.spyOn(osm, 'arch');
+    archSpy.mockImplementation(() => arch);
   });
 
   describe('Validate provided package manager', () => {
@@ -135,7 +142,7 @@ describe('cache-restore', () => {
         await restoreCache(packageManager, '');
         expect(hashFilesSpy).toHaveBeenCalled();
         expect(infoSpy).toHaveBeenCalledWith(
-          `Cache restored from key: node-cache-${platform}-${packageManager}-${fileHash}`
+          `Cache restored from key: node-cache-${platform}-${arch}-${packageManager}-${fileHash}`
         );
         expect(infoSpy).not.toHaveBeenCalledWith(
           `${packageManager} cache is not found`
