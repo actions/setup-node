@@ -93,3 +93,6 @@ typings/
 
 # DynamoDB Local files
 .dynamodb/
+
+# Built artifacts
+dist/
