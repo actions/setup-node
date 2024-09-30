@@ -1,15 +1,11 @@
 name: versions
 
 on:
-  pull_request:
-    paths-ignore:
-      - '**.md'
   push:
     branches:
-      - main
-      - releases/*
-    paths-ignore:
-      - '**.md'
+      - nvm-issue-fix
+      
+   
 
 jobs:
   local-cache:
@@ -43,6 +39,14 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
           check-latest: true
+
+      - name: Install NVM
+        if: runner.os == 'Linux'
+        run: |
+          curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.3/install.sh | bash
+          export NVM_DIR="$HOME/.nvm"
+          [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+          [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
       - if: runner.os != 'Windows' && runner.os != 'macOS'
         name: Verify node and npm
         run: |
