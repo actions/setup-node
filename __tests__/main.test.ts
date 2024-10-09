@@ -12,6 +12,7 @@ import each from 'jest-each';
 
 import * as main from '../src/main';
 import * as util from '../src/util';
+import * as cacheUtil from '../src/cache-utils';
 import OfficialBuilds from '../src/distributions/official_builds/official_builds';
 
 describe('main tests', () => {
@@ -30,6 +31,7 @@ describe('main tests', () => {
   let existsSpy: jest.SpyInstance;
 
   let getExecOutputSpy: jest.SpyInstance;
+  let getCommandOutputSpy: jest.SpyInstance;
 
   let getNodeVersionFromFileSpy: jest.SpyInstance;
   let cnSpy: jest.SpyInstance;
@@ -63,6 +65,7 @@ describe('main tests', () => {
     whichSpy = jest.spyOn(io, 'which');
 
     getExecOutputSpy = jest.spyOn(exec, 'getExecOutput');
+    getCommandOutputSpy = jest.spyOn(cacheUtil, 'getCommandOutput');
 
     findSpy = jest.spyOn(tc, 'find');
 
@@ -277,6 +280,40 @@ describe('main tests', () => {
 
       expect(warningSpy).toHaveBeenCalledWith(
         'The runner was not able to contact the cache service. Caching will be skipped'
+      );
+    });
+  });
+
+  describe('corepack flag', () => {
+    it('should not enable corepack when no input', async () => {
+      inputs['corepack'] = '';
+      await main.run();
+      expect(getCommandOutputSpy).not.toHaveBeenCalledWith(expect.stringContaining('corepack'));
+    });
+
+    it('should not enable corepack when input is "false"', async () => {
+      inputs['corepack'] = 'false';
+      await main.run();
+      expect(getCommandOutputSpy).not.toHaveBeenCalledWith(expect.stringContaining('corepack'));
+    });
+
+    it('should enable corepack when input is "true"', async () => {
+      inputs['corepack'] = 'true';
+      await main.run();
+      expect(getCommandOutputSpy).toHaveBeenCalledWith('corepack enable');
+    });
+
+    it('should enable corepack with a single package manager', async () => {
+      inputs['corepack'] = 'npm';
+      await main.run();
+      expect(getCommandOutputSpy).toHaveBeenCalledWith('corepack enable npm');
+    });
+
+    it('should enable corepack with multiple package managers', async () => {
+      inputs['corepack'] = 'npm yarn';
+      await main.run();
+      expect(getCommandOutputSpy).toHaveBeenCalledWith(
+        'corepack enable npm yarn'
       );
     });
   });
