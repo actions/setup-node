@@ -1,9 +1,15 @@
 name: versions
 
 on:
+  pull_request:
+    paths-ignore:
+      - '**.md'
   push:
     branches:
-      - nvm-issue-fix
+      - main
+      - releases/*
+    paths-ignore:
+      - '**.md'
 
 jobs:
   local-cache:
