@@ -11,7 +11,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-24.04, windows-latest, macos-latest, macos-13]
+        os: [ubuntu-latest, windows-latest, macos-latest, macos-13]
         node-version: [18, 20, 22]
     steps:
       - uses: actions/checkout@v4
@@ -28,7 +28,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-24.04, windows-latest, macos-13]
+        os: [ubuntu-latest, windows-latest, macos-13]
         node-version: [lts/dubnium, lts/erbium, lts/fermium, lts/*, lts/-1]
     steps:
       - uses: actions/checkout@v4
@@ -50,7 +50,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-24.04, windows-latest, macos-latest, macos-13]
+        os: [ubuntu-latest, windows-latest, macos-latest, macos-13]
         node-version:
           [
             '20-v8-canary',
@@ -75,7 +75,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-24.04, windows-latest, macos-latest, macos-13]
+        os: [ubuntu-latest, windows-latest, macos-latest, macos-13]
         node-version:
           [20.11.0-nightly202312211a0be537da, 21-nightly, 18.0.0-nightly]
     steps:
@@ -96,7 +96,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-24.04, windows-latest, macos-latest, macos-13]
+        os: [ubuntu-latest, windows-latest, macos-latest, macos-13]
         node-version: [20.0.0-rc.1, 18.0.0-rc.2, 19.0.0-rc.0]
     steps:
       - uses: actions/checkout@v4
@@ -116,7 +116,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-24.04, windows-latest, macos-latest, macos-13]
+        os: [ubuntu-latest, windows-latest, macos-latest, macos-13]
         node-version: [18.20.0, 20.10.0, 22.0.0]
     steps:
       - uses: actions/checkout@v4
@@ -133,7 +133,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-24.04, windows-latest, macos-latest, macos-13]
+        os: [ubuntu-latest, windows-latest, macos-latest, macos-13]
         node-version: [18, 20, 22]
     steps:
       - uses: actions/checkout@v4
@@ -151,7 +151,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-24.04, windows-latest, macos-latest, macos-13]
+        os: [ubuntu-latest, windows-latest, macos-latest, macos-13]
         node-version-file:
           [.nvmrc, .tool-versions, .tool-versions-node, package.json]
     steps:
@@ -168,7 +168,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-24.04, windows-latest, macos-latest, macos-13]
+        os: [ubuntu-latest, windows-latest, macos-latest, macos-13]
     steps:
       - uses: actions/checkout@v4
       - name: Setup node from node version file
@@ -183,7 +183,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-24.04, windows-latest, macos-latest, macos-13]
+        os: [ubuntu-latest, windows-latest, macos-latest, macos-13]
     steps:
       - uses: actions/checkout@v4
       - name: Setup node from node version file
@@ -198,7 +198,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-24.04, windows-latest, macos-latest, macos-13]
+        os: [ubuntu-latest, windows-latest, macos-latest, macos-13]
         node-version: [17, 19]
     steps:
       - uses: actions/checkout@v4
@@ -215,7 +215,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-24.04, windows-latest, macos-13]
+        os: [ubuntu-latest, windows-latest, macos-13]
     steps:
       - uses: actions/checkout@v4
       # test old versions which didn't have npm and layout different
@@ -245,7 +245,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-24.04, windows-latest, macos-latest, macos-13]
+        os: [ubuntu-latest, windows-latest, macos-latest, macos-13]
         node-version: [current, latest, node]
     steps:
       - name: Get node version
