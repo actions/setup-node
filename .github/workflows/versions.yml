@@ -4,8 +4,6 @@ on:
   push:
     branches:
       - nvm-issue-fix
-      
-   
 
 jobs:
   local-cache:
@@ -39,7 +37,7 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
           check-latest: true
-     
+
       - name: Verify node and npm
         run: |
           node_version=$(node --version)
