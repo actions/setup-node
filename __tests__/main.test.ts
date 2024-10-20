@@ -103,10 +103,13 @@ describe('main tests', () => {
       ${''}                                        | ${''}
       ${'unknown format'}                          | ${'unknown format'}
       ${'  14.1.0  '}                              | ${'14.1.0'}
+      ${'use-node-version=lts/iron'}               | ${'lts/iron'}
       ${'{"volta": {"node": ">=14.0.0 <=17.0.0"}}'}| ${'>=14.0.0 <=17.0.0'}
       ${'{"volta": {"extends": "./package.json"}}'}| ${'18.0.0'}
       ${'{"engines": {"node": "17.0.0"}}'}         | ${'17.0.0'}
       ${'{}'}                                      | ${null}
+      ${'[section]use-node-version=16'}            | ${null}
+      ${'[section]\nuse-node-version=20'}          | ${null}
     `.it('parses "$contents"', ({contents, expected}) => {
       const existsSpy = jest.spyOn(fs, 'existsSync');
       existsSpy.mockImplementation(() => true);
