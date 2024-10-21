@@ -93305,7 +93305,7 @@ const path_1 = __importDefault(__nccwpck_require__(1017));
 const fs_1 = __importDefault(__nccwpck_require__(7147));
 const constants_1 = __nccwpck_require__(9042);
 const cache_utils_1 = __nccwpck_require__(1678);
-const restoreCache = (packageManager, cacheDependencyPath) => __awaiter(void 0, void 0, void 0, function* () {
+const restoreCache = (packageManager, cacheDependencyPath, cacheInvalidateAfterDays) => __awaiter(void 0, void 0, void 0, function* () {
     const packageManagerInfo = yield (0, cache_utils_1.getPackageManagerInfo)(packageManager);
     if (!packageManagerInfo) {
         throw new Error(`Caching for '${packageManager}' is not supported`);
@@ -93320,22 +93320,30 @@ const restoreCache = (packageManager, cacheDependencyPath) => __awaiter(void 0, 
     if (!fileHash) {
         throw new Error('Some specified paths were not resolved, unable to cache dependencies.');
     }
-    const keyPrefix = `node-cache-${platform}-${packageManager}`;
+    const numericCacheInvalidateAfterDays = cacheInvalidateAfterDays && cacheInvalidateAfterDays === '0'
+        ? 0
+        : (parseInt(cacheInvalidateAfterDays || '', 10) || 120);
+    const timedInvalidationPrefix = numericCacheInvalidateAfterDays
+        ? Math.floor(Date.now() / (1000 * 60 * 60 * 24 * numericCacheInvalidateAfterDays)) % 1000 // % 1000 to get a rolling prefix between 0 and 999 rather than a possibly infinitely large
+        : 0;
+    const keyPrefixBase = `node-cache-${platform}-${packageManager}`;
+    const keyPrefix = `${keyPrefixBase}-${timedInvalidationPrefix}`;
     const primaryKey = `${keyPrefix}-${fileHash}`;
+    const restoreKeys = [`${keyPrefix}-`];
     core.debug(`primary key is ${primaryKey}`);
     core.saveState(constants_1.State.CachePrimaryKey, primaryKey);
     const isManagedByYarnBerry = yield (0, cache_utils_1.repoHasYarnBerryManagedDependencies)(packageManagerInfo, cacheDependencyPath);
     let cacheKey;
     if (isManagedByYarnBerry) {
         core.info('All dependencies are managed locally by yarn3, the previous cache can be used');
-        cacheKey = yield cache.restoreCache(cachePaths, primaryKey, [keyPrefix]);
+        cacheKey = yield cache.restoreCache(cachePaths, primaryKey, [keyPrefixBase]);
     }
     else {
-        cacheKey = yield cache.restoreCache(cachePaths, primaryKey);
+        cacheKey = yield cache.restoreCache(cachePaths, primaryKey, restoreKeys);
     }
     core.setOutput('cache-hit', Boolean(cacheKey));
     if (!cacheKey) {
-        core.info(`${packageManager} cache is not found`);
+        core.info(`Cache not found for input keys: ${[primaryKey, ...restoreKeys].join(', ')}`);
         return;
     }
     core.saveState(constants_1.State.CacheMatchedKey, cacheKey);
@@ -94470,7 +94478,8 @@ function run() {
             if (cache && (0, cache_utils_1.isCacheFeatureAvailable)()) {
                 core.saveState(constants_1.State.CachePackageManager, cache);
                 const cacheDependencyPath = core.getInput('cache-dependency-path');
-                yield (0, cache_restore_1.restoreCache)(cache, cacheDependencyPath);
+                const cacheInvalidateAfterDays = core.getInput('cache-invalidate-after-days');
+                yield (0, cache_restore_1.restoreCache)(cache, cacheDependencyPath, cacheInvalidateAfterDays);
             }
             const matchersPath = path.join(__dirname, '../..', '.github');
             core.info(`##[add-matcher]${path.join(matchersPath, 'tsc.json')}`);
