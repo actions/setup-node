@@ -159,7 +159,7 @@ jobs:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
         node-version-file:
-          [.nvmrc, .tool-versions, .tool-versions-node, package.json]
+          [.nvmrc, .tool-versions, .tool-versions-node, package.json, .npmrc]
     steps:
       - uses: actions/checkout@v4
       - name: Setup node from node version file

@@ -33,6 +33,7 @@
     "@actions/http-client": "^2.2.1",
     "@actions/io": "^1.0.2",
     "@actions/tool-cache": "^2.0.1",
+    "ini": "^5.0.0",
     "semver": "^7.6.0",
     "uuid": "^9.0.1"
   },
