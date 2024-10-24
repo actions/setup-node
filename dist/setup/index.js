@@ -94439,7 +94439,6 @@ function run() {
             //
             const version = resolveVersionInput();
             let arch = core.getInput('architecture');
-            const cache = core.getInput('cache');
             // if architecture supplied but node-version is not
             // if we don't throw a warning, the already installed x64 node will be used which is not probably what user meant.
             if (arch && !version) {
@@ -94469,6 +94468,7 @@ function run() {
             if (registryUrl) {
                 auth.configAuthentication(registryUrl, alwaysAuth);
             }
+            const cache = core.getInput('cache');
             if (cache && (0, cache_utils_1.isCacheFeatureAvailable)()) {
                 core.saveState(constants_1.State.CachePackageManager, cache);
                 const cacheDependencyPath = core.getInput('cache-dependency-path');
