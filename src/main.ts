@@ -9,6 +9,7 @@ import {isCacheFeatureAvailable} from './cache-utils';
 import {getNodejsDistribution} from './distributions/installer-factory';
 import {getNodeVersionFromFile, printEnvDetailsAndSetOutput} from './util';
 import {State} from './constants';
+import {ignoreScriptsInNpmConfig} from './ignore-scripts';
 
 export async function run() {
   try {
@@ -58,6 +59,9 @@ export async function run() {
     if (registryUrl) {
       auth.configAuthentication(registryUrl, alwaysAuth);
     }
+
+    const ignoreScripts: string = core.getInput('ignore-scripts');
+    ignoreScriptsInNpmConfig(ignoreScripts);
 
     if (cache && isCacheFeatureAvailable()) {
       core.saveState(State.CachePackageManager, cache);

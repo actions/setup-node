@@ -84068,7 +84068,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.unique = exports.printEnvDetailsAndSetOutput = exports.getNodeVersionFromFile = void 0;
+exports.defaultIfEmpty = exports.getNpmrcLocation = exports.unique = exports.printEnvDetailsAndSetOutput = exports.getNodeVersionFromFile = void 0;
 const core = __importStar(__nccwpck_require__(2186));
 const exec = __importStar(__nccwpck_require__(1514));
 const io = __importStar(__nccwpck_require__(7436));
@@ -84166,6 +84166,12 @@ const unique = () => {
     };
 };
 exports.unique = unique;
+const getNpmrcLocation = () => {
+    return path_1.default.resolve(process.env['RUNNER_TEMP'] || process.cwd(), '.npmrc');
+};
+exports.getNpmrcLocation = getNpmrcLocation;
+const defaultIfEmpty = (input, defaultValue) => input.length === 0 ? defaultValue : input;
+exports.defaultIfEmpty = defaultIfEmpty;
 
 
 /***/ }),
