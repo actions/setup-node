@@ -256,9 +256,11 @@ steps:
 
 steps:
 - uses: actions/checkout@v4
-- uses: pnpm/action-setup@v2
+- uses: pnpm/action-setup@v4
+  name: Install pnpm
   with:
-    version: 6.32.9
+    version: 9
+    run_install: false
 - uses: actions/setup-node@v4
   with:
     node-version: '14'
