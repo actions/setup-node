@@ -195,6 +195,8 @@ export default class OfficialBuilds extends BaseDistribution {
     stable: boolean,
     manifest: INodeRelease[]
   ): string {
+    if ( versionSpec === "lts" ) versionSpec = "lts/*";
+
     const alias = versionSpec.split('lts/')[1]?.toLowerCase();
 
     if (!alias) {
