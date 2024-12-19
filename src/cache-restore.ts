@@ -15,7 +15,8 @@ import {
 
 export const restoreCache = async (
   packageManager: string,
-  cacheDependencyPath: string
+  cacheDependencyPath: string,
+  nodeVersion: string
 ) => {
   const packageManagerInfo = await getPackageManagerInfo(packageManager);
   if (!packageManagerInfo) {
@@ -40,7 +41,7 @@ export const restoreCache = async (
     );
   }
 
-  const keyPrefix = `node-cache-${platform}-${arch}-${packageManager}`;
+  const keyPrefix = `node-cache-${platform}-${arch}-${nodeVersion}-${packageManager}`;
   const primaryKey = `${keyPrefix}-${fileHash}`;
   core.debug(`primary key is ${primaryKey}`);
 
