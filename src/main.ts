@@ -1,4 +1,5 @@
 import * as core from '@actions/core';
+import * as setupNode from 'actions/setup-node@v4.1.0';
 
 import os from 'os';
 
