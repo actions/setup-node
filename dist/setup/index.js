@@ -93715,7 +93715,7 @@ class BasePrereleaseNodejs extends base_distribution_1.default {
         let toolPath = '';
         let nodeInstallationPath = core.getInput('node-installation-path');
         if (os_1.default.platform() != 'win32') {
-            nodeInstallationPath = nodeInstallationPath.replace(/\\?bin$/, '');
+            nodeInstallationPath = nodeInstallationPath.replace(/\\bin$/, '').replace(/\/bin$/, '');
         }
         const localVersionPaths = tc
             .findAllVersions('node', this.nodeInfo.arch)
@@ -93996,7 +93996,7 @@ class BaseDistribution {
             info = info || {}; // satisfy compiler, never null when reaches here
             let nodeInstallationPath = core.getInput('node-installation-path');
             if (this.osPlat != 'win32') {
-                nodeInstallationPath = nodeInstallationPath.replace(/\\?bin$/, '');
+                nodeInstallationPath = nodeInstallationPath.replace(/\\bin$/, '').replace(/\/bin$/, '');
             }
             if (this.osPlat == 'win32') {
                 const extension = this.nodeInfo.arch === 'arm64' ? '.zip' : '.7z';
