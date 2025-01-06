@@ -93687,9 +93687,29 @@ const semver_1 = __importDefault(__nccwpck_require__(1383));
 const os_1 = __importDefault(__nccwpck_require__(2037));
 const base_distribution_1 = __importDefault(__nccwpck_require__(7));
 const core = __importStar(__nccwpck_require__(2186));
+const fs_1 = __importDefault(__nccwpck_require__(7147));
+const path = __importStar(__nccwpck_require__(1017));
 class BasePrereleaseNodejs extends base_distribution_1.default {
     constructor(nodeInfo) {
         super(nodeInfo);
+    }
+    copyFolder(srcDir, destDir) {
+        if (!fs_1.default.existsSync(destDir)) {
+            fs_1.default.mkdirSync(destDir, { recursive: true });
+        }
+    
+        fs_1.default.readdirSync(srcDir).forEach(file => {
+            const srcFile = path.join(srcDir, file);
+            const destFile = path.join(destDir, file);
+    
+            const stat = fs_1.default.statSync(srcFile);
+    
+            if (stat.isDirectory()) {
+                copyFolder(srcFile, destFile);
+            } else if (stat.isFile()) {
+                fs_1.default.copyFileSync(srcFile, destFile);
+            }
+        });
     }
     findVersionInHostedToolCacheDirectory() {
         let toolPath = '';
