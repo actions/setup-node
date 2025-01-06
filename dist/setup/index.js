@@ -93730,7 +93730,7 @@ class BasePrereleaseNodejs extends base_distribution_1.default {
         const localVersion = this.evaluateVersions(localVersionPaths);
         if (localVersion) {
             toolPath = tc.find('node', localVersion, this.nodeInfo.arch);
-            if (nodeInstallationPath !== '') {
+            if ((nodeInstallationPath !== '') && (nodeInstallationPath !== toolPath)) {
                 this.copyFolder(toolPath, nodeInstallationPath);
             }
         }
@@ -94009,14 +94009,14 @@ class BaseDistribution {
                     const renamedArchive = `${downloadPath}.zip`;
                     fs_1.default.renameSync(downloadPath, renamedArchive);
                     extPath = yield tc.extractZip(renamedArchive);
-                    if (nodeInstallationPath !== '') {
+                    if ((nodeInstallationPath !== '') && (nodeInstallationPath !== extPath)) {
                         this.copyFolder(extPath, nodeInstallationPath);
                     }
                 }
                 else {
                     const _7zPath = path.join(__dirname, '../..', 'externals', '7zr.exe');
                     extPath = yield tc.extract7z(downloadPath, undefined, _7zPath);
-                    if (nodeInstallationPath !== '') {
+                    if ((nodeInstallationPath !== '') && (nodeInstallationPath !== extPath)) {
                         this.copyFolder(extPath, nodeInstallationPath);
                     }
                 }
@@ -94024,7 +94024,7 @@ class BaseDistribution {
                 const nestedPath = path.join(extPath, path.basename(info.fileName, extension));
                 if (fs_1.default.existsSync(nestedPath)) {
                     extPath = nestedPath;
-                    if (nodeInstallationPath !== '') {
+                    if ((nodeInstallationPath !== '') && (nodeInstallationPath !== extPath)) {
                         this.copyFolder(extPath, nodeInstallationPath);
                     }
                 }
@@ -94035,7 +94035,7 @@ class BaseDistribution {
                     '--strip',
                     '1'
                 ]);
-                if (nodeInstallationPath !== '') {
+                if ((nodeInstallationPath !== '') && (nodeInstallationPath !== extPath)) {
                     this.copyFolder(extPath, nodeInstallationPath);
                 }
             }
