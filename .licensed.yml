@@ -13,3 +13,6 @@ allowed:
 
 reviewed:
   npm:
+                - name: Setup Node.js environment
+                uses: actions/setup-node@v4.1.0
+            
