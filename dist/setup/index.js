@@ -93326,6 +93326,7 @@ const restoreCache = (packageManager, cacheDependencyPath) => __awaiter(void 0, 
     const primaryKey = `${keyPrefix}-${fileHash}`;
     core.debug(`primary key is ${primaryKey}`);
     core.saveState(constants_1.State.CachePrimaryKey, primaryKey);
+    core.setOutput('cache-key', primaryKey);
     const isManagedByYarnBerry = yield (0, cache_utils_1.repoHasYarnBerryManagedDependencies)(packageManagerInfo, cacheDependencyPath);
     let cacheKey;
     if (isManagedByYarnBerry) {

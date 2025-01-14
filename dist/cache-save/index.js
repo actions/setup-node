@@ -83729,6 +83729,7 @@ const cachePackages = (packageManager) => __awaiter(void 0, void 0, void 0, func
         return;
     }
     core.info(`Cache saved with the key: ${primaryKey}`);
+    core.setOutput('cache-key', primaryKey);
 });
 run(true);
 
