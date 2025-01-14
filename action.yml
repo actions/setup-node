@@ -30,6 +30,8 @@ inputs:
 outputs:
   cache-hit: 
     description: 'A boolean value to indicate if a cache was hit.'
+  cache-key:
+    description: 'The key used for the cache.'
   node-version:
     description: 'The installed node version.'
 runs:

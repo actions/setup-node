@@ -27,6 +27,7 @@ describe('run', () => {
   let setFailedSpy: jest.SpyInstance;
   let getStateSpy: jest.SpyInstance;
   let saveCacheSpy: jest.SpyInstance;
+  let setOutputSpy: jest.SpyInstance;
   let getCommandOutputSpy: jest.SpyInstance;
   let hashFilesSpy: jest.SpyInstance;
   let existsSpy: jest.SpyInstance;
@@ -52,6 +53,8 @@ describe('run', () => {
     // cache
     saveCacheSpy = jest.spyOn(cache, 'saveCache');
     saveCacheSpy.mockImplementation(() => undefined);
+
+    setOutputSpy = jest.spyOn(core, 'setOutput');
 
     // glob
     hashFilesSpy = jest.spyOn(glob, 'hashFiles');
@@ -228,6 +231,7 @@ describe('run', () => {
       expect(infoSpy).toHaveBeenLastCalledWith(
         `Cache saved with the key: ${npmFileHash}`
       );
+      expect(core.setOutput).toHaveBeenCalledWith('cache-key', npmFileHash);
       expect(setFailedSpy).not.toHaveBeenCalled();
     });
 
@@ -258,6 +262,7 @@ describe('run', () => {
       expect(infoSpy).toHaveBeenLastCalledWith(
         `Cache saved with the key: ${npmFileHash}`
       );
+      expect(core.setOutput).toHaveBeenCalledWith('cache-key', npmFileHash);
       expect(setFailedSpy).not.toHaveBeenCalled();
     });
 
@@ -288,6 +293,7 @@ describe('run', () => {
       expect(infoSpy).toHaveBeenLastCalledWith(
         `Cache saved with the key: ${yarnFileHash}`
       );
+      expect(core.setOutput).toHaveBeenCalledWith('cache-key', yarnFileHash);
       expect(setFailedSpy).not.toHaveBeenCalled();
     });
 
@@ -297,9 +303,9 @@ describe('run', () => {
         key === State.CachePackageManager
           ? inputs['cache']
           : key === State.CacheMatchedKey
-          ? pnpmFileHash
+          ? 'no-match'
           : key === State.CachePrimaryKey
-          ? npmFileHash
+          ? pnpmFileHash
           : key === State.CachePaths
           ? '["/foo/bar"]'
           : 'not expected'
@@ -316,8 +322,9 @@ describe('run', () => {
       );
       expect(saveCacheSpy).toHaveBeenCalled();
       expect(infoSpy).toHaveBeenLastCalledWith(
-        `Cache saved with the key: ${npmFileHash}`
+        `Cache saved with the key: ${pnpmFileHash}`
       );
+      expect(core.setOutput).toHaveBeenCalledWith('cache-key', pnpmFileHash);
       expect(setFailedSpy).not.toHaveBeenCalled();
     });
 

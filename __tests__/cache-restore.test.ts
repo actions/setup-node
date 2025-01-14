@@ -180,6 +180,38 @@ describe('cache-restore', () => {
     );
   });
 
+  describe('Cache key output', () => {
+    const packageManager = 'npm';
+    const cacheDependencyPath = 'package-lock.json';
+    const primaryKey = `node-cache-${platform}-${arch}-${packageManager}-${npmFileHash}`;
+    const cacheKey = `node-cache-${platform}-${arch}-${packageManager}-abc123`;
+
+    beforeEach(() => {
+      getCommandOutputSpy.mockImplementation(command => {
+        if (command.includes('npm config get cache')) return npmCachePath;
+      });
+    });
+
+    it('sets the cache-key output', async () => {
+      restoreCacheSpy.mockResolvedValue(cacheKey);
+      await restoreCache(packageManager, cacheDependencyPath);
+      expect(setOutputSpy).toHaveBeenCalledWith('cache-key', primaryKey);
+    });
+
+    it('sets the cache-hit output to true when cache is found', async () => {
+      restoreCacheSpy.mockResolvedValue(cacheKey);
+      await restoreCache(packageManager, cacheDependencyPath);
+      expect(setOutputSpy).toHaveBeenCalledWith('cache-hit', true);
+    });
+
+    it('sets the cache-hit output to false when cache is not found', async () => {
+      restoreCacheSpy.mockResolvedValue(undefined);
+      await restoreCache(packageManager, cacheDependencyPath);
+
+      expect(setOutputSpy).toHaveBeenCalledWith('cache-hit', false);
+    });
+  });
+
   afterEach(() => {
     jest.resetAllMocks();
     jest.clearAllMocks();
