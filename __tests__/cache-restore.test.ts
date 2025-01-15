@@ -131,6 +131,7 @@ describe('cache-restore', () => {
     ])(
       'restored dependencies for %s',
       async (packageManager, toolVersion, fileHash) => {
+        const expectedCacheKey = `node-cache-${platform}-${arch}-${packageManager}-${fileHash}`;
         getCommandOutputSpy.mockImplementation((command: string) => {
           if (command.includes('version')) {
             return toolVersion;
@@ -142,12 +143,20 @@ describe('cache-restore', () => {
         await restoreCache(packageManager, '');
         expect(hashFilesSpy).toHaveBeenCalled();
         expect(infoSpy).toHaveBeenCalledWith(
-          `Cache restored from key: node-cache-${platform}-${arch}-${packageManager}-${fileHash}`
+          `Cache restored from key: ${expectedCacheKey}`
         );
         expect(infoSpy).not.toHaveBeenCalledWith(
           `${packageManager} cache is not found`
         );
         expect(setOutputSpy).toHaveBeenCalledWith('cache-hit', true);
+        expect(setOutputSpy).toHaveBeenCalledWith(
+          'cache-key',
+          expectedCacheKey
+        );
+        expect(setOutputSpy).toHaveBeenCalledWith(
+          'cache-matched-key',
+          expectedCacheKey
+        );
       }
     );
   });
@@ -161,6 +170,7 @@ describe('cache-restore', () => {
     ])(
       'dependencies are changed %s',
       async (packageManager, toolVersion, fileHash) => {
+        const expectedCacheKey = `node-cache-${platform}-${arch}-${packageManager}-${fileHash}`;
         getCommandOutputSpy.mockImplementation((command: string) => {
           if (command.includes('version')) {
             return toolVersion;
@@ -176,6 +186,14 @@ describe('cache-restore', () => {
           `${packageManager} cache is not found`
         );
         expect(setOutputSpy).toHaveBeenCalledWith('cache-hit', false);
+        expect(setOutputSpy).toHaveBeenCalledWith(
+          'cache-key',
+          expectedCacheKey
+        );
+        expect(setOutputSpy).toHaveBeenCalledWith(
+          'cache-matched-key',
+          undefined
+        );
       }
     );
   });
@@ -209,6 +227,28 @@ describe('cache-restore', () => {
       await restoreCache(packageManager, cacheDependencyPath);
 
       expect(setOutputSpy).toHaveBeenCalledWith('cache-hit', false);
+    });
+
+    it('sets the cache-matched-key output when cache is found', async () => {
+      (cache.restoreCache as jest.Mock).mockResolvedValue(cacheKey);
+
+      await restoreCache(packageManager, cacheDependencyPath);
+
+      expect(core.setOutput).toHaveBeenCalledWith(
+        'cache-matched-key',
+        cacheKey
+      );
+    });
+
+    it('sets the cache-matched-key output to undefined when cache is not found', async () => {
+      (cache.restoreCache as jest.Mock).mockResolvedValue(undefined);
+
+      await restoreCache(packageManager, cacheDependencyPath);
+
+      expect(core.setOutput).toHaveBeenCalledWith(
+        'cache-matched-key',
+        undefined
+      );
     });
   });
 

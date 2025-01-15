@@ -62,6 +62,8 @@ export const restoreCache = async (
   }
 
   core.setOutput('cache-hit', Boolean(cacheKey));
+  core.setOutput('cache-matched-key', cacheKey);
+  core.debug(`cache-matched-key is ${cacheKey}`);
 
   if (!cacheKey) {
     core.info(`${packageManager} cache is not found`);
