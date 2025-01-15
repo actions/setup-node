@@ -5,7 +5,7 @@ type: npm
 summary: Use node's fs.realpath, but fall back to the JS implementation if the native
   one fails
 homepage:
-license: other
+license: isc
 licenses:
 - sources: LICENSE
   text: |

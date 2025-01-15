@@ -4,7 +4,7 @@ version: 7.2.3
 type: npm
 summary: a little globber
 homepage:
-license: other
+license: isc
 licenses:
 - sources: LICENSE
   text: |

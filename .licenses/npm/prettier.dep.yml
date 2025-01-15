@@ -4,7 +4,7 @@ version: 2.8.8
 type: npm
 summary: Prettier is an opinionated code formatter
 homepage: https://prettier.io
-license: other
+license: mit
 licenses:
 - sources: LICENSE
   text: "# Prettier license\n\nPrettier is released under the MIT license:\n\nCopyright
