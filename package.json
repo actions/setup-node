@@ -51,7 +51,7 @@
     "jest-circus": "^29.7.0",
     "jest-each": "^29.7.0",
     "prettier": "^2.8.4",
-    "ts-jest": "^29.1.2",
+    "ts-jest": "^29.2.5",
     "typescript": "^5.4.2"
   }
 }
