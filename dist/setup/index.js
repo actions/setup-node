@@ -100769,6 +100769,8 @@ function run() {
             if (registryUrl) {
                 auth.configAuthentication(registryUrl, alwaysAuth);
             }
+            const corepack = core.getInput('corepack') || 'false';
+            yield (0, util_1.enableCorepack)(corepack);
             if (cache && (0, cache_utils_1.isCacheFeatureAvailable)()) {
                 core.saveState(constants_1.State.CachePackageManager, cache);
                 const cacheDependencyPath = core.getInput('cache-dependency-path');
@@ -100852,12 +100854,13 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.unique = exports.printEnvDetailsAndSetOutput = exports.getNodeVersionFromFile = void 0;
+exports.enableCorepack = exports.unique = exports.printEnvDetailsAndSetOutput = exports.getNodeVersionFromFile = void 0;
 const core = __importStar(__nccwpck_require__(2186));
 const exec = __importStar(__nccwpck_require__(1514));
 const io = __importStar(__nccwpck_require__(7436));
 const fs_1 = __importDefault(__nccwpck_require__(7147));
 const path_1 = __importDefault(__nccwpck_require__(1017));
+const cache_utils_1 = __nccwpck_require__(1678);
 function getNodeVersionFromFile(versionFilePath) {
     var _a, _b, _c, _d, _e;
     if (!fs_1.default.existsSync(versionFilePath)) {
@@ -100950,6 +100953,19 @@ const unique = () => {
     };
 };
 exports.unique = unique;
+function enableCorepack(input) {
+    return __awaiter(this, void 0, void 0, function* () {
+        if (input.length && input !== 'false') {
+            const corepackArgs = ['enable'];
+            if (input !== 'true') {
+                const packageManagers = input.split(' ');
+                corepackArgs.push(...packageManagers);
+            }
+            yield (0, cache_utils_1.getCommandOutput)(`corepack ${corepackArgs.join(' ')}`);
+        }
+    });
+}
+exports.enableCorepack = enableCorepack;
 
 
 /***/ }),
