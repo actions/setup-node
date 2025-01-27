@@ -7,6 +7,10 @@ inputs:
     default: 'false'
   node-version:
     description: 'Version Spec of the version to use. Examples: 12.x, 10.15.1, >=10.15.0.'
+  mirror-url:
+    description: 'The URL to download Node.js from, bypassing any checks.'
+    required: false
+    default: ''
   node-version-file:
     description: 'File containing the version Spec of the version to use.  Examples: package.json, .nvmrc, .node-version, .tool-versions.'
   architecture:
