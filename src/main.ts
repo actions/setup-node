@@ -1,17 +1,34 @@
 import * as core from '@actions/core';
+import * as tc from '@actions/tool-cache';
 
 import os from 'os';
 
 import * as auth from './authutil';
+import * as semver from 'semver';
 import * as path from 'path';
 import {restoreCache} from './cache-restore';
 import {isCacheFeatureAvailable} from './cache-utils';
 import {getNodejsDistribution} from './distributions/installer-factory';
 import {getNodeVersionFromFile, printEnvDetailsAndSetOutput} from './util';
 import {State} from './constants';
+import {HttpClient} from '@actions/http-client';
 
 export async function run() {
   try {
+    const mirrorUrl = core.getInput('mirror-url');
+    const versionSpec = core.getInput('node-version');
+
+    if (mirrorUrl && versionSpec) {
+      const nodePath = await downloadNodeFromMirror(versionSpec, mirrorUrl);
+      core.addPath(nodePath);
+      await printEnvDetailsAndSetOutput();
+      core.info(
+        `Node.js version ${versionSpec} has been downloaded and added to PATH from mirror URL: ${mirrorUrl}`
+      );
+
+      return;
+    }
+
     //
     // Version is optional.  If supplied, install / use from the tool cache
     // If not supplied then task is still used to setup proxy, auth, etc...
@@ -75,6 +92,75 @@ export async function run() {
     );
   } catch (err) {
     core.setFailed((err as Error).message);
+  }
+}
+
+async function downloadNodeFromMirror(
+  versionSpec: string,
+  mirrorUrl: string
+): Promise<string> {
+  const osPlat = process.platform;
+  const osArch = translateArchToDistUrl(process.arch);
+  // Resolve the version to the latest matching version
+  const resolvedVersion = await resolveVersionFromMirror(
+    versionSpec,
+    mirrorUrl
+  );
+
+  if (!resolvedVersion) {
+    throw new Error(`Invalid Node.js version: ${versionSpec}`);
+  }
+  const cleanVersion = semver.clean(resolvedVersion) || resolvedVersion;
+  const fileName =
+    osPlat === 'win32'
+      ? `node-v${cleanVersion}-win-${osArch}`
+      : `node-v${cleanVersion}-${osPlat}-${osArch}`;
+  const urlFileName =
+    osPlat === 'win32' ? `${fileName}.zip` : `${fileName}.tar.gz`;
+  const downloadUrl = `${mirrorUrl}/v${cleanVersion}/${urlFileName}`;
+
+  core.info(`Attempting to download Node.js from mirror URL: ${downloadUrl}`);
+  const downloadPath = await tc.downloadTool(downloadUrl);
+  core.info('Extracting ...');
+
+  // Check the file extension and extract accordingly
+  let extractedPath: string;
+  if (downloadUrl.endsWith('.tar.gz')) {
+    extractedPath = await tc.extractTar(downloadPath);
+  } else if (downloadUrl.endsWith('.zip')) {
+    extractedPath = await tc.extractZip(downloadPath);
+  } else {
+    throw new Error('Unsupported file format');
+  }
+
+  // Ensure the correct path is added to the system PATH
+  const toolPath = path.join(extractedPath);
+  core.addPath(toolPath);
+
+  return toolPath;
+}
+async function resolveVersionFromMirror(
+  versionSpec: string,
+  mirrorUrl: string
+): Promise<string | null> {
+  const dataUrl = `${mirrorUrl}/index.json`;
+  const httpClient = new HttpClient('setup-node');
+  const response = await httpClient.getJson<any[]>(dataUrl);
+  const versions = response.result || [];
+
+  const matchingVersions = versions
+    .map(version => version.version)
+    .filter(version => semver.satisfies(version, versionSpec))
+    .sort(semver.rcompare);
+
+  return matchingVersions.length > 0 ? matchingVersions[0] : null;
+}
+function translateArchToDistUrl(arch: string): string {
+  switch (arch) {
+    case 'arm':
+      return 'armv7l';
+    default:
+      return arch;
   }
 }
 
