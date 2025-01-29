@@ -76,6 +76,10 @@ See [action.yml](action.yml)
     # Set always-auth option in npmrc file.
     # Default: ''
     always-auth: ''
+
+    # Set node installation path.
+    # Default: ''
+    node-installation-path: ''
 ```
 <!-- end usage -->
 

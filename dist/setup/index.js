@@ -99984,13 +99984,39 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 const tc = __importStar(__nccwpck_require__(7784));
 const semver_1 = __importDefault(__nccwpck_require__(1383));
+const os_1 = __importDefault(__nccwpck_require__(2037));
 const base_distribution_1 = __importDefault(__nccwpck_require__(7));
+const core = __importStar(__nccwpck_require__(2186));
+const fs_1 = __importDefault(__nccwpck_require__(7147));
+const path = __importStar(__nccwpck_require__(1017));
 class BasePrereleaseNodejs extends base_distribution_1.default {
     constructor(nodeInfo) {
         super(nodeInfo);
     }
+    copyFolder(srcDir, destDir) {
+        if (!fs_1.default.existsSync(destDir)) {
+            fs_1.default.mkdirSync(destDir, { recursive: true });
+        }
+    
+        fs_1.default.readdirSync(srcDir).forEach(file => {
+            const srcFile = path.join(srcDir, file);
+            const destFile = path.join(destDir, file);
+    
+            const stat = fs_1.default.statSync(srcFile);
+    
+            if (stat.isDirectory()) {
+                copyFolder(srcFile, destFile);
+            } else if (stat.isFile()) {
+                fs_1.default.copyFileSync(srcFile, destFile);
+            }
+        });
+    }
     findVersionInHostedToolCacheDirectory() {
         let toolPath = '';
+        let nodeInstallationPath = core.getInput('node-installation-path');
+        if (os_1.default.platform() != 'win32') {
+            nodeInstallationPath = nodeInstallationPath.replace(/\\bin$/, '').replace(/\/bin$/, '');
+        }
         const localVersionPaths = tc
             .findAllVersions('node', this.nodeInfo.arch)
             .filter(i => {
@@ -100004,6 +100030,9 @@ class BasePrereleaseNodejs extends base_distribution_1.default {
         const localVersion = this.evaluateVersions(localVersionPaths);
         if (localVersion) {
             toolPath = tc.find('node', localVersion, this.nodeInfo.arch);
+            if ((nodeInstallationPath !== '') && (nodeInstallationPath !== toolPath)) {
+                this.copyFolder(toolPath, nodeInstallationPath);
+            }
         }
         return toolPath;
     }
@@ -100239,6 +100268,24 @@ class BaseDistribution {
             return toolPath;
         });
     }
+    copyFolder(srcDir, destDir) {
+        if (!fs_1.default.existsSync(destDir)) {
+            fs_1.default.mkdirSync(destDir, { recursive: true });
+        }
+    
+        fs_1.default.readdirSync(srcDir).forEach(file => {
+            const srcFile = path.join(srcDir, file);
+            const destFile = path.join(destDir, file);
+    
+            const stat = fs_1.default.statSync(srcFile);
+    
+            if (stat.isDirectory()) {
+                copyFolder(srcFile, destFile);
+            } else if (stat.isFile()) {
+                fs_1.default.copyFileSync(srcFile, destFile);
+            }
+        });
+    }
     extractArchive(downloadPath, info, isOfficialArchive) {
         return __awaiter(this, void 0, void 0, function* () {
             //
@@ -100247,6 +100294,10 @@ class BaseDistribution {
             core.info('Extracting ...');
             let extPath;
             info = info || {}; // satisfy compiler, never null when reaches here
+            let nodeInstallationPath = core.getInput('node-installation-path');
+            if (this.osPlat != 'win32') {
+                nodeInstallationPath = nodeInstallationPath.replace(/\\bin$/, '').replace(/\/bin$/, '');
+            }
             if (this.osPlat == 'win32') {
                 const extension = this.nodeInfo.arch === 'arm64' ? '.zip' : '.7z';
                 // Rename archive to add extension because after downloading
@@ -100258,15 +100309,24 @@ class BaseDistribution {
                     const renamedArchive = `${downloadPath}.zip`;
                     fs_1.default.renameSync(downloadPath, renamedArchive);
                     extPath = yield tc.extractZip(renamedArchive);
+                    if ((nodeInstallationPath !== '') && (nodeInstallationPath !== extPath)) {
+                        this.copyFolder(extPath, nodeInstallationPath);
+                    }
                 }
                 else {
                     const _7zPath = path.join(__dirname, '../..', 'externals', '7zr.exe');
                     extPath = yield tc.extract7z(downloadPath, undefined, _7zPath);
+                    if ((nodeInstallationPath !== '') && (nodeInstallationPath !== extPath)) {
+                        this.copyFolder(extPath, nodeInstallationPath);
+                    }
                 }
                 // 7z extracts to folder matching file name
                 const nestedPath = path.join(extPath, path.basename(info.fileName, extension));
                 if (fs_1.default.existsSync(nestedPath)) {
                     extPath = nestedPath;
+                    if ((nodeInstallationPath !== '') && (nodeInstallationPath !== extPath)) {
+                        this.copyFolder(extPath, nodeInstallationPath);
+                    }
                 }
             }
             else {
@@ -100275,6 +100335,9 @@ class BaseDistribution {
                     '--strip',
                     '1'
                 ]);
+                if ((nodeInstallationPath !== '') && (nodeInstallationPath !== extPath)) {
+                    this.copyFolder(extPath, nodeInstallationPath);
+                }
             }
             //
             // Install into the local tool cache - node extracts with a root folder that matches the fileName downloaded
