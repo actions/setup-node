@@ -100174,6 +100174,26 @@ class BaseDistribution {
             fileName: fileName
         };
     }
+    getNodejsMirrorURLInfo(version) {
+        const mirrorURL = this.nodeInfo.mirrorURL;
+        const osArch = this.translateArchToDistUrl(this.nodeInfo.arch);
+        version = semver_1.default.clean(version) || '';
+        const fileName = this.osPlat == 'win32'
+            ? `node-v${version}-win-${osArch}`
+            : `node-v${version}-${this.osPlat}-${osArch}`;
+        const urlFileName = this.osPlat == 'win32'
+            ? this.nodeInfo.arch === 'arm64'
+                ? `${fileName}.zip`
+                : `${fileName}.7z`
+            : `${fileName}.tar.gz`;
+        const url = `${mirrorURL}/v${version}/${urlFileName}`;
+        return {
+            downloadUrl: url,
+            resolvedVersion: version,
+            arch: osArch,
+            fileName: fileName
+        };
+    }
     downloadNodejs(info) {
         return __awaiter(this, void 0, void 0, function* () {
             let downloadPath = '';
@@ -100451,73 +100471,90 @@ class OfficialBuilds extends base_distribution_1.default {
     }
     setupNodeJs() {
         return __awaiter(this, void 0, void 0, function* () {
-            var _a;
-            let manifest;
-            let nodeJsVersions;
-            const osArch = this.translateArchToDistUrl(this.nodeInfo.arch);
-            if (this.isLtsAlias(this.nodeInfo.versionSpec)) {
-                core.info('Attempt to resolve LTS alias from manifest...');
-                // No try-catch since it's not possible to resolve LTS alias without manifest
-                manifest = yield this.getManifest();
-                this.nodeInfo.versionSpec = this.resolveLtsAliasFromManifest(this.nodeInfo.versionSpec, this.nodeInfo.stable, manifest);
-            }
-            if (this.isLatestSyntax(this.nodeInfo.versionSpec)) {
-                nodeJsVersions = yield this.getNodeJsVersions();
-                const versions = this.filterVersions(nodeJsVersions);
-                this.nodeInfo.versionSpec = this.evaluateVersions(versions);
-                core.info('getting latest node version...');
-            }
-            if (this.nodeInfo.checkLatest) {
-                core.info('Attempt to resolve the latest version from manifest...');
-                const resolvedVersion = yield this.resolveVersionFromManifest(this.nodeInfo.versionSpec, this.nodeInfo.stable, osArch, manifest);
-                if (resolvedVersion) {
-                    this.nodeInfo.versionSpec = resolvedVersion;
-                    core.info(`Resolved as '${resolvedVersion}'`);
-                }
-                else {
-                    core.info(`Failed to resolve version ${this.nodeInfo.versionSpec} from manifest`);
-                }
-            }
-            let toolPath = this.findVersionInHostedToolCacheDirectory();
-            if (toolPath) {
-                core.info(`Found in cache @ ${toolPath}`);
-                this.addToolPath(toolPath);
-                return;
-            }
-            let downloadPath = '';
-            try {
-                core.info(`Attempting to download ${this.nodeInfo.versionSpec}...`);
-                const versionInfo = yield this.getInfoFromManifest(this.nodeInfo.versionSpec, this.nodeInfo.stable, osArch, manifest);
-                if (versionInfo) {
-                    core.info(`Acquiring ${versionInfo.resolvedVersion} - ${versionInfo.arch} from ${versionInfo.downloadUrl}`);
-                    downloadPath = yield tc.downloadTool(versionInfo.downloadUrl, undefined, this.nodeInfo.auth);
+            var _a, _b;
+            if (this.nodeInfo.mirrorURL) {
+                let downloadPath = '';
+                let toolPath = '';
+                try {
+                    core.info(`Attempting to download using mirror URL...`);
+                    downloadPath = yield this.downloadFromMirrorURL(); // Attempt to download from the mirror
                     if (downloadPath) {
-                        toolPath = yield this.extractArchive(downloadPath, versionInfo, false);
+                        toolPath = downloadPath;
                     }
                 }
-                else {
-                    core.info('Not found in manifest. Falling back to download directly from Node');
-                }
-            }
-            catch (err) {
-                // Rate limit?
-                if (err instanceof tc.HTTPError &&
-                    (err.httpStatusCode === 403 || err.httpStatusCode === 429)) {
-                    core.info(`Received HTTP status code ${err.httpStatusCode}. This usually indicates the rate limit has been exceeded`);
-                }
-                else {
+                catch (err) {
                     core.info(err.message);
+                    core.debug((_a = err.stack) !== null && _a !== void 0 ? _a : 'empty stack');
                 }
-                core.debug((_a = err.stack) !== null && _a !== void 0 ? _a : 'empty stack');
-                core.info('Falling back to download directly from Node');
             }
-            if (!toolPath) {
-                toolPath = yield this.downloadDirectlyFromNode();
+            else {
+                let manifest;
+                let nodeJsVersions;
+                const osArch = this.translateArchToDistUrl(this.nodeInfo.arch);
+                if (this.isLtsAlias(this.nodeInfo.versionSpec)) {
+                    core.info('Attempt to resolve LTS alias from manifest...');
+                    // No try-catch since it's not possible to resolve LTS alias without manifest
+                    manifest = yield this.getManifest();
+                    this.nodeInfo.versionSpec = this.resolveLtsAliasFromManifest(this.nodeInfo.versionSpec, this.nodeInfo.stable, manifest);
+                }
+                if (this.isLatestSyntax(this.nodeInfo.versionSpec)) {
+                    nodeJsVersions = yield this.getNodeJsVersions();
+                    const versions = this.filterVersions(nodeJsVersions);
+                    this.nodeInfo.versionSpec = this.evaluateVersions(versions);
+                    core.info('getting latest node version...');
+                }
+                if (this.nodeInfo.checkLatest) {
+                    core.info('Attempt to resolve the latest version from manifest...');
+                    const resolvedVersion = yield this.resolveVersionFromManifest(this.nodeInfo.versionSpec, this.nodeInfo.stable, osArch, manifest);
+                    if (resolvedVersion) {
+                        this.nodeInfo.versionSpec = resolvedVersion;
+                        core.info(`Resolved as '${resolvedVersion}'`);
+                    }
+                    else {
+                        core.info(`Failed to resolve version ${this.nodeInfo.versionSpec} from manifest`);
+                    }
+                }
+                let toolPath = this.findVersionInHostedToolCacheDirectory();
+                if (toolPath) {
+                    core.info(`Found in cache @ ${toolPath}`);
+                    this.addToolPath(toolPath);
+                    return;
+                }
+                let downloadPath = '';
+                try {
+                    core.info(`Attempting to download ${this.nodeInfo.versionSpec}...`);
+                    const versionInfo = yield this.getInfoFromManifest(this.nodeInfo.versionSpec, this.nodeInfo.stable, osArch, manifest);
+                    if (versionInfo) {
+                        core.info(`Acquiring ${versionInfo.resolvedVersion} - ${versionInfo.arch} from ${versionInfo.downloadUrl}`);
+                        downloadPath = yield tc.downloadTool(versionInfo.downloadUrl, undefined, this.nodeInfo.auth);
+                        if (downloadPath) {
+                            toolPath = yield this.extractArchive(downloadPath, versionInfo, false);
+                        }
+                    }
+                    else {
+                        core.info('Not found in manifest. Falling back to download directly from Node');
+                    }
+                }
+                catch (err) {
+                    // Rate limit?
+                    if (err instanceof tc.HTTPError &&
+                        (err.httpStatusCode === 403 || err.httpStatusCode === 429)) {
+                        core.info(`Received HTTP status code ${err.httpStatusCode}. This usually indicates the rate limit has been exceeded`);
+                    }
+                    else {
+                        core.info(err.message);
+                    }
+                    core.debug((_b = err.stack) !== null && _b !== void 0 ? _b : 'empty stack');
+                    core.info('Falling back to download directly from Node');
+                }
+                if (!toolPath) {
+                    toolPath = yield this.downloadDirectlyFromNode();
+                }
+                if (this.osPlat != 'win32') {
+                    toolPath = path_1.default.join(toolPath, 'bin');
+                }
+                core.addPath(toolPath);
             }
-            if (this.osPlat != 'win32') {
-                toolPath = path_1.default.join(toolPath, 'bin');
-            }
-            core.addPath(toolPath);
         });
     }
     addToolPath(toolPath) {
@@ -100625,6 +100662,29 @@ class OfficialBuilds extends base_distribution_1.default {
     }
     isLatestSyntax(versionSpec) {
         return ['current', 'latest', 'node'].includes(versionSpec);
+    }
+    downloadFromMirrorURL() {
+        return __awaiter(this, void 0, void 0, function* () {
+            const nodeJsVersions = yield this.getNodeJsVersions();
+            const versions = this.filterVersions(nodeJsVersions);
+            const evaluatedVersion = this.evaluateVersions(versions);
+            if (!evaluatedVersion) {
+                throw new Error(`Unable to find Node version '${this.nodeInfo.versionSpec}' for platform ${this.osPlat} and architecture ${this.nodeInfo.arch}.`);
+            }
+            const toolName = this.getNodejsMirrorURLInfo(evaluatedVersion);
+            try {
+                const toolPath = yield this.downloadNodejs(toolName);
+                return toolPath;
+            }
+            catch (error) {
+                if (error instanceof tc.HTTPError && error.httpStatusCode === 404) {
+                    core.warning(`Node version ${this.nodeInfo.versionSpec} for platform ${this.osPlat} and architecture ${this.nodeInfo.arch} was found but failed to download. ` +
+                        'This usually happens when downloadable binaries are not fully updated at https://nodejs.org/. ' +
+                        'To resolve this issue you may either fall back to the older version or try again later.');
+                }
+                throw error;
+            }
+        });
     }
 }
 exports["default"] = OfficialBuilds;
@@ -100748,6 +100808,7 @@ function run() {
             if (!arch) {
                 arch = os_1.default.arch();
             }
+            const mirrorURL = core.getInput('mirrorURL').trim(); // .trim() to remove any accidental spaces
             if (version) {
                 const token = core.getInput('token');
                 const auth = !token ? undefined : `token ${token}`;
@@ -100758,7 +100819,8 @@ function run() {
                     checkLatest,
                     auth,
                     stable,
-                    arch
+                    arch,
+                    mirrorURL
                 };
                 const nodeDistribution = (0, installer_factory_1.getNodejsDistribution)(nodejsInfo);
                 yield nodeDistribution.setupNodeJs();

@@ -33,6 +33,9 @@ export async function run() {
       arch = os.arch();
     }
 
+    const mirrorURL = core.getInput('mirrorURL').trim(); // .trim() to remove any accidental spaces
+
+
     if (version) {
       const token = core.getInput('token');
       const auth = !token ? undefined : `token ${token}`;
@@ -45,7 +48,8 @@ export async function run() {
         checkLatest,
         auth,
         stable,
-        arch
+        arch,
+        mirrorURL
       };
       const nodeDistribution = getNodejsDistribution(nodejsInfo);
       await nodeDistribution.setupNodeJs();

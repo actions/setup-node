@@ -25,6 +25,7 @@ export default abstract class BaseDistribution {
   }
 
   protected abstract getDistributionUrl(): string;
+  
 
   public async setupNodeJs() {
     let nodeJsVersions: INodeVersion[] | undefined;
@@ -119,6 +120,31 @@ export default abstract class BaseDistribution {
         : `${fileName}.tar.gz`;
     const initialUrl = this.getDistributionUrl();
     const url = `${initialUrl}/v${version}/${urlFileName}`;
+
+    return <INodeVersionInfo>{
+      downloadUrl: url,
+      resolvedVersion: version,
+      arch: osArch,
+      fileName: fileName
+    };
+  }
+
+  protected getNodejsMirrorURLInfo(version: string) {
+    const mirrorURL = this.nodeInfo.mirrorURL;
+    const osArch: string = this.translateArchToDistUrl(this.nodeInfo.arch);
+    version = semver.clean(version) || '';
+    const fileName: string =
+      this.osPlat == 'win32'
+        ? `node-v${version}-win-${osArch}`
+        : `node-v${version}-${this.osPlat}-${osArch}`;
+    const urlFileName: string =
+      this.osPlat == 'win32'
+        ? this.nodeInfo.arch === 'arm64'
+          ? `${fileName}.zip`
+          : `${fileName}.7z`
+        : `${fileName}.tar.gz`;
+    
+    const url = `${mirrorURL}/v${version}/${urlFileName}`;
 
     return <INodeVersionInfo>{
       downloadUrl: url,

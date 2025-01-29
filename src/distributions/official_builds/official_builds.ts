@@ -12,9 +12,27 @@ interface INodeRelease extends tc.IToolRelease {
 export default class OfficialBuilds extends BaseDistribution {
   constructor(nodeInfo: NodeInputs) {
     super(nodeInfo);
+    
   }
+  
 
   public async setupNodeJs() {
+     if(this.nodeInfo.mirrorURL){
+
+      let downloadPath = '';
+      let toolPath = '';
+         try {
+           core.info(`Attempting to download using mirror URL...`);
+           downloadPath = await this.downloadFromMirrorURL(); // Attempt to download from the mirror
+            if (downloadPath) {
+             toolPath = downloadPath;
+           }
+         } catch (err) {
+           core.info((err as Error).message);
+           core.debug((err as Error).stack ?? 'empty stack');
+         }
+      
+     }else{
     let manifest: tc.IToolRelease[] | undefined;
     let nodeJsVersions: INodeVersion[] | undefined;
     const osArch = this.translateArchToDistUrl(this.nodeInfo.arch);
@@ -125,6 +143,8 @@ export default class OfficialBuilds extends BaseDistribution {
 
     core.addPath(toolPath);
   }
+}
+
 
   protected addToolPath(toolPath: string) {
     if (this.osPlat != 'win32') {
@@ -180,6 +200,7 @@ export default class OfficialBuilds extends BaseDistribution {
     return `https://nodejs.org/dist`;
   }
 
+ 
   private getManifest(): Promise<tc.IToolRelease[]> {
     core.debug('Getting manifest from actions/node-versions@main');
     return tc.getManifestFromRepo(
@@ -291,4 +312,34 @@ export default class OfficialBuilds extends BaseDistribution {
   private isLatestSyntax(versionSpec): boolean {
     return ['current', 'latest', 'node'].includes(versionSpec);
   }
+
+  protected async downloadFromMirrorURL() {
+    const nodeJsVersions = await this.getNodeJsVersions();
+    const versions = this.filterVersions(nodeJsVersions);
+    const evaluatedVersion = this.evaluateVersions(versions);
+
+    if (!evaluatedVersion) {
+      throw new Error(
+        `Unable to find Node version '${this.nodeInfo.versionSpec}' for platform ${this.osPlat} and architecture ${this.nodeInfo.arch}.`
+      );
+    }
+
+    const toolName = this.getNodejsMirrorURLInfo(evaluatedVersion);
+
+    try {
+      const toolPath = await this.downloadNodejs(toolName);
+      return toolPath;
+    } catch (error) {
+      if (error instanceof tc.HTTPError && error.httpStatusCode === 404) {
+        core.warning(
+          `Node version ${this.nodeInfo.versionSpec} for platform ${this.osPlat} and architecture ${this.nodeInfo.arch} was found but failed to download. ` +
+            'This usually happens when downloadable binaries are not fully updated at https://nodejs.org/. ' +
+            'To resolve this issue you may either fall back to the older version or try again later.'
+        );
+      }
+
+      throw error;
+    }
+  }
+
 }

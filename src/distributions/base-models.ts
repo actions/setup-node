@@ -4,6 +4,7 @@ export interface NodeInputs {
   auth?: string;
   checkLatest: boolean;
   stable: boolean;
+  mirrorURL: string;
 }
 
 export interface INodeVersionInfo {
@@ -11,6 +12,7 @@ export interface INodeVersionInfo {
   resolvedVersion: string;
   arch: string;
   fileName: string;
+  
 }
 
 export interface INodeVersion {
