@@ -320,7 +320,8 @@ export default class OfficialBuilds extends BaseDistribution {
     core.info('versions'+versions);
 
     const evaluatedVersion = this.evaluateVersions(versions);
-    core.info('eversions'+evaluatedVersion);
+    core.info('versionSpec'+this.nodeInfo.versionSpec);
+    
     if (this.nodeInfo.checkLatest) {
       const evaluatedVersion = await this.findVersionInDist(nodeJsVersions);
       this.nodeInfo.versionSpec = evaluatedVersion;
