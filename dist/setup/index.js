@@ -100225,6 +100225,7 @@ class BaseDistribution {
     acquireWindowsNodeFromFallbackLocation(version_1) {
         return __awaiter(this, arguments, void 0, function* (version, arch = os_1.default.arch()) {
             const initialUrl = this.getDistributionUrl();
+            core.info('url: ' + initialUrl);
             const osArch = this.translateArchToDistUrl(arch);
             // Create temporary folder to download to
             const tempDownloadFolder = `temp_${(0, uuid_1.v4)()}`;

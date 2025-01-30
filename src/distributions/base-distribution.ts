@@ -196,7 +196,8 @@ export default abstract class BaseDistribution {
     arch: string = os.arch()
   ): Promise<string> {
     const initialUrl = this.getDistributionUrl();
-    const osArch: string = this.translateArchToDistUrl(arch);
+    core.info('url: ' + initialUrl);
+        const osArch: string = this.translateArchToDistUrl(arch);
 
     // Create temporary folder to download to
     const tempDownloadFolder = `temp_${uuidv4()}`;
