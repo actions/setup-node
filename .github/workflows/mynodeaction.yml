@@ -1,0 +1,28 @@
+name: Node.js CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4.2.2
+
+    - name: Setup Node.js environment
+      uses: actions/setup-node@v4.2.0
+      with:
+        node-version: '14' # Specify the Node.js version you need
+
+    - name: Install dependencies
+      run: npm install
+
+    - name: Run tests
+      run: npm test
