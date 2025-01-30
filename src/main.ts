@@ -33,7 +33,7 @@ export async function run() {
       arch = os.arch();
     }
 
-    const mirrorURL = core.getInput('mirrorURL').trim(); // .trim() to remove any accidental spaces
+    const mirrorURL = core.getInput('mirror-url').trim(); // .trim() to remove any accidental spaces
 
 
     if (version) {

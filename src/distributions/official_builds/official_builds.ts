@@ -318,6 +318,11 @@ export default class OfficialBuilds extends BaseDistribution {
     const versions = this.filterVersions(nodeJsVersions);
     const evaluatedVersion = this.evaluateVersions(versions);
 
+    if (this.nodeInfo.checkLatest) {
+      const evaluatedVersion = await this.findVersionInDist(nodeJsVersions);
+      this.nodeInfo.versionSpec = evaluatedVersion;
+    }
+
     if (!evaluatedVersion) {
       throw new Error(
         `Unable to find Node version '${this.nodeInfo.versionSpec}' for platform ${this.osPlat} and architecture ${this.nodeInfo.arch}.`

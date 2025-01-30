@@ -100668,6 +100668,10 @@ class OfficialBuilds extends base_distribution_1.default {
             const nodeJsVersions = yield this.getNodeJsVersions();
             const versions = this.filterVersions(nodeJsVersions);
             const evaluatedVersion = this.evaluateVersions(versions);
+            if (this.nodeInfo.checkLatest) {
+                const evaluatedVersion = yield this.findVersionInDist(nodeJsVersions);
+                this.nodeInfo.versionSpec = evaluatedVersion;
+            }
             if (!evaluatedVersion) {
                 throw new Error(`Unable to find Node version '${this.nodeInfo.versionSpec}' for platform ${this.osPlat} and architecture ${this.nodeInfo.arch}.`);
             }
@@ -100808,7 +100812,7 @@ function run() {
             if (!arch) {
                 arch = os_1.default.arch();
             }
-            const mirrorURL = core.getInput('mirrorURL').trim(); // .trim() to remove any accidental spaces
+            const mirrorURL = core.getInput('mirror-url').trim(); // .trim() to remove any accidental spaces
             if (version) {
                 const token = core.getInput('token');
                 const auth = !token ? undefined : `token ${token}`;
