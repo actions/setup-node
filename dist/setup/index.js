@@ -100670,6 +100670,7 @@ class OfficialBuilds extends base_distribution_1.default {
             const versions = this.filterVersions(nodeJsVersions);
             core.info('versions' + versions);
             const evaluatedVersion = this.evaluateVersions(versions);
+            core.info('eversions' + evaluatedVersion);
             if (this.nodeInfo.checkLatest) {
                 const evaluatedVersion = yield this.findVersionInDist(nodeJsVersions);
                 this.nodeInfo.versionSpec = evaluatedVersion;
