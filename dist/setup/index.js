@@ -100205,7 +100205,7 @@ class BaseDistribution {
                 if (err instanceof tc.HTTPError &&
                     err.httpStatusCode == 404 &&
                     this.osPlat == 'win32') {
-                    return yield this.acquireWindowsNodeFromFallbackLocation(info.resolvedVersion, info.arch);
+                    return yield this.acquireWindowsNodeFromFallbackLocation(info.resolvedVersion, info.arch, info.downloadUrl);
                 }
                 core.error(`Download failed from ${info.downloadUrl}. Please check the URl and try again.`);
                 throw err;
@@ -100223,7 +100223,7 @@ class BaseDistribution {
         return { range: valid, options };
     }
     acquireWindowsNodeFromFallbackLocation(version_1) {
-        return __awaiter(this, arguments, void 0, function* (version, arch = os_1.default.arch()) {
+        return __awaiter(this, arguments, void 0, function* (version, arch = os_1.default.arch(), downloadUrl) {
             const initialUrl = this.getDistributionUrl();
             core.info('url: ' + initialUrl);
             const osArch = this.translateArchToDistUrl(arch);
@@ -100239,7 +100239,7 @@ class BaseDistribution {
                 exeUrl = `${initialUrl}/v${version}/win-${osArch}/node.exe`;
                 libUrl = `${initialUrl}/v${version}/win-${osArch}/node.lib`;
                 core.info(`Downloading only node binary from ${exeUrl}`);
-                if (!exeUrl) {
+                if (downloadUrl != exeUrl) {
                     core.error('unable to download node binary with the provided URL. Please check and try again');
                 }
                 const exePath = yield tc.downloadTool(exeUrl);

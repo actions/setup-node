@@ -169,7 +169,8 @@ export default abstract class BaseDistribution {
       ) {
         return await this.acquireWindowsNodeFromFallbackLocation(
           info.resolvedVersion,
-          info.arch
+          info.arch,
+          info.downloadUrl
         );
       }
       core.error(`Download failed from ${info.downloadUrl}. Please check the URl and try again.`);
@@ -193,11 +194,12 @@ export default abstract class BaseDistribution {
 
   protected async acquireWindowsNodeFromFallbackLocation(
     version: string,
-    arch: string = os.arch()
+    arch: string = os.arch(),
+    downloadUrl : string
   ): Promise<string> {
     const initialUrl = this.getDistributionUrl();
     core.info('url: ' + initialUrl);
-        const osArch: string = this.translateArchToDistUrl(arch);
+    const osArch: string = this.translateArchToDistUrl(arch);
 
     // Create temporary folder to download to
     const tempDownloadFolder = `temp_${uuidv4()}`;
@@ -212,7 +214,7 @@ export default abstract class BaseDistribution {
       libUrl = `${initialUrl}/v${version}/win-${osArch}/node.lib`;
 
       core.info(`Downloading only node binary from ${exeUrl}`);
-      if(!exeUrl ){core.error('unable to download node binary with the provided URL. Please check and try again');}
+      if(downloadUrl != exeUrl ){core.error('unable to download node binary with the provided URL. Please check and try again');}
       
 
       const exePath = await tc.downloadTool(exeUrl);
