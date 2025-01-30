@@ -342,11 +342,14 @@ export default class OfficialBuilds extends BaseDistribution {
       return toolPath;
     } catch (error) {
       if (error instanceof tc.HTTPError && error.httpStatusCode === 404) {
-        core.warning(
+        core.error(
           `Node version ${this.nodeInfo.versionSpec} for platform ${this.osPlat} and architecture ${this.nodeInfo.arch} was found but failed to download. ` +
-            'This usually happens when downloadable binaries are not fully updated at https://nodejs.org/. ' +
-            'To resolve this issue you may either fall back to the older version or try again later.'
+          'This usually happens when downloadable binaries are not fully updated at https://nodejs.org/. ' +
+          'To resolve this issue you may either fall back to the older version or try again later.'
         );
+      } else {
+        // For any other error type, you can log the error message.
+        core.error(`An unexpected error occurred like url might not correct`);
       }
 
       throw error;
