@@ -315,12 +315,17 @@ export default class OfficialBuilds extends BaseDistribution {
 
   protected async downloadFromMirrorURL() {
     const nodeJsVersions = await this.getNodeJsVersions();
+    core.info('versions from nodeJSVersions'+nodeJsVersions);
     const versions = this.filterVersions(nodeJsVersions);
+    core.info('versions'+versions);
+
     const evaluatedVersion = this.evaluateVersions(versions);
 
     if (this.nodeInfo.checkLatest) {
       const evaluatedVersion = await this.findVersionInDist(nodeJsVersions);
       this.nodeInfo.versionSpec = evaluatedVersion;
+      core.info('versionSpec'+this.nodeInfo.versionSpec);
+
     }
 
     if (!evaluatedVersion) {

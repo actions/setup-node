@@ -100666,11 +100666,14 @@ class OfficialBuilds extends base_distribution_1.default {
     downloadFromMirrorURL() {
         return __awaiter(this, void 0, void 0, function* () {
             const nodeJsVersions = yield this.getNodeJsVersions();
+            core.info('versions from nodeJSVersions' + nodeJsVersions);
             const versions = this.filterVersions(nodeJsVersions);
+            core.info('versions' + versions);
             const evaluatedVersion = this.evaluateVersions(versions);
             if (this.nodeInfo.checkLatest) {
                 const evaluatedVersion = yield this.findVersionInDist(nodeJsVersions);
                 this.nodeInfo.versionSpec = evaluatedVersion;
+                core.info('versionSpec' + this.nodeInfo.versionSpec);
             }
             if (!evaluatedVersion) {
                 throw new Error(`Unable to find Node version '${this.nodeInfo.versionSpec}' for platform ${this.osPlat} and architecture ${this.nodeInfo.arch}.`);
