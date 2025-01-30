@@ -172,6 +172,7 @@ export default abstract class BaseDistribution {
           info.arch
         );
       }
+      core.error(`Download failed from ${info.downloadUrl}. Please check the URl and try again.`);
 
       throw err;
     }

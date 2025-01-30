@@ -100207,6 +100207,7 @@ class BaseDistribution {
                     this.osPlat == 'win32') {
                     return yield this.acquireWindowsNodeFromFallbackLocation(info.resolvedVersion, info.arch);
                 }
+                core.error(`Download failed from ${info.downloadUrl}. Please check the URl and try again.`);
                 throw err;
             }
             const toolPath = yield this.extractArchive(downloadPath, info, true);
