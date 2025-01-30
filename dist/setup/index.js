@@ -100238,6 +100238,9 @@ class BaseDistribution {
                 exeUrl = `${initialUrl}/v${version}/win-${osArch}/node.exe`;
                 libUrl = `${initialUrl}/v${version}/win-${osArch}/node.lib`;
                 core.info(`Downloading only node binary from ${exeUrl}`);
+                if (!exeUrl) {
+                    core.error('unable to download node binary with the provided URL. Please check and try again');
+                }
                 const exePath = yield tc.downloadTool(exeUrl);
                 yield io.cp(exePath, path.join(tempDir, 'node.exe'));
                 const libPath = yield tc.downloadTool(libUrl);

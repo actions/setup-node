@@ -211,6 +211,8 @@ export default abstract class BaseDistribution {
       libUrl = `${initialUrl}/v${version}/win-${osArch}/node.lib`;
 
       core.info(`Downloading only node binary from ${exeUrl}`);
+      if(!exeUrl ){core.error('unable to download node binary with the provided URL. Please check and try again');}
+      
 
       const exePath = await tc.downloadTool(exeUrl);
       await io.cp(exePath, path.join(tempDir, 'node.exe'));
