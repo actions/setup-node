@@ -100156,7 +100156,7 @@ class BaseDistribution {
     }
     getMirrorUrlVersions() {
         return __awaiter(this, void 0, void 0, function* () {
-            const initialUrl = this.getDistributionMirrorUrl();
+            const initialUrl = this.getDistributionUrl();
             const dataUrl = `${initialUrl}/index.json`;
             const response = yield this.httpClient.getJson(dataUrl);
             return response.result || [];
@@ -100173,7 +100173,7 @@ class BaseDistribution {
                 ? `${fileName}.zip`
                 : `${fileName}.7z`
             : `${fileName}.tar.gz`;
-        const initialUrl = this.getDistributionMirrorUrl();
+        const initialUrl = this.getDistributionUrl();
         const url = `${initialUrl}/v${version}/${urlFileName}`;
         return {
             downloadUrl: url,
@@ -100647,11 +100647,10 @@ class OfficialBuilds extends base_distribution_1.default {
         return version;
     }
     getDistributionUrl() {
+        if (this.nodeInfo.mirrorURL) {
+            return this.nodeInfo.mirrorURL;
+        }
         return `https://nodejs.org/dist`;
-    }
-    getDistributionMirrorUrl() {
-        const mirrorURL = this.nodeInfo.mirrorURL;
-        return mirrorURL !== null && mirrorURL !== void 0 ? mirrorURL : '';
     }
     getManifest() {
         core.debug('Getting manifest from actions/node-versions@main');

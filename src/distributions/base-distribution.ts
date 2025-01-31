@@ -25,7 +25,6 @@ export default abstract class BaseDistribution {
   }
 
   protected abstract getDistributionUrl(): string;
-  protected abstract getDistributionMirrorUrl(): string;
 
   public async setupNodeJs() {
     let nodeJsVersions: INodeVersion[] | undefined;
@@ -106,7 +105,7 @@ export default abstract class BaseDistribution {
   }
 
   protected async getMirrorUrlVersions(): Promise<INodeVersion[]> {
-    const initialUrl = this.getDistributionMirrorUrl();
+    const initialUrl = this.getDistributionUrl();
     
     const dataUrl = `${initialUrl}/index.json`;
 
@@ -127,7 +126,7 @@ export default abstract class BaseDistribution {
           ? `${fileName}.zip`
           : `${fileName}.7z`
         : `${fileName}.tar.gz`;
-    const initialUrl = this.getDistributionMirrorUrl();
+    const initialUrl = this.getDistributionUrl();
     const url = `${initialUrl}/v${version}/${urlFileName}`;
 
     return <INodeVersionInfo>{

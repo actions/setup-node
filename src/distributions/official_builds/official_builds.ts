@@ -193,14 +193,12 @@ export default class OfficialBuilds extends BaseDistribution {
   }
 
   protected getDistributionUrl(): string {
+    if (this.nodeInfo.mirrorURL) {
+      return this.nodeInfo.mirrorURL;
+    }
     return `https://nodejs.org/dist`;
   }
-
-  protected getDistributionMirrorUrl(): string {
-    const mirrorURL = this.nodeInfo.mirrorURL;
-   
-    return mirrorURL ?? '';
-  }
+  
 
   private getManifest(): Promise<tc.IToolRelease[]> {
     core.debug('Getting manifest from actions/node-versions@main');
