@@ -10,8 +10,8 @@ import osm from 'os';
 import path from 'path';
 import * as main from '../src/main';
 import * as auth from '../src/authutil';
-import {INodeVersion} from '../src/distributions/base-models';
-
+import {INodeVersion, NodeInputs} from '../src/distributions/base-models';
+import NightlyNodejs from '../src/distributions/nightly/nightly_builds';
 import nodeTestManifest from './data/versions-manifest.json';
 import nodeTestDist from './data/node-dist-index.json';
 import nodeTestDistNightly from './data/node-nightly-index.json';
@@ -605,4 +605,96 @@ describe('setup-node', () => {
       }
     );
   });
+});
+// Mock core.info to track the log output
+jest.mock('@actions/core', () => ({
+  info: jest.fn(),
+}));
+
+// Create a subclass to access the protected method for testing purposes
+class TestNightlyNodejs extends NightlyNodejs {
+  public getDistributionUrlPublic() {
+    return this.getDistributionUrl();  // This allows us to call the protected method
+  }
+}
+
+describe('NightlyNodejs', () => {
+
+  it('uses mirror URL when provided', async () => {
+    const mirrorURL = 'https://my.custom.mirror/nodejs/nightly';
+    const nodeInfo: NodeInputs = {
+      mirrorURL: '', versionSpec: '18.0.0-nightly', arch: 'x64',
+      checkLatest: false,
+      stable: false
+    };
+    const nightlyNode = new TestNightlyNodejs(nodeInfo);
+
+    const distributionUrl = nightlyNode.getDistributionUrlPublic();
+    
+    expect(distributionUrl).toBe(mirrorURL);
+    expect(core.info).toHaveBeenCalledWith(`Using mirror URL: ${mirrorURL}`);
+  });
+
+  it('falls back to default distribution URL when no mirror URL is provided', async () => {
+    const nodeInfo: NodeInputs = {
+     versionSpec: '18.0.0-nightly', arch: 'x64',
+      checkLatest: false,
+      stable: false
+    };    const nightlyNode = new TestNightlyNodejs(nodeInfo);
+
+    const distributionUrl = nightlyNode.getDistributionUrlPublic();
+
+    expect(distributionUrl).toBe('https://nodejs.org/download/nightly');
+    expect(core.info).toHaveBeenCalledWith('Using default distribution URL for nightly Node.js.');
+  });
+
+  it('logs mirror URL when provided', async () => {
+    const mirrorURL = 'https://custom.mirror/nodejs/nightly';
+    const nodeInfo: NodeInputs = {
+      mirrorURL: '', versionSpec: '18.0.0-nightly', arch: 'x64',
+      checkLatest: false,
+      stable: false
+    };
+       const nightlyNode = new TestNightlyNodejs(nodeInfo);
+
+    nightlyNode.getDistributionUrlPublic();
+    
+    expect(core.info).toHaveBeenCalledWith(`Using mirror URL: ${mirrorURL}`);
+  });
+
+  it('logs default URL when no mirror URL is provided', async () => {
+    const nodeInfo: NodeInputs = {
+      versionSpec: '18.0.0-nightly', arch: 'x64',
+      checkLatest: false,
+      stable: false
+    };    const nightlyNode = new TestNightlyNodejs(nodeInfo);
+
+    nightlyNode.getDistributionUrlPublic();
+
+    expect(core.info).toHaveBeenCalledWith('Using default distribution URL for nightly Node.js.');
+  });
+
+  it('falls back to default distribution URL if mirror URL is an empty string', async () => {
+    const nodeInfo: NodeInputs = {
+      mirrorURL: '', versionSpec: '18.0.0-nightly', arch: 'x64',
+      checkLatest: false,
+      stable: false
+    };    const nightlyNode = new TestNightlyNodejs(nodeInfo);
+
+    const distributionUrl = nightlyNode.getDistributionUrlPublic();
+
+    expect(distributionUrl).toBe('https://nodejs.org/download/nightly');
+    expect(core.info).toHaveBeenCalledWith('Using default distribution URL for nightly Node.js.');
+  });
+
+  it('falls back to default distribution URL if mirror URL is undefined', async () => {
+    const nodeInfo: NodeInputs = { nodeVersion: '18.0.0-nightly', architecture: 'x64', platform: 'linux' };
+    const nightlyNode = new TestNightlyNodejs(nodeInfo);
+
+    const distributionUrl = nightlyNode.getDistributionUrlPublic();
+
+    expect(distributionUrl).toBe('https://nodejs.org/download/nightly');
+    expect(core.info).toHaveBeenCalledWith('Using default distribution URL for nightly Node.js.');
+  });
+
 });

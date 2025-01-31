@@ -13,6 +13,10 @@ import each from 'jest-each';
 import * as main from '../src/main';
 import * as util from '../src/util';
 import OfficialBuilds from '../src/distributions/official_builds/official_builds';
+import * as installerFactory from '../src/distributions/installer-factory';
+jest.mock('../src/distributions/installer-factory', () => ({
+  getNodejsDistribution: jest.fn()
+}));
 
 describe('main tests', () => {
   let inputs = {} as any;
@@ -281,3 +285,125 @@ describe('main tests', () => {
     });
   });
 });
+
+
+// Mock the necessary modules
+jest.mock('@actions/core');
+jest.mock('./distributions/installer-factory');
+
+// Create a mock object that satisfies the BaseDistribution type
+const createMockNodejsDistribution = () => ({
+  setupNodeJs: jest.fn(),
+  // Mocking other properties required by the BaseDistribution type (adjust based on your actual types)
+  httpClient: {}, // Example for httpClient, replace with proper mock if necessary
+  osPlat: 'darwin', // Example platform ('darwin', 'win32', 'linux', etc.)
+  nodeInfo: {
+    version: '14.x',
+    arch: 'x64',
+    platform: 'darwin',
+  },
+  getDistributionUrl: jest.fn().mockReturnValue('https://nodejs.org/dist/'), // Default distribution URL
+  install: jest.fn(),
+  validate: jest.fn(),
+  // Mock any other methods/properties defined in BaseDistribution
+});
+
+// Define the mock structure for BaseDistribution type (adjust to your actual type)
+interface BaseDistribution {
+  setupNodeJs: jest.Mock;
+  httpClient: object;
+  osPlat: string;
+  nodeInfo: {
+    version: string;
+    arch: string;
+    platform: string;
+  };
+  getDistributionUrl: jest.Mock;
+  install: jest.Mock;
+  validate: jest.Mock;
+}
+
+describe('Mirror URL Tests', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it('should pass mirror URL correctly when provided', async () => {
+    (core.getInput as jest.Mock).mockImplementation((name: string) => {
+      if (name === 'mirror-url') return 'https://custom-mirror-url.com';
+      if (name === 'node-version') return '14.x';
+      return '';
+    });
+
+    const mockNodejsDistribution = createMockNodejsDistribution();
+    (installerFactory.getNodejsDistribution as unknown as jest.Mock<typeof installerFactory.getNodejsDistribution>).mockReturnValue(mockNodejsDistribution);
+
+    await main.run();
+
+    // Ensure setupNodeJs is called with the correct parameters, including the mirror URL
+    expect(mockNodejsDistribution.setupNodeJs).toHaveBeenCalledWith({
+      versionSpec: '14.x',
+      checkLatest: false,
+      auth: undefined,
+      stable: true,
+      arch: 'x64',
+      mirrorURL: 'https://custom-mirror-url.com',
+    });
+  });
+
+  it('should use default mirror URL when no mirror URL is provided', async () => {
+    (core.getInput as jest.Mock).mockImplementation((name: string) => {
+      if (name === 'mirror-url') return '';
+      if (name === 'node-version') return '14.x';
+      return '';
+    });
+
+    const mockNodejsDistribution = createMockNodejsDistribution();
+    (installerFactory.getNodejsDistribution as jest.Mock).mockReturnValue(mockNodejsDistribution);
+
+    await main.run();
+
+    // Expect that setupNodeJs is called with an empty mirror URL (which will default inside the function)
+    expect(mockNodejsDistribution.setupNodeJs).toHaveBeenCalledWith(expect.objectContaining({
+      mirrorURL: '', // Default URL is expected to be handled internally
+    }));
+  });
+
+  it('should handle mirror URL with spaces correctly', async () => {
+    (core.getInput as jest.Mock).mockImplementation((name: string) => {
+      if (name === 'mirror-url') return '    https://custom-mirror-url.com   ';
+      if (name === 'node-version') return '14.x';
+      return '';
+    });
+
+    const mockNodejsDistribution = createMockNodejsDistribution();
+    (installerFactory.getNodejsDistribution as jest.Mock).mockReturnValue(mockNodejsDistribution);
+
+    await main.run();
+
+    // Expect that setupNodeJs is called with the trimmed mirror URL
+    expect(mockNodejsDistribution.setupNodeJs).toHaveBeenCalledWith(expect.objectContaining({
+      mirrorURL: 'https://custom-mirror-url.com',
+    }));
+  });
+
+  it('should warn if architecture is provided but node-version is missing', async () => {
+    (core.getInput as jest.Mock).mockImplementation((name: string) => {
+      if (name === 'architecture') return 'x64';
+      if (name === 'node-version') return '';
+      return '';
+    });
+
+    const mockWarning = jest.spyOn(core, 'warning');
+    const mockNodejsDistribution = createMockNodejsDistribution();
+    installerFactory.getNodejsDistribution.mockReturnValue(mockNodejsDistribution);
+
+    await main.run();
+
+    expect(mockWarning).toHaveBeenCalledWith(
+      '`architecture` is provided but `node-version` is missing. In this configuration, the version/architecture of Node will not be changed.'
+    );
+    expect(mockNodejsDistribution.setupNodeJs).not.toHaveBeenCalled(); // Setup Node should not be called
+  });
+});
+

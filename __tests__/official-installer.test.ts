@@ -829,3 +829,101 @@ describe('setup-node', () => {
     );
   });
 });
+describe('OfficialBuilds - Mirror URL functionality', () => {
+  const nodeInfo: NodeInputs = { nodeVersion: '18.0.0-nightly', architecture: 'x64', platform: 'linux', mirrorURL: '' };
+  
+  it('should download using the mirror URL when provided', async () => {
+    const mirrorURL = 'https://my.custom.mirror/nodejs';
+    nodeInfo.mirrorURL = mirrorURL;
+    const officialBuilds = new OfficialBuilds(nodeInfo);
+
+    // Mock download from mirror URL
+    const mockDownloadPath = '/some/temp/path';
+    jest.spyOn(tc, 'downloadTool').mockResolvedValue(mockDownloadPath);
+
+    await officialBuilds.setupNodeJs();
+
+    expect(core.info).toHaveBeenCalledWith('Attempting to download using mirror URL...');
+    expect(core.info).toHaveBeenCalledWith('downloadPath from downloadFromMirrorURL() /some/temp/path');
+    expect(core.addPath).toHaveBeenCalledWith(mockDownloadPath);
+  });
+
+  it('should log a message when mirror URL is used', async () => {
+    const mirrorURL = 'https://my.custom.mirror/nodejs';
+    nodeInfo.mirrorURL = mirrorURL;
+    const officialBuilds = new OfficialBuilds(nodeInfo);
+
+    const mockDownloadPath = '/some/temp/path';
+    jest.spyOn(tc, 'downloadTool').mockResolvedValue(mockDownloadPath);
+
+    await officialBuilds.setupNodeJs();
+
+    expect(core.info).toHaveBeenCalledWith(`Using mirror URL: ${mirrorURL}`);
+  });
+
+  it('should fall back to default URL if mirror URL is not provided', async () => {
+    nodeInfo.mirrorURL = ''; // No mirror URL provided
+    const officialBuilds = new OfficialBuilds(nodeInfo);
+
+    const mockDownloadPath = '/some/temp/path';
+    jest.spyOn(tc, 'downloadTool').mockResolvedValue(mockDownloadPath);
+
+    await officialBuilds.setupNodeJs();
+
+    expect(core.info).toHaveBeenCalledWith('Attempting to download from default Node.js URL...');
+    expect(core.addPath).toHaveBeenCalledWith(mockDownloadPath);
+  });
+
+  it('should log an error and handle failure during mirror URL download', async () => {
+    const mirrorURL = 'https://my.custom.mirror/nodejs';
+    nodeInfo.mirrorURL = mirrorURL;
+    const officialBuilds = new OfficialBuilds(nodeInfo);
+
+    // Simulate an error during the download process
+    const errorMessage = 'Network error';
+    jest.spyOn(tc, 'downloadTool').mockRejectedValue(new Error(errorMessage));
+
+    await officialBuilds.setupNodeJs();
+
+    expect(core.info).toHaveBeenCalledWith('Attempting to download using mirror URL...');
+    expect(core.error).toHaveBeenCalledWith(errorMessage);
+    expect(core.debug).toHaveBeenCalledWith(expect.stringContaining('empty stack'));
+  });
+
+  it('should log a fallback message if downloading from the mirror URL fails', async () => {
+    const mirrorURL = 'https://my.custom.mirror/nodejs';
+    nodeInfo.mirrorURL = mirrorURL;
+    const officialBuilds = new OfficialBuilds(nodeInfo);
+
+    // Simulate download failure and fallback to default URL
+    const errorMessage = 'Network error';
+    jest.spyOn(tc, 'downloadTool').mockRejectedValue(new Error(errorMessage));
+
+    const mockDownloadPath = '/some/temp/path';
+    jest.spyOn(tc, 'downloadTool').mockResolvedValue(mockDownloadPath);
+
+    await officialBuilds.setupNodeJs();
+
+    expect(core.info).toHaveBeenCalledWith('Failed to download from mirror URL. Falling back to default Node.js URL...');
+    expect(core.addPath).toHaveBeenCalledWith(mockDownloadPath);
+  });
+
+  it('should throw an error if mirror URL is not provided and downloading from both mirror and default fails', async () => {
+    nodeInfo.mirrorURL = ''; // No mirror URL
+    const officialBuilds = new OfficialBuilds(nodeInfo);
+
+    // Simulate failure in both mirror and default download
+    const errorMessage = 'Network error';
+    jest.spyOn(tc, 'downloadTool').mockRejectedValue(new Error(errorMessage));
+
+    await expect(officialBuilds.setupNodeJs()).rejects.toThrowError(new Error('Unable to find Node version for platform linux and architecture x64.'));
+  });
+
+  it('should throw an error if mirror URL is undefined and not provided', async () => {
+    nodeInfo.mirrorURL = undefined; // Undefined mirror URL
+    const officialBuilds = new OfficialBuilds(nodeInfo);
+
+    // Simulate a missing mirror URL scenario
+    await expect(officialBuilds.setupNodeJs()).rejects.toThrowError('Mirror URL is undefined');
+  });
+});

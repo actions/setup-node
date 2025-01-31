@@ -107,10 +107,8 @@ export default abstract class BaseDistribution {
 
   protected async getMirrorUrlVersions(): Promise<INodeVersion[]> {
     const initialUrl = this.getDistributionMirrorUrl();
-    core.info('initialUrl from getDistributionMirrorUrl '+initialUrl);
     
     const dataUrl = `${initialUrl}/index.json`;
-    core.info('dataUrl from index '+dataUrl);
 
     const response = await this.httpClient.getJson<INodeVersion[]>(dataUrl);
     return response.result || [];
@@ -142,10 +140,8 @@ export default abstract class BaseDistribution {
 
   protected getNodejsMirrorURLInfo(version: string) {
     const mirrorURL = this.nodeInfo.mirrorURL;
-    core.info('mirrorURL from getNodejsMirrorURLInfo '+mirrorURL);
     
     const osArch: string = this.translateArchToDistUrl(this.nodeInfo.arch);
-    core.info('osArch from translateArchToDistUrl '+osArch);
     
     version = semver.clean(version) || '';
     const fileName: string =
@@ -160,7 +156,6 @@ export default abstract class BaseDistribution {
         : `${fileName}.tar.gz`;
 
     const url = `${mirrorURL}/v${version}/${urlFileName}`;
-      core.info('url from construct '+url);
 
     return <INodeVersionInfo>{
       downloadUrl: url,

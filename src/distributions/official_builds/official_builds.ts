@@ -318,14 +318,11 @@ export default class OfficialBuilds extends BaseDistribution {
 
   protected async downloadFromMirrorURL() {
     const nodeJsVersions = await this.getMirrorUrlVersions();
-    core.info('nodeJsVersions from getMirrorUrVersions '+nodeJsVersions);
     const versions = this.filterVersions(nodeJsVersions);
-    core.info('versions from filterVersions '+versions);
 
 
     const evaluatedVersion = this.evaluateVersions(versions);
 
-    core.info('evaluatedVersion from evaluatedVersions '+evaluatedVersion);
 
 
     if (!evaluatedVersion) {
@@ -336,12 +333,10 @@ export default class OfficialBuilds extends BaseDistribution {
 
     const toolName = this.getNodejsMirrorURLInfo(evaluatedVersion);
 
-    core.info('toolName from getNodejsMirrorURLInfo '+toolName);
 
 
     try {
       const toolPath = await this.downloadNodejs(toolName);
-      core.info('toolPath from downloadNodejs '+toolPath);
 
       return toolPath;
     } catch (error) {
