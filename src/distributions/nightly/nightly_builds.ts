@@ -20,7 +20,7 @@ export default class NightlyNodejs extends BasePrereleaseNodejs {
     // Check if mirrorUrl exists in the nodeInfo and return it if available
     const mirrorUrl = this.nodeInfo.mirrorURL;
     if (mirrorUrl) {
-      core.info(`Downloding Using mirror URL: ${mirrorUrl}`);
+      
       return mirrorUrl;
     }
 
