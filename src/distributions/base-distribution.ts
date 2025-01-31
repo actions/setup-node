@@ -105,9 +105,12 @@ export default abstract class BaseDistribution {
     return response.result || [];
   }
 
-  protected async getMirrorUrVersions(): Promise<INodeVersion[]> {
+  protected async getMirrorUrlVersions(): Promise<INodeVersion[]> {
     const initialUrl = this.getDistributionMirrorUrl();
+    core.info('initialUrl from getDistributionMirrorUrl '+initialUrl);
+    
     const dataUrl = `${initialUrl}/index.json`;
+    core.info('dataUrl from index '+dataUrl);
 
     const response = await this.httpClient.getJson<INodeVersion[]>(dataUrl);
     return response.result || [];

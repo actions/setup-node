@@ -317,7 +317,7 @@ export default class OfficialBuilds extends BaseDistribution {
   }
 
   protected async downloadFromMirrorURL() {
-    const nodeJsVersions = await this.getMirrorUrVersions();
+    const nodeJsVersions = await this.getMirrorUrlVersions();
     core.info('nodeJsVersions from getMirrorUrVersions '+nodeJsVersions);
     const versions = this.filterVersions(nodeJsVersions);
     core.info('versions from filterVersions '+versions);

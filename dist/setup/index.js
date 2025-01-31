@@ -100154,10 +100154,12 @@ class BaseDistribution {
             return response.result || [];
         });
     }
-    getMirrorUrVersions() {
+    getMirrorUrlVersions() {
         return __awaiter(this, void 0, void 0, function* () {
             const initialUrl = this.getDistributionMirrorUrl();
+            core.info('initialUrl from getDistributionMirrorUrl ' + initialUrl);
             const dataUrl = `${initialUrl}/index.json`;
+            core.info('dataUrl from index ' + dataUrl);
             const response = yield this.httpClient.getJson(dataUrl);
             return response.result || [];
         });
@@ -100726,7 +100728,7 @@ class OfficialBuilds extends base_distribution_1.default {
     }
     downloadFromMirrorURL() {
         return __awaiter(this, void 0, void 0, function* () {
-            const nodeJsVersions = yield this.getMirrorUrVersions();
+            const nodeJsVersions = yield this.getMirrorUrlVersions();
             core.info('nodeJsVersions from getMirrorUrVersions ' + nodeJsVersions);
             const versions = this.filterVersions(nodeJsVersions);
             core.info('versions from filterVersions ' + versions);
