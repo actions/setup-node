@@ -100457,6 +100457,7 @@ class NightlyNodejs extends base_distribution_prerelease_1.default {
         // Check if mirrorUrl exists in the nodeInfo and return it if available
         const mirrorUrl = this.nodeInfo.mirrorURL;
         if (mirrorUrl) {
+            core.info(`Downloding Using mirror URL: ${mirrorUrl}`);
             return mirrorUrl;
         }
         // Default to the official Node.js nightly distribution URL if no mirror URL is provided
