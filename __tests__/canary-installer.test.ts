@@ -10,13 +10,14 @@ import osm from 'os';
 import path from 'path';
 import * as main from '../src/main';
 import * as auth from '../src/authutil';
-import {INodeVersion} from '../src/distributions/base-models';
+import {INodeVersion, NodeInputs} from '../src/distributions/base-models';
 
 import nodeTestManifest from './data/versions-manifest.json';
 import nodeTestDist from './data/node-dist-index.json';
 import nodeTestDistNightly from './data/node-nightly-index.json';
 import nodeTestDistRc from './data/node-rc-index.json';
 import nodeV8CanaryTestDist from './data/v8-canary-dist-index.json';
+import canaryBuild from '../src/distributions/v8-canary/canary_builds';
 
 describe('setup-node', () => {
   let inputs = {} as any;
@@ -528,4 +529,85 @@ describe('setup-node', () => {
       expect(cacheSpy).not.toHaveBeenCalled();
     });
   });
+});
+describe('CanaryBuild - Mirror URL functionality', () => {
+ const nodeInfo: NodeInputs = {
+    versionSpec: '18.0.0-rc', arch: 'x64', mirrorURL: '',
+    checkLatest: false,
+    stable: false
+  };
+  it('should return the default distribution URL if no mirror URL is provided', () => {
+    const canaryBuild = new CanaryBuild(nodeInfo);
+
+// @ts-ignore: Accessing protected method for testing purposes
+const distributionMirrorUrl = canaryBuild.getDistributionMirrorUrl();
+expect(distributionMirrorUrl).toBe('https://nodejs.org/download/v8-canary');
+  });
+
+  it('should use the mirror URL from nodeInfo if provided', () => {
+    const mirrorURL = 'https://custom.mirror.url/v8-canary';
+    nodeInfo.mirrorURL = mirrorURL;
+    const canaryBuild = new CanaryBuild(nodeInfo);
+
+// @ts-ignore: Accessing protected method for testing purposes
+const distributionMirrorUrl = canaryBuild.getDistributionMirrorUrl();
+    expect(core.info).toHaveBeenCalledWith(`Using mirror URL: ${mirrorURL}`);
+    expect(distributionMirrorUrl).toBe(mirrorURL);
+  });
+
+  it('should fall back to the default distribution URL if mirror URL is not provided', () => {
+    nodeInfo.mirrorURL = ''; // No mirror URL
+    const canaryBuild = new CanaryBuild(nodeInfo);
+
+// @ts-ignore: Accessing protected method for testing purposes
+const distributionMirrorUrl = canaryBuild.getDistributionMirrorUrl();
+    expect(core.info).toHaveBeenCalledWith('Using mirror URL: https://nodejs.org/download/v8-canary');
+    expect(distributionMirrorUrl).toBe('https://nodejs.org/download/v8-canary');
+  });
+
+  it('should log the correct info when mirror URL is not provided', () => {
+    nodeInfo.mirrorURL = ''; // No mirror URL
+    const canaryBuild = new CanaryBuild(nodeInfo);
+
+// @ts-ignore: Accessing protected method for testing purposes
+  canaryBuild.getDistributionMirrorUrl();
+    expect(core.info).toHaveBeenCalledWith('Using mirror URL: https://nodejs.org/download/v8-canary');
+  });
+
+  it('should return mirror URL if provided in nodeInfo', () => {
+    const mirrorURL = 'https://custom.mirror.url/v8-canary';
+    nodeInfo.mirrorURL = mirrorURL;
+
+    const canaryBuild = new CanaryBuild(nodeInfo);
+// @ts-ignore: Accessing protected method for testing purposes
+const distributionMirrorUrl = canaryBuild.getDistributionMirrorUrl();
+    expect(core.info).toHaveBeenCalledWith(`Using mirror URL: ${mirrorURL}`);
+    expect(distributionMirrorUrl).toBe(mirrorURL);
+  });
+
+  it('should use the default URL if mirror URL is empty string', () => {
+    nodeInfo.mirrorURL = ''; // Empty string for mirror URL
+    const canaryBuild = new CanaryBuild(nodeInfo);
+
+// @ts-ignore: Accessing protected method for testing purposes
+const distributionMirrorUrl = canaryBuild.getDistributionMirrorUrl();
+    expect(core.info).toHaveBeenCalledWith('Using mirror URL: https://nodejs.org/download/v8-canary');
+    expect(distributionMirrorUrl).toBe('https://nodejs.org/download/v8-canary');
+  });
+
+  it('should return the default URL if mirror URL is undefined', async () => {
+    // Create a spy on core.info
+    const infoSpy = jest.spyOn(core, 'info').mockImplementation(() => {}); // Mocking with empty implementation
+    
+    // @ts-ignore: Accessing protected method for testing purposes
+    const distributionMirrorUrl = await canaryBuild.getDistributionMirrorUrl();  // Use await here
+    
+    // Assert that core.info was called with the expected message
+    expect(infoSpy).toHaveBeenCalledWith('Using mirror URL: https://nodejs.org/download/v8-canary');
+    expect(distributionMirrorUrl).toBe('https://nodejs.org/download/v8-canary');
+    
+    // Optional: Restore the original function after the test
+    infoSpy.mockRestore();
+  });
+  
 });

@@ -198,10 +198,8 @@ export default class OfficialBuilds extends BaseDistribution {
 
   protected getDistributionMirrorUrl(): string {
     const mirrorURL = this.nodeInfo.mirrorURL;
-    if (!mirrorURL) {
-      throw new Error('Mirror URL is undefined');
-    }
-    return mirrorURL;
+   
+    return mirrorURL ?? '';
   }
 
   private getManifest(): Promise<tc.IToolRelease[]> {

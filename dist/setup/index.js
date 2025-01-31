@@ -100651,10 +100651,7 @@ class OfficialBuilds extends base_distribution_1.default {
     }
     getDistributionMirrorUrl() {
         const mirrorURL = this.nodeInfo.mirrorURL;
-        if (!mirrorURL) {
-            throw new Error('Mirror URL is undefined');
-        }
-        return mirrorURL;
+        return mirrorURL !== null && mirrorURL !== void 0 ? mirrorURL : '';
     }
     getManifest() {
         core.debug('Getting manifest from actions/node-versions@main');

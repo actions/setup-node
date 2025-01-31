@@ -11,7 +11,7 @@ import path from 'path';
 import * as main from '../src/main';
 import * as auth from '../src/authutil';
 import OfficialBuilds from '../src/distributions/official_builds/official_builds';
-import {INodeVersion} from '../src/distributions/base-models';
+import {INodeVersion, NodeInputs} from '../src/distributions/base-models';
 
 import nodeTestManifest from './data/versions-manifest.json';
 import nodeTestDist from './data/node-dist-index.json';
@@ -830,8 +830,11 @@ describe('setup-node', () => {
   });
 });
 describe('OfficialBuilds - Mirror URL functionality', () => {
-  const nodeInfo: NodeInputs = { nodeVersion: '18.0.0-nightly', architecture: 'x64', platform: 'linux', mirrorURL: '' };
-  
+const nodeInfo: NodeInputs = {
+      mirrorURL: '', versionSpec: '18.0.0-nightly', arch: 'x64',
+      checkLatest: false,
+      stable: false
+    };   
   it('should download using the mirror URL when provided', async () => {
     const mirrorURL = 'https://my.custom.mirror/nodejs';
     nodeInfo.mirrorURL = mirrorURL;
@@ -918,12 +921,15 @@ describe('OfficialBuilds - Mirror URL functionality', () => {
 
     await expect(officialBuilds.setupNodeJs()).rejects.toThrowError(new Error('Unable to find Node version for platform linux and architecture x64.'));
   });
-
   it('should throw an error if mirror URL is undefined and not provided', async () => {
-    nodeInfo.mirrorURL = undefined; // Undefined mirror URL
-    const officialBuilds = new OfficialBuilds(nodeInfo);
-
-    // Simulate a missing mirror URL scenario
+    // Mock missing mirror URL
+    process.env.MIRROR_URL = undefined;  // Simulate missing mirror URL
+    
+    // Mock the version lookup method to avoid triggering version errors
+    jest.spyOn(OfficialBuilds, 'findVersionInHostedToolCacheDirectory').mockResolvedValue(null); // Simulate "not found"
+  
+    // Now we expect the function to throw the "Mirror URL is undefined" error
     await expect(officialBuilds.setupNodeJs()).rejects.toThrowError('Mirror URL is undefined');
   });
+  
 });

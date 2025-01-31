@@ -679,7 +679,8 @@ describe('NightlyNodejs', () => {
       mirrorURL: '', versionSpec: '18.0.0-nightly', arch: 'x64',
       checkLatest: false,
       stable: false
-    };    const nightlyNode = new TestNightlyNodejs(nodeInfo);
+    }; 
+      const nightlyNode = new TestNightlyNodejs(nodeInfo);
 
     const distributionUrl = nightlyNode.getDistributionUrlPublic();
 
@@ -688,8 +689,12 @@ describe('NightlyNodejs', () => {
   });
 
   it('falls back to default distribution URL if mirror URL is undefined', async () => {
-    const nodeInfo: NodeInputs = { nodeVersion: '18.0.0-nightly', architecture: 'x64', platform: 'linux' };
-    const nightlyNode = new TestNightlyNodejs(nodeInfo);
+    const nodeInfo: NodeInputs = {
+      mirrorURL: '', versionSpec: '18.0.0-nightly', arch: 'x64',
+      checkLatest: false,
+      stable: false
+    }; 
+        const nightlyNode = new TestNightlyNodejs(nodeInfo);
 
     const distributionUrl = nightlyNode.getDistributionUrlPublic();
 
