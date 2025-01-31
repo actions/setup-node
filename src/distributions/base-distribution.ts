@@ -139,7 +139,11 @@ export default abstract class BaseDistribution {
 
   protected getNodejsMirrorURLInfo(version: string) {
     const mirrorURL = this.nodeInfo.mirrorURL;
+    core.info('mirrorURL from getNodejsMirrorURLInfo '+mirrorURL);
+    
     const osArch: string = this.translateArchToDistUrl(this.nodeInfo.arch);
+    core.info('osArch from translateArchToDistUrl '+osArch);
+    
     version = semver.clean(version) || '';
     const fileName: string =
       this.osPlat == 'win32'
@@ -153,6 +157,7 @@ export default abstract class BaseDistribution {
         : `${fileName}.tar.gz`;
 
     const url = `${mirrorURL}/v${version}/${urlFileName}`;
+      core.info('url from construct '+url);
 
     return <INodeVersionInfo>{
       downloadUrl: url,

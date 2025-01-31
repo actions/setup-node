@@ -21,6 +21,7 @@ export default class OfficialBuilds extends BaseDistribution {
       try {
         core.info(`Attempting to download using mirror URL...`);
         downloadPath = await this.downloadFromMirrorURL(); // Attempt to download from the mirror
+        core.info('downloadPath from downloadFromMirrorURL() '+ downloadPath);
         if (downloadPath) {
           toolPath = downloadPath;
         }
@@ -317,9 +318,15 @@ export default class OfficialBuilds extends BaseDistribution {
 
   protected async downloadFromMirrorURL() {
     const nodeJsVersions = await this.getMirrorUrVersions();
+    core.info('nodeJsVersions from getMirrorUrVersions '+nodeJsVersions);
     const versions = this.filterVersions(nodeJsVersions);
+    core.info('versions from filterVersions '+versions);
+
 
     const evaluatedVersion = this.evaluateVersions(versions);
+
+    core.info('evaluatedVersion from evaluatedVersions '+evaluatedVersion);
+
 
     if (!evaluatedVersion) {
       throw new Error(
@@ -329,8 +336,13 @@ export default class OfficialBuilds extends BaseDistribution {
 
     const toolName = this.getNodejsMirrorURLInfo(evaluatedVersion);
 
+    core.info('toolName from getNodejsMirrorURLInfo '+toolName);
+
+
     try {
       const toolPath = await this.downloadNodejs(toolName);
+      core.info('toolPath from downloadNodejs '+toolPath);
+
       return toolPath;
     } catch (error) {
       if (error instanceof tc.HTTPError && error.httpStatusCode === 404) {

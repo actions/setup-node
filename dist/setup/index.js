@@ -100184,7 +100184,9 @@ class BaseDistribution {
     }
     getNodejsMirrorURLInfo(version) {
         const mirrorURL = this.nodeInfo.mirrorURL;
+        core.info('mirrorURL from getNodejsMirrorURLInfo ' + mirrorURL);
         const osArch = this.translateArchToDistUrl(this.nodeInfo.arch);
+        core.info('osArch from translateArchToDistUrl ' + osArch);
         version = semver_1.default.clean(version) || '';
         const fileName = this.osPlat == 'win32'
             ? `node-v${version}-win-${osArch}`
@@ -100195,6 +100197,7 @@ class BaseDistribution {
                 : `${fileName}.7z`
             : `${fileName}.tar.gz`;
         const url = `${mirrorURL}/v${version}/${urlFileName}`;
+        core.info('url from construct ' + url);
         return {
             downloadUrl: url,
             resolvedVersion: version,
@@ -100528,6 +100531,7 @@ class OfficialBuilds extends base_distribution_1.default {
                 try {
                     core.info(`Attempting to download using mirror URL...`);
                     downloadPath = yield this.downloadFromMirrorURL(); // Attempt to download from the mirror
+                    core.info('downloadPath from downloadFromMirrorURL() ' + downloadPath);
                     if (downloadPath) {
                         toolPath = downloadPath;
                     }
@@ -100723,14 +100727,19 @@ class OfficialBuilds extends base_distribution_1.default {
     downloadFromMirrorURL() {
         return __awaiter(this, void 0, void 0, function* () {
             const nodeJsVersions = yield this.getMirrorUrVersions();
+            core.info('nodeJsVersions from getMirrorUrVersions ' + nodeJsVersions);
             const versions = this.filterVersions(nodeJsVersions);
+            core.info('versions from filterVersions ' + versions);
             const evaluatedVersion = this.evaluateVersions(versions);
+            core.info('evaluatedVersion from evaluatedVersions ' + evaluatedVersion);
             if (!evaluatedVersion) {
                 throw new Error(`Unable to find Node version '${this.nodeInfo.versionSpec}' for platform ${this.osPlat} and architecture ${this.nodeInfo.arch}.`);
             }
             const toolName = this.getNodejsMirrorURLInfo(evaluatedVersion);
+            core.info('toolName from getNodejsMirrorURLInfo ' + toolName);
             try {
                 const toolPath = yield this.downloadNodejs(toolName);
+                core.info('toolPath from downloadNodejs ' + toolPath);
                 return toolPath;
             }
             catch (error) {
