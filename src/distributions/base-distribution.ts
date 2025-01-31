@@ -25,7 +25,7 @@ export default abstract class BaseDistribution {
   }
 
   protected abstract getDistributionUrl(): string;
-  
+  protected abstract getDistributionMirrorUrl(): string;
 
   public async setupNodeJs() {
     let nodeJsVersions: INodeVersion[] | undefined;
@@ -105,6 +105,14 @@ export default abstract class BaseDistribution {
     return response.result || [];
   }
 
+  protected async getMirrorUrVersions(): Promise<INodeVersion[]> {
+    const initialUrl = this.getDistributionMirrorUrl();
+    const dataUrl = `${initialUrl}/index.json`;
+
+    const response = await this.httpClient.getJson<INodeVersion[]>(dataUrl);
+    return response.result || [];
+  }
+
   protected getNodejsDistInfo(version: string) {
     const osArch: string = this.translateArchToDistUrl(this.nodeInfo.arch);
     version = semver.clean(version) || '';
@@ -118,7 +126,7 @@ export default abstract class BaseDistribution {
           ? `${fileName}.zip`
           : `${fileName}.7z`
         : `${fileName}.tar.gz`;
-    const initialUrl = this.getDistributionUrl();
+    const initialUrl = this.getDistributionMirrorUrl();
     const url = `${initialUrl}/v${version}/${urlFileName}`;
 
     return <INodeVersionInfo>{
@@ -143,7 +151,7 @@ export default abstract class BaseDistribution {
           ? `${fileName}.zip`
           : `${fileName}.7z`
         : `${fileName}.tar.gz`;
-    
+
     const url = `${mirrorURL}/v${version}/${urlFileName}`;
 
     return <INodeVersionInfo>{
@@ -173,7 +181,9 @@ export default abstract class BaseDistribution {
           info.downloadUrl
         );
       }
-      core.error(`Download failed from ${info.downloadUrl}. Please check the URl and try again.`);
+      core.error(
+        `Download failed from ${info.downloadUrl}. Please check the URl and try again.`
+      );
 
       throw err;
     }
@@ -195,7 +205,7 @@ export default abstract class BaseDistribution {
   protected async acquireWindowsNodeFromFallbackLocation(
     version: string,
     arch: string = os.arch(),
-    downloadUrl : string
+    downloadUrl: string
   ): Promise<string> {
     const initialUrl = this.getDistributionUrl();
     core.info('url: ' + initialUrl);
@@ -214,8 +224,12 @@ export default abstract class BaseDistribution {
       libUrl = `${initialUrl}/v${version}/win-${osArch}/node.lib`;
 
       core.info(`Downloading only node binary from ${exeUrl}`);
-      if(downloadUrl != exeUrl ){core.error('unable to download node binary with the provided URL. Please check and try again');}
-      
+
+      if (downloadUrl != exeUrl) {
+        core.error(
+          'unable to download node binary with the provided URL. Please check and try again'
+        );
+      }
 
       const exePath = await tc.downloadTool(exeUrl);
       await io.cp(exePath, path.join(tempDir, 'node.exe'));

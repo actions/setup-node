@@ -100154,6 +100154,14 @@ class BaseDistribution {
             return response.result || [];
         });
     }
+    getMirrorUrVersions() {
+        return __awaiter(this, void 0, void 0, function* () {
+            const initialUrl = this.getDistributionMirrorUrl();
+            const dataUrl = `${initialUrl}/index.json`;
+            const response = yield this.httpClient.getJson(dataUrl);
+            return response.result || [];
+        });
+    }
     getNodejsDistInfo(version) {
         const osArch = this.translateArchToDistUrl(this.nodeInfo.arch);
         version = semver_1.default.clean(version) || '';
@@ -100165,7 +100173,7 @@ class BaseDistribution {
                 ? `${fileName}.zip`
                 : `${fileName}.7z`
             : `${fileName}.tar.gz`;
-        const initialUrl = this.getDistributionUrl();
+        const initialUrl = this.getDistributionMirrorUrl();
         const url = `${initialUrl}/v${version}/${urlFileName}`;
         return {
             downloadUrl: url,
@@ -100406,17 +100414,54 @@ exports.getNodejsDistribution = getNodejsDistribution;
 
 "use strict";
 
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 const base_distribution_prerelease_1 = __importDefault(__nccwpck_require__(957));
+const core = __importStar(__nccwpck_require__(2186));
 class NightlyNodejs extends base_distribution_prerelease_1.default {
     constructor(nodeInfo) {
         super(nodeInfo);
         this.distribution = 'nightly';
     }
+    getDistributionMirrorUrl() {
+        // Implement the method to return the mirror URL or an empty string if not available
+        return this.nodeInfo.mirrorURL || '';
+    }
+    // Updated getDistributionUrl method to handle mirror URL or fallback
     getDistributionUrl() {
+        // Check if mirrorUrl exists in the nodeInfo and return it if available
+        const mirrorUrl = this.nodeInfo.mirrorURL;
+        if (mirrorUrl) {
+            core.info(`Using mirror URL: ${mirrorUrl}`);
+            return mirrorUrl;
+        }
+        // Default to the official Node.js nightly distribution URL if no mirror URL is provided
+        core.info('Using default distribution URL for nightly Node.js.');
         return 'https://nodejs.org/download/nightly';
     }
 }
@@ -100603,6 +100648,13 @@ class OfficialBuilds extends base_distribution_1.default {
     getDistributionUrl() {
         return `https://nodejs.org/dist`;
     }
+    getDistributionMirrorUrl() {
+        const mirrorURL = this.nodeInfo.mirrorURL;
+        if (!mirrorURL) {
+            throw new Error('Mirror URL is undefined');
+        }
+        return mirrorURL;
+    }
     getManifest() {
         core.debug('Getting manifest from actions/node-versions@main');
         return tc.getManifestFromRepo('actions', 'node-versions', this.nodeInfo.auth, 'main');
@@ -100670,17 +100722,9 @@ class OfficialBuilds extends base_distribution_1.default {
     }
     downloadFromMirrorURL() {
         return __awaiter(this, void 0, void 0, function* () {
-            const nodeJsVersions = yield this.getNodeJsVersions();
-            core.info('versions from nodeJSVersions' + nodeJsVersions);
+            const nodeJsVersions = yield this.getMirrorUrVersions();
             const versions = this.filterVersions(nodeJsVersions);
-            core.info('versions' + versions);
             const evaluatedVersion = this.evaluateVersions(versions);
-            core.info('versionSpec' + this.nodeInfo.versionSpec);
-            if (this.nodeInfo.checkLatest) {
-                const evaluatedVersion = yield this.findVersionInDist(nodeJsVersions);
-                this.nodeInfo.versionSpec = evaluatedVersion;
-                core.info('versionSpec' + this.nodeInfo.versionSpec);
-            }
             if (!evaluatedVersion) {
                 throw new Error(`Unable to find Node version '${this.nodeInfo.versionSpec}' for platform ${this.osPlat} and architecture ${this.nodeInfo.arch}.`);
             }
@@ -100714,17 +100758,51 @@ exports["default"] = OfficialBuilds;
 
 "use strict";
 
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 const base_distribution_1 = __importDefault(__nccwpck_require__(7));
+const core = __importStar(__nccwpck_require__(2186));
 class RcBuild extends base_distribution_1.default {
     constructor(nodeInfo) {
         super(nodeInfo);
     }
     getDistributionUrl() {
         return 'https://nodejs.org/download/rc';
+    }
+    getDistributionMirrorUrl() {
+        // Check if mirrorUrl exists in the nodeInfo and return it if available
+        const mirrorUrl = this.nodeInfo.mirrorURL;
+        if (mirrorUrl) {
+            core.info(`Using mirror URL: ${mirrorUrl}`);
+            return mirrorUrl;
+        }
+        // Return the default URL if no mirror URL is provided
+        return this.getDistributionUrl();
     }
 }
 exports["default"] = RcBuild;
@@ -100737,17 +100815,50 @@ exports["default"] = RcBuild;
 
 "use strict";
 
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 const base_distribution_prerelease_1 = __importDefault(__nccwpck_require__(957));
+const core = __importStar(__nccwpck_require__(2186));
 class CanaryBuild extends base_distribution_prerelease_1.default {
     constructor(nodeInfo) {
         super(nodeInfo);
         this.distribution = 'v8-canary';
     }
     getDistributionUrl() {
+        return 'https://nodejs.org/download/v8-canary';
+    }
+    getDistributionMirrorUrl() {
+        // Check if mirrorUrl exists in the nodeInfo and return it if available
+        const mirrorUrl = this.nodeInfo.mirrorURL;
+        if (mirrorUrl) {
+            core.info(`Using mirror URL: ${mirrorUrl}`);
+            return mirrorUrl;
+        }
         return 'https://nodejs.org/download/v8-canary';
     }
 }

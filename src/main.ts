@@ -35,7 +35,6 @@ export async function run() {
 
     const mirrorURL = core.getInput('mirror-url').trim(); // .trim() to remove any accidental spaces
 
-
     if (version) {
       const token = core.getInput('token');
       const auth = !token ? undefined : `token ${token}`;
