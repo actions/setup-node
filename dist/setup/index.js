@@ -100728,7 +100728,7 @@ class OfficialBuilds extends base_distribution_1.default {
             const versions = this.filterVersions(nodeJsVersions);
             const evaluatedVersion = this.evaluateVersions(versions);
             if (!evaluatedVersion) {
-                throw new Error(`Unable to find Node version '${this.nodeInfo.versionSpec}' for platform ${this.osPlat} and architecture ${this.nodeInfo.arch} from the provided ${this.nodeInfo.mirrorURL}.`);
+                throw new Error(`Unable to find Node version '${this.nodeInfo.versionSpec}' for platform ${this.osPlat} and architecture ${this.nodeInfo.arch} from the provided mirror-url ${this.nodeInfo.mirrorURL}. Please check the mirror-url`);
             }
             const toolName = this.getNodejsMirrorURLInfo(evaluatedVersion);
             try {
