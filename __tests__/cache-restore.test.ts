@@ -115,7 +115,7 @@ describe('cache-restore', () => {
     it.each([['npm7'], ['npm6'], ['pnpm6'], ['yarn1'], ['yarn2'], ['random']])(
       'Throw an error because %s is not supported',
       async packageManager => {
-        await expect(restoreCache(packageManager, '')).rejects.toThrow(
+        await expect(restoreCache(packageManager, '', '')).rejects.toThrow(
           `Caching for '${packageManager}' is not supported`
         );
       }
@@ -124,13 +124,13 @@ describe('cache-restore', () => {
 
   describe('Restore dependencies', () => {
     it.each([
-      ['yarn', '2.1.2', yarnFileHash],
-      ['yarn', '1.2.3', yarnFileHash],
-      ['npm', '', npmFileHash],
-      ['pnpm', '', pnpmFileHash]
+      ['yarn', '2.1.2', yarnFileHash, '22'],
+      ['yarn', '1.2.3', yarnFileHash, '20.17'],
+      ['npm', '', npmFileHash, '22.12'],
+      ['pnpm', '', pnpmFileHash, '18']
     ])(
       'restored dependencies for %s',
-      async (packageManager, toolVersion, fileHash) => {
+      async (packageManager, toolVersion, fileHash, nodeVersion) => {
         getCommandOutputSpy.mockImplementation((command: string) => {
           if (command.includes('version')) {
             return toolVersion;
@@ -139,10 +139,10 @@ describe('cache-restore', () => {
           }
         });
 
-        await restoreCache(packageManager, '');
+        await restoreCache(packageManager, '', nodeVersion);
         expect(hashFilesSpy).toHaveBeenCalled();
         expect(infoSpy).toHaveBeenCalledWith(
-          `Cache restored from key: node-cache-${platform}-${arch}-${packageManager}-${fileHash}`
+          `Cache restored from key: node-cache-${platform}-${arch}-${nodeVersion}-${packageManager}-${fileHash}`
         );
         expect(infoSpy).not.toHaveBeenCalledWith(
           `${packageManager} cache is not found`
@@ -170,7 +170,7 @@ describe('cache-restore', () => {
         });
 
         restoreCacheSpy.mockImplementationOnce(() => undefined);
-        await restoreCache(packageManager, '');
+        await restoreCache(packageManager, '', '');
         expect(hashFilesSpy).toHaveBeenCalled();
         expect(infoSpy).toHaveBeenCalledWith(
           `${packageManager} cache is not found`
