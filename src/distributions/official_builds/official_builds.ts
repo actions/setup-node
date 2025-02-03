@@ -323,7 +323,7 @@ export default class OfficialBuilds extends BaseDistribution {
 
     if (!evaluatedVersion) {
       throw new Error(
-        `Unable to find Node version '${this.nodeInfo.versionSpec}' for platform ${this.osPlat} and architecture ${this.nodeInfo.arch}.`
+        `Unable to find Node version '${this.nodeInfo.versionSpec}' for platform ${this.osPlat} and architecture ${this.nodeInfo.arch} from the provided ${this.nodeInfo.mirrorURL}.`
       );
     }
 
