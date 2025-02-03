@@ -100158,8 +100158,25 @@ class BaseDistribution {
         return __awaiter(this, void 0, void 0, function* () {
             const initialUrl = this.getDistributionUrl();
             const dataUrl = `${initialUrl}/index.json`;
-            const response = yield this.httpClient.getJson(dataUrl);
-            return response.result || [];
+            try {
+                const response = yield this.httpClient.getJson(dataUrl);
+                return response.result || [];
+            }
+            catch (err) {
+                if (err instanceof Error && err.message.includes('getaddrinfo EAI_AGAIN')) {
+                    core.error(`Network error: Failed to resolve the server at ${dataUrl}. 
+                      Please check your DNS settings or verify that the URL is correct.`);
+                }
+                else if (err instanceof hc.HttpClientError && err.statusCode === 404) {
+                    core.error(`404 Error: Unable to find versions at ${dataUrl}. 
+                      Please verify that the mirror URL is valid.`);
+                }
+                else {
+                    core.error(`Failed to fetch Node.js versions from ${dataUrl}. 
+                      Please check the URL and try again.}`);
+                }
+                throw err;
+            }
         });
     }
     getNodejsDistInfo(version) {
