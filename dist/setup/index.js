@@ -100215,6 +100215,11 @@ class BaseDistribution {
                     this.osPlat == 'win32') {
                     return yield this.acquireWindowsNodeFromFallbackLocation(info.resolvedVersion, info.arch, info.downloadUrl);
                 }
+                // Handle network-related issues (e.g., DNS resolution failures)
+                if (err instanceof Error && err.message.includes('getaddrinfo EAI_AGAIN')) {
+                    core.error(`Network error: Failed to resolve the server at ${info.downloadUrl}. 
+            This could be due to a DNS resolution issue. Please verify the URL or check your network connection.`);
+                }
                 core.error(`Download failed from ${info.downloadUrl}. Please check the URl and try again.`);
                 throw err;
             }
