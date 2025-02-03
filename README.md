@@ -21,7 +21,7 @@ See [action.yml](action.yml)
 - uses: actions/setup-node@v4
   with:
     # Version Spec of the version to use in SemVer notation.
-    # It also admits such aliases as lts/*, latest, nightly and canary builds
+    # It also admits such aliases as lts, lts/*, latest, nightly and canary builds
     # Examples: 12.x, 10.15.1, >=10.15.0, lts/Hydrogen, 16-nightly, latest, node
     node-version: ''
 
@@ -105,7 +105,7 @@ Examples:
 
  - Major versions: `18`, `20`
  - More specific versions: `10.15`, `16.15.1` , `18.4.0`
- - NVM LTS syntax: `lts/erbium`, `lts/fermium`, `lts/*`, `lts/-n`
+ - NVM LTS syntax: `lts`, `lts/erbium`, `lts/fermium`, `lts/*`, `lts/-n`
  - Latest release: `*` or `latest`/`current`/`node`
 
 **Note:** Like the other values, `*` will get the latest [locally-cached Node.js version](https://github.com/actions/runner-images/blob/main/images/ubuntu/Ubuntu2204-Readme.md#nodejs), or the latest version from [actions/node-versions](https://github.com/actions/node-versions/blob/main/versions-manifest.json), depending on the [`check-latest`](docs/advanced-usage.md#check-latest-version) input.
