@@ -106,3 +106,10 @@ export const unique = () => {
     return true;
   };
 };
+
+export const getNpmrcLocation: () => string = () => {
+  return path.resolve(process.env['RUNNER_TEMP'] || process.cwd(), '.npmrc');
+};
+
+export const defaultIfEmpty = (input: string, defaultValue: string): string =>
+  input.length === 0 ? defaultValue : input;
