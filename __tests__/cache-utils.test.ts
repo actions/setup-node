@@ -6,7 +6,7 @@ import {
   PackageManagerInfo,
   isCacheFeatureAvailable,
   supportedPackageManagers,
-  getCommandOutput,
+  isGhes,
   resetProjectDirectoriesMemoized
 } from '../src/cache-utils';
 import fs from 'fs';
@@ -359,5 +359,43 @@ describe('cache-utils', () => {
         ]);
       }
     );
+  });
+});
+
+describe('isGhes', () => {
+  const pristineEnv = process.env;
+
+  beforeEach(() => {
+    jest.resetModules();
+    process.env = {...pristineEnv};
+  });
+
+  afterAll(() => {
+    process.env = pristineEnv;
+  });
+
+  it('returns false when the GITHUB_SERVER_URL environment variable is not defined', () => {
+    delete process.env['GITHUB_SERVER_URL'];
+    expect(isGhes()).toBeFalsy();
+  });
+
+  it('returns false when the GITHUB_SERVER_URL environment variable is set to github.com', () => {
+    process.env['GITHUB_SERVER_URL'] = 'https://github.com';
+    expect(isGhes()).toBeFalsy();
+  });
+
+  it('returns false when the GITHUB_SERVER_URL environment variable is set to a GitHub Enterprise Cloud-style URL', () => {
+    process.env['GITHUB_SERVER_URL'] = 'https://contoso.ghe.com';
+    expect(isGhes()).toBeFalsy();
+  });
+
+  it('returns false when the GITHUB_SERVER_URL environment variable has a .localhost suffix', () => {
+    process.env['GITHUB_SERVER_URL'] = 'https://mock-github.localhost';
+    expect(isGhes()).toBeFalsy();
+  });
+
+  it('returns true when the GITHUB_SERVER_URL environment variable is set to some other URL', () => {
+    process.env['GITHUB_SERVER_URL'] = 'https://src.onpremise.fabrikam.com';
+    expect(isGhes()).toBeTruthy();
   });
 });

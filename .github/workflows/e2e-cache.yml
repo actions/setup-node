@@ -18,8 +18,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
-        node-version: [12, 14, 16]
+        os: [ubuntu-latest, windows-latest, macos-latest, macos-13]
+        node-version: [18, 20, 22]
     steps:
       - uses: actions/checkout@v4
       - name: Clean global cache
@@ -41,12 +41,12 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
-        node-version: [12, 14, 16]
+        os: [ubuntu-latest, windows-latest, macos-latest, macos-13]
+        node-version: [18, 20, 22]
     steps:
       - uses: actions/checkout@v4
       - name: Install pnpm
-        uses: pnpm/action-setup@v2
+        uses: pnpm/action-setup@v4
         with:
           version: 6.10.0
       - name: Generate pnpm file
@@ -74,8 +74,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
-        node-version: [14, 16]
+        os: [ubuntu-latest, windows-latest, macos-latest, macos-13]
+        node-version: [18, 20]
     steps:
       - uses: actions/checkout@v4
       - name: Yarn version
@@ -106,8 +106,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
-        node-version: [12, 14, 16]
+        os: [ubuntu-latest, windows-latest, macos-latest, macos-13]
+        node-version: [18, 20, 22]
     steps:
       - uses: actions/checkout@v4
       - name: Update yarn
@@ -139,7 +139,7 @@ jobs:
     name: Test yarn subprojects
     strategy:
       matrix:
-        node-version: [12, 14, 16]
+        node-version: [18, 20, 22]
     runs-on: ubuntu-latest
 
     steps:
@@ -166,7 +166,7 @@ jobs:
     name: Test yarn subprojects all locally managed
     strategy:
       matrix:
-        node-version: [12, 14, 16]
+        node-version: [18, 20, 22]
     runs-on: ubuntu-latest
 
     steps:
@@ -193,7 +193,7 @@ jobs:
     name: Test yarn subprojects some locally managed
     strategy:
       matrix:
-        node-version: [12, 14, 16]
+        node-version: [18, 20, 22]
     runs-on: ubuntu-latest
 
     steps:
@@ -220,7 +220,7 @@ jobs:
     name: Test yarn subprojects managed by git
     strategy:
       matrix:
-        node-version: [12, 14, 16]
+        node-version: [18, 20, 22]
     runs-on: ubuntu-latest
 
     steps:

@@ -1,16 +1,16 @@
 ---
-name: yallist
-version: 4.0.0
+name: inflight
+version: 1.0.6
 type: npm
-summary: Yet Another Linked List
-homepage: 
+summary: Add callbacks to requests in flight to avoid async duplication
+homepage: https://github.com/isaacs/inflight
 license: isc
 licenses:
 - sources: LICENSE
   text: |
     The ISC License
 
-    Copyright (c) Isaac Z. Schlueter and Contributors
+    Copyright (c) Isaac Z. Schlueter
 
     Permission to use, copy, modify, and/or distribute this software for any
     purpose with or without fee is hereby granted, provided that the above

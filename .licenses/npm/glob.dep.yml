@@ -1,9 +1,9 @@
 ---
-name: lru-cache
-version: 6.0.0
+name: glob
+version: 7.2.3
 type: npm
-summary: A cache object that deletes the least-recently-used items.
-homepage: 
+summary: a little globber
+homepage:
 license: isc
 licenses:
 - sources: LICENSE
@@ -23,4 +23,10 @@ licenses:
     WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
     ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR
     IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+
+    ## Glob Logo
+
+    Glob's logo created by Tanya Brassie <http://tanyabrassie.com/>, licensed
+    under a Creative Commons Attribution-ShareAlike 4.0 International License
+    https://creativecommons.org/licenses/by-sa/4.0/
 notices: []
