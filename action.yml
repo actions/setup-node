@@ -14,6 +14,9 @@ inputs:
   check-latest:
     description: 'Set this option if you want the action to check for the latest available version that satisfies the version spec.'
     default: false
+  mirror-url:
+    description: 'Custom mirror URL to download Node.js from (optional)'
+    required: false
   registry-url:
     description: 'Optional registry to set up for auth. Will set the registry in a project level .npmrc and .yarnrc file, and set up auth to read in from env.NODE_AUTH_TOKEN.'
   scope:
