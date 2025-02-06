@@ -100864,6 +100864,9 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 const base_distribution_prerelease_1 = __importDefault(__nccwpck_require__(957));
 const core = __importStar(__nccwpck_require__(2186));
 class CanaryBuild extends base_distribution_prerelease_1.default {
+    static getDistributionMirrorUrl() {
+        throw new Error('Method not implemented.');
+    }
     constructor(nodeInfo) {
         super(nodeInfo);
         this.distribution = 'v8-canary';

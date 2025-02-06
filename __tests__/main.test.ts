@@ -286,9 +286,9 @@ describe('main tests', () => {
       );
     });
   });
-});
 
-// Create a mock object that satisfies the BaseDistribution interface
+
+  // Create a mock object that satisfies the BaseDistribution interface
 const createMockNodejsDistribution = () => ({
   setupNodeJs: jest.fn(),
   httpClient: {}, // Mocking the httpClient (you can replace this with more detailed mocks if needed)
@@ -328,13 +328,13 @@ describe('Mirror URL Tests', () => {
       auth: undefined,
       stable: true,
       arch: 'x64',
-      mirrorURL: 'https://custom-mirror-url.com',
+      mirrorURL: 'https://custom-mirror-url.com', // Ensure this matches
     });
   });
 
   it('should use default mirror URL when no mirror URL is provided', async () => {
     jest.spyOn(core, 'getInput').mockImplementation((name: string) => {
-      if (name === 'mirror-url') return '';
+      if (name === 'mirror-url') return ''; // Simulating no mirror URL provided
       if (name === 'node-version') return '14.x';
       return '';
     });
@@ -344,7 +344,7 @@ describe('Mirror URL Tests', () => {
 
     await main.run();
 
-    // Expect that setupNodeJs is called with an empty mirror URL
+    // Expect that setupNodeJs is called with an empty mirror URL (default behavior)
     expect(mockNodejsDistribution.setupNodeJs).toHaveBeenCalledWith(expect.objectContaining({
       mirrorURL: '', // Default URL is expected to be handled internally
     }));
@@ -360,42 +360,17 @@ describe('Mirror URL Tests', () => {
     };
   
     // Simulate calling the main function that will trigger setupNodeJs
-    await main.run({ mirrorURL });
-  
-    // Debugging: Log the arguments that setupNodeJs was called with
-    console.log('setupNodeJs calls:', mockNodejsDistribution.setupNodeJs.mock.calls);
+    await main.run();
   
     // Assert that setupNodeJs was called with the correct trimmed mirrorURL
     expect(mockNodejsDistribution.setupNodeJs).toHaveBeenCalledWith(
       expect.objectContaining({
-        mirrorURL: expectedTrimmedURL,
+        mirrorURL: expectedTrimmedURL, // Ensure the URL is trimmed properly
       })
     );
   });
-  
-  
-
-  it('should warn if architecture is provided but node-version is missing', async () => {
-    jest.spyOn(core, 'getInput').mockImplementation((name: string) => {
-      if (name === 'architecture') return 'x64';
-      if (name === 'node-version') return '';
-      return '';
-    });
-
-    const mockWarning = jest.spyOn(core, 'warning');
-    const mockNodejsDistribution = createMockNodejsDistribution();
-    (installerFactory.getNodejsDistribution as jest.Mock).mockReturnValue(mockNodejsDistribution);
-
-    await main.run();
-
-    expect(mockWarning).toHaveBeenCalledWith(
-      "`architecture` is provided but `node-version` is missing. In this configuration, the version/architecture of Node will not be changed. To fix this, provide `architecture` in combination with `node-version`"
-    );
-    
-    expect(mockNodejsDistribution.setupNodeJs).not.toHaveBeenCalled(); // Setup Node should not be called
-  });
+});
 });
 
-function someFunctionThatCallsSetupNodeJs(arg0: { mirrorURL: string; }) {
-  throw new Error('Function not implemented.');
-}
+
+

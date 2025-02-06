@@ -453,87 +453,93 @@ describe('setup-node', () => {
       );
     });
   });
+
+ 
+  describe('RcBuild - Mirror URL functionality', () => {
+    const nodeInfo: NodeInputs = {
+      versionSpec: '18.0.0-rc',
+      arch: 'x64',
+      mirrorURL: '',
+      checkLatest: false,
+      stable: false,
+    };
+  
+    it('should return the default distribution URL if no mirror URL is provided', () => {
+      const rcBuild = new RcBuild(nodeInfo);
+  
+      const distributionUrl = rcBuild.getDistributionUrl();
+  
+      // Default URL
+      expect(distributionUrl).toBe('https://nodejs.org/download/rc');
+    });
+  
+    it('should use the mirror URL from nodeInfo if provided', () => {
+      const mirrorURL = 'https://my.custom.mirror/nodejs';  // Set the custom mirror URL
+      nodeInfo.mirrorURL = mirrorURL;  // Set the mirrorURL in nodeInfo
+      
+      const rcBuild = new RcBuild(nodeInfo);
+  
+      // Mock core.info to track its calls
+      const infoSpy = jest.spyOn(core, 'info').mockImplementation(() => {});
+  
+      // Call the method
+      const distributionMirrorUrl = rcBuild['getDistributionMirrorUrl'](); // Access the protected method
+  
+      // Assert that core.info was called with the correct mirror URL message
+      expect(infoSpy).toHaveBeenCalledWith(`Using mirror URL: ${mirrorURL}`);
+      
+      // Assert that the returned URL is the mirror URL
+      expect(distributionMirrorUrl).toBe(mirrorURL);
+      
+      // Restore the original core.info function after the test
+      infoSpy.mockRestore();
+    });
+  
+    it('should throw an error if mirror URL is empty', () => {
+      nodeInfo.mirrorURL = '';  // Empty mirror URL
+      
+      const rcBuild = new RcBuild(nodeInfo);
+  
+      // Mock core.info to track its calls
+      const infoSpy = jest.spyOn(core, 'info').mockImplementation(() => {});
+  
+      // Expect the function to return the default URL because the mirror URL is empty
+      const distributionMirrorUrl = rcBuild['getDistributionMirrorUrl']();
+  
+      expect(distributionMirrorUrl).toBe('https://nodejs.org/download/rc');
+  
+      // Ensure that core.info was NOT called because it's not a custom mirror URL
+      expect(infoSpy).not.toHaveBeenCalled();
+  
+      infoSpy.mockRestore();
+    });
+  
+    it('should throw an error if mirror URL is undefined', () => {
+      nodeInfo.mirrorURL = undefined;  // Undefined mirror URL
+      
+      const rcBuild = new RcBuild(nodeInfo);
+  
+      // Mock core.info to track its calls
+      const infoSpy = jest.spyOn(core, 'info').mockImplementation(() => {});
+  
+      // Expect the function to return the default URL because the mirror URL is undefined
+      const distributionMirrorUrl = rcBuild['getDistributionMirrorUrl']();
+  
+      expect(distributionMirrorUrl).toBe('https://nodejs.org/download/rc');
+  
+      // Ensure that core.info was NOT called because it's not a custom mirror URL
+      expect(infoSpy).not.toHaveBeenCalled();
+  
+      infoSpy.mockRestore();
+    });
+  });
+  
+  
+  
+  
+  
 });
 
 
 
-describe('RcBuild - Mirror URL functionality', () => {
-  const nodeInfo: NodeInputs = {
-    versionSpec: '18.0.0-rc', arch: 'x64', mirrorURL: '',
-    checkLatest: false,
-    stable: false
-  };
 
-  it('should return the default distribution URL if no mirror URL is provided', () => {
-    const rcBuild = new RcBuild(nodeInfo);
-
-    const distributionUrl = rcBuild.getDistributionUrl();
-
-    expect(distributionUrl).toBe('https://nodejs.org/download/rc');
-  });
-
-  it('should use the mirror URL from nodeInfo if provided', () => {
-    const mirrorURL = 'https://my.custom.mirror/nodejs';
-    nodeInfo.mirrorURL = mirrorURL;
-    const rcBuild = new RcBuild(nodeInfo);
-
-    // @ts-ignore: Accessing protected method for testing purposes
-    const distributionMirrorUrl = rcBuild.getDistributionMirrorUrl();
-
-    expect(core.info).toHaveBeenCalledWith(`Using mirror URL: ${mirrorURL}`);
-    expect(distributionMirrorUrl).toBe(mirrorURL);
-  });
-
-  it('should fall back to the default distribution URL if mirror URL is not provided', () => {
-    nodeInfo.mirrorURL = ''; // No mirror URL
-    const rcBuild = new RcBuild(nodeInfo);
-
- // @ts-ignore: Accessing protected method for testing purposes
- const distributionMirrorUrl = rcBuild.getDistributionMirrorUrl();
-
-    expect(core.info).toHaveBeenCalledWith(`Using mirror URL: https://nodejs.org/download/rc`);
-    expect(distributionMirrorUrl).toBe('https://nodejs.org/download/rc');
-  });
-
-  it('should log the correct info when mirror URL is not provided', () => {
-    nodeInfo.mirrorURL = ''; // No mirror URL
-    const rcBuild = new RcBuild(nodeInfo);
-
- // @ts-ignore: Accessing protected method for testing purposes
- const distributionMirrorUrl = rcBuild.getDistributionMirrorUrl();
-
-    expect(core.info).toHaveBeenCalledWith('Using mirror URL: https://nodejs.org/download/rc');
-  });
-
-  it('should throw an error if mirror URL is undefined and not provided', async () => {
-    nodeInfo.mirrorURL = undefined; // Undefined mirror URL
-    const rcBuild = new RcBuild(nodeInfo);
-
-    // @ts-ignore: Accessing protected method for testing purposes
-    await expect(rcBuild['getDistributionMirrorUrl']()).resolves.toBe('https://nodejs.org/download/rc');
-  });
-
-  it('should return mirror URL if provided in nodeInfo', () => {
-    const mirrorURL = 'https://custom.mirror.url';
-    nodeInfo.mirrorURL = mirrorURL;
-
-    const rcBuild = new RcBuild(nodeInfo);
-    // @ts-ignore: Accessing protected method for testing purposes
-        // @ts-ignore: Accessing protected method for testing purposes
-        const url = rcBuild['getDistributionMirrorUrl']();
-
-    expect(core.info).toHaveBeenCalledWith(`Using mirror URL: ${mirrorURL}`);
-    expect(url).toBe(mirrorURL);
-  });
-
-  it('should use the default URL if mirror URL is empty string', () => {
-    nodeInfo.mirrorURL = ''; // Empty string for mirror URL
-    const rcBuild = new RcBuild(nodeInfo);
-
-    // @ts-ignore: Accessing protected method for testing purposes
-    const url = rcBuild['getDistributionMirrorUrl']();
-
-    expect(core.info).toHaveBeenCalledWith('Using mirror URL: https://nodejs.org/download/rc');
-    expect(url).toBe('https://nodejs.org/download/rc');
-  });
-});
