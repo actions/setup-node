@@ -3,6 +3,7 @@ import * as exec from '@actions/exec';
 import * as io from '@actions/io';
 
 import fs from 'fs';
+import * as INI from 'ini';
 import path from 'path';
 
 export function getNodeVersionFromFile(versionFilePath: string): string | null {
@@ -54,6 +55,25 @@ export function getNodeVersionFromFile(versionFilePath: string): string | null {
     }
   } catch {
     core.info('Node version file is not JSON file');
+  }
+
+  // Try parsing the file as an NPM `.npmrc` file.
+  //
+  // If the file contents contain the use-node-version key, we conclude it's an
+  // `.npmrc` file.
+  if (contents.match(/use-node-version *=/)) {
+    const manifest = INI.parse(contents);
+    const key = 'use-node-version';
+
+    if (key in manifest && typeof manifest[key] === 'string') {
+      const version = manifest[key];
+      core.info(`Using node version ${version} from global INI ${key}`);
+      return version;
+    }
+
+    // We didn't find the key `use-node-version` in the global scope of the
+    // `.npmrc` file, so we return.
+    return null;
   }
 
   const found = contents.match(/^(?:node(js)?\s+)?v?(?<version>[^\s]+)$/m);
