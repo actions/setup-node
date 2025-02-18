@@ -93,7 +93,8 @@ async function getToolVersion(tool: string, options: string[]) {
     }
 
     return stdout.trim();
-  } catch (err) {
+  } catch (error: any) {
+    core.warning(`An error occurred: ${error.message}`);
     return '';
   }
 }

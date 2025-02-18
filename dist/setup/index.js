@@ -100935,7 +100935,8 @@ function getToolVersion(tool, options) {
             }
             return stdout.trim();
         }
-        catch (err) {
+        catch (error) {
+            core.warning(`An error occurred: ${error.message}`);
             return '';
         }
     });
