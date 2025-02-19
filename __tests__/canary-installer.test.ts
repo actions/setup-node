@@ -10,13 +10,15 @@ import osm from 'os';
 import path from 'path';
 import * as main from '../src/main';
 import * as auth from '../src/authutil';
-import {INodeVersion} from '../src/distributions/base-models';
+import {INodeVersion, NodeInputs} from '../src/distributions/base-models';
 
 import nodeTestManifest from './data/versions-manifest.json';
 import nodeTestDist from './data/node-dist-index.json';
 import nodeTestDistNightly from './data/node-nightly-index.json';
 import nodeTestDistRc from './data/node-rc-index.json';
 import nodeV8CanaryTestDist from './data/v8-canary-dist-index.json';
+import canaryBuild from '../src/distributions/v8-canary/canary_builds';
+
 
 describe('setup-node', () => {
   let inputs = {} as any;
@@ -528,4 +530,157 @@ describe('setup-node', () => {
       expect(cacheSpy).not.toHaveBeenCalled();
     });
   });
+
+  describe('CanaryBuild - Mirror URL functionality', () => {
+
+
+  class CanaryBuild {
+      mirrorURL: string | undefined;
+      nodeInfo: NodeInputs;
+    
+      constructor(nodeInfo: NodeInputs) {
+        this.nodeInfo = nodeInfo;  // Store the nodeInfo object passed into the constructor
+        this.mirrorURL = nodeInfo.mirrorURL;  // Set mirrorURL from nodeInfo, or undefined if not provided
+      }
+    
+      async getDistributionMirrorUrl() {
+        // Check if mirror URL is undefined or empty, and return the default if so
+        if (!this.mirrorURL) {
+          core.info('Using mirror URL: https://nodejs.org/download/v8-canary');
+          return 'https://nodejs.org/download/v8-canary';  // Default URL
+        }else{
+          if (this.mirrorURL === '' ){
+            throw new Error('Mirror URL is empty. Please provide a valid mirror URL.');
+        }
+        return this.mirrorURL;
+      }
+       
+      }
+    }
+     
+    
+     it('should use the mirror URL from nodeInfo if provided', () => {
+      // Mocking core.info to track the log calls
+      const infoSpy = jest.spyOn(core, 'info').mockImplementation(() => {});
+  
+      const mirrorURL = 'https://custom.mirror.url/v8-canary';
+      const nodeInfo: NodeInputs = {
+        versionSpec: '8.0.0-canary',
+        arch: 'x64',
+        checkLatest: false,
+        stable: false,
+        mirrorURL: mirrorURL // Provide the custom mirror URL
+      };
+  
+      const canaryBuild = new CanaryBuild(nodeInfo);
+  
+      // Call the method to get the mirror URL
+      const distributionMirrorUrl = canaryBuild.getDistributionMirrorUrl();
+  
+      // Assert that core.info was called with the custom mirror URL
+      expect(infoSpy).toHaveBeenCalledWith(`Using mirror URL: ${mirrorURL}`);
+      
+      // Assert that the returned URL is the custom mirror URL
+      expect(distributionMirrorUrl).toBe(mirrorURL);
+      
+      // Restore the original core.info implementation
+      infoSpy.mockRestore();
+    });
+    it('should fall back to the default distribution URL if mirror URL is not provided', () => {
+      const infoSpy = jest.spyOn(core, 'info').mockImplementation(() => {});
+    
+      const nodeInfo: NodeInputs = {
+        versionSpec: '8.0.0-canary',
+        arch: 'x64',
+        checkLatest: false,
+        stable: false
+        // No mirrorURL provided here
+      };
+    
+      const canaryBuild = new CanaryBuild(nodeInfo);
+    
+      // Call the method to get the distribution URL
+      const distributionMirrorUrl = canaryBuild.getDistributionMirrorUrl();
+    
+      // Assert that core.info was called with the default URL
+      expect(infoSpy).toHaveBeenCalledWith('Using mirror URL: https://nodejs.org/download/v8-canary');
+      
+      // Assert that the returned URL is the default one
+      expect(distributionMirrorUrl).toBe('https://nodejs.org/download/v8-canary');
+      
+      infoSpy.mockRestore();
+    });
+    
+    it('should log the correct info when mirror URL is not provided', () => {
+      const infoSpy = jest.spyOn(core, 'info').mockImplementation(() => {});
+    
+      const nodeInfo: NodeInputs = {
+        versionSpec: '8.0.0-canary',
+        arch: 'x64',
+        checkLatest: false,
+        stable: false
+        // No mirrorURL provided here
+      };
+    
+      const canaryBuild = new CanaryBuild(nodeInfo);
+    
+      // Call the method
+      canaryBuild.getDistributionMirrorUrl();
+    
+      // Assert that core.info was called with the fallback URL
+      expect(infoSpy).toHaveBeenCalledWith('Using mirror URL: https://nodejs.org/download/v8-canary');
+      
+      infoSpy.mockRestore();
+    });
+    
+    it('should return mirror URL if provided in nodeInfo', () => {
+      // Custom mirror URL to be tested
+      const mirrorURL = 'https://custom.mirror.url/v8-canary';
+      
+      // Create a spy on core.info to track its calls
+      const infoSpy = jest.spyOn(core, 'info').mockImplementation(() => {});  // Mocking core.info
+      
+      // Prepare the nodeInfo object with the custom mirror URL
+      const nodeInfo: NodeInputs = {
+        versionSpec: '8.0.0-canary',
+        arch: 'x64',
+        mirrorURL: mirrorURL,  // Custom mirrorURL provided
+        checkLatest: false,
+        stable: false
+      };
+      
+      // Create an instance of CanaryBuild, passing nodeInfo to the constructor
+      const canaryBuild = new CanaryBuild(nodeInfo);
+      
+      // Call the method
+      const distributionMirrorUrl = canaryBuild.getDistributionMirrorUrl();
+      
+      // Assert that core.info was called with the expected message
+      expect(infoSpy).toHaveBeenCalledWith(`Using mirror URL: ${mirrorURL}`);
+      
+      // Assert that the returned mirror URL is correct
+      expect(distributionMirrorUrl).toBe(mirrorURL);
+      
+      // Restore the original core.info function after the test
+      infoSpy.mockRestore();
+    });
+    it('should throw an error if mirror URL is empty string', async () => {
+      const nodeInfo: NodeInputs = {
+        versionSpec: '8.0.0-canary',
+        arch: 'x64',
+        checkLatest: false,
+        stable: false,
+        mirrorURL: '' // Empty string provided as mirror URL
+      };
+    
+      const canaryBuild = new CanaryBuild(nodeInfo);
+    
+      // Expect the method to throw an error for empty string mirror URL
+      expect(canaryBuild.getDistributionMirrorUrl()).toThrow('Mirror URL is empty. Please provide a valid mirror URL.');
+    });
+   
+     
+   
+     
+   });
 });
