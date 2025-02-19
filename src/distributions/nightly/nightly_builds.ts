@@ -10,22 +10,22 @@ export default class NightlyNodejs extends BasePrereleaseNodejs {
     super(nodeInfo);
   }
 
-  protected getDistributionMirrorUrl(): string {
-    // Implement the method to return the mirror URL or an empty string if not available
-    return this.nodeInfo.mirrorURL || '';
-  }
-
-  // Updated getDistributionUrl method to handle mirror URL or fallback
   protected getDistributionUrl(): string {
-    // Check if mirrorUrl exists in the nodeInfo and return it if available
-    const mirrorUrl = this.nodeInfo.mirrorURL;
-    if (mirrorUrl) {
-      core.info(`Downloding Using mirror URL: ${mirrorUrl}`);
-      return mirrorUrl;
+    
+    if (this.nodeInfo.mirrorURL) {
+      if(this.nodeInfo.mirrorURL != '') {
+      return this.nodeInfo.mirrorURL;
+    }else{
+      if(this.nodeInfo.mirrorURL === '') {
+        throw new Error('Mirror URL is empty. Please provide a valid mirror URL.');
+      }else{
+        throw new Error('Mirror URL is not a valid');
+      }
     }
-
-    // Default to the official Node.js nightly distribution URL if no mirror URL is provided
-    core.info('Using default distribution URL for nightly Node.js.');
+   
+  }else{
     return 'https://nodejs.org/download/nightly';
   }
+  
+}
 }

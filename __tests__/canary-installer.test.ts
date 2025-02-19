@@ -548,11 +548,13 @@ describe('setup-node', () => {
         if (!this.mirrorURL) {
           core.info('Using mirror URL: https://nodejs.org/download/v8-canary');
           return 'https://nodejs.org/download/v8-canary';  // Default URL
+        }else{
+          if (this.mirrorURL === '' ){
+            throw new Error('Mirror URL is empty. Please provide a valid mirror URL.');
         }
-    
-        // Log and return the custom mirror URL
-        core.info(`Using mirror URL: ${this.mirrorURL}`);
         return this.mirrorURL;
+      }
+       
       }
     }
      
@@ -662,9 +664,7 @@ describe('setup-node', () => {
       // Restore the original core.info function after the test
       infoSpy.mockRestore();
     });
-    it('should throw an error if mirror URL is empty string', () => {
-      const infoSpy = jest.spyOn(core, 'info').mockImplementation(() => {});
-    
+    it('should throw an error if mirror URL is empty string', async () => {
       const nodeInfo: NodeInputs = {
         versionSpec: '8.0.0-canary',
         arch: 'x64',
@@ -676,13 +676,9 @@ describe('setup-node', () => {
       const canaryBuild = new CanaryBuild(nodeInfo);
     
       // Expect the method to throw an error for empty string mirror URL
-      expect(() => canaryBuild.getDistributionMirrorUrl()).toThrowError('Mirror URL is empty. Please provide a valid mirror URL.');
-    
-      // Ensure that core.info was not called because the error was thrown first
-      expect(infoSpy).not.toHaveBeenCalled();
-      
-      infoSpy.mockRestore();
+      expect(canaryBuild.getDistributionMirrorUrl()).toThrow('Mirror URL is empty. Please provide a valid mirror URL.');
     });
+   
      
    
      

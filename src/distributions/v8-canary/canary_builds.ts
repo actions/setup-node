@@ -9,16 +9,21 @@ export default class CanaryBuild extends BasePrereleaseNodejs {
   }
 
   protected getDistributionUrl(): string {
-    return 'https://nodejs.org/download/v8-canary';
-  }
-
-  protected getDistributionMirrorUrl(): string {
-    // Check if mirrorUrl exists in the nodeInfo and return it if available
-    const mirrorUrl = this.nodeInfo.mirrorURL;
-    if (mirrorUrl) {
-      core.info(`Using mirror URL: ${mirrorUrl}`);
-      return mirrorUrl;
+    
+    if (this.nodeInfo.mirrorURL) {
+      if(this.nodeInfo.mirrorURL != '') {
+      return this.nodeInfo.mirrorURL;
+    }else{
+      if(this.nodeInfo.mirrorURL === '') {
+        throw new Error('Mirror URL is empty. Please provide a valid mirror URL.');
+      }else{
+        throw new Error('Mirror URL is not a valid');
+      }
     }
+   
+  }else{
     return 'https://nodejs.org/download/v8-canary';
   }
+  
+}
 }

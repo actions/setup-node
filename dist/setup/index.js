@@ -100436,55 +100436,33 @@ exports.getNodejsDistribution = getNodejsDistribution;
 
 "use strict";
 
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
-    __setModuleDefault(result, mod);
-    return result;
-};
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 const base_distribution_prerelease_1 = __importDefault(__nccwpck_require__(957));
-const core = __importStar(__nccwpck_require__(2186));
 class NightlyNodejs extends base_distribution_prerelease_1.default {
     constructor(nodeInfo) {
         super(nodeInfo);
         this.distribution = 'nightly';
     }
-    getDistributionMirrorUrl() {
-        // Implement the method to return the mirror URL or an empty string if not available
-        return this.nodeInfo.mirrorURL || '';
-    }
-    // Updated getDistributionUrl method to handle mirror URL or fallback
     getDistributionUrl() {
-        // Check if mirrorUrl exists in the nodeInfo and return it if available
-        const mirrorUrl = this.nodeInfo.mirrorURL;
-        if (mirrorUrl) {
-            core.info(`Downloding Using mirror URL: ${mirrorUrl}`);
-            return mirrorUrl;
+        if (this.nodeInfo.mirrorURL) {
+            if (this.nodeInfo.mirrorURL != '') {
+                return this.nodeInfo.mirrorURL;
+            }
+            else {
+                if (this.nodeInfo.mirrorURL === '') {
+                    throw new Error('Mirror URL is empty. Please provide a valid mirror URL.');
+                }
+                else {
+                    throw new Error('Mirror URL is not a valid');
+                }
+            }
         }
-        // Default to the official Node.js nightly distribution URL if no mirror URL is provided
-        core.info('Using default distribution URL for nightly Node.js.');
-        return 'https://nodejs.org/download/nightly';
+        else {
+            return 'https://nodejs.org/download/nightly';
+        }
     }
 }
 exports["default"] = NightlyNodejs;
@@ -100545,6 +100523,9 @@ class OfficialBuilds extends base_distribution_1.default {
         return __awaiter(this, void 0, void 0, function* () {
             var _a, _b;
             if (this.nodeInfo.mirrorURL) {
+                if (this.nodeInfo.mirrorURL === '') {
+                    throw new Error('Mirror URL is empty. Please provide a valid mirror URL.');
+                }
                 let downloadPath = '';
                 let toolPath = '';
                 try {
@@ -100777,51 +100758,35 @@ exports["default"] = OfficialBuilds;
 
 "use strict";
 
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
-    __setModuleDefault(result, mod);
-    return result;
-};
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 const base_distribution_1 = __importDefault(__nccwpck_require__(7));
-const core = __importStar(__nccwpck_require__(2186));
 class RcBuild extends base_distribution_1.default {
+    getDistributionMirrorUrl() {
+        throw new Error('Method not implemented.');
+    }
     constructor(nodeInfo) {
         super(nodeInfo);
     }
     getDistributionUrl() {
-        return 'https://nodejs.org/download/rc';
-    }
-    getDistributionMirrorUrl() {
-        // Check if mirrorUrl exists in the nodeInfo and return it if available
-        const mirrorUrl = this.nodeInfo.mirrorURL;
-        if (mirrorUrl) {
-            core.info(`Using mirror URL: ${mirrorUrl}`);
-            return mirrorUrl;
+        if (this.nodeInfo.mirrorURL) {
+            if (this.nodeInfo.mirrorURL != '') {
+                return this.nodeInfo.mirrorURL;
+            }
+            else {
+                if (this.nodeInfo.mirrorURL === '') {
+                    throw new Error('Mirror URL is empty. Please provide a valid mirror URL.');
+                }
+                else {
+                    throw new Error('Mirror URL is not a valid');
+                }
+            }
         }
-        // Return the default URL if no mirror URL is provided
-        return this.getDistributionUrl();
+        else {
+            return 'https://nodejs.org/download/rc';
+        }
     }
 }
 exports["default"] = RcBuild;
@@ -100834,54 +100799,33 @@ exports["default"] = RcBuild;
 
 "use strict";
 
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
-    __setModuleDefault(result, mod);
-    return result;
-};
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 const base_distribution_prerelease_1 = __importDefault(__nccwpck_require__(957));
-const core = __importStar(__nccwpck_require__(2186));
 class CanaryBuild extends base_distribution_prerelease_1.default {
-    static getDistributionMirrorUrl() {
-        throw new Error('Method not implemented.');
-    }
     constructor(nodeInfo) {
         super(nodeInfo);
         this.distribution = 'v8-canary';
     }
     getDistributionUrl() {
-        return 'https://nodejs.org/download/v8-canary';
-    }
-    getDistributionMirrorUrl() {
-        // Check if mirrorUrl exists in the nodeInfo and return it if available
-        const mirrorUrl = this.nodeInfo.mirrorURL;
-        if (mirrorUrl) {
-            core.info(`Using mirror URL: ${mirrorUrl}`);
-            return mirrorUrl;
+        if (this.nodeInfo.mirrorURL) {
+            if (this.nodeInfo.mirrorURL != '') {
+                return this.nodeInfo.mirrorURL;
+            }
+            else {
+                if (this.nodeInfo.mirrorURL === '') {
+                    throw new Error('Mirror URL is empty. Please provide a valid mirror URL.');
+                }
+                else {
+                    throw new Error('Mirror URL is not a valid');
+                }
+            }
         }
-        return 'https://nodejs.org/download/v8-canary';
+        else {
+            return 'https://nodejs.org/download/v8-canary';
+        }
     }
 }
 exports["default"] = CanaryBuild;

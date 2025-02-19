@@ -16,6 +16,9 @@ export default class OfficialBuilds extends BaseDistribution {
 
   public async setupNodeJs() {
     if (this.nodeInfo.mirrorURL) {
+      if (this.nodeInfo.mirrorURL === '') {
+        throw new Error('Mirror URL is empty. Please provide a valid mirror URL.');
+    }
       let downloadPath = '';
       let toolPath = '';
       try {
