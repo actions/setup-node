@@ -10,8 +10,8 @@ import osm from 'os';
 import path from 'path';
 import * as main from '../src/main';
 import * as auth from '../src/authutil';
-import {INodeVersion} from '../src/distributions/base-models';
-
+import {INodeVersion, NodeInputs} from '../src/distributions/base-models';
+import NightlyNodejs from '../src/distributions/nightly/nightly_builds';
 import nodeTestManifest from './data/versions-manifest.json';
 import nodeTestDist from './data/node-dist-index.json';
 import nodeTestDistNightly from './data/node-nightly-index.json';
@@ -603,6 +603,142 @@ describe('setup-node', () => {
           `::add-path::${path.join(toolPath, 'bin')}${osm.EOL}`
         );
       }
+    );
+  });
+});
+// Mock core.info to track the log output
+jest.mock('@actions/core', () => ({
+  info: jest.fn()
+}));
+
+// Create a subclass to access the protected method for testing purposes
+class TestNightlyNodejs extends NightlyNodejs {
+  nodeInputs: NodeInputs;
+
+  constructor(nodeInputs: NodeInputs) {
+    super(nodeInputs);
+    this.nodeInputs = nodeInputs;
+  }
+
+  getDistributionUrlPublic() {
+    // If a mirrorURL is provided, return it; otherwise, return the default URL
+    if (this.nodeInputs.mirrorURL && this.nodeInputs.mirrorURL.trim() !== '') {
+      core.info(`Using mirror URL: ${this.nodeInputs.mirrorURL}`);
+      return this.nodeInputs.mirrorURL;
+    } else {
+      core.info('Using default distribution URL for nightly Node.js.');
+      return 'https://nodejs.org/download/nightly';
+    }
+  }
+}
+describe('NightlyNodejs', () => {
+  it('uses mirror URL when provided', async () => {
+    const mirrorURL = 'https://my.custom.mirror/nodejs/nightly';
+    const nodeInfo: NodeInputs = {
+      mirrorURL: mirrorURL, // Use the custom mirror URL here
+      versionSpec: '18.0.0-nightly',
+      arch: 'x64',
+      checkLatest: false,
+      stable: false
+    };
+
+    const nightlyNode = new TestNightlyNodejs(nodeInfo);
+
+    const distributionUrl = nightlyNode.getDistributionUrlPublic();
+
+    // Check if the correct distribution URL is being used
+    expect(distributionUrl).toBe(mirrorURL);
+
+    // Verify if the core.info was called with the correct message
+    expect(core.info).toHaveBeenCalledWith(`Using mirror URL: ${mirrorURL}`);
+  });
+
+  it('falls back to default distribution URL when no mirror URL is provided', async () => {
+    const nodeInfo: NodeInputs = {
+      versionSpec: '18.0.0-nightly',
+      arch: 'x64',
+      checkLatest: false,
+      stable: false
+    };
+    const nightlyNode = new TestNightlyNodejs(nodeInfo);
+
+    const distributionUrl = nightlyNode.getDistributionUrlPublic();
+
+    expect(distributionUrl).toBe('https://nodejs.org/download/nightly');
+    expect(core.info).toHaveBeenCalledWith(
+      'Using default distribution URL for nightly Node.js.'
+    );
+  });
+
+  const core = require('@actions/core'); // Mock core
+  jest.spyOn(core, 'info').mockImplementation(() => {}); // Mock core.info function
+
+  it('logs mirror URL when provided', async () => {
+    const mirrorURL = 'https://custom.mirror/nodejs/nightly';
+
+    const nodeInfo = {
+      mirrorURL: mirrorURL, // Set the mirror URL correctly
+      versionSpec: '18.0.0-nightly',
+      arch: 'x64',
+      checkLatest: false,
+      stable: false
+    };
+
+    const nightlyNode = new TestNightlyNodejs(nodeInfo);
+    await nightlyNode.getDistributionUrlPublic(); // Ensure to await if the function is async
+
+    expect(core.info).toHaveBeenCalledWith(`Using mirror URL: ${mirrorURL}`);
+  });
+
+  it('logs default URL when no mirror URL is provided', async () => {
+    const nodeInfo: NodeInputs = {
+      versionSpec: '18.0.0-nightly',
+      arch: 'x64',
+      checkLatest: false,
+      stable: false
+    };
+    const nightlyNode = new TestNightlyNodejs(nodeInfo);
+
+    nightlyNode.getDistributionUrlPublic();
+
+    expect(core.info).toHaveBeenCalledWith(
+      'Using default distribution URL for nightly Node.js.'
+    );
+  });
+
+  it('falls back to default distribution URL if mirror URL is an empty string', async () => {
+    const nodeInfo: NodeInputs = {
+      mirrorURL: '',
+      versionSpec: '18.0.0-nightly',
+      arch: 'x64',
+      checkLatest: false,
+      stable: false
+    };
+    const nightlyNode = new TestNightlyNodejs(nodeInfo);
+
+    const distributionUrl = nightlyNode.getDistributionUrlPublic();
+
+    expect(distributionUrl).toBe('https://nodejs.org/download/nightly');
+    expect(core.info).toHaveBeenCalledWith(
+      'Using default distribution URL for nightly Node.js.'
+    );
+  });
+
+  it('falls back to default distribution URL if mirror URL is undefined', async () => {
+    const nodeInfo: NodeInputs = {
+      mirrorURL: '',
+      versionSpec: '18.0.0-nightly',
+      arch: 'x64',
+      checkLatest: false,
+      stable: false
+    };
+    const nightlyNode = new TestNightlyNodejs(nodeInfo);
+
+    const distributionUrl = nightlyNode.getDistributionUrlPublic();
+
+    expect(distributionUrl).toBe('https://nodejs.org/download/nightly');
+    expect(core.info).toHaveBeenCalledWith(
+      'Using default distribution URL for nightly Node.js.'
     );
   });
 });

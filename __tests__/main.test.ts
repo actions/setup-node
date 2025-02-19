@@ -1,4 +1,5 @@
 import * as core from '@actions/core';
+import 'jest';
 import * as exec from '@actions/exec';
 import * as tc from '@actions/tool-cache';
 import * as cache from '@actions/cache';
@@ -13,6 +14,11 @@ import each from 'jest-each';
 import * as main from '../src/main';
 import * as util from '../src/util';
 import OfficialBuilds from '../src/distributions/official_builds/official_builds';
+
+import * as installerFactory from '../src/distributions/installer-factory';
+jest.mock('../src/distributions/installer-factory', () => ({
+  getNodejsDistribution: jest.fn()
+}));
 
 describe('main tests', () => {
   let inputs = {} as any;
@@ -277,6 +283,95 @@ describe('main tests', () => {
 
       expect(warningSpy).toHaveBeenCalledWith(
         'The runner was not able to contact the cache service. Caching will be skipped'
+      );
+    });
+  });
+
+  // Create a mock object that satisfies the BaseDistribution interface
+  const createMockNodejsDistribution = () => ({
+    setupNodeJs: jest.fn(),
+    httpClient: {}, // Mocking the httpClient (you can replace this with more detailed mocks if needed)
+    osPlat: 'darwin', // Mocking osPlat (the platform the action will run on, e.g., 'darwin', 'win32', 'linux')
+    nodeInfo: {
+      version: '14.x',
+      arch: 'x64',
+      platform: 'darwin'
+    },
+    getDistributionUrl: jest.fn().mockReturnValue('https://nodejs.org/dist/'), // Example URL
+    install: jest.fn(),
+    validate: jest.fn()
+    // Add any other methods/properties required by your BaseDistribution type
+  });
+
+  describe('Mirror URL Tests', () => {
+    beforeEach(() => {
+      jest.clearAllMocks();
+    });
+
+    it('should pass mirror URL correctly when provided', async () => {
+      jest.spyOn(core, 'getInput').mockImplementation((name: string) => {
+        if (name === 'mirror-url') return 'https://custom-mirror-url.com';
+        if (name === 'node-version') return '14.x';
+        return '';
+      });
+
+      const mockNodejsDistribution = createMockNodejsDistribution();
+      (installerFactory.getNodejsDistribution as jest.Mock).mockReturnValue(
+        mockNodejsDistribution
+      );
+
+      await main.run();
+
+      // Ensure setupNodeJs is called with the correct parameters, including the mirror URL
+      expect(mockNodejsDistribution.setupNodeJs).toHaveBeenCalledWith({
+        versionSpec: '14.x',
+        checkLatest: false,
+        auth: undefined,
+        stable: true,
+        arch: 'x64',
+        mirrorURL: 'https://custom-mirror-url.com' // Ensure this matches
+      });
+    });
+
+    it('should use default mirror URL when no mirror URL is provided', async () => {
+      jest.spyOn(core, 'getInput').mockImplementation((name: string) => {
+        if (name === 'mirror-url') return ''; // Simulating no mirror URL provided
+        if (name === 'node-version') return '14.x';
+        return '';
+      });
+
+      const mockNodejsDistribution = createMockNodejsDistribution();
+      (installerFactory.getNodejsDistribution as jest.Mock).mockReturnValue(
+        mockNodejsDistribution
+      );
+
+      await main.run();
+
+      // Expect that setupNodeJs is called with an empty mirror URL (default behavior)
+      expect(mockNodejsDistribution.setupNodeJs).toHaveBeenCalledWith(
+        expect.objectContaining({
+          mirrorURL: '' // Default URL is expected to be handled internally
+        })
+      );
+    });
+
+    it('should handle mirror URL with spaces correctly', async () => {
+      const mirrorURL = 'https://custom-mirror-url.com ';
+      const expectedTrimmedURL = 'https://custom-mirror-url.com';
+
+      // Mock the setupNodeJs function
+      const mockNodejsDistribution = {
+        setupNodeJs: jest.fn()
+      };
+
+      // Simulate calling the main function that will trigger setupNodeJs
+      await main.run();
+
+      // Assert that setupNodeJs was called with the correct trimmed mirrorURL
+      expect(mockNodejsDistribution.setupNodeJs).toHaveBeenCalledWith(
+        expect.objectContaining({
+          mirrorURL: expectedTrimmedURL // Ensure the URL is trimmed properly
+        })
       );
     });
   });

@@ -104,6 +104,31 @@ export default abstract class BaseDistribution {
     return response.result || [];
   }
 
+  protected async getMirrorUrlVersions(): Promise<INodeVersion[]> {
+    const initialUrl = this.getDistributionUrl();
+
+    const dataUrl = `${initialUrl}/index.json`;
+    try {
+      const response = await this.httpClient.getJson<INodeVersion[]>(dataUrl);
+      return response.result || [];
+    } catch (err) {
+      if (
+        err instanceof Error &&
+        err.message.includes('getaddrinfo EAI_AGAIN')
+      ) {
+        core.error(`Network error: Failed to resolve the server at ${dataUrl}. 
+                      Please check your DNS settings or verify that the URL is correct.`);
+      } else if (err instanceof hc.HttpClientError && err.statusCode === 404) {
+        core.error(`404 Error: Unable to find versions at ${dataUrl}. 
+                      Please verify that the mirror URL is valid.`);
+      } else {
+        core.error(`Failed to fetch Node.js versions from ${dataUrl}. 
+                      Please check the URL and try again.}`);
+      }
+      throw err;
+    }
+  }
+
   protected getNodejsDistInfo(version: string) {
     const osArch: string = this.translateArchToDistUrl(this.nodeInfo.arch);
     version = semver.clean(version) || '';
@@ -128,6 +153,33 @@ export default abstract class BaseDistribution {
     };
   }
 
+  protected getNodejsMirrorURLInfo(version: string) {
+    const mirrorURL = this.nodeInfo.mirrorURL;
+
+    const osArch: string = this.translateArchToDistUrl(this.nodeInfo.arch);
+
+    version = semver.clean(version) || '';
+    const fileName: string =
+      this.osPlat == 'win32'
+        ? `node-v${version}-win-${osArch}`
+        : `node-v${version}-${this.osPlat}-${osArch}`;
+    const urlFileName: string =
+      this.osPlat == 'win32'
+        ? this.nodeInfo.arch === 'arm64'
+          ? `${fileName}.zip`
+          : `${fileName}.7z`
+        : `${fileName}.tar.gz`;
+
+    const url = `${mirrorURL}/v${version}/${urlFileName}`;
+
+    return <INodeVersionInfo>{
+      downloadUrl: url,
+      resolvedVersion: version,
+      arch: osArch,
+      fileName: fileName
+    };
+  }
+
   protected async downloadNodejs(info: INodeVersionInfo) {
     let downloadPath = '';
     core.info(
@@ -143,9 +195,23 @@ export default abstract class BaseDistribution {
       ) {
         return await this.acquireWindowsNodeFromFallbackLocation(
           info.resolvedVersion,
-          info.arch
+          info.arch,
+          info.downloadUrl
         );
       }
+      // Handle network-related issues (e.g., DNS resolution failures)
+      if (
+        err instanceof Error &&
+        err.message.includes('getaddrinfo EAI_AGAIN')
+      ) {
+        core.error(
+          `Network error: Failed to resolve the server at ${info.downloadUrl}. 
+            This could be due to a DNS resolution issue. Please verify the URL or check your network connection.`
+        );
+      }
+      core.error(
+        `Download failed from ${info.downloadUrl}. Please check the URl and try again.`
+      );
 
       throw err;
     }
@@ -166,9 +232,11 @@ export default abstract class BaseDistribution {
 
   protected async acquireWindowsNodeFromFallbackLocation(
     version: string,
-    arch: string = os.arch()
+    arch: string = os.arch(),
+    downloadUrl: string
   ): Promise<string> {
     const initialUrl = this.getDistributionUrl();
+    core.info('url: ' + initialUrl);
     const osArch: string = this.translateArchToDistUrl(arch);
 
     // Create temporary folder to download to
@@ -184,6 +252,12 @@ export default abstract class BaseDistribution {
       libUrl = `${initialUrl}/v${version}/win-${osArch}/node.lib`;
 
       core.info(`Downloading only node binary from ${exeUrl}`);
+
+      if (downloadUrl != exeUrl) {
+        core.error(
+          'unable to download node binary with the provided URL. Please check and try again'
+        );
+      }
 
       const exePath = await tc.downloadTool(exeUrl);
       await io.cp(exePath, path.join(tempDir, 'node.exe'));

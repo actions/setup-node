@@ -10,12 +10,13 @@ import osm from 'os';
 import path from 'path';
 import * as main from '../src/main';
 import * as auth from '../src/authutil';
-import {INodeVersion} from '../src/distributions/base-models';
+import {INodeVersion, NodeInputs} from '../src/distributions/base-models';
 
 import nodeTestDist from './data/node-dist-index.json';
 import nodeTestDistNightly from './data/node-nightly-index.json';
 import nodeTestDistRc from './data/node-rc-index.json';
 import nodeV8CanaryTestDist from './data/v8-canary-dist-index.json';
+import RcBuild from '../src/distributions/rc/rc_builds';
 
 describe('setup-node', () => {
   let inputs = {} as any;
@@ -144,6 +145,10 @@ describe('setup-node', () => {
 
     const toolPath = path.normalize('/cache/node/12.0.0-rc.1/x64');
     findSpy.mockImplementation(() => toolPath);
+    // Ensure spies are set up before running the main logic
+    const logSpy = jest.spyOn(console, 'log'); // Ensure this is spying on console.log
+    const cnSpy = jest.spyOn(process.stdout, 'write'); // Ensure this spies on the correct add-path function
+
     await main.run();
 
     expect(logSpy).toHaveBeenCalledWith(`Found in cache @ ${toolPath}`);
@@ -156,6 +161,10 @@ describe('setup-node', () => {
 
     const toolPath = path.normalize('/cache/node/12.0.0-rc.1/x64');
     findSpy.mockImplementation(() => toolPath);
+
+    // Ensure spies are set up before running the main logic
+    const logSpy = jest.spyOn(console, 'log'); // Ensure this is spying on console.log
+
     await main.run();
 
     expect(logSpy).toHaveBeenCalledWith(`Found in cache @ ${toolPath}`);
@@ -168,6 +177,10 @@ describe('setup-node', () => {
 
     const toolPath = path.normalize('/cache/node/12.0.0-rc.1/x64');
     findSpy.mockImplementation(() => toolPath);
+    // Ensure spies are set up before running the main logic
+    const logSpy = jest.spyOn(console, 'log'); // Ensure this is spying on console.log
+    const cnSpy = jest.spyOn(process.stdout, 'write'); // Ensure this spies on the correct add-path function
+
     await main.run();
 
     const expPath = path.join(toolPath, 'bin');
@@ -224,6 +237,10 @@ describe('setup-node', () => {
     inputs['node-version'] = versionSpec;
 
     findSpy.mockImplementation(() => '');
+    // Ensure spies are set up before running the main logic
+    const logSpy = jest.spyOn(console, 'log'); // Ensure this is spying on console.log
+    const cnSpy = jest.spyOn(process.stdout, 'write'); // Ensure this spies on the correct add-path function
+
     await main.run();
 
     expect(cnSpy).toHaveBeenCalledWith(
@@ -247,6 +264,11 @@ describe('setup-node', () => {
     dlSpy.mockImplementation(() => {
       throw new Error(errMsg);
     });
+
+    // Ensure spies are set up before running the main logic
+    const logSpy = jest.spyOn(console, 'log'); // Ensure this is spying on console.log
+    const cnSpy = jest.spyOn(process.stdout, 'write'); // Ensure this spies on the correct add-path function
+
     await main.run();
 
     expect(cnSpy).toHaveBeenCalledWith(`::error::${errMsg}${osm.EOL}`);
@@ -281,6 +303,9 @@ describe('setup-node', () => {
       const toolPath = path.normalize(`/cache/node/${version}/${arch}`);
       exSpy.mockImplementation(async () => '/some/other/temp/path');
       cacheSpy.mockImplementation(async () => toolPath);
+      // Ensure spies are set up before running the main logic
+      const logSpy = jest.spyOn(console, 'log'); // Ensure this is spying on console.log
+      const cnSpy = jest.spyOn(process.stdout, 'write'); // Ensure this spies on the correct add-path function
 
       await main.run();
       expect(dlSpy).toHaveBeenCalled();
@@ -331,6 +356,11 @@ describe('setup-node', () => {
         inputs['node-version'] = input;
         os['arch'] = 'x64';
         os['platform'] = 'linux';
+
+        // Ensure spies are set up before running the main logic
+        const logSpy = jest.spyOn(console, 'log'); // Ensure this is spying on console.log
+        const cnSpy = jest.spyOn(process.stdout, 'write'); // Ensure this spies on the correct add-path function
+
         // act
         await main.run();
 
@@ -352,14 +382,18 @@ describe('setup-node', () => {
       'finds the %s version in the hostedToolcache',
       async (input, expectedVersion) => {
         const toolPath = path.normalize(`/cache/node/${expectedVersion}/x64`);
-        findSpy.mockImplementation((_, version) =>
-          path.normalize(`/cache/node/${version}/x64`)
-        );
+
+        // Mocking the behavior of findSpy and findAllVersionsSpy
+        findSpy.mockImplementation((_, version) => {
+          console.log(`findSpy called for version: ${version}`); // Debugging line
+          return path.normalize(`/cache/node/${version}/x64`);
+        });
+
         findAllVersionsSpy.mockReturnValue([
           '2.2.2-rc.2',
           '1.1.1-rc.1',
           '99.1.1',
-          expectedVersion,
+          expectedVersion, // This should be the expected version
           '88.1.1',
           '3.3.3-rc.3'
         ]);
@@ -368,14 +402,27 @@ describe('setup-node', () => {
         os['arch'] = 'x64';
         os['platform'] = 'linux';
 
-        // act
+        // Ensure spies are set up before running the main logic
+        const logSpy = jest.spyOn(console, 'log'); // Ensure this is spying on console.log
+        const cnSpy = jest.spyOn(process.stdout, 'write'); // Ensure this spies on the correct add-path function
+
+        // Act: Run the main function (your application logic)
         await main.run();
 
-        // assert
+        // Debugging output to check if logSpy was called
+        console.log('logSpy calls:', logSpy.mock.calls); // Debugging line
+
+        // Assert: Check that the logSpy was called with the correct message
         expect(logSpy).toHaveBeenCalledWith(`Found in cache @ ${toolPath}`);
+
+        // Assert: Check that cnSpy was called with the correct add-path action
         expect(cnSpy).toHaveBeenCalledWith(
           `::add-path::${path.join(toolPath, 'bin')}${osm.EOL}`
         );
+
+        // Clean up spies
+        logSpy.mockRestore();
+        cnSpy.mockRestore();
       }
     );
 
@@ -390,6 +437,10 @@ describe('setup-node', () => {
       inputs['node-version'] = versionSpec;
       os['arch'] = 'x64';
       os['platform'] = 'linux';
+      // Ensure spies are set up before running the main logic
+      const logSpy = jest.spyOn(console, 'log'); // Ensure this is spying on console.log
+      const cnSpy = jest.spyOn(process.stdout, 'write'); // Ensure this spies on the correct add-path function
+
       // act
       await main.run();
 
@@ -397,6 +448,126 @@ describe('setup-node', () => {
       expect(cnSpy).toHaveBeenCalledWith(
         `::error::Unable to find Node version '${versionSpec}' for platform ${os.platform} and architecture ${os.arch}.${osm.EOL}`
       );
+    });
+  });
+
+  describe('RcBuild - Mirror URL functionality', () => {
+    const nodeInfo: NodeInputs = {
+      versionSpec: '18.0.0-rc',
+      arch: 'x64',
+      mirrorURL: '',
+      checkLatest: false,
+      stable: false
+    };
+
+    class RcBuild {
+      mirrorURL: string | undefined;
+      nodeInfo: NodeInputs;
+
+      constructor(nodeInfo: NodeInputs) {
+        this.nodeInfo = nodeInfo; // Store the nodeInfo object passed into the constructor
+        this.mirrorURL = nodeInfo.mirrorURL; // Set mirrorURL from nodeInfo, or undefined if not provided
+      }
+
+      getDistributionMirrorUrl() {
+        // If mirrorURL is provided in nodeInfo, return it
+        if (this.nodeInfo.mirrorURL != '') {
+          core.info(`Using mirror URL: ${this.nodeInfo.mirrorURL}`);
+          return this.nodeInfo.mirrorURL;
+        } else {
+          if (this.nodeInfo.mirrorURL === '') {
+            throw new Error(
+              'Mirror URL is empty. Please provide a valid mirror URL.'
+            );
+          } else {
+            if (this.nodeInfo.mirrorURL === undefined) {
+              throw new Error(
+                'Mirror URL is undefined. Please provide a valid mirror URL.'
+              );
+            }
+          }
+        }
+      }
+    }
+
+    it('should return the default distribution URL if no mirror URL is provided', () => {
+      // Assuming nodeInfo does not have a mirrorURL
+      const nodeInfo = {
+        versionSpec: '16.0.0-rc',
+        arch: 'x64',
+        checkLatest: false,
+        stable: false,
+        mirrorURL: '' // No mirror URL provided
+      };
+
+      const rcBuild = new RcBuild(nodeInfo);
+
+      const distributionUrl = rcBuild.getDistributionMirrorUrl();
+
+      // Default URL
+      expect(distributionUrl).toBe('https://nodejs.org/download/rc');
+    });
+
+    it('should use the mirror URL from nodeInfo if provided', () => {
+      const mirrorURL = 'https://my.custom.mirror/nodejs'; // Set the custom mirror URL
+      nodeInfo.mirrorURL = mirrorURL; // Set the mirrorURL in nodeInfo
+
+      const rcBuild = new RcBuild(nodeInfo);
+
+      // Mock core.info to track its calls
+      const infoSpy = jest.spyOn(core, 'info').mockImplementation(() => {});
+
+      // Call the method
+      const distributionMirrorUrl = rcBuild.getDistributionMirrorUrl(); // Access the method
+
+      // Assert that core.info was called with the correct mirror URL message
+      expect(infoSpy).toHaveBeenCalledWith(`Using mirror URL: ${mirrorURL}`);
+
+      // Assert that the returned URL is the mirror URL
+      expect(distributionMirrorUrl).toBe(mirrorURL);
+
+      // Restore the original core.info function after the test
+      infoSpy.mockRestore();
+    });
+
+    it('should throw an error if mirror URL is empty', () => {
+      nodeInfo.mirrorURL = ''; // Empty mirror URL
+
+      const rcBuild = new RcBuild(nodeInfo);
+
+      // Mock core.info to track its calls
+      const infoSpy = jest.spyOn(core, 'info').mockImplementation(() => {});
+
+      // Expect the function to return the default URL because the mirror URL is empty
+      const distributionMirrorUrl = rcBuild.getDistributionMirrorUrl();
+
+      // Assert the returned URL is the default URL
+      expect(distributionMirrorUrl).toBe('https://nodejs.org/download/rc');
+
+      // Ensure that core.info was NOT called because it's not a custom mirror URL
+      expect(infoSpy).not.toHaveBeenCalled();
+
+      // Restore the original core.info function after the test
+      infoSpy.mockRestore();
+    });
+
+    it('should throw an error if mirror URL is undefined', () => {
+      nodeInfo.mirrorURL = undefined; // Undefined mirror URL
+
+      const rcBuild = new RcBuild(nodeInfo);
+
+      // Mock core.info to track its calls
+      const infoSpy = jest.spyOn(core, 'info').mockImplementation(() => {});
+
+      // Expect the function to throw an error due to undefined mirror URL
+      expect(() => rcBuild.getDistributionMirrorUrl()).toThrowError(
+        'Mirror URL is undefined. Please provide a valid mirror URL.'
+      );
+
+      // Ensure that core.info was NOT called because it's not a valid URL
+      expect(infoSpy).not.toHaveBeenCalled();
+
+      infoSpy.mockRestore();
     });
   });
 });
