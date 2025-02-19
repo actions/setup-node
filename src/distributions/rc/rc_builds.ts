@@ -1,6 +1,5 @@
 import BaseDistribution from '../base-distribution';
 import {NodeInputs} from '../base-models';
-import * as core from '@actions/core';
 
 export default class RcBuild extends BaseDistribution {
   getDistributionMirrorUrl() {

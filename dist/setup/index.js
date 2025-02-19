@@ -100529,13 +100529,12 @@ class OfficialBuilds extends base_distribution_1.default {
                     throw new Error('Mirror URL is empty. Please provide a valid mirror URL.');
                 }
                 let downloadPath = '';
-                let toolPath = '';
                 try {
                     core.info(`Attempting to download using mirror URL...`);
                     downloadPath = yield this.downloadFromMirrorURL(); // Attempt to download from the mirror
                     core.info('downloadPath from downloadFromMirrorURL() ' + downloadPath);
                     if (downloadPath) {
-                        toolPath = downloadPath;
+                        const toolPath = downloadPath;
                     }
                 }
                 catch (err) {

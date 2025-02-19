@@ -22,13 +22,13 @@ export default class OfficialBuilds extends BaseDistribution {
         );
       }
       let downloadPath = '';
-      let toolPath = '';
+
       try {
         core.info(`Attempting to download using mirror URL...`);
         downloadPath = await this.downloadFromMirrorURL(); // Attempt to download from the mirror
         core.info('downloadPath from downloadFromMirrorURL() ' + downloadPath);
         if (downloadPath) {
-          toolPath = downloadPath;
+          const toolPath = downloadPath;
         }
       } catch (err) {
         core.info((err as Error).message);

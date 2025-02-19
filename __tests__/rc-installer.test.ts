@@ -560,7 +560,7 @@ describe('setup-node', () => {
       const infoSpy = jest.spyOn(core, 'info').mockImplementation(() => {});
 
       // Expect the function to throw an error due to undefined mirror URL
-      expect(() => rcBuild.getDistributionMirrorUrl()).toThrowError(
+      expect(() => rcBuild.getDistributionMirrorUrl()).toThrow(
         'Mirror URL is undefined. Please provide a valid mirror URL.'
       );
 

@@ -670,7 +670,6 @@ describe('NightlyNodejs', () => {
     );
   });
 
-  const core = require('@actions/core'); // Mock core
   jest.spyOn(core, 'info').mockImplementation(() => {}); // Mock core.info function
 
   it('logs mirror URL when provided', async () => {
