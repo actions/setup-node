@@ -2,10 +2,6 @@ import BaseDistribution from '../base-distribution';
 import {NodeInputs} from '../base-models';
 
 export default class RcBuild extends BaseDistribution {
-  getDistributionMirrorUrl() {
-    throw new Error('Method not implemented.');
-  }
-
   constructor(nodeInfo: NodeInputs) {
     super(nodeInfo);
   }

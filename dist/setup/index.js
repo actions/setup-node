@@ -100438,11 +100438,35 @@ exports.getNodejsDistribution = getNodejsDistribution;
 
 "use strict";
 
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 const base_distribution_prerelease_1 = __importDefault(__nccwpck_require__(957));
+const core = __importStar(__nccwpck_require__(2186));
 class NightlyNodejs extends base_distribution_prerelease_1.default {
     constructor(nodeInfo) {
         super(nodeInfo);
@@ -100451,6 +100475,7 @@ class NightlyNodejs extends base_distribution_prerelease_1.default {
     getDistributionUrl() {
         if (this.nodeInfo.mirrorURL) {
             if (this.nodeInfo.mirrorURL != '') {
+                core.info('Download using Using mirror URL for nightly Node.js.');
                 return this.nodeInfo.mirrorURL;
             }
             else {
@@ -100463,6 +100488,7 @@ class NightlyNodejs extends base_distribution_prerelease_1.default {
             }
         }
         else {
+            core.info('Using default distribution URL for nightly Node.js.');
             return 'https://nodejs.org/download/nightly';
         }
     }
@@ -100525,9 +100551,6 @@ class OfficialBuilds extends base_distribution_1.default {
         return __awaiter(this, void 0, void 0, function* () {
             var _a, _b;
             if (this.nodeInfo.mirrorURL) {
-                if (this.nodeInfo.mirrorURL === '') {
-                    throw new Error('Mirror URL is empty. Please provide a valid mirror URL.');
-                }
                 let downloadPath = '';
                 try {
                     core.info(`Attempting to download using mirror URL...`);
@@ -100539,10 +100562,13 @@ class OfficialBuilds extends base_distribution_1.default {
                 }
                 catch (err) {
                     core.info(err.message);
+                    core.info('Download failed');
                     core.debug((_a = err.stack) !== null && _a !== void 0 ? _a : 'empty stack');
                 }
             }
             else {
+                core.info('No mirror URL found. Falling back to default setup...');
+                core.info('Setup Node.js');
                 let manifest;
                 let nodeJsVersions;
                 const osArch = this.translateArchToDistUrl(this.nodeInfo.arch);
@@ -100765,9 +100791,6 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 const base_distribution_1 = __importDefault(__nccwpck_require__(7));
 class RcBuild extends base_distribution_1.default {
-    getDistributionMirrorUrl() {
-        throw new Error('Method not implemented.');
-    }
     constructor(nodeInfo) {
         super(nodeInfo);
     }
@@ -100875,7 +100898,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.run = void 0;
+exports.setupNodeJs = exports.run = void 0;
 const core = __importStar(__nccwpck_require__(2186));
 const os_1 = __importDefault(__nccwpck_require__(2037));
 const auth = __importStar(__nccwpck_require__(7573));
@@ -100903,7 +100926,10 @@ function run() {
             if (!arch) {
                 arch = os_1.default.arch();
             }
-            const mirrorURL = core.getInput('mirror-url').trim(); // .trim() to remove any accidental spaces
+            const mirrorURL = core.getInput('mirror-url');
+            if (mirrorURL === ' ' && mirrorURL === undefined) {
+                core.error('Mirror URL is emptry or undefined. The default mirror URL will be used.');
+            }
             if (version) {
                 const token = core.getInput('token');
                 const auth = !token ? undefined : `token ${token}`;
@@ -100964,6 +100990,10 @@ function resolveVersionInput() {
     }
     return version;
 }
+function setupNodeJs(mirrorURL) {
+    throw new Error('Function not implemented.');
+}
+exports.setupNodeJs = setupNodeJs;
 
 
 /***/ }),

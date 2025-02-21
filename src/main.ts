@@ -33,7 +33,12 @@ export async function run() {
       arch = os.arch();
     }
 
-    const mirrorURL = core.getInput('mirror-url').trim(); // .trim() to remove any accidental spaces
+    const mirrorURL = core.getInput('mirror-url');
+    if (mirrorURL === ' ' && mirrorURL === undefined) {
+      core.error(
+        'Mirror URL is emptry or undefined. The default mirror URL will be used.'
+      );
+    }
 
     if (version) {
       const token = core.getInput('token');
@@ -115,4 +120,7 @@ function resolveVersionInput(): string {
   }
 
   return version;
+}
+export function setupNodeJs(mirrorURL: string) {
+  throw new Error('Function not implemented.');
 }

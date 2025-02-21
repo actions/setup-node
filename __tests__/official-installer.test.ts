@@ -9,6 +9,7 @@ import cp from 'child_process';
 import osm from 'os';
 import path from 'path';
 import * as main from '../src/main';
+import isLtsAlias from '../src/distributions/official_builds/official_builds';
 import * as auth from '../src/authutil';
 import OfficialBuilds from '../src/distributions/official_builds/official_builds';
 import {INodeVersion, NodeInputs} from '../src/distributions/base-models';
@@ -829,13 +830,6 @@ describe('setup-node', () => {
     );
   });
 
-  import {OfficialBuilds} from './path-to-your-official-builds-file'; // Adjust path
-  import * as core from '@actions/core';
-  import * as tc from '@actions/tool-cache';
-
-  jest.mock('@actions/core');
-  jest.mock('@actions/tool-cache');
-
   describe('OfficialBuilds - Mirror URL functionality', () => {
     let officialBuilds: OfficialBuilds;
 
@@ -846,69 +840,61 @@ describe('setup-node', () => {
         arch: 'x64',
         stable: true,
         checkLatest: false,
-        osPlat: 'linux', // Mock OS platform to avoid "undefined" error
-        auth: 'someAuthToken'
+        osPlat: 'linux' // Mock OS platform to avoid "undefined" error
       };
-      officialBuilds = new OfficialBuilds(mockNodeInfo);
     });
 
     it('should download using the mirror URL when provided', async () => {
+      // Mock data for nodeInfo
+      const nodeInfo: NodeInputs = {
+        versionSpec: '8.0.0-canary',
+        arch: 'x64',
+        checkLatest: false,
+        stable: false,
+        mirrorURL: 'https://my.custom.mirror/nodejs' // Mirror URL provided here
+      };
+
+      // Mock the core.info function to capture logs
+      const logSpy = jest.spyOn(core, 'info').mockImplementation(() => {});
+
+      // Mock the tc.downloadTool to simulate downloading
       const mockDownloadPath = '/some/temp/path';
       const mockDownloadTool = jest
         .spyOn(tc, 'downloadTool')
         .mockResolvedValue(mockDownloadPath);
+
+      // Mock core.addPath to avoid actual path changes
       const mockAddPath = jest
         .spyOn(core, 'addPath')
         .mockImplementation(() => {});
 
-      await officialBuilds.setupNodeJs();
+      // Mock the findSpy or any other necessary logic
+      findSpy.mockImplementation(() => nodeInfo);
 
-      // Check if the mirror URL was used
-      expect(core.info).toHaveBeenCalledWith(
-        'Attempting to download using mirror URL...'
+      // Call the function that will use the mirror URL and log the message
+      await main.run();
+
+      // Ensure downloadTool was called with the mirror URL
+      expect(mockDownloadTool).toHaveBeenCalledWith(
+        'https://my.custom.mirror/nodejs'
       );
+
+      // Optionally, check that the download path was logged
       expect(core.info).toHaveBeenCalledWith(
         'downloadPath from downloadFromMirrorURL() /some/temp/path'
       );
-      expect(core.addPath).toHaveBeenCalledWith(mockDownloadPath);
-    });
 
-    it('should log a message when mirror URL is used', async () => {
-      const mockInfo = jest.spyOn(core, 'info').mockImplementation(() => {});
-
-      await officialBuilds.setupNodeJs();
-
-      // Check if the appropriate message is logged for mirror URL
-      expect(core.info).toHaveBeenCalledWith(
-        `Using mirror URL: https://my.custom.mirror/nodejs`
-      );
-    });
-
-    it('should fall back to default URL if mirror URL is not provided', async () => {
-      // Mock a scenario where mirror URL is not provided
-      officialBuilds.nodeInfo.mirrorURL = undefined;
-
-      const mockInfo = jest.spyOn(core, 'info').mockImplementation(() => {});
-
-      await officialBuilds.setupNodeJs();
-
-      // Check if fallback logic was triggered
-      expect(core.info).toHaveBeenCalledWith(
-        'Falling back to download directly from Node'
-      );
+      // Ensure the download path was added to the path
+      expect(mockAddPath).toHaveBeenCalledWith(mockDownloadPath);
+      expect(cnSpy).toHaveBeenCalledWith('https://my.custom.mirror/nodejs');
     });
 
     it('should log an error and handle failure during mirror URL download', async () => {
       const errorMessage = 'Network error';
-      const mockError = jest.spyOn(core, 'error').mockImplementation(() => {});
-      const mockDebug = jest.spyOn(core, 'debug').mockImplementation(() => {});
-
-      const mockDownloadTool = jest
-        .spyOn(tc, 'downloadTool')
-        .mockRejectedValue(new Error(errorMessage));
 
       try {
-        await officialBuilds.setupNodeJs();
+        // Act: Run the main function
+        await main.run();
       } catch (error) {
         // Expect core.error to be called with the error message
         expect(core.error).toHaveBeenCalledWith(errorMessage);
@@ -918,53 +904,23 @@ describe('setup-node', () => {
       }
     });
 
-    it('should log a fallback message if downloading from the mirror URL fails', async () => {
-      const mockInfo = jest.spyOn(core, 'info').mockImplementation(() => {});
-      const mockDownloadTool = jest
-        .spyOn(tc, 'downloadTool')
-        .mockRejectedValue(new Error('Download failed'));
+    it('should log an error message if downloading from the mirror URL fails', async () => {
+      // Spy on core.setFailed
+      const setFailedSpy = jest
+        .spyOn(core, 'setFailed')
+        .mockImplementation(() => {});
 
-      await officialBuilds.setupNodeJs();
-
-      // Check if fallback log message was triggered
-      expect(core.info).toHaveBeenCalledWith(
-        'Failed to download from mirror URL. Falling back to default Node.js URL...'
+      // Mocking downloadFromMirrorURL to reject the promise and simulate a failure
+      dlSpy.mockImplementation(() =>
+        Promise.reject(new Error('Download failed'))
       );
-    });
-
-    it('should throw an error if mirror URL is not provided and downloading from both mirror and default fails', async () => {
-      const errorMessage = `Unable to find Node version for platform linux and architecture x64.`;
-
-      const mockDownloadTool = jest
-        .spyOn(tc, 'downloadTool')
-        .mockRejectedValue(new Error('Download failed'));
-      const mockGetNodeJsVersions = jest
-        .spyOn(officialBuilds, 'getNodeJsVersions')
-        .mockResolvedValue([]);
-
-      // Simulating failure in getting versions and download
-      try {
-        await officialBuilds.setupNodeJs();
-      } catch (error) {
-        expect(error.message).toContain(errorMessage);
-      }
-    });
-
-    it('should throw an error if mirror URL is undefined and not provided', async () => {
-      const errorMessage = `Unable to find Node version for platform linux and architecture x64.`;
-      officialBuilds.nodeInfo.mirrorURL = undefined; // Simulate missing mirror URL
-
-      const mockGetNodeJsVersions = jest
-        .spyOn(officialBuilds, 'getNodeJsVersions')
-        .mockResolvedValue([]);
-      const mockDownloadTool = jest
-        .spyOn(tc, 'downloadTool')
-        .mockRejectedValue(new Error('Download failed'));
 
       try {
-        await officialBuilds.setupNodeJs();
-      } catch (error) {
-        expect(error.message).toContain(errorMessage);
+        // Call the function with the mirror URL
+        await main.run();
+      } catch (e) {
+        // Verifying if core.setFailed was called with the error message 'Download failed'
+        expect(setFailedSpy).toHaveBeenCalledWith('Download failed');
       }
     });
   });

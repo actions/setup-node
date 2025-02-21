@@ -16,11 +16,6 @@ export default class OfficialBuilds extends BaseDistribution {
 
   public async setupNodeJs() {
     if (this.nodeInfo.mirrorURL) {
-      if (this.nodeInfo.mirrorURL === '') {
-        throw new Error(
-          'Mirror URL is empty. Please provide a valid mirror URL.'
-        );
-      }
       let downloadPath = '';
 
       try {
@@ -32,9 +27,12 @@ export default class OfficialBuilds extends BaseDistribution {
         }
       } catch (err) {
         core.info((err as Error).message);
+        core.info('Download failed');
         core.debug((err as Error).stack ?? 'empty stack');
       }
     } else {
+      core.info('No mirror URL found. Falling back to default setup...');
+      core.info('Setup Node.js');
       let manifest: tc.IToolRelease[] | undefined;
       let nodeJsVersions: INodeVersion[] | undefined;
       const osArch = this.translateArchToDistUrl(this.nodeInfo.arch);
