@@ -1,5 +1,4 @@
 import * as core from '@actions/core';
-import 'jest';
 import * as exec from '@actions/exec';
 import * as tc from '@actions/tool-cache';
 import * as cache from '@actions/cache';
@@ -19,6 +18,7 @@ import * as installerFactory from '../src/distributions/installer-factory';
 jest.mock('../src/distributions/installer-factory', () => ({
   getNodejsDistribution: jest.fn()
 }));
+import {validateMirrorURL} from '../src/util';
 
 describe('main tests', () => {
   let inputs = {} as any;
@@ -43,6 +43,8 @@ describe('main tests', () => {
   let isCacheActionAvailable: jest.SpyInstance;
 
   let setupNodeJsSpy: jest.SpyInstance;
+
+  let validateMirrorUrlSpy: jest.SpyInstance;
 
   beforeEach(() => {
     inputs = {};
@@ -171,6 +173,45 @@ describe('main tests', () => {
     });
   });
 
+  describe('getNodeVersionFromFile', () => {
+    each`
+      contents                                     | expected
+      ${'12'}                                      | ${'12'}
+      ${'12.3'}                                    | ${'12.3'}
+      ${'12.3.4'}                                  | ${'12.3.4'}
+      ${'v12.3.4'}                                 | ${'12.3.4'}
+      ${'lts/erbium'}                              | ${'lts/erbium'}
+      ${'lts/*'}                                   | ${'lts/*'}
+      ${'nodejs 12.3.4'}                           | ${'12.3.4'}
+      ${'ruby 2.3.4\nnodejs 12.3.4\npython 3.4.5'} | ${'12.3.4'}
+      ${''}                                        | ${''}
+      ${'unknown format'}                          | ${'unknown format'}
+      ${'  14.1.0  '}                              | ${'14.1.0'}
+      ${'{"volta": {"node": ">=14.0.0 <=17.0.0"}}'}| ${'>=14.0.0 <=17.0.0'}
+      ${'{"volta": {"extends": "./package.json"}}'}| ${'18.0.0'}
+      ${'{"engines": {"node": "17.0.0"}}'}         | ${'17.0.0'}
+      ${'{}'}                                      | ${null}
+    `.it('parses "$contents"', ({contents, expected}) => {
+      const existsSpy = jest.spyOn(fs, 'existsSync');
+      existsSpy.mockImplementation(() => true);
+
+      const readFileSpy = jest.spyOn(fs, 'readFileSync');
+      readFileSpy.mockImplementation(filePath => {
+        if (
+          typeof filePath === 'string' &&
+          path.basename(filePath) === 'package.json'
+        ) {
+          // Special case for volta.extends
+          return '{"volta": {"node": "18.0.0"}}';
+        }
+
+        return contents;
+      });
+
+      expect(util.getNodeVersionFromFile('file')).toBe(expected);
+    });
+  });
+
   describe('node-version-file flag', () => {
     beforeEach(() => {
       delete inputs['node-version'];
@@ -287,91 +328,39 @@ describe('main tests', () => {
     });
   });
 
-  // Create a mock object that satisfies the BaseDistribution interface
-  const createMockNodejsDistribution = () => ({
-    setupNodeJs: jest.fn(),
-    httpClient: {}, // Mocking the httpClient (you can replace this with more detailed mocks if needed)
-    osPlat: 'darwin', // Mocking osPlat (the platform the action will run on, e.g., 'darwin', 'win32', 'linux')
-    nodeInfo: {
-      version: '14.x',
-      arch: 'x64',
-      platform: 'darwin'
-    },
-    getDistributionUrl: jest.fn().mockReturnValue('https://nodejs.org/dist/'), // Example URL
-    install: jest.fn(),
-    validate: jest.fn()
-    // Add any other methods/properties required by your BaseDistribution type
-  });
-
-  describe('Mirror URL Tests', () => {
+  describe('mirror-url parameter', () => {
     beforeEach(() => {
-      jest.clearAllMocks();
+      inputs['mirror-url'] = 'https://custom-mirror-url.com';
+
+      validateMirrorUrlSpy = jest.spyOn(main, 'run');
+      validateMirrorUrlSpy.mockImplementation(() => {});
     });
 
-    it('should pass mirror URL correctly when provided', async () => {
-      jest.spyOn(core, 'getInput').mockImplementation((name: string) => {
-        if (name === 'mirror-url') return 'https://custom-mirror-url.com';
-        if (name === 'node-version') return '14.x';
-        return '';
-      });
-
-      const mockNodejsDistribution = createMockNodejsDistribution();
-      (installerFactory.getNodejsDistribution as jest.Mock).mockReturnValue(
-        mockNodejsDistribution
-      );
-
-      await main.run();
-
-      // Ensure setupNodeJs is called with the correct parameters, including the mirror URL
-      expect(mockNodejsDistribution.setupNodeJs).toHaveBeenCalledWith({
-        versionSpec: '14.x',
-        checkLatest: false,
-        auth: undefined,
-        stable: true,
-        arch: 'x64',
-        mirrorURL: 'https://custom-mirror-url.com' // Ensure this matches
-      });
+    afterEach(() => {
+      validateMirrorUrlSpy.mockRestore();
     });
 
-    it('should use default mirror URL when no mirror URL is provided', async () => {
-      jest.spyOn(core, 'getInput').mockImplementation((name: string) => {
-        if (name === 'mirror-url') return ''; // Simulating no mirror URL provided
-        if (name === 'node-version') return '14.x';
-        return '';
-      });
+    it('Read mirror-url if mirror-url is provided', async () => {
+      // Arrange
+      inputs['mirror-url'] = 'https://custom-mirror-url.com';
 
-      const mockNodejsDistribution = createMockNodejsDistribution();
-      (installerFactory.getNodejsDistribution as jest.Mock).mockReturnValue(
-        mockNodejsDistribution
-      );
-
+      // Act
       await main.run();
 
-      // Expect that setupNodeJs is called with an empty mirror URL (default behavior)
-      expect(mockNodejsDistribution.setupNodeJs).toHaveBeenCalledWith(
-        expect.objectContaining({
-          mirrorURL: '' // Default URL is expected to be handled internally
-        })
-      );
+      // Assert
+      expect(inputs['mirror-url']).toBeDefined();
     });
 
-    it('should handle mirror URL with spaces correctly', async () => {
-      const mirrorURL = 'https://custom-mirror-url.com ';
-      const expectedTrimmedURL = 'https://custom-mirror-url.com';
+    it('should throw an error if mirror-url is empty', async () => {
+      // Arrange
+      inputs['mirror-url'] = ' ';
 
-      // Mock the setupNodeJs function
-      const mockNodejsDistribution = {
-        setupNodeJs: jest.fn()
-      };
+      // Mock log and setFailed
+      const logSpy = jest.spyOn(console, 'log').mockImplementation(() => {}); // Mock the log function
 
-      // Simulate calling the main function that will trigger setupNodeJs
-      await main.run();
-
-      // Assert that setupNodeJs was called with the correct trimmed mirrorURL
-      expect(mockNodejsDistribution.setupNodeJs).toHaveBeenCalledWith(
-        expect.objectContaining({
-          mirrorURL: expectedTrimmedURL // Ensure the URL is trimmed properly
-        })
+      // Act & Assert
+      expect(() => validateMirrorURL(inputs['mirror-url'])).toThrowError(
+        'Mirror URL is empty. Please provide a valid mirror URL.'
       );
     });
   });

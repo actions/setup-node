@@ -7,7 +7,11 @@ import * as path from 'path';
 import {restoreCache} from './cache-restore';
 import {isCacheFeatureAvailable} from './cache-utils';
 import {getNodejsDistribution} from './distributions/installer-factory';
-import {getNodeVersionFromFile, printEnvDetailsAndSetOutput} from './util';
+import {
+  getNodeVersionFromFile,
+  printEnvDetailsAndSetOutput,
+  validateMirrorURL
+} from './util';
 import {State} from './constants';
 
 export async function run() {
@@ -33,12 +37,8 @@ export async function run() {
       arch = os.arch();
     }
 
-    const mirrorURL = core.getInput('mirror-url');
-    if (mirrorURL === ' ' && mirrorURL === undefined) {
-      core.error(
-        'Mirror URL is emptry or undefined. The default mirror URL will be used.'
-      );
-    }
+    const mirrorurl = core.getInput('mirror-url');
+    const mirrorURL = validateMirrorURL(mirrorurl);
 
     if (version) {
       const token = core.getInput('token');
@@ -120,7 +120,4 @@ function resolveVersionInput(): string {
   }
 
   return version;
-}
-export function setupNodeJs(mirrorURL: string) {
-  throw new Error('Function not implemented.');
 }

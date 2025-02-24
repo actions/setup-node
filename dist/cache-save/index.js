@@ -91098,7 +91098,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.unique = exports.printEnvDetailsAndSetOutput = exports.getNodeVersionFromFile = void 0;
+exports.unique = exports.validateMirrorURL = exports.printEnvDetailsAndSetOutput = exports.getNodeVersionFromFile = void 0;
 const core = __importStar(__nccwpck_require__(2186));
 const exec = __importStar(__nccwpck_require__(1514));
 const io = __importStar(__nccwpck_require__(7436));
@@ -91186,6 +91186,15 @@ function getToolVersion(tool, options) {
         }
     });
 }
+function validateMirrorURL(mirrorURL) {
+    if (mirrorURL === ' ' || mirrorURL.trim() === 'undefined') {
+        throw new Error('Mirror URL is empty. Please provide a valid mirror URL.');
+    }
+    else {
+        return mirrorURL;
+    }
+}
+exports.validateMirrorURL = validateMirrorURL;
 const unique = () => {
     const encountered = new Set();
     return (value) => {

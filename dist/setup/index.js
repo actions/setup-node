@@ -100438,35 +100438,11 @@ exports.getNodejsDistribution = getNodejsDistribution;
 
 "use strict";
 
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
-    __setModuleDefault(result, mod);
-    return result;
-};
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 const base_distribution_prerelease_1 = __importDefault(__nccwpck_require__(957));
-const core = __importStar(__nccwpck_require__(2186));
 class NightlyNodejs extends base_distribution_prerelease_1.default {
     constructor(nodeInfo) {
         super(nodeInfo);
@@ -100474,21 +100450,9 @@ class NightlyNodejs extends base_distribution_prerelease_1.default {
     }
     getDistributionUrl() {
         if (this.nodeInfo.mirrorURL) {
-            if (this.nodeInfo.mirrorURL != '') {
-                core.info('Download using Using mirror URL for nightly Node.js.');
-                return this.nodeInfo.mirrorURL;
-            }
-            else {
-                if (this.nodeInfo.mirrorURL === '') {
-                    throw new Error('Mirror URL is empty. Please provide a valid mirror URL.');
-                }
-                else {
-                    throw new Error('Mirror URL is not a valid');
-                }
-            }
+            return this.nodeInfo.mirrorURL;
         }
         else {
-            core.info('Using default distribution URL for nightly Node.js.');
             return 'https://nodejs.org/download/nightly';
         }
     }
@@ -100796,17 +100760,7 @@ class RcBuild extends base_distribution_1.default {
     }
     getDistributionUrl() {
         if (this.nodeInfo.mirrorURL) {
-            if (this.nodeInfo.mirrorURL != '') {
-                return this.nodeInfo.mirrorURL;
-            }
-            else {
-                if (this.nodeInfo.mirrorURL === '') {
-                    throw new Error('Mirror URL is empty. Please provide a valid mirror URL.');
-                }
-                else {
-                    throw new Error('Mirror URL is not a valid');
-                }
-            }
+            return this.nodeInfo.mirrorURL;
         }
         else {
             return 'https://nodejs.org/download/rc';
@@ -100835,17 +100789,7 @@ class CanaryBuild extends base_distribution_prerelease_1.default {
     }
     getDistributionUrl() {
         if (this.nodeInfo.mirrorURL) {
-            if (this.nodeInfo.mirrorURL != '') {
-                return this.nodeInfo.mirrorURL;
-            }
-            else {
-                if (this.nodeInfo.mirrorURL === '') {
-                    throw new Error('Mirror URL is empty. Please provide a valid mirror URL.');
-                }
-                else {
-                    throw new Error('Mirror URL is not a valid');
-                }
-            }
+            return this.nodeInfo.mirrorURL;
         }
         else {
             return 'https://nodejs.org/download/v8-canary';
@@ -100898,7 +100842,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.setupNodeJs = exports.run = void 0;
+exports.run = void 0;
 const core = __importStar(__nccwpck_require__(2186));
 const os_1 = __importDefault(__nccwpck_require__(2037));
 const auth = __importStar(__nccwpck_require__(7573));
@@ -100926,10 +100870,8 @@ function run() {
             if (!arch) {
                 arch = os_1.default.arch();
             }
-            const mirrorURL = core.getInput('mirror-url');
-            if (mirrorURL === ' ' && mirrorURL === undefined) {
-                core.error('Mirror URL is emptry or undefined. The default mirror URL will be used.');
-            }
+            const mirrorurl = core.getInput('mirror-url');
+            const mirrorURL = (0, util_1.validateMirrorURL)(mirrorurl);
             if (version) {
                 const token = core.getInput('token');
                 const auth = !token ? undefined : `token ${token}`;
@@ -100990,10 +100932,6 @@ function resolveVersionInput() {
     }
     return version;
 }
-function setupNodeJs(mirrorURL) {
-    throw new Error('Function not implemented.');
-}
-exports.setupNodeJs = setupNodeJs;
 
 
 /***/ }),
@@ -101039,7 +100977,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.unique = exports.printEnvDetailsAndSetOutput = exports.getNodeVersionFromFile = void 0;
+exports.unique = exports.validateMirrorURL = exports.printEnvDetailsAndSetOutput = exports.getNodeVersionFromFile = void 0;
 const core = __importStar(__nccwpck_require__(2186));
 const exec = __importStar(__nccwpck_require__(1514));
 const io = __importStar(__nccwpck_require__(7436));
@@ -101127,6 +101065,15 @@ function getToolVersion(tool, options) {
         }
     });
 }
+function validateMirrorURL(mirrorURL) {
+    if (mirrorURL === ' ' || mirrorURL.trim() === 'undefined') {
+        throw new Error('Mirror URL is empty. Please provide a valid mirror URL.');
+    }
+    else {
+        return mirrorURL;
+    }
+}
+exports.validateMirrorURL = validateMirrorURL;
 const unique = () => {
     const encountered = new Set();
     return (value) => {

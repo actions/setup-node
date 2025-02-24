@@ -7,17 +7,7 @@ export default class RcBuild extends BaseDistribution {
   }
   protected getDistributionUrl(): string {
     if (this.nodeInfo.mirrorURL) {
-      if (this.nodeInfo.mirrorURL != '') {
-        return this.nodeInfo.mirrorURL;
-      } else {
-        if (this.nodeInfo.mirrorURL === '') {
-          throw new Error(
-            'Mirror URL is empty. Please provide a valid mirror URL.'
-          );
-        } else {
-          throw new Error('Mirror URL is not a valid');
-        }
-      }
+      return this.nodeInfo.mirrorURL;
     } else {
       return 'https://nodejs.org/download/rc';
     }

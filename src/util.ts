@@ -97,7 +97,13 @@ async function getToolVersion(tool: string, options: string[]) {
     return '';
   }
 }
-
+export function validateMirrorURL(mirrorURL) {
+  if (mirrorURL === ' ' || mirrorURL.trim() === 'undefined') {
+    throw new Error('Mirror URL is empty. Please provide a valid mirror URL.');
+  } else {
+    return mirrorURL;
+  }
+}
 export const unique = () => {
   const encountered = new Set();
   return (value: unknown): boolean => {
