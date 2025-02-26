@@ -359,7 +359,7 @@ describe('main tests', () => {
       const logSpy = jest.spyOn(console, 'log').mockImplementation(() => {}); // Mock the log function
 
       // Act & Assert
-      expect(() => validateMirrorURL(inputs['mirror-url'])).toThrowError(
+      expect(() => validateMirrorURL(inputs['mirror-url'])).toThrow(
         'Mirror URL is empty. Please provide a valid mirror URL.'
       );
     });
