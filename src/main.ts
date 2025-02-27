@@ -7,11 +7,7 @@ import * as path from 'path';
 import {restoreCache} from './cache-restore';
 import {isCacheFeatureAvailable} from './cache-utils';
 import {getNodejsDistribution} from './distributions/installer-factory';
-import {
-  getNodeVersionFromFile,
-  printEnvDetailsAndSetOutput,
-  validateMirrorURL
-} from './util';
+import {getNodeVersionFromFile, printEnvDetailsAndSetOutput} from './util';
 import {State} from './constants';
 
 export async function run() {
@@ -37,8 +33,7 @@ export async function run() {
       arch = os.arch();
     }
 
-    const mirrorurl = core.getInput('mirror-url');
-    const mirrorURL = validateMirrorURL(mirrorurl);
+    const mirrorURL = core.getInput('mirror-url');
 
     if (version) {
       const token = core.getInput('token');

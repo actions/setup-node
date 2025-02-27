@@ -100870,8 +100870,7 @@ function run() {
             if (!arch) {
                 arch = os_1.default.arch();
             }
-            const mirrorurl = core.getInput('mirror-url');
-            const mirrorURL = (0, util_1.validateMirrorURL)(mirrorurl);
+            const mirrorURL = core.getInput('mirror-url');
             if (version) {
                 const token = core.getInput('token');
                 const auth = !token ? undefined : `token ${token}`;

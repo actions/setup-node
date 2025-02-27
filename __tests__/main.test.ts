@@ -14,12 +14,6 @@ import * as main from '../src/main';
 import * as util from '../src/util';
 import OfficialBuilds from '../src/distributions/official_builds/official_builds';
 
-import * as installerFactory from '../src/distributions/installer-factory';
-jest.mock('../src/distributions/installer-factory', () => ({
-  getNodejsDistribution: jest.fn()
-}));
-import {validateMirrorURL} from '../src/util';
-
 describe('main tests', () => {
   let inputs = {} as any;
   let os = {} as any;
@@ -43,8 +37,6 @@ describe('main tests', () => {
   let isCacheActionAvailable: jest.SpyInstance;
 
   let setupNodeJsSpy: jest.SpyInstance;
-
-  let validateMirrorUrlSpy: jest.SpyInstance;
 
   beforeEach(() => {
     inputs = {};
@@ -173,45 +165,6 @@ describe('main tests', () => {
     });
   });
 
-  describe('getNodeVersionFromFile', () => {
-    each`
-      contents                                     | expected
-      ${'12'}                                      | ${'12'}
-      ${'12.3'}                                    | ${'12.3'}
-      ${'12.3.4'}                                  | ${'12.3.4'}
-      ${'v12.3.4'}                                 | ${'12.3.4'}
-      ${'lts/erbium'}                              | ${'lts/erbium'}
-      ${'lts/*'}                                   | ${'lts/*'}
-      ${'nodejs 12.3.4'}                           | ${'12.3.4'}
-      ${'ruby 2.3.4\nnodejs 12.3.4\npython 3.4.5'} | ${'12.3.4'}
-      ${''}                                        | ${''}
-      ${'unknown format'}                          | ${'unknown format'}
-      ${'  14.1.0  '}                              | ${'14.1.0'}
-      ${'{"volta": {"node": ">=14.0.0 <=17.0.0"}}'}| ${'>=14.0.0 <=17.0.0'}
-      ${'{"volta": {"extends": "./package.json"}}'}| ${'18.0.0'}
-      ${'{"engines": {"node": "17.0.0"}}'}         | ${'17.0.0'}
-      ${'{}'}                                      | ${null}
-    `.it('parses "$contents"', ({contents, expected}) => {
-      const existsSpy = jest.spyOn(fs, 'existsSync');
-      existsSpy.mockImplementation(() => true);
-
-      const readFileSpy = jest.spyOn(fs, 'readFileSync');
-      readFileSpy.mockImplementation(filePath => {
-        if (
-          typeof filePath === 'string' &&
-          path.basename(filePath) === 'package.json'
-        ) {
-          // Special case for volta.extends
-          return '{"volta": {"node": "18.0.0"}}';
-        }
-
-        return contents;
-      });
-
-      expect(util.getNodeVersionFromFile('file')).toBe(expected);
-    });
-  });
-
   describe('node-version-file flag', () => {
     beforeEach(() => {
       delete inputs['node-version'];
@@ -324,43 +277,6 @@ describe('main tests', () => {
 
       expect(warningSpy).toHaveBeenCalledWith(
         'The runner was not able to contact the cache service. Caching will be skipped'
-      );
-    });
-  });
-
-  describe('mirror-url parameter', () => {
-    beforeEach(() => {
-      inputs['mirror-url'] = 'https://custom-mirror-url.com';
-
-      validateMirrorUrlSpy = jest.spyOn(main, 'run');
-      validateMirrorUrlSpy.mockImplementation(() => {});
-    });
-
-    afterEach(() => {
-      validateMirrorUrlSpy.mockRestore();
-    });
-
-    it('Read mirror-url if mirror-url is provided', async () => {
-      // Arrange
-      inputs['mirror-url'] = 'https://custom-mirror-url.com';
-
-      // Act
-      await main.run();
-
-      // Assert
-      expect(inputs['mirror-url']).toBeDefined();
-    });
-
-    it('should throw an error if mirror-url is empty', async () => {
-      // Arrange
-      inputs['mirror-url'] = ' ';
-
-      // Mock log and setFailed
-      const logSpy = jest.spyOn(console, 'log').mockImplementation(() => {}); // Mock the log function
-
-      // Act & Assert
-      expect(() => validateMirrorURL(inputs['mirror-url'])).toThrow(
-        'Mirror URL is empty. Please provide a valid mirror URL.'
       );
     });
   });

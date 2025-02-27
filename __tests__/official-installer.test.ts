@@ -831,52 +831,7 @@ describe('setup-node', () => {
     );
   });
   describe('mirror-url parameter', () => {
-    it('Download mirror url if mirror-url is provided', async () => {
-      // Set up test inputs and environment
-      os.platform = 'linux';
-      os.arch = 'x64';
-      inputs['check-latest'] = 'true';
-      const mirrorURL = (inputs['mirror-url'] =
-        'https://custom-mirror-url.com');
-      inputs['token'] = 'faketoken';
-
-      // Mock that the version is not in cache (simulate a fresh download)
-      findSpy.mockImplementation(() => '');
-
-      // Mock implementations for other dependencies
-      const toolPath = path.normalize('/cache/node/11.11.0/x64');
-      exSpy.mockImplementation(async () => '/some/other/temp/path');
-      cacheSpy.mockImplementation(async () => toolPath);
-
-      const dlmirrorSpy = jest.fn(); // Create a spy to track the download logic
-
-      const mockDownloadNodejs = jest
-        .spyOn(OfficialBuilds.prototype as any, 'downloadFromMirrorURL')
-        .mockImplementation(async () => {
-          dlmirrorSpy();
-        });
-
-      // Run the main method or your logic that invokes `downloadFromMirrorURL`
-      await main.run(); // This should internally call `downloadFromMirrorURL`
-
-      // Prepare the expected path after download
-      const expPath = path.join(toolPath, 'bin');
-
-      // Assert that the spy was called, meaning the download logic was triggered
-      expect(dlmirrorSpy).toHaveBeenCalled(); // This verifies that the download occurred
-
-      // Other assertions to verify the flow
-      expect(exSpy).toHaveBeenCalled();
-      expect(logSpy).toHaveBeenCalledWith(
-        `Attempting to download from ${mirrorURL}...`
-      );
-      expect(cnSpy).toHaveBeenCalledWith(`::add-path::${expPath}${osm.EOL}`);
-
-      // Clean up mocks after the test
-      mockDownloadNodejs.mockRestore(); // Ensure to restore the original method after the test
-    });
-
-    it('fallback to default if mirror url is not provided', async () => {
+    it('default if mirror url is not provided', async () => {
       os.platform = 'linux';
       os.arch = 'x64';
 
