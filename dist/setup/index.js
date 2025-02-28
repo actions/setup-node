@@ -100165,16 +100165,15 @@ class BaseDistribution {
             catch (err) {
                 if (err instanceof Error &&
                     err.message.includes('getaddrinfo EAI_AGAIN')) {
-                    core.error(`Network error: Failed to resolve the server at ${dataUrl}. 
+                    core.setFailed(`Network error: Failed to resolve the server at ${dataUrl}. 
                       Please check your DNS settings or verify that the URL is correct.`);
                 }
                 else if (err instanceof hc.HttpClientError && err.statusCode === 404) {
-                    core.error(`404 Error: Unable to find versions at ${dataUrl}. 
+                    core.setFailed(`404 Error: Unable to find versions at ${dataUrl}. 
                       Please verify that the mirror URL is valid.`);
                 }
                 else {
-                    core.error(`Failed to fetch Node.js versions from ${dataUrl}. 
-                      Please check the URL and try again.}`);
+                    core.setFailed(`Failed to fetch Node.js versions from ${dataUrl}.Please check the URL and try again.}`);
                 }
                 throw err;
             }
@@ -100525,8 +100524,8 @@ class OfficialBuilds extends base_distribution_1.default {
                     }
                 }
                 catch (err) {
-                    core.info(err.message);
-                    core.info('Download failed');
+                    core.setFailed(err.message);
+                    core.setFailed('Download failed');
                     core.debug((_a = err.stack) !== null && _a !== void 0 ? _a : 'empty stack');
                 }
             }
@@ -100726,13 +100725,13 @@ class OfficialBuilds extends base_distribution_1.default {
             }
             catch (error) {
                 if (error instanceof tc.HTTPError && error.httpStatusCode === 404) {
-                    core.error(`Node version ${this.nodeInfo.versionSpec} for platform ${this.osPlat} and architecture ${this.nodeInfo.arch} was found but failed to download. ` +
+                    core.setFailed(`Node version ${this.nodeInfo.versionSpec} for platform ${this.osPlat} and architecture ${this.nodeInfo.arch} was found but failed to download. ` +
                         'This usually happens when downloadable binaries are not fully updated at https://nodejs.org/. ' +
                         'To resolve this issue you may either fall back to the older version or try again later.');
                 }
                 else {
                     // For any other error type, you can log the error message.
-                    core.error(`An unexpected error occurred like url might not correct`);
+                    core.setFailed(`An unexpected error occurred like url might not correct`);
                 }
                 throw error;
             }

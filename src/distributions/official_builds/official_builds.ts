@@ -26,8 +26,8 @@ export default class OfficialBuilds extends BaseDistribution {
           const toolPath = downloadPath;
         }
       } catch (err) {
-        core.info((err as Error).message);
-        core.info('Download failed');
+        core.setFailed((err as Error).message);
+        core.setFailed('Download failed');
         core.debug((err as Error).stack ?? 'empty stack');
       }
     } else {
@@ -334,14 +334,14 @@ export default class OfficialBuilds extends BaseDistribution {
       return toolPath;
     } catch (error) {
       if (error instanceof tc.HTTPError && error.httpStatusCode === 404) {
-        core.error(
+        core.setFailed(
           `Node version ${this.nodeInfo.versionSpec} for platform ${this.osPlat} and architecture ${this.nodeInfo.arch} was found but failed to download. ` +
             'This usually happens when downloadable binaries are not fully updated at https://nodejs.org/. ' +
             'To resolve this issue you may either fall back to the older version or try again later.'
         );
       } else {
         // For any other error type, you can log the error message.
-        core.error(`An unexpected error occurred like url might not correct`);
+        core.setFailed(`An unexpected error occurred like url might not correct`);
       }
 
       throw error;
