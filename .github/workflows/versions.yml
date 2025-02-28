@@ -1,15 +1,7 @@
 name: versions
 
 on:
-  pull_request:
-    paths-ignore:
-      - '**.md'
-  push:
-    branches:
-      - main
-      - releases/*
-    paths-ignore:
-      - '**.md'
+  workflow_dispath:
 
 jobs:
   local-cache:
