@@ -1,7 +1,7 @@
 name: versions
 
 on:
-  workflow_dispath:
+  workflow_dispatch:
 
 jobs:
   local-cache:
