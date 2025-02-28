@@ -341,7 +341,9 @@ export default class OfficialBuilds extends BaseDistribution {
         );
       } else {
         // For any other error type, you can log the error message.
-        core.setFailed(`An unexpected error occurred like url might not correct`);
+        core.setFailed(
+          `An unexpected error occurred like url might not correct`
+        );
       }
 
       throw error;

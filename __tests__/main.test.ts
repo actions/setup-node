@@ -13,7 +13,7 @@ import each from 'jest-each';
 import * as main from '../src/main';
 import * as util from '../src/util';
 import OfficialBuilds from '../src/distributions/official_builds/official_builds';
-import { validateMirrorURL } from '../src/util';
+import {validateMirrorURL} from '../src/util';
 
 describe('main tests', () => {
   let inputs = {} as any;
@@ -284,12 +284,10 @@ describe('main tests', () => {
   describe('mirror-url parameter', () => {
     beforeEach(() => {
       inputs['mirror-url'] = 'https://custom-mirror-url.com';
-
-      
     });
 
     afterEach(() => {
-    delete inputs['mirror-url'];
+      delete inputs['mirror-url'];
     });
 
     it('Read mirror-url if mirror-url is provided', async () => {
@@ -316,5 +314,4 @@ describe('main tests', () => {
       );
     });
   });
-
 });
