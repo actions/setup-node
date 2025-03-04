@@ -21,17 +21,12 @@ export default class OfficialBuilds extends BaseDistribution {
       try {
         core.info(`Attempting to download using mirror URL...`);
         downloadPath = await this.downloadFromMirrorURL(); // Attempt to download from the mirror
-        core.info('downloadPath from downloadFromMirrorURL() ' + downloadPath);
-        if (downloadPath) {
-          const toolPath = downloadPath;
-        }
       } catch (err) {
         core.setFailed((err as Error).message);
         core.setFailed('Download failed');
         core.debug((err as Error).stack ?? 'empty stack');
       }
     } else {
-      core.info('No mirror URL found. Falling back to default setup...');
       core.info('Setup Node.js');
       let manifest: tc.IToolRelease[] | undefined;
       let nodeJsVersions: INodeVersion[] | undefined;

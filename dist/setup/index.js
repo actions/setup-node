@@ -100516,10 +100516,6 @@ class OfficialBuilds extends base_distribution_1.default {
                 try {
                     core.info(`Attempting to download using mirror URL...`);
                     downloadPath = yield this.downloadFromMirrorURL(); // Attempt to download from the mirror
-                    core.info('downloadPath from downloadFromMirrorURL() ' + downloadPath);
-                    if (downloadPath) {
-                        const toolPath = downloadPath;
-                    }
                 }
                 catch (err) {
                     core.setFailed(err.message);
@@ -100528,7 +100524,6 @@ class OfficialBuilds extends base_distribution_1.default {
                 }
             }
             else {
-                core.info('No mirror URL found. Falling back to default setup...');
                 core.info('Setup Node.js');
                 let manifest;
                 let nodeJsVersions;
