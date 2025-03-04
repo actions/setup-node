@@ -100124,19 +100124,6 @@ class BaseDistribution {
             return evaluatedVersion;
         });
     }
-    findMirrorVersionInDist(nodeJsVersions) {
-        return __awaiter(this, void 0, void 0, function* () {
-            if (!nodeJsVersions) {
-                nodeJsVersions = yield this.getNodeJsVersions();
-            }
-            const versions = this.filterVersions(nodeJsVersions);
-            const evaluatedVersion = this.evaluateVersions(versions);
-            if (!evaluatedVersion) {
-                throw new Error(`Unable to find Node version '${this.nodeInfo.versionSpec}' for platform ${this.osPlat} and architecture ${this.nodeInfo.arch}.`);
-            }
-            return evaluatedVersion;
-        });
-    }
     evaluateVersions(versions) {
         let version = '';
         const { range, options } = this.validRange(this.nodeInfo.versionSpec);
@@ -100718,43 +100705,28 @@ class OfficialBuilds extends base_distribution_1.default {
     }
     downloadFromMirrorURL() {
         return __awaiter(this, void 0, void 0, function* () {
-            // Fetch the available Node.js versions from the mirror
             const nodeJsVersions = yield this.getMirrorUrlVersions();
-            // Filter the available versions based on your criteria
             const versions = this.filterVersions(nodeJsVersions);
-            let evaluatedVersion;
-            // If `checkLatest` is set, use the latest version from the mirror
-            if (this.nodeInfo.checkLatest) {
-                evaluatedVersion = yield this.findMirrorVersionInDist(nodeJsVersions);
-                this.nodeInfo.versionSpec = evaluatedVersion; // Update versionSpec to the latest version
-            }
-            else {
-                // Otherwise, evaluate the version from the filtered list
-                evaluatedVersion = this.evaluateVersions(versions);
-            }
-            // If no version is found, throw an error
+            const evaluatedVersion = this.evaluateVersions(versions);
             if (!evaluatedVersion) {
-                throw new Error(`Unable to find Node version '${this.nodeInfo.versionSpec}' for platform ${this.osPlat} and architecture ${this.nodeInfo.arch} from the provided mirror-url ${this.nodeInfo.mirrorURL}. Please check the mirror-url.`);
+                throw new Error(`Unable to find Node version '${this.nodeInfo.versionSpec}' for platform ${this.osPlat} and architecture ${this.nodeInfo.arch} from the provided mirror-url ${this.nodeInfo.mirrorURL}. Please check the mirror-url`);
             }
-            // Get the tool name for downloading
             const toolName = this.getNodejsMirrorURLInfo(evaluatedVersion);
             try {
-                // Try to download the Node.js binaries
                 const toolPath = yield this.downloadNodejs(toolName);
                 return toolPath;
             }
             catch (error) {
-                // Handle specific HTTP error (404 - Not Found)
                 if (error instanceof tc.HTTPError && error.httpStatusCode === 404) {
                     core.setFailed(`Node version ${this.nodeInfo.versionSpec} for platform ${this.osPlat} and architecture ${this.nodeInfo.arch} was found but failed to download. ` +
                         'This usually happens when downloadable binaries are not fully updated at https://nodejs.org/. ' +
                         'To resolve this issue you may either fall back to the older version or try again later.');
                 }
                 else {
-                    // For any other error, log the actual error message
-                    core.setFailed(`An unexpected error occurred:'url might not be correct'}`);
+                    // For any other error type, you can log the error message.
+                    core.setFailed(`An unexpected error occurred like url might not correct`);
                 }
-                throw error; // Re-throw the error after logging
+                throw error;
             }
         });
     }

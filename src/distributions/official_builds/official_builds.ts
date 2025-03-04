@@ -310,39 +310,24 @@ export default class OfficialBuilds extends BaseDistribution {
   }
 
   protected async downloadFromMirrorURL() {
-    // Fetch the available Node.js versions from the mirror
     const nodeJsVersions = await this.getMirrorUrlVersions();
-
-    // Filter the available versions based on your criteria
     const versions = this.filterVersions(nodeJsVersions);
 
-    let evaluatedVersion;
+    const evaluatedVersion = this.evaluateVersions(versions);
 
-    // If `checkLatest` is set, use the latest version from the mirror
-    if (this.nodeInfo.checkLatest) {
-      evaluatedVersion = await this.findMirrorVersionInDist(nodeJsVersions);
-      this.nodeInfo.versionSpec = evaluatedVersion; // Update versionSpec to the latest version
-    } else {
-      // Otherwise, evaluate the version from the filtered list
-      evaluatedVersion = this.evaluateVersions(versions);
-    }
-
-    // If no version is found, throw an error
     if (!evaluatedVersion) {
       throw new Error(
-        `Unable to find Node version '${this.nodeInfo.versionSpec}' for platform ${this.osPlat} and architecture ${this.nodeInfo.arch} from the provided mirror-url ${this.nodeInfo.mirrorURL}. Please check the mirror-url.`
+        `Unable to find Node version '${this.nodeInfo.versionSpec}' for platform ${this.osPlat} and architecture ${this.nodeInfo.arch} from the provided mirror-url ${this.nodeInfo.mirrorURL}. Please check the mirror-url`
       );
     }
 
-    // Get the tool name for downloading
     const toolName = this.getNodejsMirrorURLInfo(evaluatedVersion);
 
     try {
-      // Try to download the Node.js binaries
       const toolPath = await this.downloadNodejs(toolName);
+
       return toolPath;
     } catch (error) {
-      // Handle specific HTTP error (404 - Not Found)
       if (error instanceof tc.HTTPError && error.httpStatusCode === 404) {
         core.setFailed(
           `Node version ${this.nodeInfo.versionSpec} for platform ${this.osPlat} and architecture ${this.nodeInfo.arch} was found but failed to download. ` +
@@ -350,13 +335,13 @@ export default class OfficialBuilds extends BaseDistribution {
             'To resolve this issue you may either fall back to the older version or try again later.'
         );
       } else {
-        // For any other error, log the actual error message
+        // For any other error type, you can log the error message.
         core.setFailed(
-          `An unexpected error occurred:'url might not be correct'}`
+          `An unexpected error occurred like url might not correct`
         );
       }
 
-      throw error; // Re-throw the error after logging
+      throw error;
     }
   }
 }
