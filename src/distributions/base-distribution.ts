@@ -63,6 +63,20 @@ export default abstract class BaseDistribution {
 
     return evaluatedVersion;
   }
+  protected async findMirrorVersionInDist(nodeJsVersions?: INodeVersion[]) {
+    if (!nodeJsVersions) {
+      nodeJsVersions = await this.getNodeJsVersions();
+    }
+    const versions = this.filterVersions(nodeJsVersions);
+    const evaluatedVersion = this.evaluateVersions(versions);
+    if (!evaluatedVersion) {
+      throw new Error(
+        `Unable to find Node version '${this.nodeInfo.versionSpec}' for platform ${this.osPlat} and architecture ${this.nodeInfo.arch}.`
+      );
+    }
+
+    return evaluatedVersion;
+  }
 
   protected evaluateVersions(versions: string[]): string {
     let version = '';
