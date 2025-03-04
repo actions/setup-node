@@ -100510,17 +100510,14 @@ class OfficialBuilds extends base_distribution_1.default {
     }
     setupNodeJs() {
         return __awaiter(this, void 0, void 0, function* () {
-            var _a, _b;
+            var _a;
             if (this.nodeInfo.mirrorURL) {
-                let downloadPath = '';
                 try {
                     core.info(`Attempting to download using mirror URL...`);
-                    downloadPath = yield this.downloadFromMirrorURL(); // Attempt to download from the mirror
+                    yield this.downloadFromMirrorURL(); // Attempt to download from the mirror
                 }
                 catch (err) {
                     core.setFailed(err.message);
-                    core.setFailed('Download failed');
-                    core.debug((_a = err.stack) !== null && _a !== void 0 ? _a : 'empty stack');
                 }
             }
             else {
@@ -100581,7 +100578,7 @@ class OfficialBuilds extends base_distribution_1.default {
                     else {
                         core.info(err.message);
                     }
-                    core.debug((_b = err.stack) !== null && _b !== void 0 ? _b : 'empty stack');
+                    core.debug((_a = err.stack) !== null && _a !== void 0 ? _a : 'empty stack');
                     core.info('Falling back to download directly from Node');
                 }
                 if (!toolPath) {
@@ -100719,11 +100716,10 @@ class OfficialBuilds extends base_distribution_1.default {
             catch (error) {
                 if (error instanceof tc.HTTPError && error.httpStatusCode === 404) {
                     core.setFailed(`Node version ${this.nodeInfo.versionSpec} for platform ${this.osPlat} and architecture ${this.nodeInfo.arch} was found but failed to download. ` +
-                        'This usually happens when downloadable binaries are not fully updated at https://nodejs.org/. ' +
+                        'This usually happens when downloadable binaries are not fully updated in the provided mirror-url' +
                         'To resolve this issue you may either fall back to the older version or try again later.');
                 }
                 else {
-                    // For any other error type, you can log the error message.
                     core.setFailed(`An unexpected error occurred like url might not correct`);
                 }
                 throw error;

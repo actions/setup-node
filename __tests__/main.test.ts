@@ -305,7 +305,6 @@ describe('main tests', () => {
       // Arrange
       inputs['mirror-url'] = ' ';
 
-      // Mock log and setFailed
       const logSpy = jest.spyOn(console, 'log').mockImplementation(() => {}); // Mock the log function
 
       // Act & Assert

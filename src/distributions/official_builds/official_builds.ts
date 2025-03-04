@@ -16,15 +16,11 @@ export default class OfficialBuilds extends BaseDistribution {
 
   public async setupNodeJs() {
     if (this.nodeInfo.mirrorURL) {
-      let downloadPath = '';
-
       try {
         core.info(`Attempting to download using mirror URL...`);
-        downloadPath = await this.downloadFromMirrorURL(); // Attempt to download from the mirror
+        await this.downloadFromMirrorURL(); // Attempt to download from the mirror
       } catch (err) {
         core.setFailed((err as Error).message);
-        core.setFailed('Download failed');
-        core.debug((err as Error).stack ?? 'empty stack');
       }
     } else {
       core.info('Setup Node.js');
@@ -331,11 +327,10 @@ export default class OfficialBuilds extends BaseDistribution {
       if (error instanceof tc.HTTPError && error.httpStatusCode === 404) {
         core.setFailed(
           `Node version ${this.nodeInfo.versionSpec} for platform ${this.osPlat} and architecture ${this.nodeInfo.arch} was found but failed to download. ` +
-            'This usually happens when downloadable binaries are not fully updated at https://nodejs.org/. ' +
+            'This usually happens when downloadable binaries are not fully updated in the provided mirror-url' +
             'To resolve this issue you may either fall back to the older version or try again later.'
         );
       } else {
-        // For any other error type, you can log the error message.
         core.setFailed(
           `An unexpected error occurred like url might not correct`
         );
