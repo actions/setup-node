@@ -76,6 +76,21 @@ See [action.yml](action.yml)
     # Set always-auth option in npmrc file.
     # Default: ''
     always-auth: ''
+
+    # Optional mirror to download binaries from.
+    # Artifacts need to match the official Node.js
+    # Example:
+    # V8 Canaray Build: <mirror_url>/download/v8-canary
+    # RC Build: <mirror_url>/download/rc
+    # Official: Build <mirror_url>/dist
+    # Nightly build: <mirror_url>/download/nightly
+    # Default: ''
+    mirror: ''
+
+    # Optional mirror token.
+    # The token will be used as a bearer token in the Authorization header
+    # Default: ''
+    mirror-token: ''
 ```
 <!-- end usage -->
 
