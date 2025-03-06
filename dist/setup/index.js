@@ -100148,9 +100148,13 @@ class BaseDistribution {
     }
     getNodeJsVersions() {
         return __awaiter(this, void 0, void 0, function* () {
-            const initialUrl = this.getDistributionUrl();
+            const initialUrl = this.getDistributionUrl(this.nodeInfo.mirror);
             const dataUrl = `${initialUrl}/index.json`;
-            const response = yield this.httpClient.getJson(dataUrl);
+            const headers = {};
+            if (this.nodeInfo.mirrorToken) {
+                headers['Authorization'] = `Bearer ${this.nodeInfo.mirrorToken}`;
+            }
+            const response = yield this.httpClient.getJson(dataUrl, headers);
             return response.result || [];
         });
     }
@@ -100165,7 +100169,7 @@ class BaseDistribution {
                 ? `${fileName}.zip`
                 : `${fileName}.7z`
             : `${fileName}.tar.gz`;
-        const initialUrl = this.getDistributionUrl();
+        const initialUrl = this.getDistributionUrl(this.nodeInfo.mirror);
         const url = `${initialUrl}/v${version}/${urlFileName}`;
         return {
             downloadUrl: url,
@@ -100179,7 +100183,7 @@ class BaseDistribution {
             let downloadPath = '';
             core.info(`Acquiring ${info.resolvedVersion} - ${info.arch} from ${info.downloadUrl}`);
             try {
-                downloadPath = yield tc.downloadTool(info.downloadUrl);
+                downloadPath = yield tc.downloadTool(info.downloadUrl, undefined, this.nodeInfo.mirrorToken);
             }
             catch (err) {
                 if (err instanceof tc.HTTPError &&
@@ -100203,7 +100207,7 @@ class BaseDistribution {
     }
     acquireWindowsNodeFromFallbackLocation(version_1) {
         return __awaiter(this, arguments, void 0, function* (version, arch = os_1.default.arch()) {
-            const initialUrl = this.getDistributionUrl();
+            const initialUrl = this.getDistributionUrl(this.nodeInfo.mirror);
             const osArch = this.translateArchToDistUrl(arch);
             // Create temporary folder to download to
             const tempDownloadFolder = `temp_${(0, uuid_1.v4)()}`;
@@ -100217,18 +100221,18 @@ class BaseDistribution {
                 exeUrl = `${initialUrl}/v${version}/win-${osArch}/node.exe`;
                 libUrl = `${initialUrl}/v${version}/win-${osArch}/node.lib`;
                 core.info(`Downloading only node binary from ${exeUrl}`);
-                const exePath = yield tc.downloadTool(exeUrl);
+                const exePath = yield tc.downloadTool(exeUrl, undefined, this.nodeInfo.mirrorToken);
                 yield io.cp(exePath, path.join(tempDir, 'node.exe'));
-                const libPath = yield tc.downloadTool(libUrl);
+                const libPath = yield tc.downloadTool(libUrl, undefined, this.nodeInfo.mirrorToken);
                 yield io.cp(libPath, path.join(tempDir, 'node.lib'));
             }
             catch (err) {
                 if (err instanceof tc.HTTPError && err.httpStatusCode == 404) {
                     exeUrl = `${initialUrl}/v${version}/node.exe`;
                     libUrl = `${initialUrl}/v${version}/node.lib`;
-                    const exePath = yield tc.downloadTool(exeUrl);
+                    const exePath = yield tc.downloadTool(exeUrl, undefined, this.nodeInfo.mirrorToken);
                     yield io.cp(exePath, path.join(tempDir, 'node.exe'));
-                    const libPath = yield tc.downloadTool(libUrl);
+                    const libPath = yield tc.downloadTool(libUrl, undefined, this.nodeInfo.mirrorToken);
                     yield io.cp(libPath, path.join(tempDir, 'node.lib'));
                 }
                 else {
@@ -100391,8 +100395,9 @@ class NightlyNodejs extends base_distribution_prerelease_1.default {
         super(nodeInfo);
         this.distribution = 'nightly';
     }
-    getDistributionUrl() {
-        return 'https://nodejs.org/download/nightly';
+    getDistributionUrl(mirror) {
+        const url = mirror || 'https://nodejs.org';
+        return `${url}/download/nightly`;
     }
 }
 exports["default"] = NightlyNodejs;
@@ -100490,7 +100495,7 @@ class OfficialBuilds extends base_distribution_1.default {
                 const versionInfo = yield this.getInfoFromManifest(this.nodeInfo.versionSpec, this.nodeInfo.stable, osArch, manifest);
                 if (versionInfo) {
                     core.info(`Acquiring ${versionInfo.resolvedVersion} - ${versionInfo.arch} from ${versionInfo.downloadUrl}`);
-                    downloadPath = yield tc.downloadTool(versionInfo.downloadUrl, undefined, this.nodeInfo.auth);
+                    downloadPath = yield tc.downloadTool(versionInfo.downloadUrl, undefined, this.nodeInfo.mirror ? this.nodeInfo.mirrorToken : this.nodeInfo.auth);
                     if (downloadPath) {
                         toolPath = yield this.extractArchive(downloadPath, versionInfo, false);
                     }
@@ -100558,12 +100563,13 @@ class OfficialBuilds extends base_distribution_1.default {
         version = super.evaluateVersions(versions);
         return version;
     }
-    getDistributionUrl() {
-        return `https://nodejs.org/dist`;
+    getDistributionUrl(mirror) {
+        const url = mirror || 'https://nodejs.org';
+        return `${url}/dist`;
     }
     getManifest() {
         core.debug('Getting manifest from actions/node-versions@main');
-        return tc.getManifestFromRepo('actions', 'node-versions', this.nodeInfo.auth, 'main');
+        return tc.getManifestFromRepo('actions', 'node-versions', this.nodeInfo.mirror ? this.nodeInfo.mirrorToken : this.nodeInfo.auth, 'main');
     }
     resolveLtsAliasFromManifest(versionSpec, stable, manifest) {
         var _a;
@@ -100646,8 +100652,9 @@ class RcBuild extends base_distribution_1.default {
     constructor(nodeInfo) {
         super(nodeInfo);
     }
-    getDistributionUrl() {
-        return 'https://nodejs.org/download/rc';
+    getDistributionUrl(mirror) {
+        const url = mirror || 'https://nodejs.org';
+        return `${url}/download/rc`;
     }
 }
 exports["default"] = RcBuild;
@@ -100670,8 +100677,9 @@ class CanaryBuild extends base_distribution_prerelease_1.default {
         super(nodeInfo);
         this.distribution = 'v8-canary';
     }
-    getDistributionUrl() {
-        return 'https://nodejs.org/download/v8-canary';
+    getDistributionUrl(mirror) {
+        const url = mirror || 'https://nodejs.org';
+        return `${url}/download/v8-canary`;
     }
 }
 exports["default"] = CanaryBuild;
@@ -100751,6 +100759,8 @@ function run() {
             if (version) {
                 const token = core.getInput('token');
                 const auth = !token ? undefined : `token ${token}`;
+                const mirror = core.getInput('mirror');
+                const mirrorToken = core.getInput('mirror-token');
                 const stable = (core.getInput('stable') || 'true').toUpperCase() === 'TRUE';
                 const checkLatest = (core.getInput('check-latest') || 'false').toUpperCase() === 'TRUE';
                 const nodejsInfo = {
@@ -100758,7 +100768,9 @@ function run() {
                     checkLatest,
                     auth,
                     stable,
-                    arch
+                    arch,
+                    mirror,
+                    mirrorToken
                 };
                 const nodeDistribution = (0, installer_factory_1.getNodejsDistribution)(nodejsInfo);
                 yield nodeDistribution.setupNodeJs();
