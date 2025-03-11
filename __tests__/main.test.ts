@@ -13,6 +13,7 @@ import each from 'jest-each';
 import * as main from '../src/main';
 import * as util from '../src/util';
 import OfficialBuilds from '../src/distributions/official_builds/official_builds';
+import {validateMirrorURL} from '../src/util';
 
 describe('main tests', () => {
   let inputs = {} as any;
@@ -277,6 +278,38 @@ describe('main tests', () => {
 
       expect(warningSpy).toHaveBeenCalledWith(
         'The runner was not able to contact the cache service. Caching will be skipped'
+      );
+    });
+  });
+  describe('mirror-url parameter', () => {
+    beforeEach(() => {
+      inputs['mirror-url'] = 'https://custom-mirror-url.com';
+    });
+
+    afterEach(() => {
+      delete inputs['mirror-url'];
+    });
+
+    it('Read mirror-url if mirror-url is provided', async () => {
+      // Arrange
+      inputs['mirror-url'] = 'https://custom-mirror-url.com';
+
+      // Act
+      await main.run();
+
+      // Assert
+      expect(inputs['mirror-url']).toBeDefined();
+    });
+
+    it('should throw an error if mirror-url is empty', async () => {
+      // Arrange
+      inputs['mirror-url'] = ' ';
+
+      const logSpy = jest.spyOn(console, 'log').mockImplementation(() => {}); // Mock the log function
+
+      // Act & Assert
+      expect(() => validateMirrorURL(inputs['mirror-url'])).toThrow(
+        'Mirror URL is empty. Please provide a valid mirror URL.'
       );
     });
   });

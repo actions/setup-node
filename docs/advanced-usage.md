@@ -1,3 +1,5 @@
+
+
 ## Working with lockfiles
 
 All supported package managers recommend that you **always** commit the lockfile, although implementations vary doing so generally provides the following benefits:
@@ -76,10 +78,10 @@ When using the `package.json` input, the action will look for `volta.node` first
 ```json
 {
   "engines": {
-    "node": ">=16.0.0"
+    "node": ">=18.0.0"
   },
   "volta": {
-    "node": "16.0.0"
+    "node": "22.0.0"
   }
 }
 ```
@@ -100,7 +102,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: '14'
+          node-version: '22'
           architecture: 'x64' # optional, x64 or x86. If not specified, x64 will be used by default
       - run: npm ci
       - run: npm test
@@ -239,7 +241,7 @@ steps:
 - uses: actions/checkout@v4
 - uses: actions/setup-node@v4
   with:
-    node-version: '14'
+    node-version: '22'
     cache: 'yarn'
 - run: yarn install --frozen-lockfile # optional, --immutable
 - run: yarn test
@@ -261,7 +263,7 @@ steps:
     version: 6.32.9
 - uses: actions/setup-node@v4
   with:
-    node-version: '14'
+    node-version: '22'
     cache: 'pnpm'
 - run: pnpm install
 - run: pnpm test
@@ -277,7 +279,7 @@ steps:
 - uses: actions/checkout@v4
 - uses: actions/setup-node@v4
   with:
-    node-version: '14'
+    node-version: '22'
     cache: 'npm'
     cache-dependency-path: '**/package-lock.json'
 - run: npm ci
@@ -290,7 +292,7 @@ steps:
 - uses: actions/checkout@v4
 - uses: actions/setup-node@v4
   with:
-    node-version: '14'
+    node-version: '22'
     cache: 'npm'
     cache-dependency-path: |
       server/app/package-lock.json
@@ -312,9 +314,9 @@ jobs:
           - macos-latest
           - windows-latest
         node_version:
-          - 12
-          - 14
-          - 16
+          - 18
+          - 20
+          - 22
         architecture:
           - x64
         # an extra windows-x86 run:
@@ -340,7 +342,7 @@ steps:
 - uses: actions/checkout@v4
 - uses: actions/setup-node@v4
   with:
-    node-version: '14.x'
+    node-version: '22'
     registry-url: 'https://registry.npmjs.org'
 - run: npm ci
 - run: npm publish
@@ -360,7 +362,7 @@ steps:
 - uses: actions/checkout@v4
 - uses: actions/setup-node@v4
   with:
-    node-version: '14.x'
+    node-version: '22'
     registry-url: <registry url>
 - run: yarn install --frozen-lockfile
 - run: yarn publish
@@ -380,7 +382,7 @@ steps:
 - uses: actions/checkout@v4
 - uses: actions/setup-node@v4
   with:
-    node-version: '14.x'
+    node-version: '22'
     registry-url: 'https://registry.npmjs.org'
 # Skip post-install scripts here, as a malicious
 # script could steal NODE_AUTH_TOKEN.
@@ -418,3 +420,15 @@ Please refer to the [Ensuring workflow access to your package - Configuring a pa
 
 ### always-auth input
 The always-auth input sets `always-auth=true` in .npmrc file. With this option set [npm](https://docs.npmjs.com/cli/v6/using-npm/config#always-auth)/yarn sends the authentication credentials when making a request to the registries.
+
+### Using mirror-url
+You can use the new mirror-url parameter to specify a custom mirror for downloading node.js versions from a different location
+
+```yaml
+steps:
+  - uses: actions/checkout@v4
+  - uses: actions/setup-node@v4
+    with:
+      node-version: '22'
+      mirror-url: 'https://mirror.example.com/node'
+```

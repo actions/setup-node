@@ -10,6 +10,8 @@ import osm from 'os';
 import path from 'path';
 import * as main from '../src/main';
 import * as auth from '../src/authutil';
+import isLtsAlias from '../src/distributions/official_builds/official_builds';
+
 import OfficialBuilds from '../src/distributions/official_builds/official_builds';
 import {INodeVersion} from '../src/distributions/base-models';
 
@@ -827,5 +829,36 @@ describe('setup-node', () => {
         expect(logSpy).toHaveBeenCalledWith(`Found in cache @ ${toolPath}`);
       }
     );
+  });
+  describe('mirror-url parameter', () => {
+    it('default if mirror url is not provided', async () => {
+      os.platform = 'linux';
+      os.arch = 'x64';
+
+      inputs['node-version'] = '11';
+      inputs['check-latest'] = 'true';
+      inputs['always-auth'] = false;
+      inputs['token'] = 'faketoken';
+
+      dlSpy.mockImplementation(async () => '/some/temp/path');
+      const toolPath = path.normalize('/cache/node/12.11.0/x64');
+      exSpy.mockImplementation(async () => '/some/other/temp/path');
+      cacheSpy.mockImplementation(async () => toolPath);
+
+      const dlmirrorSpy = jest.fn();
+      dlmirrorSpy.mockImplementation(async () => 'mocked-download-path');
+      await main.run();
+
+      const expPath = path.join(toolPath, 'bin');
+
+      expect(dlSpy).toHaveBeenCalled();
+      expect(exSpy).toHaveBeenCalled();
+
+      expect(logSpy).toHaveBeenCalledWith(
+        'Attempt to resolve the latest version from manifest...'
+      );
+
+      expect(cnSpy).toHaveBeenCalledWith(`::add-path::${expPath}${osm.EOL}`);
+    });
   });
 });

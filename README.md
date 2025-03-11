@@ -1,3 +1,4 @@
+
 # setup-node
 
 [![basic-validation](https://github.com/actions/setup-node/actions/workflows/basic-validation.yml/badge.svg)](https://github.com/actions/setup-node/actions/workflows/basic-validation.yml)
@@ -76,6 +77,10 @@ See [action.yml](action.yml)
     # Set always-auth option in npmrc file.
     # Default: ''
     always-auth: ''
+
+    # Optional mirror to download nodejs binaries from.
+    # Default: ''
+    mirror-url: ''
 ```
 <!-- end usage -->
 
@@ -86,7 +91,7 @@ steps:
 - uses: actions/checkout@v4
 - uses: actions/setup-node@v4
   with:
-    node-version: 18
+    node-version: 22
 - run: npm ci
 - run: npm test
 ```
@@ -103,7 +108,7 @@ The `node-version` input supports the Semantic Versioning Specification, for mor
 
 Examples:
 
- - Major versions: `18`, `20`
+ - Major versions: `20`, `22`
  - More specific versions: `10.15`, `16.15.1` , `18.4.0`
  - NVM LTS syntax: `lts/erbium`, `lts/fermium`, `lts/*`, `lts/-n`
  - Latest release: `*` or `latest`/`current`/`node`
@@ -163,7 +168,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        node: [ 14, 16, 18 ]
+        node: [ 18, 20, 22 ]
     name: Node ${{ matrix.node }} sample
     steps:
       - uses: actions/checkout@v4
@@ -203,6 +208,7 @@ If the runner is not able to access github.com, any Nodejs versions requested du
  - [Publishing to npmjs and GPR with npm](docs/advanced-usage.md#publish-to-npmjs-and-gpr-with-npm)
  - [Publishing to npmjs and GPR with yarn](docs/advanced-usage.md#publish-to-npmjs-and-gpr-with-yarn)
  - [Using private packages](docs/advanced-usage.md#use-private-packages)
+ - [Using mirror-url)](https://github.com/aparnajyothi-y/setup-node/edit/add-mirror-url/docs/advanced-usage.md#node-mirrors-nodejs-version-mirrors)
 
 ## Recommended permissions
 
@@ -224,3 +230,5 @@ Contributions are welcome! See [Contributor's Guide](docs/contributors.md)
 ## Code of Conduct
 
 :wave: Be nice. See [our code of conduct](CODE_OF_CONDUCT.md)
+
+
