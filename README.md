@@ -16,68 +16,34 @@ This action provides the following functionality for GitHub Actions users:
 
 See [action.yml](action.yml)
 
-<!-- start usage -->
-```yaml
-- uses: actions/setup-node@v4
-  with:
-    # Version Spec of the version to use in SemVer notation.
-    # It also admits such aliases as lts/*, latest, nightly and canary builds
-    # Examples: 12.x, 10.15.1, >=10.15.0, lts/Hydrogen, 16-nightly, latest, node
-    node-version: ''
+<!-- markdownlint-capture -->
+<!-- markdownlint-disable -->
+<!-- prettier-ignore-start -->
+<!-- BEGIN_GITHUB_ACTION_DOCS -->
+## Inputs
 
-    # File containing the version Spec of the version to use.  Examples: package.json, .nvmrc, .node-version, .tool-versions.
-    # If node-version and node-version-file are both provided the action will use version from node-version. 
-    node-version-file: ''
+| Name | Description | Default | Required |
+|------|-------------|---------|:--------:|
+| <a name="input_always_auth"></a> [always-auth](#input\_always\_auth) | Set always-auth in npmrc. | `false` | no |
+| <a name="input_architecture"></a> [architecture](#input\_architecture) | Target architecture for Node to use. Examples: x86, x64. Will use system architecture by default. |  | no |
+| <a name="input_cache"></a> [cache](#input\_cache) | Used to specify a package manager for caching in the default directory. Supported values: npm, yarn, pnpm. |  | no |
+| <a name="input_cache_dependency_path"></a> [cache-dependency-path](#input\_cache\_dependency\_path) | Used to specify the path to a dependency file: package-lock.json, yarn.lock, etc. Supports wildcards or a list of file names for caching multiple dependencies. |  | no |
+| <a name="input_check_latest"></a> [check-latest](#input\_check\_latest) | Set this option if you want the action to check for the latest available version that satisfies the version spec. |  | no |
+| <a name="input_node_version"></a> [node-version](#input\_node\_version) | Version Spec of the version to use. Examples: 12.x, 10.15.1, >=10.15.0. |  | no |
+| <a name="input_node_version_file"></a> [node-version-file](#input\_node\_version\_file) | File containing the version Spec of the version to use.  Examples: package.json, .nvmrc, .node-version, .tool-versions. |  | no |
+| <a name="input_registry_url"></a> [registry-url](#input\_registry\_url) | Optional registry to set up for auth. Will set the registry in a project level .npmrc and .yarnrc file, and set up auth to read in from env.NODE_AUTH_TOKEN. |  | no |
+| <a name="input_scope"></a> [scope](#input\_scope) | Optional scope for authenticating against scoped registries. Will fall back to the repository owner when using the GitHub Packages registry (https://npm.pkg.github.com/). |  | no |
+| <a name="input_token"></a> [token](#input\_token) | Used to pull node distributions from node-versions. Since there's a default, this is typically not supplied by the user. When running this action on github.com, the default value is sufficient. When running on GHES, you can pass a personal access token for github.com if you are experiencing rate limiting. | `${{ github.server_url == 'https://github.com' && github.token || '' }}` | no |
 
-    # Set this option if you want the action to check for the latest available version 
-    # that satisfies the version spec.
-    # It will only get affect for lts Nodejs versions (12.x, >=10.15.0, lts/Hydrogen). 
-    # Default: false
-    check-latest: false
+## Outputs
 
-    # Target architecture for Node to use. Examples: x86, x64. Will use system architecture by default.
-    # Default: ''. The action use system architecture by default 
-    architecture: ''
-
-    # Used to pull node distributions from https://github.com/actions/node-versions. 
-    # Since there's a default, this is typically not supplied by the user. 
-    # When running this action on github.com, the default value is sufficient. 
-    # When running on GHES, you can pass a personal access token for github.com if you are experiencing rate limiting.
-    #
-    # We recommend using a service account with the least permissions necessary. Also
-    # when generating a new PAT, select the least scopes necessary.
-    #
-    # [Learn more about creating and using encrypted secrets](https://help.github.com/en/actions/automating-your-workflow-with-github-actions/creating-and-using-encrypted-secrets)
-    #
-    # Default: ${{ github.server_url == 'https://github.com' && github.token || '' }}
-    token: ''
-
-    # Used to specify a package manager for caching in the default directory. Supported values: npm, yarn, pnpm.
-    # Package manager should be pre-installed
-    # Default: ''
-    cache: ''
-
-    # Used to specify the path to a dependency file: package-lock.json, yarn.lock, etc. 
-    # It will generate hash from the target file for primary key. It works only If cache is specified.  
-    # Supports wildcards or a list of file names for caching multiple dependencies.
-    # Default: ''
-    cache-dependency-path: ''
-
-    # Optional registry to set up for auth. Will set the registry in a project level .npmrc and .yarnrc file, 
-    # and set up auth to read in from env.NODE_AUTH_TOKEN.
-    # Default: ''
-    registry-url: ''
-
-    # Optional scope for authenticating against scoped registries. 
-    # Will fall back to the repository owner when using the GitHub Packages registry (https://npm.pkg.github.com/).
-    # Default: ''
-    scope: ''
-
-    # Set always-auth option in npmrc file.
-    # Default: ''
-    always-auth: ''
-```
-<!-- end usage -->
+| Name | Description |
+|------|-------------|
+| <a name="output_cache_hit"></a> [cache-hit](#output\_cache\_hit) | A boolean value to indicate if a cache was hit. |
+| <a name="output_node_version"></a> [node-version](#output\_node\_version) | The installed node version. |
+<!-- END_GITHUB_ACTION_DOCS -->
+<!-- prettier-ignore-end -->
+<!-- markdownlint-restore -->
 
 **Basic:**
 
