@@ -34,6 +34,7 @@
     "@actions/io": "^1.0.2",
     "@actions/tool-cache": "^2.0.2",
     "ini": "^5.0.0",
+    "@types/ini": "^4.1.1",
     "semver": "^7.6.3",
     "uuid": "^9.0.1"
   },
