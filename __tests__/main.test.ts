@@ -104,6 +104,7 @@ describe('main tests', () => {
       ${'unknown format'}                          | ${'unknown format'}
       ${'  14.1.0  '}                              | ${'14.1.0'}
       ${'use-node-version=lts/iron'}               | ${'lts/iron'}
+      ${'use-node-version=23.10.0'}                | ${'23.10.0'}
       ${'{"volta": {"node": ">=14.0.0 <=17.0.0"}}'}| ${'>=14.0.0 <=17.0.0'}
       ${'{"volta": {"extends": "./package.json"}}'}| ${'18.0.0'}
       ${'{"engines": {"node": "17.0.0"}}'}         | ${'17.0.0'}
