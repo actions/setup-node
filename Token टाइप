@@ -1,0 +1,13 @@
+{
+  "access_token": "accesstoken",
+  "expires_in": "28800",
+  "refresh_token": "r1.refreshme",
+  "refresh_token_expires_in": "15811200",
+  "scope": "",
+  "token_type": "bearer" POST /login/oauth/access_token HTTP/1.1
+Host: github.com
+
+grant_type=refresh_token
+refresh_token=r1.refreshme
+&client_id=5566778899
+&client_secret=5566778899
