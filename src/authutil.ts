@@ -25,6 +25,12 @@ function writeRegistryToFile(
   if (!scope && registryUrl.indexOf('npm.pkg.github.com') > -1) {
     scope = github.context.repo.owner;
   }
+  if (!scope) {
+    const namePrefix = packageJson('name')?.match(/^(@[^/]+)\//);
+    if (namePrefix) {
+      scope = namePrefix[1];
+    }
+  }
   if (scope && scope[0] != '@') {
     scope = '@' + scope;
   }
@@ -56,4 +62,15 @@ function writeRegistryToFile(
     'NODE_AUTH_TOKEN',
     process.env.NODE_AUTH_TOKEN || 'XXXXX-XXXXX-XXXXX-XXXXX'
   );
+}
+
+function packageJson(prop: string){
+  const pkgPath: string = path.resolve(process.env['RUNNER_TEMP'] || process.cwd(), 'package.json');
+  try {
+    const json = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
+
+    return prop ? json[prop] : json;
+  } catch(e) {
+    core.debug(`Unable to read from package.json`);
+  }
 }
