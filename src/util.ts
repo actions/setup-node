@@ -115,6 +115,7 @@ export async function enableCorepack(input: string): Promise<void> {
       const packageManagers = input.split(' ');
       corepackArgs.push(...packageManagers);
     }
+    await getCommandOutput('npm i -g corepack');
     await getCommandOutput(`corepack ${corepackArgs.join(' ')}`);
   }
 }
