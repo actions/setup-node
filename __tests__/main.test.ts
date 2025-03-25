@@ -301,10 +301,28 @@ describe('main tests', () => {
       );
     });
 
-    it('should enable corepack when input is "true"', async () => {
+    it('should install latest corepack when input is "true"', async () => {
       inputs['corepack'] = 'true';
       await main.run();
-      expect(getCommandOutputSpy).toHaveBeenCalledWith('npm i -g corepack');
+      expect(getCommandOutputSpy).toHaveBeenCalledWith(
+        'npm i -g corepack@latest'
+      );
+    });
+
+    it('should install latest corepack when input is "latest"', async () => {
+      inputs['corepack'] = 'latest';
+      await main.run();
+      expect(getCommandOutputSpy).toHaveBeenCalledWith(
+        'npm i -g corepack@latest'
+      );
+    });
+
+    it('should install a specific version of corepack when specified', async () => {
+      inputs['corepack'] = '0.32.0';
+      await main.run();
+      expect(getCommandOutputSpy).toHaveBeenCalledWith(
+        'npm i -g corepack@0.32.0'
+      );
     });
   });
 });

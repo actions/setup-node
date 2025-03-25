@@ -88341,7 +88341,8 @@ exports.unique = unique;
 function enableCorepack(input) {
     return __awaiter(this, void 0, void 0, function* () {
         if (input.length && input !== 'false') {
-            yield (0, cache_utils_1.getCommandOutput)('npm i -g corepack');
+            const version = input === 'true' ? 'latest' : input;
+            yield (0, cache_utils_1.getCommandOutput)(`npm i -g corepack@${version}`);
         }
     });
 }

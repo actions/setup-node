@@ -110,6 +110,7 @@ export const unique = () => {
 
 export async function enableCorepack(input: string): Promise<void> {
   if (input.length && input !== 'false') {
-    await getCommandOutput('npm i -g corepack');
+    const version = input === 'true' ? 'latest' : input;
+    await getCommandOutput(`npm i -g corepack@${version}`);
   }
 }

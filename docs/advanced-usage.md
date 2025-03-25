@@ -432,3 +432,16 @@ steps:
 - name: Install dependencies
   run: yarn install --immutable
 ```
+
+You can also pass a version string to install a specific version of corepack.
+
+```yaml
+steps:
+- uses: actions/checkout@v4
+- uses: actions/setup-node@v4
+  with:
+    node-version: '18.x'
+    corepack: '0.32.0'
+- name: Install dependencies
+  run: yarn install --immutable
+```
