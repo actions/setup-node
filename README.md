@@ -21,7 +21,7 @@ See [action.yml](action.yml)
 - uses: actions/setup-node@v4
   with:
     # Version Spec of the version to use in SemVer notation.
-    # It also emits such aliases as lts, latest, nightly and canary builds
+    # It also admits such aliases as lts/*, latest, nightly and canary builds
     # Examples: 12.x, 10.15.1, >=10.15.0, lts/Hydrogen, 16-nightly, latest, node
     node-version: ''
 
@@ -103,7 +103,7 @@ The `node-version` input supports the Semantic Versioning Specification, for mor
 
 Examples:
 
- - Major versions: `16`, `18`, `20`
+ - Major versions: `18`, `20`
  - More specific versions: `10.15`, `16.15.1` , `18.4.0`
  - NVM LTS syntax: `lts/erbium`, `lts/fermium`, `lts/*`, `lts/-n`
  - Latest release: `*` or `latest`/`current`/`node`
@@ -135,7 +135,7 @@ steps:
 - uses: actions/checkout@v4
 - uses: actions/setup-node@v4
   with:
-    node-version: 16
+    node-version: 20
     cache: 'npm'
 - run: npm ci
 - run: npm test
@@ -148,7 +148,7 @@ steps:
 - uses: actions/checkout@v4
 - uses: actions/setup-node@v4
   with:
-    node-version: 16
+    node-version: 20
     cache: 'npm'
     cache-dependency-path: subdir/package-lock.json
 - run: npm ci
@@ -185,7 +185,7 @@ To get a higher rate limit, you can [generate a personal access token on github.
 uses: actions/setup-node@v4
 with:
   token: ${{ secrets.GH_DOTCOM_TOKEN }}
-  node-version: 16
+  node-version: 20
 ```
 
 If the runner is not able to access github.com, any Nodejs versions requested during a workflow run must come from the runner's tool cache. See "[Setting up the tool cache on self-hosted runners without internet access](https://docs.github.com/en/enterprise-server@3.2/admin/github-actions/managing-access-to-actions-from-githubcom/setting-up-the-tool-cache-on-self-hosted-runners-without-internet-access)" for more information.
@@ -204,6 +204,15 @@ If the runner is not able to access github.com, any Nodejs versions requested du
  - [Publishing to npmjs and GPR with yarn](docs/advanced-usage.md#publish-to-npmjs-and-gpr-with-yarn)
  - [Using private packages](docs/advanced-usage.md#use-private-packages)
  - [Enabling Corepack](docs/advanced-usage.md#enabling-corepack)
+
+## Recommended permissions
+
+When using the `setup-node` action in your GitHub Actions workflow, it is recommended to set the following permissions to ensure proper functionality:
+
+```yaml
+permissions:
+  contents: read # access to check out code and install dependencies
+```
 
 ## License
 

@@ -88,7 +88,11 @@ export default class OfficialBuilds extends BaseDistribution {
         );
 
         if (downloadPath) {
-          toolPath = await this.extractArchive(downloadPath, versionInfo);
+          toolPath = await this.extractArchive(
+            downloadPath,
+            versionInfo,
+            false
+          );
         }
       } else {
         core.info(
