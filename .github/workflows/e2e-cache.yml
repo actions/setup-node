@@ -135,6 +135,44 @@ jobs:
         run: __tests__/verify-node.sh "${{ matrix.node-version }}"
         shell: bash
 
+  node-yarn4-corepack-dependencies-caching:
+    name: Test yarn 4 (Node ${{ matrix.node-version}}, ${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    env:
+      YARN_ENABLE_IMMUTABLE_INSTALLS: false
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        node-version: [18, 20, 22]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Update yarn
+        run: yarn set version 4.1.0
+      - name: Yarn version
+        run: yarn --version
+      - name: Generate simple .yarnrc.yml
+        run: |
+          echo "nodeLinker: node-modules" >> .yarnrc.yml
+      - name: Generate yarn file
+        run: yarn install
+      - name: Remove dependencies
+        shell: pwsh
+        run: Remove-Item node_modules -Force -Recurse
+      - name: Clean global cache
+        run: yarn cache clean --all
+      - name: Setup Node
+        uses: ./
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'yarn'
+          corepack: true
+      - name: Install dependencies
+        run: yarn install
+      - name: Verify node and yarn
+        run: __tests__/verify-node.sh "${{ matrix.node-version }}"
+        shell: bash
+
   yarn-subprojects:
     name: Test yarn subprojects
     strategy:

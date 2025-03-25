@@ -159,7 +159,7 @@ jobs:
 
 ## Nightly versions
 
-You can specify a nightly version to download it from https://nodejs.org/download/nightly. 
+You can specify a nightly version to download it from https://nodejs.org/download/nightly.
 
 ### Install the nightly build for a major version
 
@@ -267,7 +267,7 @@ steps:
 - run: pnpm test
 ```
 
-> **Note**: By default `--frozen-lockfile` option is passed starting from pnpm `6.10.x`. It will be automatically added if you run it on [CI](https://pnpm.io/cli/install#--frozen-lockfile). 
+> **Note**: By default `--frozen-lockfile` option is passed starting from pnpm `6.10.x`. It will be automatically added if you run it on [CI](https://pnpm.io/cli/install#--frozen-lockfile).
 > If the `pnpm-lock.yaml` file changes then pass `--frozen-lockfile` option.
 
 
@@ -418,3 +418,30 @@ Please refer to the [Ensuring workflow access to your package - Configuring a pa
 
 ### always-auth input
 The always-auth input sets `always-auth=true` in .npmrc file. With this option set [npm](https://docs.npmjs.com/cli/v6/using-npm/config#always-auth)/yarn sends the authentication credentials when making a request to the registries.
+
+## Enabling Corepack
+You can enable [Corepack](https://github.com/nodejs/corepack) by using the `corepack` input. You can then use `pnpm` and `yarn` commands in your project.
+
+```yaml
+steps:
+- uses: actions/checkout@v4
+- uses: actions/setup-node@v4
+  with:
+    node-version: '22.x'
+    corepack: true
+- name: Install dependencies
+  run: yarn install --immutable
+```
+
+You can also pass a version string to install a specific version of corepack.
+
+```yaml
+steps:
+- uses: actions/checkout@v4
+- uses: actions/setup-node@v4
+  with:
+    node-version: '18.x'
+    corepack: '0.32.0'
+- name: Install dependencies
+  run: yarn install --immutable
+```

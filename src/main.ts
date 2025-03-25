@@ -7,7 +7,11 @@ import * as path from 'path';
 import {restoreCache} from './cache-restore';
 import {isCacheFeatureAvailable} from './cache-utils';
 import {getNodejsDistribution} from './distributions/installer-factory';
-import {getNodeVersionFromFile, printEnvDetailsAndSetOutput} from './util';
+import {
+  getNodeVersionFromFile,
+  printEnvDetailsAndSetOutput,
+  enableCorepack
+} from './util';
 import {State} from './constants';
 
 export async function run() {
@@ -58,6 +62,9 @@ export async function run() {
     if (registryUrl) {
       auth.configAuthentication(registryUrl, alwaysAuth);
     }
+
+    const corepack = core.getInput('corepack') || 'false';
+    await enableCorepack(corepack);
 
     if (cache && isCacheFeatureAvailable()) {
       core.saveState(State.CachePackageManager, cache);

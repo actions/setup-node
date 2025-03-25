@@ -88239,12 +88239,13 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.unique = exports.printEnvDetailsAndSetOutput = exports.getNodeVersionFromFile = void 0;
+exports.enableCorepack = exports.unique = exports.printEnvDetailsAndSetOutput = exports.getNodeVersionFromFile = void 0;
 const core = __importStar(__nccwpck_require__(7484));
 const exec = __importStar(__nccwpck_require__(5236));
 const io = __importStar(__nccwpck_require__(4994));
 const fs_1 = __importDefault(__nccwpck_require__(9896));
 const path_1 = __importDefault(__nccwpck_require__(6928));
+const cache_utils_1 = __nccwpck_require__(4673);
 function getNodeVersionFromFile(versionFilePath) {
     var _a, _b, _c, _d, _e;
     if (!fs_1.default.existsSync(versionFilePath)) {
@@ -88337,6 +88338,15 @@ const unique = () => {
     };
 };
 exports.unique = unique;
+function enableCorepack(input) {
+    return __awaiter(this, void 0, void 0, function* () {
+        if (input.length && input !== 'false') {
+            const version = input === 'true' ? 'latest' : input;
+            yield (0, cache_utils_1.getCommandOutput)(`npm i -g corepack@${version}`);
+        }
+    });
+}
+exports.enableCorepack = enableCorepack;
 
 
 /***/ }),

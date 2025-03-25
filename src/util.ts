@@ -4,6 +4,7 @@ import * as io from '@actions/io';
 
 import fs from 'fs';
 import path from 'path';
+import {getCommandOutput} from './cache-utils';
 
 export function getNodeVersionFromFile(versionFilePath: string): string | null {
   if (!fs.existsSync(versionFilePath)) {
@@ -106,3 +107,10 @@ export const unique = () => {
     return true;
   };
 };
+
+export async function enableCorepack(input: string): Promise<void> {
+  if (input.length && input !== 'false') {
+    const version = input === 'true' ? 'latest' : input;
+    await getCommandOutput(`npm i -g corepack@${version}`);
+  }
+}
