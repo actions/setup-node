@@ -427,21 +427,8 @@ steps:
 - uses: actions/checkout@v4
 - uses: actions/setup-node@v4
   with:
-    node-version: '18.x'
+    node-version: '22.x'
     corepack: true
-- name: Install dependencies
-  run: yarn install --immutable
-```
-
-You can also pass package manager names separated by a space to enable corepack for specific package managers only.
-
-```yaml
-steps:
-- uses: actions/checkout@v4
-- uses: actions/setup-node@v4
-  with:
-    node-version: '18.x'
-    corepack: yarn pnpm
 - name: Install dependencies
   run: yarn install --immutable
 ```

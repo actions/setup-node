@@ -305,23 +305,6 @@ describe('main tests', () => {
       inputs['corepack'] = 'true';
       await main.run();
       expect(getCommandOutputSpy).toHaveBeenCalledWith('npm i -g corepack');
-      expect(getCommandOutputSpy).toHaveBeenCalledWith('corepack enable');
-    });
-
-    it('should enable corepack with a single package manager', async () => {
-      inputs['corepack'] = 'npm';
-      await main.run();
-      expect(getCommandOutputSpy).toHaveBeenCalledWith('npm i -g corepack');
-      expect(getCommandOutputSpy).toHaveBeenCalledWith('corepack enable npm');
-    });
-
-    it('should enable corepack with multiple package managers', async () => {
-      inputs['corepack'] = 'npm yarn';
-      await main.run();
-      expect(getCommandOutputSpy).toHaveBeenCalledWith('npm i -g corepack');
-      expect(getCommandOutputSpy).toHaveBeenCalledWith(
-        'corepack enable npm yarn'
-      );
     });
   });
 });

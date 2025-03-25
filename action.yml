@@ -26,7 +26,7 @@ inputs:
   cache-dependency-path:
     description: 'Used to specify the path to a dependency file: package-lock.json, yarn.lock, etc. Supports wildcards or a list of file names for caching multiple dependencies.'
   corepack:
-    description: 'Used to specify whether to enable Corepack. Set to true to enable all package managers or set it to one or more package manager names separated by a space. Supported package manager names: npm, yarn, pnpm.'
+    description: 'Used to specify whether to enable Corepack.'
     default: 'false'
 # TODO: add input to control forcing to pull from cloud or dist.
 #       escape valve for someone having issues or needing the absolute latest which isn't cached yet

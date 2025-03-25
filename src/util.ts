@@ -110,12 +110,6 @@ export const unique = () => {
 
 export async function enableCorepack(input: string): Promise<void> {
   if (input.length && input !== 'false') {
-    const corepackArgs = ['enable'];
-    if (input !== 'true') {
-      const packageManagers = input.split(' ');
-      corepackArgs.push(...packageManagers);
-    }
     await getCommandOutput('npm i -g corepack');
-    await getCommandOutput(`corepack ${corepackArgs.join(' ')}`);
   }
 }

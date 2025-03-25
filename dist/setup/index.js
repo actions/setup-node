@@ -98019,13 +98019,7 @@ exports.unique = unique;
 function enableCorepack(input) {
     return __awaiter(this, void 0, void 0, function* () {
         if (input.length && input !== 'false') {
-            const corepackArgs = ['enable'];
-            if (input !== 'true') {
-                const packageManagers = input.split(' ');
-                corepackArgs.push(...packageManagers);
-            }
             yield (0, cache_utils_1.getCommandOutput)('npm i -g corepack');
-            yield (0, cache_utils_1.getCommandOutput)(`corepack ${corepackArgs.join(' ')}`);
         }
     });
 }
