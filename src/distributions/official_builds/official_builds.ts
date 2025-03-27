@@ -96,7 +96,9 @@ export default class OfficialBuilds extends BaseDistribution {
         }
       } else {
         core.info(
-          'Not found in manifest. Falling back to download directly from Node'
+          `Not found in manifest. Falling back to download directly from ${
+            this.nodeInfo.mirror ?? 'Node'
+          }`
         );
       }
     } catch (err) {
@@ -112,7 +114,11 @@ export default class OfficialBuilds extends BaseDistribution {
         core.info((err as Error).message);
       }
       core.debug((err as Error).stack ?? 'empty stack');
-      core.info('Falling back to download directly from Node');
+      core.info(
+        `Falling back to download directly from ${
+          this.nodeInfo.mirror ?? 'Node'
+        }`
+      );
     }
 
     if (!toolPath) {

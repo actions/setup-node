@@ -97519,7 +97519,7 @@ class OfficialBuilds extends base_distribution_1.default {
     }
     setupNodeJs() {
         return __awaiter(this, void 0, void 0, function* () {
-            var _a;
+            var _a, _b, _c;
             let manifest;
             let nodeJsVersions;
             const osArch = this.translateArchToDistUrl(this.nodeInfo.arch);
@@ -97564,7 +97564,7 @@ class OfficialBuilds extends base_distribution_1.default {
                     }
                 }
                 else {
-                    core.info('Not found in manifest. Falling back to download directly from Node');
+                    core.info(`Not found in manifest. Falling back to download directly from ${(_a = this.nodeInfo.mirror) !== null && _a !== void 0 ? _a : 'Node'}`);
                 }
             }
             catch (err) {
@@ -97576,8 +97576,8 @@ class OfficialBuilds extends base_distribution_1.default {
                 else {
                     core.info(err.message);
                 }
-                core.debug((_a = err.stack) !== null && _a !== void 0 ? _a : 'empty stack');
-                core.info('Falling back to download directly from Node');
+                core.debug((_b = err.stack) !== null && _b !== void 0 ? _b : 'empty stack');
+                core.info(`Falling back to download directly from ${(_c = this.nodeInfo.mirror) !== null && _c !== void 0 ? _c : 'Node'}`);
             }
             if (!toolPath) {
                 toolPath = yield this.downloadDirectlyFromNode();

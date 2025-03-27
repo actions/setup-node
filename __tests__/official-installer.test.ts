@@ -282,6 +282,43 @@ describe('setup-node', () => {
     expect(cnSpy).toHaveBeenCalledWith(`::add-path::${expPath}${osm.EOL}`);
   });
 
+  it('falls back to a version from node dist from mirror', async () => {
+    os.platform = 'linux';
+    os.arch = 'x64';
+
+    // a version which is not in the manifest but is in node dist
+    const versionSpec = '11.15.0';
+    const mirror = 'https://my_mirror_url';
+    inputs['node-version'] = versionSpec;
+    inputs['always-auth'] = false;
+    inputs['token'] = 'faketoken';
+    inputs['mirror'] = mirror;
+    inputs['mirror-token'] = 'faketoken';
+
+    // ... but not in the local cache
+    findSpy.mockImplementation(() => '');
+
+    dlSpy.mockImplementation(async () => '/some/temp/path');
+    const toolPath = path.normalize('/cache/node/11.15.0/x64');
+    exSpy.mockImplementation(async () => '/some/other/temp/path');
+    cacheSpy.mockImplementation(async () => toolPath);
+
+    await main.run();
+
+    const expPath = path.join(toolPath, 'bin');
+
+    expect(getManifestSpy).toHaveBeenCalled();
+    expect(logSpy).toHaveBeenCalledWith(
+      `Attempting to download ${versionSpec}...`
+    );
+    expect(logSpy).toHaveBeenCalledWith(
+      `Not found in manifest. Falling back to download directly from ${mirror}`
+    );
+    expect(dlSpy).toHaveBeenCalled();
+    expect(exSpy).toHaveBeenCalled();
+    expect(cnSpy).toHaveBeenCalledWith(`::add-path::${expPath}${osm.EOL}`);
+  });
+
   it('falls back to a version from node dist', async () => {
     os.platform = 'linux';
     os.arch = 'x64';
