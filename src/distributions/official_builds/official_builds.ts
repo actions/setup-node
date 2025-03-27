@@ -96,7 +96,9 @@ export default class OfficialBuilds extends BaseDistribution {
         }
       } else {
         core.info(
-          'Not found in manifest. Falling back to download directly from Node'
+          `Not found in manifest. Falling back to download directly from ${
+            this.nodeInfo.mirror || 'Node'
+          }`
         );
       }
     } catch (err) {

@@ -97564,7 +97564,7 @@ class OfficialBuilds extends base_distribution_1.default {
                     }
                 }
                 else {
-                    core.info('Not found in manifest. Falling back to download directly from Node');
+                    core.info(`Not found in manifest. Falling back to download directly from ${this.nodeInfo.mirror || 'Node'}`);
                 }
             }
             catch (err) {
