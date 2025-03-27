@@ -498,6 +498,70 @@ describe('setup-node', () => {
         );
       }
     );
+
+    it.each([
+      [
+        '20.0.0-v8-canary',
+        '20.0.0-v8-canary20221103f7e2421e91',
+        '20.0.0-v8-canary20221030fefe1c0879',
+        'https://my_mirror.org/download/v8-canary/v20.0.0-v8-canary20221103f7e2421e91/node-v20.0.0-v8-canary20221103f7e2421e91-linux-x64.tar.gz'
+      ],
+      [
+        '20-v8-canary',
+        '20.0.0-v8-canary20221103f7e2421e91',
+        '20.0.0-v8-canary20221030fefe1c0879',
+        'https://my_mirror.org/download/v8-canary/v20.0.0-v8-canary20221103f7e2421e91/node-v20.0.0-v8-canary20221103f7e2421e91-linux-x64.tar.gz'
+      ],
+      [
+        '19.0.0-v8-canary',
+        '19.0.0-v8-canary202210187d6960f23f',
+        '19.0.0-v8-canary202210172ec229fc56',
+        'https://my_mirror.org/download/v8-canary/v19.0.0-v8-canary202210187d6960f23f/node-v19.0.0-v8-canary202210187d6960f23f-linux-x64.tar.gz'
+      ],
+      [
+        '19-v8-canary',
+        '19.0.0-v8-canary202210187d6960f23f',
+        '19.0.0-v8-canary202210172ec229fc56',
+        'https://my_mirror.org/download/v8-canary/v19.0.0-v8-canary202210187d6960f23f/node-v19.0.0-v8-canary202210187d6960f23f-linux-x64.tar.gz'
+      ]
+    ])(
+      'get %s version from dist if check-latest is true',
+      async (input, expectedVersion, foundVersion, expectedUrl) => {
+        const foundToolPath = path.normalize(`/cache/node/${foundVersion}/x64`);
+        const toolPath = path.normalize(`/cache/node/${expectedVersion}/x64`);
+
+        inputs['node-version'] = input;
+        inputs['check-latest'] = 'true';
+        os['arch'] = 'x64';
+        os['platform'] = 'linux';
+        inputs['mirror'] = 'https://my_mirror.org';
+        inputs['mirror-token'] = 'faketoken';
+
+        findSpy.mockReturnValue(foundToolPath);
+        findAllVersionsSpy.mockReturnValue([
+          '20.0.0-v8-canary20221030fefe1c0879',
+          '19.0.0-v8-canary202210172ec229fc56',
+          '20.0.0-v8-canary2022102310ff1e5a8d'
+        ]);
+        dlSpy.mockImplementation(async () => '/some/temp/path');
+        exSpy.mockImplementation(async () => '/some/other/temp/path');
+        cacheSpy.mockImplementation(async () => toolPath);
+
+        // act
+        await main.run();
+
+        // assert
+        expect(findAllVersionsSpy).toHaveBeenCalled();
+        expect(logSpy).toHaveBeenCalledWith(
+          `Acquiring ${expectedVersion} - ${os.arch} from ${expectedUrl}`
+        );
+        expect(logSpy).toHaveBeenCalledWith('Extracting ...');
+        expect(logSpy).toHaveBeenCalledWith('Adding to the cache ...');
+        expect(cnSpy).toHaveBeenCalledWith(
+          `::add-path::${path.join(toolPath, 'bin')}${osm.EOL}`
+        );
+      }
+    );
   });
 
   describe('setup-node v8 canary tests', () => {

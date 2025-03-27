@@ -7,7 +7,8 @@ export default class NightlyNodejs extends BasePrereleaseNodejs {
     super(nodeInfo);
   }
 
-  protected getDistributionUrl(): string {
-    return 'https://nodejs.org/download/nightly';
+  protected getDistributionUrl(mirror: string): string {
+    const url = mirror || 'https://nodejs.org';
+    return `${url}/download/nightly`;
   }
 }
