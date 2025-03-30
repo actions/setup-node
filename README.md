@@ -124,7 +124,7 @@ The action has a built-in functionality for caching and restoring dependencies. 
 
 The action defaults to search for the dependency file (`package-lock.json`, `npm-shrinkwrap.json` or `yarn.lock`) in the repository root, and uses its hash as a part of the cache key. Use `cache-dependency-path` for cases when multiple dependency files are used, or they are located in different subdirectories.
 
-**Note:** The action does not cache `node_modules`
+**Note:** The action does not cache the local `node_modules` directly, but instead [caches the global cache](https://github.com/actions/setup-node/blob/main/docs/advanced-usage.md#caching-packages-data) at the machine level.
 
 See the examples of using cache for `yarn`/`pnpm` and `cache-dependency-path` input in the [Advanced usage](docs/advanced-usage.md#caching-packages-data) guide.
 
