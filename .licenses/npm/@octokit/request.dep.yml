@@ -4,7 +4,7 @@ version: 5.6.3
 type: npm
 summary: Send parameterized requests to GitHub's APIs with sensible defaults in browsers
   and Node
-homepage:
+homepage: 
 license: mit
 licenses:
 - sources: LICENSE

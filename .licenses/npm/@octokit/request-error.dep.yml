@@ -3,7 +3,7 @@ name: "@octokit/request-error"
 version: 2.1.0
 type: npm
 summary: Error class for Octokit request errors
-homepage:
+homepage: 
 license: mit
 licenses:
 - sources: LICENSE
