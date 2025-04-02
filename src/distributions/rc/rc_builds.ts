@@ -6,7 +6,8 @@ export default class RcBuild extends BaseDistribution {
     super(nodeInfo);
   }
 
-  getDistributionUrl(): string {
-    return 'https://nodejs.org/download/rc';
+  getDistributionUrl(mirror: string): string {
+    const url = mirror || 'https://nodejs.org';
+    return `${url}/download/rc`;
   }
 }
