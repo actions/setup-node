@@ -1,15 +1,1 @@
-name: Licensed
-
-on:
-  push:
-    branches:
-      - main
-  pull_request:
-    branches:
-      - main
-  workflow_dispatch:
-
-jobs:
-  call-licensed:
-    name: Licensed
-    uses: actions/reusable-workflows/.github/workflows/licensed.yml@main
+[![Licensed](https://github.com/actions/setup-node/actions/workflows/licensed.yml/badge.svg)](https://github.com/actions/setup-node/actions/workflows/licensed.yml)
