@@ -26,6 +26,14 @@ export function getNodeVersionFromFile(versionFilePath: string): string | null {
         return manifest.volta.node;
       }
 
+      // support devEngines from npm 11
+      if (
+        manifest.devEngines?.runtime?.name === 'node' &&
+        manifest.devEngines.runtime.version
+      ) {
+        return manifest.devEngines.runtime.version;
+      }
+
       if (manifest.engines?.node) {
         return manifest.engines.node;
       }
