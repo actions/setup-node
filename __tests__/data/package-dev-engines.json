@@ -1,0 +1,11 @@
+{
+  "engines": {
+    "node": "^20 || ^22"
+  },
+  "devEngines": {
+    "runtime": {
+      "name": "node",
+      "version": "^20"
+    }
+  }
+}
