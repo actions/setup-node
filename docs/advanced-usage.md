@@ -72,6 +72,7 @@ steps:
 ```
 
 When using the `package.json` input, the action will look for `volta.node` first. If `volta.node` isn't defined, then it will look for `engines.node`.
+(The latter is defined [here in the npm docs](https://docs.npmjs.com/cli/v10/configuring-npm/package-json/#engines).)
 
 ```json
 {
