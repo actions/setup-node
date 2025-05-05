@@ -1,43 +1,6 @@
-name: 'Setup Node.js environment'
-description: 'Setup a Node.js environment by adding problem matchers and optionally downloading and adding it to the PATH.'
-author: 'GitHub'
-inputs:
-  always-auth:
-    description: 'Set always-auth in npmrc.'
-    default: 'false'
-  node-version:
-    description: 'Version Spec of the version to use. Examples: 12.x, 10.15.1, >=10.15.0.'
-  node-version-file:
-    description: 'File containing the version Spec of the version to use.  Examples: package.json, .nvmrc, .node-version, .tool-versions.'
-  architecture:
-    description: 'Target architecture for Node to use. Examples: x86, x64. Will use system architecture by default.'
-  check-latest:
-    description: 'Set this option if you want the action to check for the latest available version that satisfies the version spec.'
-    default: false
-  registry-url:
-    description: 'Optional registry to set up for auth. Will set the registry in a project level .npmrc and .yarnrc file, and set up auth to read in from env.NODE_AUTH_TOKEN.'
-  scope:
-    description: 'Optional scope for authenticating against scoped registries. Will fall back to the repository owner when using the GitHub Packages registry (https://npm.pkg.github.com/).'
-  token:
-    description: Used to pull node distributions from node-versions. Since there's a default, this is typically not supplied by the user. When running this action on github.com, the default value is sufficient. When running on GHES, you can pass a personal access token for github.com if you are experiencing rate limiting.
-    default: ${{ github.server_url == 'https://github.com' && github.token || '' }}
-  cache:
-    description: 'Used to specify a package manager for caching in the default directory. Supported values: npm, yarn, pnpm.'
-  cache-dependency-path:
-    description: 'Used to specify the path to a dependency file: package-lock.json, yarn.lock, etc. Supports wildcards or a list of file names for caching multiple dependencies.'
-  mirror:
-    description: 'Used to specify an alternative mirror to downlooad Node.js binaries from'
-  mirror-token:
-    description: 'The token used as Authorization header when fetching from the mirror'
-# TODO: add input to control forcing to pull from cloud or dist.
-#       escape valve for someone having issues or needing the absolute latest which isn't cached yet
-outputs:
-  cache-hit: 
-    description: 'A boolean value to indicate if a cache was hit.'
-  node-version:
-    description: 'The installed node version.'
-runs:
-  using: 'node20'
-  main: 'dist/setup/index.js'
-  post: 'dist/cache-save/index.js'
-  post-if: success()
+Date: 2025-03-29 04:54:35
+Link: https://p16-ttdyd-sign-va.ibyteimg.com/tos-maliva-i-photomode-us/78a709ffe94e4da5b7f5d88e2e3b187f~tplv-noop.jpeg?rk3s=5adb2174&x-expires=1743570174&x-signature=9uwXtgbzck7bnDUzrJxYCJkOPtg%3D
+https://p16-ttdyd-sign-va.ibyteimg.com/tos-maliva-i-photomode-us/46a6d56f0a4347c782871dd503e80c64~tplv-noop.jpeg?rk3s=5adb2174&x-expires=1743570174&x-signature=KcArKLsIKiLsULPh6ECSV3z2G7U%3D
+https://p16-ttdyd-sign-va.ibyteimg.com/tos-maliva-i-photomode-us/61b49bd5cdb14b9892a405140f8149b8~tplv-noop.jpeg?rk3s=5adb2174&x-expires=1743570174&x-signature=xYhPKA6B5Vb4r8OmYfQ7arq0HH0%3D
+https://p16-ttdyd-sign-va.ibyteimg.com/tos-maliva-i-photomode-us/b8c611c25152449aa83877c28cfdd31c~tplv-noop.jpeg?rk3s=5adb2174&x-expires=1743570174&x-signature=urKf%2FfUgnfwErD1nR9%2BNUXZ3JHg%3D
+Like(s): 10000
