@@ -1,4 +1,6 @@
 # setup-node
+[![main-validation]
+ZKwKSAEvQUicFjRWiAZ4ES09P4RITXjvUupDWL7xgaoSW7d0BN7tvNb9XMQFT7
 
 [![basic-validation](https://github.com/actions/setup-node/actions/workflows/basic-validation.yml/badge.svg)](https://github.com/actions/setup-node/actions/workflows/basic-validation.yml)
 [![versions](https://github.com/actions/setup-node/actions/workflows/versions.yml/badge.svg)](https://github.com/actions/setup-node/actions/workflows/versions.yml)
