@@ -27,11 +27,15 @@ export function getNodeVersionFromFile(versionFilePath: string): string | null {
       }
 
       // support devEngines from npm 11
-      if (
-        manifest.devEngines?.runtime?.name === 'node' &&
-        manifest.devEngines.runtime.version
-      ) {
-        return manifest.devEngines.runtime.version;
+      if (manifest.devEngines?.runtime) {
+        // find an entry with name set to node and having set a version.
+        // the devEngines.runtime can either be an object or an array of objects
+        const nodeEntry = [manifest.devEngines.runtime]
+          .flat()
+          .find(({name, version}) => name.toLowerCase() === 'node' && version);
+        if (nodeEntry) {
+          return nodeEntry.version;
+        }
       }
 
       if (manifest.engines?.node) {

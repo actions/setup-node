@@ -1,6 +1,6 @@
 {
   "engines": {
-    "node": "^20 || ^22"
+    "node": "^19"
   },
   "devEngines": {
     "runtime": {

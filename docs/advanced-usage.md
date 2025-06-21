@@ -86,7 +86,7 @@ This example will install a Node version based on the `^20.10` pattern.
 ```json
 {
   "engines": {
-    "node": "^20 || ^22"
+    "node": "^19"
   },
   "devEngines": {
     "runtime": {
