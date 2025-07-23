@@ -4,7 +4,7 @@
             "owner": "eslint-stylish",
             "pattern": [
                 {
-                    "regexp": "^([^\\s].*)$",
+                    "regexp": "^\\s*([^\\s].*)$",
                     "file": 1
                 },
                 {

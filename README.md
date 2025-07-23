@@ -21,7 +21,7 @@ See [action.yml](action.yml)
 - uses: actions/setup-node@v4
   with:
     # Version Spec of the version to use in SemVer notation.
-    # It also emits such aliases as lts, latest, nightly and canary builds
+    # It also admits such aliases as lts/*, latest, nightly and canary builds
     # Examples: 12.x, 10.15.1, >=10.15.0, lts/Hydrogen, 16-nightly, latest, node
     node-version: ''
 
@@ -76,6 +76,21 @@ See [action.yml](action.yml)
     # Set always-auth option in npmrc file.
     # Default: ''
     always-auth: ''
+
+    # Optional mirror to download binaries from.
+    # Artifacts need to match the official Node.js
+    # Example:
+    # V8 Canaray Build: <mirror_url>/download/v8-canary
+    # RC Build: <mirror_url>/download/rc
+    # Official: Build <mirror_url>/dist
+    # Nightly build: <mirror_url>/download/nightly
+    # Default: ''
+    mirror: ''
+
+    # Optional mirror token.
+    # The token will be used as a bearer token in the Authorization header
+    # Default: ''
+    mirror-token: ''
 ```
 <!-- end usage -->
 
@@ -203,6 +218,15 @@ If the runner is not able to access github.com, any Nodejs versions requested du
  - [Publishing to npmjs and GPR with npm](docs/advanced-usage.md#publish-to-npmjs-and-gpr-with-npm)
  - [Publishing to npmjs and GPR with yarn](docs/advanced-usage.md#publish-to-npmjs-and-gpr-with-yarn)
  - [Using private packages](docs/advanced-usage.md#use-private-packages)
+
+## Recommended permissions
+
+When using the `setup-node` action in your GitHub Actions workflow, it is recommended to set the following permissions to ensure proper functionality:
+
+```yaml
+permissions:
+  contents: read # access to check out code and install dependencies
+```
 
 ## License
 

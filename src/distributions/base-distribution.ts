@@ -24,7 +24,7 @@ export default abstract class BaseDistribution {
     });
   }
 
-  protected abstract getDistributionUrl(): string;
+  protected abstract getDistributionUrl(mirror: string): string;
 
   public async setupNodeJs() {
     let nodeJsVersions: INodeVersion[] | undefined;
@@ -97,10 +97,19 @@ export default abstract class BaseDistribution {
   }
 
   protected async getNodeJsVersions(): Promise<INodeVersion[]> {
-    const initialUrl = this.getDistributionUrl();
+    const initialUrl = this.getDistributionUrl(this.nodeInfo.mirror);
     const dataUrl = `${initialUrl}/index.json`;
 
-    const response = await this.httpClient.getJson<INodeVersion[]>(dataUrl);
+    const headers = {};
+
+    if (this.nodeInfo.mirrorToken) {
+      headers['Authorization'] = `Bearer ${this.nodeInfo.mirrorToken}`;
+    }
+
+    const response = await this.httpClient.getJson<INodeVersion[]>(
+      dataUrl,
+      headers
+    );
     return response.result || [];
   }
 
@@ -117,7 +126,7 @@ export default abstract class BaseDistribution {
           ? `${fileName}.zip`
           : `${fileName}.7z`
         : `${fileName}.tar.gz`;
-    const initialUrl = this.getDistributionUrl();
+    const initialUrl = this.getDistributionUrl(this.nodeInfo.mirror);
     const url = `${initialUrl}/v${version}/${urlFileName}`;
 
     return <INodeVersionInfo>{
@@ -134,7 +143,11 @@ export default abstract class BaseDistribution {
       `Acquiring ${info.resolvedVersion} - ${info.arch} from ${info.downloadUrl}`
     );
     try {
-      downloadPath = await tc.downloadTool(info.downloadUrl);
+      downloadPath = await tc.downloadTool(
+        info.downloadUrl,
+        undefined,
+        this.nodeInfo.mirrorToken
+      );
     } catch (err) {
       if (
         err instanceof tc.HTTPError &&
@@ -150,7 +163,7 @@ export default abstract class BaseDistribution {
       throw err;
     }
 
-    const toolPath = await this.extractArchive(downloadPath, info);
+    const toolPath = await this.extractArchive(downloadPath, info, true);
     core.info('Done');
 
     return toolPath;
@@ -168,7 +181,7 @@ export default abstract class BaseDistribution {
     version: string,
     arch: string = os.arch()
   ): Promise<string> {
-    const initialUrl = this.getDistributionUrl();
+    const initialUrl = this.getDistributionUrl(this.nodeInfo.mirror);
     const osArch: string = this.translateArchToDistUrl(arch);
 
     // Create temporary folder to download to
@@ -185,18 +198,34 @@ export default abstract class BaseDistribution {
 
       core.info(`Downloading only node binary from ${exeUrl}`);
 
-      const exePath = await tc.downloadTool(exeUrl);
+      const exePath = await tc.downloadTool(
+        exeUrl,
+        undefined,
+        this.nodeInfo.mirrorToken
+      );
       await io.cp(exePath, path.join(tempDir, 'node.exe'));
-      const libPath = await tc.downloadTool(libUrl);
+      const libPath = await tc.downloadTool(
+        libUrl,
+        undefined,
+        this.nodeInfo.mirrorToken
+      );
       await io.cp(libPath, path.join(tempDir, 'node.lib'));
     } catch (err) {
       if (err instanceof tc.HTTPError && err.httpStatusCode == 404) {
         exeUrl = `${initialUrl}/v${version}/node.exe`;
         libUrl = `${initialUrl}/v${version}/node.lib`;
 
-        const exePath = await tc.downloadTool(exeUrl);
+        const exePath = await tc.downloadTool(
+          exeUrl,
+          undefined,
+          this.nodeInfo.mirrorToken
+        );
         await io.cp(exePath, path.join(tempDir, 'node.exe'));
-        const libPath = await tc.downloadTool(libUrl);
+        const libPath = await tc.downloadTool(
+          libUrl,
+          undefined,
+          this.nodeInfo.mirrorToken
+        );
         await io.cp(libPath, path.join(tempDir, 'node.lib'));
       } else {
         throw err;
@@ -210,7 +239,8 @@ export default abstract class BaseDistribution {
 
   protected async extractArchive(
     downloadPath: string,
-    info: INodeVersionInfo | null
+    info: INodeVersionInfo | null,
+    isOfficialArchive?: boolean
   ) {
     //
     // Extract
@@ -225,7 +255,7 @@ export default abstract class BaseDistribution {
       // on Windows runners without PowerShell Core.
       //
       // For default PowerShell Windows it should contain extension type to unpack it.
-      if (extension === '.zip') {
+      if (extension === '.zip' && isOfficialArchive) {
         const renamedArchive = `${downloadPath}.zip`;
         fs.renameSync(downloadPath, renamedArchive);
         extPath = await tc.extractZip(renamedArchive);

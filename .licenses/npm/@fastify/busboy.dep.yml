@@ -1,9 +1,9 @@
 ---
 name: "@fastify/busboy"
-version: 2.0.0
+version: 2.1.1
 type: npm
 summary: A streaming parser for HTML form data for node.js
-homepage: 
+homepage:
 license: mit
 licenses:
 - sources: LICENSE
