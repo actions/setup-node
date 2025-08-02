@@ -123,7 +123,7 @@ Examples:
  - NVM LTS syntax (see Caveat below): `lts/erbium`, `lts/fermium`, `lts/*`, `lts/-n`
  - Latest release (see Caveat below): `*` or `latest`/`current`/`node`
 
-**Caveat:** If you require timely version upgrades, use specific versions like `22.18.0` and upgrade the versions yourself. Non-specific versions like `22`, `lts/*`, `*`, `latest`, etc. will get the latest [locally-cached Node.js version](https://github.com/actions/runner-images/blob/main/images/ubuntu/Ubuntu2204-Readme.md#nodejs), or the latest version from [actions/node-versions](https://github.com/actions/node-versions/blob/main/versions-manifest.json), depending on the [`check-latest`](docs/advanced-usage.md#check-latest-version) input. Both can be several days outdated.
+**Caveat:** If you require timely version upgrades, use specific versions like `22.18.0` and upgrade the versions yourself. Non-specific versions like `22`, `lts/*`, `*`, `latest`, etc. will get the latest [locally-cached Node.js version](https://github.com/actions/runner-images/blob/main/images/ubuntu/Ubuntu2204-Readme.md#nodejs), or the latest version from [actions/node-versions](https://github.com/actions/node-versions/blob/main/versions-manifest.json), depending on the [`check-latest`](docs/advanced-usage.md#check-latest-version) input. Both of these sources can be slow to upgrade, with multiple days or weeks of lag time after the version release.
 
 `current`/`latest`/`node` always resolve to the latest [dist version](https://nodejs.org/dist/index.json).
 That version is then downloaded from actions/node-versions if possible, or directly from Node.js if not.
