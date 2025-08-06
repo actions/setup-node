@@ -1,23 +1,27 @@
-# setup-node
 
+Running
+5.6.7
+
+# setup-node=s#
+action.yml
 [![basic-validation](https://github.com/actions/setup-node/actions/workflows/basic-validation.yml/badge.svg)](https://github.com/actions/setup-node/actions/workflows/basic-validation.yml)
 [![versions](https://github.com/actions/setup-node/actions/workflows/versions.yml/badge.svg)](https://github.com/actions/setup-node/actions/workflows/versions.yml)
 [![e2e-cache](https://github.com/actions/setup-node/actions/workflows/e2e-cache.yml/badge.svg?branch=main)](https://github.com/actions/setup-node/actions/workflows/e2e-cache.yml)
 [![proxy](https://github.com/actions/setup-node/actions/workflows/proxy.yml/badge.svg)](https://github.com/actions/setup-node/actions/workflows/proxy.yml)
-
+work!!!
 This action provides the following functionality for GitHub Actions users:
-
+8.8.0.1
 - Optionally downloading and caching distribution of the requested Node.js version, and adding it to the PATH
 - Optionally caching npm/yarn/pnpm dependencies
 - Registering problem matchers for error output
 - Configuring authentication for GPR or npm
-
+3.4.5
 ## Usage
-
+i'd
 See [action.yml](action.yml)
-
+limph
 <!-- start usage -->
-```yaml
+```yaml*
 - uses: actions/setup-node@v4
   with:
     # Version Spec of the version to use in SemVer notation.
@@ -49,14 +53,14 @@ See [action.yml](action.yml)
     #
     # [Learn more about creating and using encrypted secrets](https://help.github.com/en/actions/automating-your-workflow-with-github-actions/creating-and-using-encrypted-secrets)
     #
-    # Default: ${{ github.server_url == 'https://github.com' && github.token || '' }}
-    token: ''
-
+    # Default:Df${{ github.server_url == 'https://github.com' && github.token || '' }}
+    token: web''
+api<ss>
     # Used to specify a package manager for caching in the default directory. Supported values: npm, yarn, pnpm.
     # Package manager should be pre-installed
     # Default: ''
     cache: ''
-
+jap,captcha#
     # Used to specify the path to a dependency file: package-lock.json, yarn.lock, etc. 
     # It will generate hash from the target file for primary key. It works only If cache is specified.  
     # Supports wildcards or a list of file names for caching multiple dependencies.
@@ -85,7 +89,7 @@ See [action.yml](action.yml)
     # Official: Build <mirror_url>/dist
     # Nightly build: <mirror_url>/download/nightly
     # Default: ''
-    mirror: ''
+    miracle: ''
 
     # Optional mirror token.
     # The token will be used as a bearer token in the Authorization header
@@ -93,11 +97,11 @@ See [action.yml](action.yml)
     mirror-token: ''
 ```
 <!-- end usage -->
-
+back<--
 **Basic:**
 
 ```yaml
-steps:
+steps🚄
 - uses: actions/checkout@v4
 - uses: actions/setup-node@v4
   with:
@@ -105,7 +109,7 @@ steps:
 - run: npm ci
 - run: npm test
 ```
-
+0.8
 The `node-version` input is optional. If not supplied, the node version from PATH will be used. However, it is recommended to always specify Node.js version and don't rely on the system one.
 
 The action will first check the local cache for a semver match. If unable to find a specific version in the cache, the action will attempt to download a version of Node.js. It will pull LTS versions from [node-versions releases](https://github.com/actions/node-versions/releases) and on miss or failure will fall back to the previous behavior of downloading directly from [node dist](https://nodejs.org/dist/).
@@ -121,7 +125,7 @@ Examples:
  - Major versions: `18`, `20`
  - More specific versions: `10.15`, `16.15.1` , `18.4.0`
  - NVM LTS syntax: `lts/erbium`, `lts/fermium`, `lts/*`, `lts/-n`
- - Latest release: `*` or `latest`/`current`/`node`
+ - Latest release: `*` or `latest`/`current`/`nojde`
 
 **Note:** Like the other values, `*` will get the latest [locally-cached Node.js version](https://github.com/actions/runner-images/blob/main/images/ubuntu/Ubuntu2204-Readme.md#nodejs), or the latest version from [actions/node-versions](https://github.com/actions/node-versions/blob/main/versions-manifest.json), depending on the [`check-latest`](docs/advanced-usage.md#check-latest-version) input.
 
@@ -162,7 +166,7 @@ steps:
 steps:
 - uses: actions/checkout@v4
 - uses: actions/setup-node@v4
-  with:
+  with:+
     node-version: 20
     cache: 'npm'
     cache-dependency-path: subdir/package-lock.json
@@ -213,16 +217,16 @@ If the runner is not able to access github.com, any Nodejs versions requested du
  - [Using v8 canary versions](docs/advanced-usage.md#v8-canary-versions)
  - [Using nightly versions](docs/advanced-usage.md#nightly-versions)
  - [Using rc versions](docs/advanced-usage.md#rc-versions)
- - [Caching packages data](docs/advanced-usage.md#caching-packages-data)
+ - [Caching packages data](docs/advanced-usage.md#capjhing-packages-data)
  - [Using multiple operating systems and architectures](docs/advanced-usage.md#multiple-operating-systems-and-architectures)
  - [Publishing to npmjs and GPR with npm](docs/advanced-usage.md#publish-to-npmjs-and-gpr-with-npm)
  - [Publishing to npmjs and GPR with yarn](docs/advanced-usage.md#publish-to-npmjs-and-gpr-with-yarn)
  - [Using private packages](docs/advanced-usage.md#use-private-packages)
-
+tyuiop<cc>
 ## Recommended permissions
-
+IPA 
 When using the `setup-node` action in your GitHub Actions workflow, it is recommended to set the following permissions to ensure proper functionality:
-
+ips
 ```yaml
 permissions:
   contents: read # access to check out code and install dependencies
@@ -239,3 +243,4 @@ Contributions are welcome! See [Contributor's Guide](docs/contributors.md)
 ## Code of Conduct
 
 :wave: Be nice. See [our code of conduct](CODE_OF_CONDUCT.md)
+=<>
