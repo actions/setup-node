@@ -181,7 +181,7 @@ jobs:
         with:
           node-version-file: '__tests__/data/package-volta.json'
       - name: Verify node
-        run: __tests__/verify-node.sh 20
+        run: __tests__/verify-node.sh 24
 
   version-file-volta-extends:
     runs-on: ${{ matrix.os }}
@@ -196,7 +196,7 @@ jobs:
         with:
           node-version-file: '__tests__/data/package-volta-extends.json'
       - name: Verify node
-        run: __tests__/verify-node.sh 20
+        run: __tests__/verify-node.sh 24
 
   node-dist:
     runs-on: ${{ matrix.os }}
