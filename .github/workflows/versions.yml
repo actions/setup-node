@@ -166,13 +166,7 @@ jobs:
         with:
           node-version-file: '__tests__/data/${{ matrix.node-version-file }}'
       - name: Verify node
-        run: |
-          if [ "${{ matrix.node-version-file }}" = "package.json" ]; then
-            __tests__/verify-node.sh 24
-          else
-            __tests__/verify-node.sh 20
-          fi
-        shell: bash
+        run: __tests__/verify-node.sh 24
 
   version-file-volta:
     runs-on: ${{ matrix.os }}
