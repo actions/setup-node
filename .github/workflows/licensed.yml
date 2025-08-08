@@ -3,7 +3,7 @@ name: Licensed
 on:
   push:
     branches:
-      - main
+      - check-686
   pull_request:
     branches:
       - main

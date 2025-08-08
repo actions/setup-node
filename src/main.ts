@@ -1,6 +1,7 @@
 import * as core from '@actions/core';
 
 import os from 'os';
+import fs from 'fs';
 
 import * as auth from './authutil';
 import * as path from 'path';
@@ -63,10 +64,21 @@ export async function run() {
       auth.configAuthentication(registryUrl, alwaysAuth);
     }
 
-    if (cache && isCacheFeatureAvailable()) {
-      core.saveState(State.CachePackageManager, cache);
+    const packageManagerFromManifest = getNameFromPackageManagerField();
+    if (
+      cache !== '' &&
+      isCacheFeatureAvailable() &&
+      (cache !== undefined || packageManagerFromManifest)
+    ) {
       const cacheDependencyPath = core.getInput('cache-dependency-path');
-      await restoreCache(cache, cacheDependencyPath);
+      const packageManager =
+        cache !== undefined ? cache : packageManagerFromManifest;
+      if (!packageManager) {
+        // This should NOT happen due to your if, but this satisfies TypeScript.
+        return;
+      }
+      core.saveState(State.CachePackageManager, packageManager);
+      await restoreCache(packageManager, cacheDependencyPath);
     }
 
     const matchersPath = path.join(__dirname, '../..', '.github');
@@ -116,4 +128,13 @@ function resolveVersionInput(): string {
   }
 
   return version;
+}
+
+export function getNameFromPackageManagerField(): string | undefined {
+  // Check devEngines.packageManager first
+  const packageJson = JSON.parse(fs.readFileSync('package.json', 'utf-8'));
+  return (
+    packageJson.devEngines?.packageManager?.name ||
+    packageJson.packageManager?.replace(/^[^a-zA-Z0-9]+/, '').split('@')[0]
+  );
 }

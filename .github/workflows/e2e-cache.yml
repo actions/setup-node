@@ -6,7 +6,7 @@ on:
       - '**.md'
   push:
     branches:
-      - main
+      - check-686
       - releases/*
     paths-ignore:
       - '**.md'
@@ -243,3 +243,43 @@ jobs:
           cache-dependency-path: |
             sub2/*.lock
             sub3/*.lock
+
+  test-cache-auto-enabled:
+    name: Test Cache Auto-Enabled
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest, macos-13]
+        node-version: [18, 20, 22]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Change directory to __tests__/data
+        run: cd __tests__/data
+      - name: Setup Node
+        uses: ./
+        with:
+          node-version: ${{ matrix.node-version }}
+      - name: Install dependencies
+        run: npm install
+
+  test-cache-explicitly-disabled:
+    name: Test Cache Explicitly Disabled
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest, macos-13]
+        node-version: [18, 20, 22]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Change directory to __tests__/data
+        run: cd __tests__/data
+      - name: Setup Node
+        uses: ./
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: ''
+      - name: Verify node and npm
+        run: __tests__/verify-node.sh "${{ matrix.node-version }}"
+        shell: bash

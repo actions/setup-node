@@ -1,4 +1,9 @@
 {
+  "devEngines": {
+    "packageManager": {
+      "name": "npm"
+    }
+  },
   "engines": {
     "node": "^20.0.0"
   }
