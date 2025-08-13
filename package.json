@@ -4,6 +4,9 @@
   "private": true,
   "description": "setup node action",
   "main": "lib/setup-node.js",
+  "engines": {
+    "node": ">=24.0.0"
+  },
   "scripts": {
     "build": "ncc build -o dist/setup src/setup-node.ts && ncc build -o dist/cache-save src/cache-save.ts",
     "format": "prettier --no-error-on-unmatched-pattern --config ./.prettierrc.js --write \"**/*.{ts,yml,yaml}\"",
