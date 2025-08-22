@@ -99583,9 +99583,10 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.run = void 0;
+exports.getNameFromPackageManagerField = exports.run = void 0;
 const core = __importStar(__nccwpck_require__(37484));
 const os_1 = __importDefault(__nccwpck_require__(70857));
+const fs_1 = __importDefault(__nccwpck_require__(79896));
 const auth = __importStar(__nccwpck_require__(98789));
 const path = __importStar(__nccwpck_require__(16928));
 const cache_restore_1 = __nccwpck_require__(44326);
@@ -99603,6 +99604,8 @@ function run() {
             const version = resolveVersionInput();
             let arch = core.getInput('architecture');
             const cache = core.getInput('cache');
+            const packagemanagercache = (core.getInput('package-manager-cache') || 'true').toUpperCase() ===
+                'TRUE';
             // if architecture supplied but node-version is not
             // if we don't throw a warning, the already installed x64 node will be used which is not probably what user meant.
             if (arch && !version) {
@@ -99636,10 +99639,15 @@ function run() {
             if (registryUrl) {
                 auth.configAuthentication(registryUrl, alwaysAuth);
             }
+            const resolvedPackageManager = getNameFromPackageManagerField();
+            const cacheDependencyPath = core.getInput('cache-dependency-path');
             if (cache && (0, cache_utils_1.isCacheFeatureAvailable)()) {
                 core.saveState(constants_1.State.CachePackageManager, cache);
-                const cacheDependencyPath = core.getInput('cache-dependency-path');
                 yield (0, cache_restore_1.restoreCache)(cache, cacheDependencyPath);
+            }
+            else if (resolvedPackageManager && packagemanagercache) {
+                core.saveState(constants_1.State.CachePackageManager, resolvedPackageManager);
+                yield (0, cache_restore_1.restoreCache)(resolvedPackageManager, cacheDependencyPath);
             }
             const matchersPath = path.join(__dirname, '../..', '.github');
             core.info(`##[add-matcher]${path.join(matchersPath, 'tsc.json')}`);
@@ -99674,6 +99682,26 @@ function resolveVersionInput() {
     }
     return version;
 }
+function getNameFromPackageManagerField() {
+    var _a, _b;
+    // Check devEngines.packageManager and packageManager field in package.json
+    try {
+        const packageJson = JSON.parse(fs_1.default.readFileSync('package.json', 'utf-8'));
+        return (((_b = (_a = packageJson.devEngines) === null || _a === void 0 ? void 0 : _a.packageManager) === null || _b === void 0 ? void 0 : _b.name) ||
+            (() => {
+                const pm = packageJson.packageManager;
+                if (typeof pm === 'string') {
+                    const match = pm.match(/^(?:\^)?(npm|yarn|pnpm)@/);
+                    return match ? match[1] : undefined;
+                }
+                return undefined;
+            })());
+    }
+    catch (err) {
+        return undefined;
+    }
+}
+exports.getNameFromPackageManagerField = getNameFromPackageManagerField;
 
 
 /***/ }),
