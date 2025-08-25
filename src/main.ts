@@ -127,7 +127,7 @@ function resolveVersionInput(): string {
 }
 
 export function getNameFromPackageManagerField(): string | undefined {
-  // Check devEngines.packageManager and packageManager field in package.json
+  // Check packageManager field in package.json
   const SUPPORTED_PACKAGE_MANAGERS = ['npm', 'yarn', 'pnpm'];
   try {
     const packageJson = JSON.parse(
@@ -136,20 +136,15 @@ export function getNameFromPackageManagerField(): string | undefined {
         'utf-8'
       )
     );
-    return (
-      packageJson.devEngines?.packageManager?.name ||
-      (() => {
-        const pm = packageJson.packageManager;
-        if (typeof pm === 'string') {
-          const regex = new RegExp(
-            `^(?:\\^)?(${SUPPORTED_PACKAGE_MANAGERS.join('|')})@`
-          );
-          const match = pm.match(regex);
-          return match ? match[1] : undefined;
-        }
-        return undefined;
-      })()
-    );
+    const pm = packageJson.packageManager;
+    if (typeof pm === 'string') {
+      const regex = new RegExp(
+        `^(?:\\^)?(${SUPPORTED_PACKAGE_MANAGERS.join('|')})@`
+      );
+      const match = pm.match(regex);
+      return match ? match[1] : undefined;
+    }
+    return undefined;
   } catch (err) {
     return undefined;
   }

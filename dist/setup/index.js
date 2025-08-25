@@ -99683,21 +99683,17 @@ function resolveVersionInput() {
     return version;
 }
 function getNameFromPackageManagerField() {
-    var _a, _b;
-    // Check devEngines.packageManager and packageManager field in package.json
+    // Check packageManager field in package.json
     const SUPPORTED_PACKAGE_MANAGERS = ['npm', 'yarn', 'pnpm'];
     try {
         const packageJson = JSON.parse(fs_1.default.readFileSync(path.join(process.env.GITHUB_WORKSPACE, 'package.json'), 'utf-8'));
-        return (((_b = (_a = packageJson.devEngines) === null || _a === void 0 ? void 0 : _a.packageManager) === null || _b === void 0 ? void 0 : _b.name) ||
-            (() => {
-                const pm = packageJson.packageManager;
-                if (typeof pm === 'string') {
-                    const regex = new RegExp(`^(?:\\^)?(${SUPPORTED_PACKAGE_MANAGERS.join('|')})@`);
-                    const match = pm.match(regex);
-                    return match ? match[1] : undefined;
-                }
-                return undefined;
-            })());
+        const pm = packageJson.packageManager;
+        if (typeof pm === 'string') {
+            const regex = new RegExp(`^(?:\\^)?(${SUPPORTED_PACKAGE_MANAGERS.join('|')})@`);
+            const match = pm.match(regex);
+            return match ? match[1] : undefined;
+        }
+        return undefined;
     }
     catch (err) {
         return undefined;

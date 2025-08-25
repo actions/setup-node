@@ -285,28 +285,6 @@ describe('main tests', () => {
   });
 
   describe('cache feature tests', () => {
-    it('Should enable caching with the resolved package manager from devEngines.packageManager in package.json when the cache input is not provided', async () => {
-      inputs['package-manager-cache'] = 'true';
-      inputs['cache'] = ''; // No cache input is provided
-
-      inSpy.mockImplementation(name => inputs[name]);
-
-      const readFileSpy = jest.spyOn(fs, 'readFileSync');
-      readFileSpy.mockImplementation(() =>
-        JSON.stringify({
-          devEngines: {
-            packageManager: {
-              name: 'pnpm'
-            }
-          }
-        })
-      );
-
-      await main.run();
-
-      expect(saveStateSpy).toHaveBeenCalledWith(expect.anything(), 'pnpm');
-    });
-
     it('Should enable caching with the resolved package manager from packageManager field in package.json when the cache input is not provided', async () => {
       inputs['package-manager-cache'] = 'true';
       inputs['cache'] = ''; // No cache input is provided
