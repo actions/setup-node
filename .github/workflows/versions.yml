@@ -18,7 +18,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest, macos-13]
-        node-version: [18, 20, 22]
+        node-version: [18, 20, 22, 24]
     steps:
       - uses: actions/checkout@v4
       - name: Setup Node
@@ -139,7 +139,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest, macos-13]
-        node-version: [18, 20, 22]
+        node-version: [18, 20, 22, 24]
     steps:
       - uses: actions/checkout@v4
       - name: Setup Node and check latest
@@ -166,7 +166,7 @@ jobs:
         with:
           node-version-file: '__tests__/data/${{ matrix.node-version-file }}'
       - name: Verify node
-        run: __tests__/verify-node.sh 20
+        run: __tests__/verify-node.sh 24
 
   version-file-volta:
     runs-on: ${{ matrix.os }}
@@ -181,7 +181,7 @@ jobs:
         with:
           node-version-file: '__tests__/data/package-volta.json'
       - name: Verify node
-        run: __tests__/verify-node.sh 20
+        run: __tests__/verify-node.sh 24
 
   version-file-volta-extends:
     runs-on: ${{ matrix.os }}
@@ -196,7 +196,7 @@ jobs:
         with:
           node-version-file: '__tests__/data/package-volta-extends.json'
       - name: Verify node
-        run: __tests__/verify-node.sh 20
+        run: __tests__/verify-node.sh 24
 
   node-dist:
     runs-on: ${{ matrix.os }}

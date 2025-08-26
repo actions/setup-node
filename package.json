@@ -1,9 +1,12 @@
 {
   "name": "setup-node",
-  "version": "4.0.0",
+  "version": "5.0.0",
   "private": true,
   "description": "setup node action",
   "main": "lib/setup-node.js",
+  "engines": {
+    "node": ">=24.0.0"
+  },
   "scripts": {
     "build": "ncc build -o dist/setup src/setup-node.ts && ncc build -o dist/cache-save src/cache-save.ts",
     "format": "prettier --no-error-on-unmatched-pattern --config ./.prettierrc.js --write \"**/*.{ts,yml,yaml}\"",
@@ -38,7 +41,7 @@
   },
   "devDependencies": {
     "@types/jest": "^29.5.14",
-    "@types/node": "^20.11.25",
+    "@types/node": "^24.1.0",
     "@types/semver": "^7.5.8",
     "@typescript-eslint/eslint-plugin": "^5.54.0",
     "@typescript-eslint/parser": "^5.54.0",
