@@ -20,6 +20,7 @@ describe('main tests', () => {
 
   let infoSpy: jest.SpyInstance;
   let warningSpy: jest.SpyInstance;
+  let saveStateSpy: jest.SpyInstance;
   let inSpy: jest.SpyInstance;
   let setOutputSpy: jest.SpyInstance;
   let startGroupSpy: jest.SpyInstance;
@@ -53,6 +54,8 @@ describe('main tests', () => {
     setOutputSpy.mockImplementation(() => {});
     warningSpy = jest.spyOn(core, 'warning');
     warningSpy.mockImplementation(() => {});
+    saveStateSpy = jest.spyOn(core, 'saveState');
+    saveStateSpy.mockImplementation(() => {});
     startGroupSpy = jest.spyOn(core, 'startGroup');
     startGroupSpy.mockImplementation(() => {});
     endGroupSpy = jest.spyOn(core, 'endGroup');
@@ -278,6 +281,67 @@ describe('main tests', () => {
       expect(warningSpy).toHaveBeenCalledWith(
         'The runner was not able to contact the cache service. Caching will be skipped'
       );
+    });
+  });
+
+  describe('cache feature tests', () => {
+    it('Should enable caching with the resolved package manager from packageManager field in package.json when the cache input is not provided', async () => {
+      inputs['package-manager-cache'] = 'true';
+      inputs['cache'] = ''; // No cache input is provided
+
+      inSpy.mockImplementation(name => inputs[name]);
+
+      const readFileSpy = jest.spyOn(fs, 'readFileSync');
+      readFileSpy.mockImplementation(() =>
+        JSON.stringify({
+          packageManager: 'yarn@3.2.0'
+        })
+      );
+
+      await main.run();
+
+      expect(saveStateSpy).toHaveBeenCalledWith(expect.anything(), 'yarn');
+    });
+
+    it('Should not enable caching if the packageManager field is missing in package.json and the cache input is not provided', async () => {
+      inputs['package-manager-cache'] = 'true';
+      inputs['cache'] = ''; // No cache input is provided
+
+      inSpy.mockImplementation(name => inputs[name]);
+
+      const readFileSpy = jest.spyOn(fs, 'readFileSync');
+      readFileSpy.mockImplementation(() =>
+        JSON.stringify({
+          //packageManager field is not present
+        })
+      );
+
+      await main.run();
+
+      expect(saveStateSpy).not.toHaveBeenCalled();
+    });
+
+    it('Should skip caching when package-manager-cache is false', async () => {
+      inputs['package-manager-cache'] = 'false';
+      inputs['cache'] = ''; // No cache input is provided
+
+      inSpy.mockImplementation(name => inputs[name]);
+
+      await main.run();
+
+      expect(saveStateSpy).not.toHaveBeenCalled();
+    });
+
+    it('Should enable caching with cache input explicitly provided', async () => {
+      inputs['package-manager-cache'] = 'true';
+      inputs['cache'] = 'npm'; // Explicit cache input provided
+
+      inSpy.mockImplementation(name => inputs[name]);
+      isCacheActionAvailable.mockReturnValue(true);
+
+      await main.run();
+
+      expect(saveStateSpy).toHaveBeenCalledWith(expect.anything(), 'npm');
     });
   });
 });

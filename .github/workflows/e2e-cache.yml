@@ -243,3 +243,28 @@ jobs:
           cache-dependency-path: |
             sub2/*.lock
             sub3/*.lock
+
+  node-npm-package-manager-cache:
+    name: Test enabling cache if package manager field is present (Node ${{ matrix.node-version }}, ${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest, macos-13]
+        node-version: [18, 20, 22]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Create package.json with packageManager field
+        run: |
+          echo '{ "name": "test-project", "version": "1.0.0", "packageManager": "npm@8.0.0" }' > package.json
+      - name: Clean global cache
+        run: npm cache clean --force
+      - name: Setup Node with caching enabled
+        uses: ./
+        with:
+          node-version: ${{ matrix.node-version }}
+      - name: Install dependencies
+        run: npm install
+      - name: Verify node and npm
+        run: __tests__/verify-node.sh "${{ matrix.node-version }}"
+        shell: bash

@@ -1,6 +1,7 @@
 import * as core from '@actions/core';
 
 import os from 'os';
+import fs from 'fs';
 
 import * as auth from './authutil';
 import * as path from 'path';
@@ -20,6 +21,9 @@ export async function run() {
 
     let arch = core.getInput('architecture');
     const cache = core.getInput('cache');
+    const packagemanagercache =
+      (core.getInput('package-manager-cache') || 'true').toUpperCase() ===
+      'TRUE';
 
     // if architecture supplied but node-version is not
     // if we don't throw a warning, the already installed x64 node will be used which is not probably what user meant.
@@ -63,10 +67,14 @@ export async function run() {
       auth.configAuthentication(registryUrl, alwaysAuth);
     }
 
+    const resolvedPackageManager = getNameFromPackageManagerField();
+    const cacheDependencyPath = core.getInput('cache-dependency-path');
     if (cache && isCacheFeatureAvailable()) {
       core.saveState(State.CachePackageManager, cache);
-      const cacheDependencyPath = core.getInput('cache-dependency-path');
       await restoreCache(cache, cacheDependencyPath);
+    } else if (resolvedPackageManager && packagemanagercache) {
+      core.saveState(State.CachePackageManager, resolvedPackageManager);
+      await restoreCache(resolvedPackageManager, cacheDependencyPath);
     }
 
     const matchersPath = path.join(__dirname, '../..', '.github');
@@ -116,4 +124,28 @@ function resolveVersionInput(): string {
   }
 
   return version;
+}
+
+export function getNameFromPackageManagerField(): string | undefined {
+  // Check packageManager field in package.json
+  const SUPPORTED_PACKAGE_MANAGERS = ['npm', 'yarn', 'pnpm'];
+  try {
+    const packageJson = JSON.parse(
+      fs.readFileSync(
+        path.join(process.env.GITHUB_WORKSPACE!, 'package.json'),
+        'utf-8'
+      )
+    );
+    const pm = packageJson.packageManager;
+    if (typeof pm === 'string') {
+      const regex = new RegExp(
+        `^(?:\\^)?(${SUPPORTED_PACKAGE_MANAGERS.join('|')})@`
+      );
+      const match = pm.match(regex);
+      return match ? match[1] : undefined;
+    }
+    return undefined;
+  } catch (err) {
+    return undefined;
+  }
 }
