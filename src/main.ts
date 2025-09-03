@@ -37,6 +37,14 @@ export async function run() {
       arch = os.arch();
     }
 
+    if (process.env.AGENT_TOOLSDIRECTORY?.trim()) {
+      process.env['RUNNER_TOOL_CACHE'] = process.env['AGENT_TOOLSDIRECTORY'];
+    }
+
+    core.debug(
+      `Node is expected to be installed into ${process.env['RUNNER_TOOL_CACHE']}`
+    );
+
     if (version) {
       const token = core.getInput('token');
       const auth = !token ? undefined : `token ${token}`;
