@@ -1,0 +1,17 @@
+{
+  "engines": {
+    "node": "^19"
+  },
+  "devEngines": {
+    "runtime": [
+      {
+        "name": "bun",
+        "version": "^1"
+      },
+      {
+        "name": "node",
+        "version": "^20"
+      }
+    ]
+  }
+}
