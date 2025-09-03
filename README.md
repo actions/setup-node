@@ -18,7 +18,7 @@ See [action.yml](action.yml)
 
 <!-- start usage -->
 ```yaml
-- uses: actions/setup-node@v5
+- uses: actions/setup-node@v4
   with:
     # Version Spec of the version to use in SemVer notation.
     # It also admits such aliases as lts/*, latest, nightly and canary builds
@@ -99,7 +99,7 @@ See [action.yml](action.yml)
 ```yaml
 steps:
 - uses: actions/checkout@v5
-- uses: actions/setup-node@v5
+- uses: actions/setup-node@v4
   with:
     node-version: 18
 - run: npm ci
@@ -160,7 +160,7 @@ See the examples of using cache for `yarn`/`pnpm` and `cache-dependency-path` in
 ```yaml
 steps:
 - uses: actions/checkout@v5
-- uses: actions/setup-node@v5
+- uses: actions/setup-node@v4
   with:
     node-version: 20
     cache: 'npm'
@@ -173,7 +173,7 @@ steps:
 ```yaml
 steps:
 - uses: actions/checkout@v5
-- uses: actions/setup-node@v5
+- uses: actions/setup-node@v4
   with:
     node-version: 20
     cache: 'npm'
@@ -195,7 +195,7 @@ jobs:
     steps:
       - uses: actions/checkout@v5
       - name: Setup node
-        uses: actions/setup-node@v5
+        uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node }}
       - run: npm ci
@@ -209,7 +209,7 @@ jobs:
 To get a higher rate limit, you can [generate a personal access token on github.com](https://github.com/settings/tokens/new) and pass it as the `token` input for the action:
 
 ```yaml
-uses: actions/setup-node@v5
+uses: actions/setup-node@v4
 with:
   token: ${{ secrets.GH_DOTCOM_TOKEN }}
   node-version: 20
