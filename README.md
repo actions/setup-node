@@ -18,6 +18,7 @@ This action provides the following functionality for GitHub Actions users:
 
 - Upgrade action to use node24 by @salmanmkc in https://github.com/actions/setup-node/pull/1325
 Make sure your runner is on version v2.327.1 or later to ensure compatibility with this release. [See Release Notes](https://github.com/actions/runner/releases/tag/v2.327.1)
+
 For more detailed release notes with documntation updates and dependency upgrades, please track [release notes](https://github.com/actions/setup-node/releases/edit/v5.0.0)
 
 
