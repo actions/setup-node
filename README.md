@@ -16,13 +16,10 @@ This action provides the following functionality for GitHub Actions users:
 
 - Enhance caching in setup-node with automatic package manager detection in [#1348](https://github.com/actions/setup-node/pull/1348)
 
-- Upgrade action to use node24 by @salmanmkc in https://github.com/actions/setup-node/pull/1325
+- Upgrade action to use node24 in [#1325](https://github.com/actions/setup-node/pull/1325)
 Make sure your runner is on version v2.327.1 or later to ensure compatibility with this release. [See Release Notes](https://github.com/actions/runner/releases/tag/v2.327.1)
 
 For more detailed release notes with documntation updates and dependency upgrades, please track [release notes](https://github.com/actions/setup-node/releases/edit/v5.0.0)
-
-
-
 
 ## Usage
 
@@ -69,14 +66,14 @@ See [action.yml](action.yml)
     # Default: ''
     cache: ''
 
+    # Used to disable automatic caching based on the package manager field in package.json. By default, caching is enabled if the package manager field is present and no cache input is provided'
+    # default: true
+    package-manager-cache: true
+
     # Used to specify the path to a dependency file: package-lock.json, yarn.lock, etc. 
     # It will generate hash from the target file for primary key. It works only If cache is specified.  
     # Supports wildcards or a list of file names for caching multiple dependencies.
     # Default: ''
-    package-manager-cache: false
-
-    # Used to disable automatic caching based on the package manager field in package.json. By default, caching is enabled if the package manager field is present.'
-    # default: true
     cache-dependency-path: ''
 
     # Optional registry to set up for auth. Will set the registry in a project level .npmrc and .yarnrc file, 
@@ -267,6 +264,3 @@ Contributions are welcome! See [Contributor's Guide](docs/contributors.md)
 ## Code of Conduct
 
 :wave: Be nice. See [our code of conduct](CODE_OF_CONDUCT.md)
-
-
-[def]: https://github.com/actions/runner/releases/tag/v2.327.1
