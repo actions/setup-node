@@ -12,6 +12,15 @@ This action provides the following functionality for GitHub Actions users:
 - Registering problem matchers for error output
 - Configuring authentication for GPR or npm
 
+## Breaking changes in V5 
+
+- Enhance caching in setup-node with automatic package manager detection in [#1348](https://github.com/actions/setup-node/pull/1348)
+
+- Upgrade action to use node24 in [#1325](https://github.com/actions/setup-node/pull/1325)
+Make sure your runner is on version v2.327.1 or later to ensure compatibility with this release. [See Release Notes](https://github.com/actions/runner/releases/tag/v2.327.1)
+
+For more detailed release notes with documntation updates and dependency upgrades, please track [release notes](https://github.com/actions/setup-node/releases/edit/v5.0.0)
+
 ## Usage
 
 See [action.yml](action.yml)
@@ -56,6 +65,10 @@ See [action.yml](action.yml)
     # Package manager should be pre-installed
     # Default: ''
     cache: ''
+
+    # Used to disable automatic caching based on the package manager field in package.json. By default, caching is enabled if the package manager field is present and no cache input is provided'
+    # default: true
+    package-manager-cache: true
 
     # Used to specify the path to a dependency file: package-lock.json, yarn.lock, etc. 
     # It will generate hash from the target file for primary key. It works only If cache is specified.  
@@ -137,12 +150,12 @@ It's **always** recommended to commit the lockfile of your package manager for s
 
 The action has a built-in functionality for caching and restoring dependencies. It uses [actions/cache](https://github.com/actions/cache) under the hood for caching global packages data but requires less configuration settings. Supported package managers are `npm`, `yarn`, `pnpm` (v6.10+). The `cache` input is optional.
 
-Caching is turned on by default when a `packageManager` field is detected in the `package.json` file. The `package-manager-cache` input provides control over this automatic caching behavior. By default, `package-manager-cache` is set to `true`, which enables caching when a valid package manager field is detected in the `package.json` file. To disable this automatic caching, set the `package-manager-cache` input to `false`.
+Caching is turned on by default when a `packageManager` field is detected in the `package.json` file and no `cache` input is provided. The `package-manager-cache` input provides control over this automatic caching behavior. By default, `package-manager-cache` is set to `true`, which enables caching when a valid package manager field is detected in the `package.json` file. To disable this automatic caching, set the `package-manager-cache` input to `false`.
 
 ```yaml
 steps:
-- uses: actions/checkout@v4
-- uses: actions/setup-node@v4
+- uses: actions/checkout@v5
+- uses: actions/setup-node@v5
   with:
     package-manager-cache: false
 - run: npm ci
