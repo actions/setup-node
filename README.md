@@ -15,12 +15,12 @@ This action provides the following functionality for GitHub Actions users:
 ## Breaking changes in V5 
 
 - Enhance caching in setup-node with automatic package manager detection.
-> For workflows with elevated privileges or access to sensitive information, we recommend disabling automatic caching by setting `package-manager-cache: false` when caching is not needed for secure operation.
+  > For workflows with elevated privileges or access to sensitive information, we recommend disabling automatic caching by setting `package-manager-cache: false` when caching is not needed for secure operation.
 
 - Upgraded action from node20 to node24.
-> Make sure your runner is on version v2.327.1 or later to ensure compatibility with this release. [See Release Notes](https://github.com/actions/runner/releases/tag/v2.327.1)
+  > Make sure your runner is on version v2.327.1 or later to ensure compatibility with this release. [See Release Notes](https://github.com/actions/runner/releases/tag/v2.327.1)
 
-For more detailed release notes,  see the full release notes on the [releases page](https://github.com/actions/setup-node/releases/v5.0.0)
+For more detailed release notes, see the full release notes on the [releases page](https://github.com/actions/setup-node/releases/v5.0.0)
 
 ## Usage
 
