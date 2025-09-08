@@ -14,12 +14,13 @@ This action provides the following functionality for GitHub Actions users:
 
 ## Breaking changes in V5 
 
-- Enhance caching in setup-node with automatic package manager detection in [#1348](https://github.com/actions/setup-node/pull/1348)
+- Enhance caching in setup-node with automatic package manager detection.
+> For workflows with elevated privileges or access to sensitive information, we recommend disabling automatic caching by setting `package-manager-cache: false` when caching is not needed for secure operation.
 
-- Upgrade action to use node24 in [#1325](https://github.com/actions/setup-node/pull/1325)
-Make sure your runner is on version v2.327.1 or later to ensure compatibility with this release. [See Release Notes](https://github.com/actions/runner/releases/tag/v2.327.1)
+- Upgrade action to use node24.
+> Make sure your runner is on version v2.327.1 or later to ensure compatibility with this release. [See Release Notes](https://github.com/actions/runner/releases/tag/v2.327.1)
 
-For more detailed release notes with documntation updates and dependency upgrades, please track [release notes](https://github.com/actions/setup-node/releases/edit/v5.0.0)
+For more detailed release notes with documntation updates and dependency upgrades, please track [release notes](https://github.com/actions/setup-node/releases/v5.0.0)
 
 ## Usage
 
@@ -160,7 +161,7 @@ steps:
     package-manager-cache: false
 - run: npm ci
 ```
-> If no valid `packageManager` field is detected in the `package.json` file, caching will remain disabled unless explicitly configured.
+> If no valid `packageManager` field is detected in the `package.json` file, caching will remain disabled unless explicitly configured. For workflows with elevated privileges or access to sensitive information, we recommend disabling automatic caching by setting `package-manager-cache: false` when caching is not needed for secure operation.
 
 The action defaults to search for the dependency file (`package-lock.json`, `npm-shrinkwrap.json` or `yarn.lock`) in the repository root, and uses its hash as a part of the cache key. Use `cache-dependency-path` for cases when multiple dependency files are used, or they are located in different subdirectories.
 
