@@ -73,6 +73,11 @@ export async function run() {
       core.saveState(State.CachePackageManager, cache);
       await restoreCache(cache, cacheDependencyPath);
     } else if (resolvedPackageManager && packagemanagercache) {
+      core.info(
+        "Detected package manager from package.json's packageManager field: " +
+          resolvedPackageManager +
+          '. Auto caching has been enabled for it. If you want to disable it, set package-manager-cache input to false'
+      );
       core.saveState(State.CachePackageManager, resolvedPackageManager);
       await restoreCache(resolvedPackageManager, cacheDependencyPath);
     }
