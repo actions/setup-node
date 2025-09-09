@@ -45,6 +45,7 @@ export const restoreCache = async (
   core.debug(`primary key is ${primaryKey}`);
 
   core.saveState(State.CachePrimaryKey, primaryKey);
+  core.setOutput('cache-key', primaryKey);
 
   const isManagedByYarnBerry = await repoHasYarnBerryManagedDependencies(
     packageManagerInfo,
@@ -61,6 +62,8 @@ export const restoreCache = async (
   }
 
   core.setOutput('cache-hit', Boolean(cacheKey));
+  core.setOutput('cache-matched-key', cacheKey);
+  core.debug(`cache-matched-key is ${cacheKey}`);
 
   if (!cacheKey) {
     core.info(`${packageManager} cache is not found`);
