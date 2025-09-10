@@ -67,19 +67,26 @@ export async function run() {
       auth.configAuthentication(registryUrl, alwaysAuth);
     }
 
-    const resolvedPackageManager = getNameFromPackageManagerField();
     const cacheDependencyPath = core.getInput('cache-dependency-path');
-    if (cache && isCacheFeatureAvailable()) {
-      core.saveState(State.CachePackageManager, cache);
-      await restoreCache(cache, cacheDependencyPath);
-    } else if (resolvedPackageManager && packagemanagercache) {
-      core.info(
-        "Detected package manager from package.json's packageManager field: " +
-          resolvedPackageManager +
-          '. Auto caching has been enabled for it. If you want to disable it, set package-manager-cache input to false'
-      );
-      core.saveState(State.CachePackageManager, resolvedPackageManager);
-      await restoreCache(resolvedPackageManager, cacheDependencyPath);
+    if (isCacheFeatureAvailable()) {
+      // we only determine the package manager type if we can cache in the first place
+      if (cache) {
+        // in previous version of setup-node, user can explictly specify what package manager they are using, we prefer that
+        core.saveState(State.CachePackageManager, cache);
+        await restoreCache(cache, cacheDependencyPath);
+      } else if (packagemanagercache) {
+        // only if user hasn't specify the "cache" (introduced in the previous version) we read the "package-manager-cache" field
+        const resolvedPackageManager = getNameFromPackageManagerField(); // only then we look for "package.json" for package manager
+        if (resolvedPackageManager) {
+          core.info(
+            "Detected package manager from package.json's packageManager field: " +
+              resolvedPackageManager +
+              '. Auto caching has been enabled for it. If you want to disable it, set package-manager-cache input to false'
+          );
+          core.saveState(State.CachePackageManager, resolvedPackageManager);
+          await restoreCache(resolvedPackageManager, cacheDependencyPath);
+        }
+      }
     }
 
     const matchersPath = path.join(__dirname, '../..', '.github');
