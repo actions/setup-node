@@ -71,7 +71,7 @@ export async function run() {
     if (isCacheFeatureAvailable()) {
       // we only determine the package manager type if we can cache in the first place
       if (cache) {
-        // in previous version of setup-node, user can explictly specify what package manager they are using, we prefer that
+        // in previous version of setup-node, user can explicitly specify what package manager they are using, we prefer that
         core.saveState(State.CachePackageManager, cache);
         await restoreCache(cache, cacheDependencyPath);
       } else if (packagemanagercache) {
