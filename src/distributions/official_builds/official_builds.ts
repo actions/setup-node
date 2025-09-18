@@ -221,8 +221,8 @@ export default class OfficialBuilds extends BaseDistribution {
       alias === '*'
         ? numbered[numbered.length - 1]
         : n < 0
-        ? numbered[numbered.length - 1 + n]
-        : aliases[alias];
+          ? numbered[numbered.length - 1 + n]
+          : aliases[alias];
 
     if (!release) {
       throw new Error(
