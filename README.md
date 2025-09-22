@@ -14,8 +14,8 @@ This action provides the following functionality for GitHub Actions users:
 
 ## Breaking changes in V5 
 
-- Enabled caching by default with package manager detection if no cache input is provided.
-  > For workflows with elevated privileges or access to sensitive information, we recommend disabling automatic caching by setting `package-manager-cache: false` when caching is not needed for secure operation.
+- Enabled caching for npm dependencies by default when the package manager is detected and no cache input is provided.
+  > For workflows with elevated privileges or access to sensitive information, we recommend disabling automatic caching for npm by setting `package-manager-cache: false` when caching is not needed for secure operation.
 
 - Upgraded action from node20 to node24.
   > Make sure your runner is on version v2.327.1 or later to ensure compatibility with this release. [See Release Notes](https://github.com/actions/runner/releases/tag/v2.327.1)
@@ -67,7 +67,8 @@ See [action.yml](action.yml)
     # Default: ''
     cache: ''
 
-    # Used to disable automatic caching based on the package manager field in package.json. By default, caching is enabled if the package manager field is present and no cache input is provided'
+    # Controls automatic caching for npm. By default, caching for npm is enabled if the packageManager field in package.json specifies npm and no explicit cache input is provided.
+    # To disable automatic caching for npm, set package-manager-cache to false.
     # default: true
     package-manager-cache: true
 
@@ -115,7 +116,7 @@ steps:
 - uses: actions/checkout@v5
 - uses: actions/setup-node@v5
   with:
-    node-version: 18
+    node-version: 24
 - run: npm ci
 - run: npm test
 ```
@@ -132,8 +133,8 @@ The `node-version` input supports the Semantic Versioning Specification, for mor
 
 Examples:
 
- - Major versions: `18`, `20`
- - More specific versions: `10.15`, `16.15.1` , `18.4.0`
+ - Major versions: `22`, `24`
+ - More specific versions: `20.19`, `22.17.1` , `24.8.0`
  - NVM LTS syntax: `lts/erbium`, `lts/fermium`, `lts/*`, `lts/-n`
  - Latest release: `*` or `latest`/`current`/`node`
 
@@ -151,18 +152,6 @@ It's **always** recommended to commit the lockfile of your package manager for s
 
 The action has a built-in functionality for caching and restoring dependencies. It uses [actions/cache](https://github.com/actions/cache) under the hood for caching global packages data but requires less configuration settings. Supported package managers are `npm`, `yarn`, `pnpm` (v6.10+). The `cache` input is optional.
 
-Caching is turned on by default when a `packageManager` field is detected in the `package.json` file and no `cache` input is provided. The `package-manager-cache` input provides control over this automatic caching behavior. By default, `package-manager-cache` is set to `true`, which enables caching when a valid package manager field is detected in the `package.json` file. To disable this automatic caching, set the `package-manager-cache` input to `false`.
-
-```yaml
-steps:
-- uses: actions/checkout@v5
-- uses: actions/setup-node@v5
-  with:
-    package-manager-cache: false
-- run: npm ci
-```
-> If no valid `packageManager` field is detected in the `package.json` file, caching will remain disabled unless explicitly configured. For workflows with elevated privileges or access to sensitive information, we recommend disabling automatic caching by setting `package-manager-cache: false` when caching is not needed for secure operation.
-
 The action defaults to search for the dependency file (`package-lock.json`, `npm-shrinkwrap.json` or `yarn.lock`) in the repository root, and uses its hash as a part of the cache key. Use `cache-dependency-path` for cases when multiple dependency files are used, or they are located in different subdirectories.
 
 **Note:** The action does not cache `node_modules`
@@ -176,7 +165,7 @@ steps:
 - uses: actions/checkout@v5
 - uses: actions/setup-node@v5
   with:
-    node-version: 20
+    node-version: 24
     cache: 'npm'
 - run: npm ci
 - run: npm test
@@ -189,12 +178,26 @@ steps:
 - uses: actions/checkout@v5
 - uses: actions/setup-node@v5
   with:
-    node-version: 20
+    node-version: 24
     cache: 'npm'
     cache-dependency-path: subdir/package-lock.json
 - run: npm ci
 - run: npm test
 ```
+
+Caching for npm dependencies is automatically enabled when your `package.json` contains a `packageManager` field set to `npm` and no explicit cache input is provided.
+
+This behavior is controlled by the `package-manager-cache` input, which defaults to `true`. To turn off automatic caching, set `package-manager-cache` to `false`.
+
+```yaml
+steps:
+- uses: actions/checkout@v5
+- uses: actions/setup-node@v5
+  with:
+    package-manager-cache: false
+- run: npm ci
+```
+> If your `package.json` file does not include a `packageManager` field set to `npm`, caching will be disabled unless you explicitly enable it. For workflows with elevated privileges or access to sensitive information, we recommend disabling automatic caching for npm by setting `package-manager-cache: false` when caching is not required for secure operation.
 
 ## Matrix Testing
 
@@ -204,7 +207,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        node: [ 14, 16, 18 ]
+        node: [ 20, 22, 24 ]
     name: Node ${{ matrix.node }} sample
     steps:
       - uses: actions/checkout@v5
@@ -226,7 +229,7 @@ To get a higher rate limit, you can [generate a personal access token on github.
 uses: actions/setup-node@v5
 with:
   token: ${{ secrets.GH_DOTCOM_TOKEN }}
-  node-version: 20
+  node-version: 24
 ```
 
 If the runner is not able to access github.com, any Nodejs versions requested during a workflow run must come from the runner's tool cache. See "[Setting up the tool cache on self-hosted runners without internet access](https://docs.github.com/en/enterprise-server@3.2/admin/github-actions/managing-access-to-actions-from-githubcom/setting-up-the-tool-cache-on-self-hosted-runners-without-internet-access)" for more information.

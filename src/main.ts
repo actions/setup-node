@@ -69,17 +69,21 @@ export async function run() {
 
     const resolvedPackageManager = getNameFromPackageManagerField();
     const cacheDependencyPath = core.getInput('cache-dependency-path');
-    if (cache && isCacheFeatureAvailable()) {
-      core.saveState(State.CachePackageManager, cache);
-      await restoreCache(cache, cacheDependencyPath);
-    } else if (resolvedPackageManager && packagemanagercache) {
-      core.info(
-        "Detected package manager from package.json's packageManager field: " +
-          resolvedPackageManager +
-          '. Auto caching has been enabled for it. If you want to disable it, set package-manager-cache input to false'
-      );
-      core.saveState(State.CachePackageManager, resolvedPackageManager);
-      await restoreCache(resolvedPackageManager, cacheDependencyPath);
+
+    if (isCacheFeatureAvailable()) {
+      // if the cache input is provided, use it for caching.
+      if (cache) {
+        core.saveState(State.CachePackageManager, cache);
+        await restoreCache(cache, cacheDependencyPath);
+        // package manager npm is detected from package.json, enable auto-caching for npm.
+      } else if (resolvedPackageManager && packagemanagercache) {
+        core.info(
+          "Detected npm as the package manager from package.json's packageManager field. " +
+            'Auto caching has been enabled for npm. If you want to disable it, set package-manager-cache input to false'
+        );
+        core.saveState(State.CachePackageManager, resolvedPackageManager);
+        await restoreCache(resolvedPackageManager, cacheDependencyPath);
+      }
     }
 
     const matchersPath = path.join(__dirname, '../..', '.github');
@@ -132,8 +136,7 @@ function resolveVersionInput(): string {
 }
 
 export function getNameFromPackageManagerField(): string | undefined {
-  // Check packageManager field in package.json
-  const SUPPORTED_PACKAGE_MANAGERS = ['npm', 'yarn', 'pnpm'];
+  // Enable auto-cache for npm
   try {
     const packageJson = JSON.parse(
       fs.readFileSync(
@@ -143,10 +146,7 @@ export function getNameFromPackageManagerField(): string | undefined {
     );
     const pm = packageJson.packageManager;
     if (typeof pm === 'string') {
-      const regex = new RegExp(
-        `^(?:\\^)?(${SUPPORTED_PACKAGE_MANAGERS.join('|')})@`
-      );
-      const match = pm.match(regex);
+      const match = pm.match(/^(?:\^)?(npm)@/);
       return match ? match[1] : undefined;
     }
     return undefined;

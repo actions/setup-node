@@ -288,19 +288,20 @@ describe('main tests', () => {
     it('Should enable caching with the resolved package manager from packageManager field in package.json when the cache input is not provided', async () => {
       inputs['package-manager-cache'] = 'true';
       inputs['cache'] = ''; // No cache input is provided
+      isCacheActionAvailable.mockImplementation(() => true);
 
       inSpy.mockImplementation(name => inputs[name]);
 
       const readFileSpy = jest.spyOn(fs, 'readFileSync');
       readFileSpy.mockImplementation(() =>
         JSON.stringify({
-          packageManager: 'yarn@3.2.0'
+          packageManager: 'npm@10.8.2'
         })
       );
 
       await main.run();
 
-      expect(saveStateSpy).toHaveBeenCalledWith(expect.anything(), 'yarn');
+      expect(saveStateSpy).toHaveBeenCalledWith(expect.anything(), 'npm');
     });
 
     it('Should not enable caching if the packageManager field is missing in package.json and the cache input is not provided', async () => {
@@ -337,7 +338,7 @@ describe('main tests', () => {
       inputs['cache'] = 'npm'; // Explicit cache input provided
 
       inSpy.mockImplementation(name => inputs[name]);
-      isCacheActionAvailable.mockReturnValue(true);
+      isCacheActionAvailable.mockImplementation(() => true);
 
       await main.run();
 

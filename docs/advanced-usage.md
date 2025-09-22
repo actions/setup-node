@@ -48,7 +48,7 @@ steps:
 - uses: actions/checkout@v5
 - uses: actions/setup-node@v5
   with:
-    node-version: '16'
+    node-version: '24'
     check-latest: true
 - run: npm ci
 - run: npm test
@@ -100,7 +100,7 @@ jobs:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
         with:
-          node-version: '14'
+          node-version: '24'
           architecture: 'x64' # optional, x64 or x86. If not specified, x64 will be used by default
       - run: npm ci
       - run: npm test
@@ -121,7 +121,7 @@ jobs:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
         with:
-          node-version: '20.0.0-v8-canary' # it will install the latest v8 canary release for node 20.0.0
+          node-version: '24.0.0-v8-canary' # it will install the latest v8 canary release for node 24.0.0
       - run: npm ci
       - run: npm test
 ```
@@ -136,7 +136,7 @@ jobs:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
         with:
-          node-version: '20-v8-canary' # it will install the latest v8 canary release for node 20
+          node-version: '24-v8-canary' # it will install the latest v8 canary release for node 24
       - run: npm ci
       - run: npm test
 ```
@@ -152,7 +152,7 @@ jobs:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
         with:
-          node-version: 'v20.1.1-v8-canary20221103f7e2421e91'
+          node-version: 'v24.0.0-v8-canary2025030537242e55ac'
       - run: npm ci
       - run: npm test
 ```
@@ -172,7 +172,7 @@ jobs:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
         with:
-          node-version: '16-nightly' # it will install the latest nightly release for node 16
+          node-version: '24-nightly' # it will install the latest nightly release for node 24
       - run: npm ci
       - run: npm test
 ```
@@ -188,7 +188,7 @@ jobs:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
         with:
-          node-version: '16.0.0-nightly' # it will install the latest nightly release for node 16.0.0
+          node-version: '24.0.0-nightly' # it will install the latest nightly release for node 24.0.0
       - run: npm ci
       - run: npm test
 ```
@@ -204,7 +204,7 @@ jobs:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
         with:
-          node-version: '16.0.0-nightly20210420a0261d231c'
+          node-version: '24.0.0-nightly202505066102159fa1'
       - run: npm ci
       - run: npm test
 ```
@@ -222,24 +222,25 @@ jobs:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
         with:
-          node-version: '16.0.0-rc.1'
+          node-version: '24.0.0-rc.4'
       - run: npm ci
       - run: npm test
 ```
 
-**Note:** Unlike nightly versions, which support version range specifiers, you must specify the exact version for a release candidate: `16.0.0-rc.1`.
+**Note:** Unlike nightly versions, which support version range specifiers, you must specify the exact version for a release candidate: `24.0.0-rc.4`.
 
 ## Caching packages data
 The action follows [actions/cache](https://github.com/actions/cache/blob/main/examples.md#node---npm) guidelines, and caches global cache on the machine instead of `node_modules`, so cache can be reused between different Node.js versions.
 
 **Caching yarn dependencies:**
-Yarn caching handles both yarn versions: 1 or 2.
+Yarn caching handles both Yarn Classic (v1) and Yarn Berry (v2, v3, v4+).
+
 ```yaml
 steps:
 - uses: actions/checkout@v5
 - uses: actions/setup-node@v5
   with:
-    node-version: '14'
+    node-version: '24'
     cache: 'yarn'
 - run: yarn install --frozen-lockfile # optional, --immutable
 - run: yarn test
@@ -256,12 +257,12 @@ steps:
 
 steps:
 - uses: actions/checkout@v5
-- uses: pnpm/action-setup@v2
+- uses: pnpm/action-setup@v4
   with:
-    version: 6.32.9
+    version: 10
 - uses: actions/setup-node@v5
   with:
-    node-version: '14'
+    node-version: '24'
     cache: 'pnpm'
 - run: pnpm install
 - run: pnpm test
@@ -277,7 +278,7 @@ steps:
 - uses: actions/checkout@v5
 - uses: actions/setup-node@v5
   with:
-    node-version: '14'
+    node-version: '24'
     cache: 'npm'
     cache-dependency-path: '**/package-lock.json'
 - run: npm ci
@@ -290,7 +291,7 @@ steps:
 - uses: actions/checkout@v5
 - uses: actions/setup-node@v5
   with:
-    node-version: '14'
+    node-version: '24'
     cache: 'npm'
     cache-dependency-path: |
       server/app/package-lock.json
@@ -312,15 +313,15 @@ jobs:
           - macos-latest
           - windows-latest
         node_version:
-          - 12
-          - 14
-          - 16
+          - 20
+          - 22
+          - 24
         architecture:
           - x64
         # an extra windows-x86 run:
         include:
-          - os: windows-2016
-            node_version: 12
+          - os: windows-2022
+            node_version: 24
             architecture: x86
     name: Node ${{ matrix.node_version }} - ${{ matrix.architecture }} on ${{ matrix.os }}
     steps:
@@ -340,7 +341,7 @@ steps:
 - uses: actions/checkout@v5
 - uses: actions/setup-node@v5
   with:
-    node-version: '14.x'
+    node-version: '24.x'
     registry-url: 'https://registry.npmjs.org'
 - run: npm ci
 - run: npm publish
@@ -360,7 +361,7 @@ steps:
 - uses: actions/checkout@v5
 - uses: actions/setup-node@v5
   with:
-    node-version: '14.x'
+    node-version: '24.x'
     registry-url: <registry url>
 - run: yarn install --frozen-lockfile
 - run: yarn publish
@@ -380,7 +381,7 @@ steps:
 - uses: actions/checkout@v5
 - uses: actions/setup-node@v5
   with:
-    node-version: '14.x'
+    node-version: '24.x'
     registry-url: 'https://registry.npmjs.org'
 # Skip post-install scripts here, as a malicious
 # script could steal NODE_AUTH_TOKEN.
@@ -400,7 +401,7 @@ steps:
 - uses: actions/checkout@v5
 - uses: actions/setup-node@v5
   with:
-    node-version: '14.x'
+    node-version: '24.x'
 - name: Setup .yarnrc.yml
   run: |
     yarn config set npmScopes.my-org.npmRegistryServer "https://npm.pkg.github.com"
@@ -429,7 +430,7 @@ The token will be passed as a bearer token in the `Authorization` header.
 ```yaml
 - uses: actions/setup-node@v5
   with:
-    node-version: '14.x'
+    node-version: '24.x'
     mirror: 'https://nodejs.org/dist'
     mirror-token: 'your-mirror-token'
 ```

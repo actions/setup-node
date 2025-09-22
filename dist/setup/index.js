@@ -99788,16 +99788,19 @@ function run() {
             }
             const resolvedPackageManager = getNameFromPackageManagerField();
             const cacheDependencyPath = core.getInput('cache-dependency-path');
-            if (cache && (0, cache_utils_1.isCacheFeatureAvailable)()) {
-                core.saveState(constants_1.State.CachePackageManager, cache);
-                yield (0, cache_restore_1.restoreCache)(cache, cacheDependencyPath);
-            }
-            else if (resolvedPackageManager && packagemanagercache) {
-                core.info("Detected package manager from package.json's packageManager field: " +
-                    resolvedPackageManager +
-                    '. Auto caching has been enabled for it. If you want to disable it, set package-manager-cache input to false');
-                core.saveState(constants_1.State.CachePackageManager, resolvedPackageManager);
-                yield (0, cache_restore_1.restoreCache)(resolvedPackageManager, cacheDependencyPath);
+            if ((0, cache_utils_1.isCacheFeatureAvailable)()) {
+                // if the cache input is provided, use it for caching.
+                if (cache) {
+                    core.saveState(constants_1.State.CachePackageManager, cache);
+                    yield (0, cache_restore_1.restoreCache)(cache, cacheDependencyPath);
+                    // package manager npm is detected from package.json, enable auto-caching for npm.
+                }
+                else if (resolvedPackageManager && packagemanagercache) {
+                    core.info("Detected npm as the package manager from package.json's packageManager field. " +
+                        'Auto caching has been enabled for npm. If you want to disable it, set package-manager-cache input to false');
+                    core.saveState(constants_1.State.CachePackageManager, resolvedPackageManager);
+                    yield (0, cache_restore_1.restoreCache)(resolvedPackageManager, cacheDependencyPath);
+                }
             }
             const matchersPath = path.join(__dirname, '../..', '.github');
             core.info(`##[add-matcher]${path.join(matchersPath, 'tsc.json')}`);
@@ -99833,14 +99836,12 @@ function resolveVersionInput() {
     return version;
 }
 function getNameFromPackageManagerField() {
-    // Check packageManager field in package.json
-    const SUPPORTED_PACKAGE_MANAGERS = ['npm', 'yarn', 'pnpm'];
+    // Enable auto-cache for npm
     try {
         const packageJson = JSON.parse(fs_1.default.readFileSync(path.join(process.env.GITHUB_WORKSPACE, 'package.json'), 'utf-8'));
         const pm = packageJson.packageManager;
         if (typeof pm === 'string') {
-            const regex = new RegExp(`^(?:\\^)?(${SUPPORTED_PACKAGE_MANAGERS.join('|')})@`);
-            const match = pm.match(regex);
+            const match = pm.match(/^(?:\^)?(npm)@/);
             return match ? match[1] : undefined;
         }
         return undefined;
