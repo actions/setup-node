@@ -99786,7 +99786,6 @@ function run() {
             if (registryUrl) {
                 auth.configAuthentication(registryUrl, alwaysAuth);
             }
-            const resolvedPackageManager = getNameFromPackageManagerField();
             const cacheDependencyPath = core.getInput('cache-dependency-path');
             if ((0, cache_utils_1.isCacheFeatureAvailable)()) {
                 // if the cache input is provided, use it for caching.
@@ -99795,11 +99794,14 @@ function run() {
                     yield (0, cache_restore_1.restoreCache)(cache, cacheDependencyPath);
                     // package manager npm is detected from package.json, enable auto-caching for npm.
                 }
-                else if (resolvedPackageManager && packagemanagercache) {
-                    core.info("Detected npm as the package manager from package.json's packageManager field. " +
-                        'Auto caching has been enabled for npm. If you want to disable it, set package-manager-cache input to false');
-                    core.saveState(constants_1.State.CachePackageManager, resolvedPackageManager);
-                    yield (0, cache_restore_1.restoreCache)(resolvedPackageManager, cacheDependencyPath);
+                else if (packagemanagercache) {
+                    const resolvedPackageManager = getNameFromPackageManagerField();
+                    if (resolvedPackageManager) {
+                        core.info("Detected npm as the package manager from package.json's packageManager field. " +
+                            'Auto caching has been enabled for npm. If you want to disable it, set package-manager-cache input to false');
+                        core.saveState(constants_1.State.CachePackageManager, resolvedPackageManager);
+                        yield (0, cache_restore_1.restoreCache)(resolvedPackageManager, cacheDependencyPath);
+                    }
                 }
             }
             const matchersPath = path.join(__dirname, '../..', '.github');

@@ -67,7 +67,6 @@ export async function run() {
       auth.configAuthentication(registryUrl, alwaysAuth);
     }
 
-    const resolvedPackageManager = getNameFromPackageManagerField();
     const cacheDependencyPath = core.getInput('cache-dependency-path');
 
     if (isCacheFeatureAvailable()) {
@@ -76,13 +75,16 @@ export async function run() {
         core.saveState(State.CachePackageManager, cache);
         await restoreCache(cache, cacheDependencyPath);
         // package manager npm is detected from package.json, enable auto-caching for npm.
-      } else if (resolvedPackageManager && packagemanagercache) {
-        core.info(
-          "Detected npm as the package manager from package.json's packageManager field. " +
-            'Auto caching has been enabled for npm. If you want to disable it, set package-manager-cache input to false'
-        );
-        core.saveState(State.CachePackageManager, resolvedPackageManager);
-        await restoreCache(resolvedPackageManager, cacheDependencyPath);
+      } else if (packagemanagercache) {
+        const resolvedPackageManager = getNameFromPackageManagerField();
+        if (resolvedPackageManager) {
+          core.info(
+            "Detected npm as the package manager from package.json's packageManager field. " +
+              'Auto caching has been enabled for npm. If you want to disable it, set package-manager-cache input to false'
+          );
+          core.saveState(State.CachePackageManager, resolvedPackageManager);
+          await restoreCache(resolvedPackageManager, cacheDependencyPath);
+        }
       }
     }
 
