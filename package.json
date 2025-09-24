@@ -36,8 +36,7 @@
     "@actions/http-client": "^2.2.1",
     "@actions/io": "^1.0.2",
     "@actions/tool-cache": "^2.0.2",
-    "semver": "^7.6.3",
-    "uuid": "^11.1.0"
+    "semver": "^7.6.3"
   },
   "devDependencies": {
     "@types/jest": "^29.5.14",
