@@ -99838,17 +99838,32 @@ function resolveVersionInput() {
     return version;
 }
 function getNameFromPackageManagerField() {
-    // Enable auto-cache for npm
+    var _a;
+    const npmRegex = /^(\^)?npm(@.*)?$/; // matches "npm", "npm@...", "^npm@..."
     try {
         const packageJson = JSON.parse(fs_1.default.readFileSync(path.join(process.env.GITHUB_WORKSPACE, 'package.json'), 'utf-8'));
-        const pm = packageJson.packageManager;
-        if (typeof pm === 'string') {
-            const match = pm.match(/^(?:\^)?(npm)@/);
-            return match ? match[1] : undefined;
+        // Check devEngines.packageManager first (object or array)
+        const devPM = (_a = packageJson === null || packageJson === void 0 ? void 0 : packageJson.devEngines) === null || _a === void 0 ? void 0 : _a.packageManager;
+        if (devPM) {
+            if (Array.isArray(devPM)) {
+                for (const obj of devPM) {
+                    if (typeof (obj === null || obj === void 0 ? void 0 : obj.name) === 'string' && npmRegex.test(obj.name)) {
+                        return 'npm';
+                    }
+                }
+            }
+            else if (typeof (devPM === null || devPM === void 0 ? void 0 : devPM.name) === 'string' && npmRegex.test(devPM.name)) {
+                return 'npm';
+            }
+        }
+        // Check top-level packageManager
+        const topLevelPM = packageJson === null || packageJson === void 0 ? void 0 : packageJson.packageManager;
+        if (typeof topLevelPM === 'string' && npmRegex.test(topLevelPM)) {
+            return 'npm';
         }
         return undefined;
     }
-    catch (err) {
+    catch (_b) {
         return undefined;
     }
 }

@@ -138,7 +138,7 @@ function resolveVersionInput(): string {
 }
 
 export function getNameFromPackageManagerField(): string | undefined {
-  // Enable auto-cache for npm
+  const npmRegex = /^(\^)?npm(@.*)?$/; // matches "npm", "npm@...", "^npm@..."
   try {
     const packageJson = JSON.parse(
       fs.readFileSync(
@@ -146,13 +146,29 @@ export function getNameFromPackageManagerField(): string | undefined {
         'utf-8'
       )
     );
-    const pm = packageJson.packageManager;
-    if (typeof pm === 'string') {
-      const match = pm.match(/^(?:\^)?(npm)@/);
-      return match ? match[1] : undefined;
+
+    // Check devEngines.packageManager first (object or array)
+    const devPM = packageJson?.devEngines?.packageManager;
+    if (devPM) {
+      if (Array.isArray(devPM)) {
+        for (const obj of devPM) {
+          if (typeof obj?.name === 'string' && npmRegex.test(obj.name)) {
+            return 'npm';
+          }
+        }
+      } else if (typeof devPM?.name === 'string' && npmRegex.test(devPM.name)) {
+        return 'npm';
+      }
     }
+
+    // Check top-level packageManager
+    const topLevelPM = packageJson?.packageManager;
+    if (typeof topLevelPM === 'string' && npmRegex.test(topLevelPM)) {
+      return 'npm';
+    }
+
     return undefined;
-  } catch (err) {
+  } catch {
     return undefined;
   }
 }
