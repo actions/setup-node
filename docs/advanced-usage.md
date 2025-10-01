@@ -46,7 +46,7 @@ If `check-latest` is set to `true`, the action first checks if the cached versio
 ```yaml
 steps:
 - uses: actions/checkout@v5
-- uses: actions/setup-node@v5
+- uses: actions/setup-node@v6
   with:
     node-version: '24'
     check-latest: true
@@ -64,7 +64,7 @@ See [supported version syntax](https://github.com/actions/setup-node#supported-v
 ```yaml
 steps:
 - uses: actions/checkout@v5
-- uses: actions/setup-node@v5
+- uses: actions/setup-node@v6
   with:
     node-version-file: '.nvmrc'
 - run: npm ci
@@ -98,7 +98,7 @@ jobs:
     name: Node sample
     steps:
       - uses: actions/checkout@v5
-      - uses: actions/setup-node@v5
+      - uses: actions/setup-node@v6
         with:
           node-version: '24'
           architecture: 'x64' # optional, x64 or x86. If not specified, x64 will be used by default
@@ -119,7 +119,7 @@ jobs:
     name: Node sample
     steps:
       - uses: actions/checkout@v5
-      - uses: actions/setup-node@v5
+      - uses: actions/setup-node@v6
         with:
           node-version: '24.0.0-v8-canary' # it will install the latest v8 canary release for node 24.0.0
       - run: npm ci
@@ -134,7 +134,7 @@ jobs:
     name: Node sample
     steps:
       - uses: actions/checkout@v5
-      - uses: actions/setup-node@v5
+      - uses: actions/setup-node@v6
         with:
           node-version: '24-v8-canary' # it will install the latest v8 canary release for node 24
       - run: npm ci
@@ -150,7 +150,7 @@ jobs:
     name: Node sample
     steps:
       - uses: actions/checkout@v5
-      - uses: actions/setup-node@v5
+      - uses: actions/setup-node@v6
         with:
           node-version: 'v24.0.0-v8-canary2025030537242e55ac'
       - run: npm ci
@@ -170,7 +170,7 @@ jobs:
     name: Node sample
     steps:
       - uses: actions/checkout@v5
-      - uses: actions/setup-node@v5
+      - uses: actions/setup-node@v6
         with:
           node-version: '24-nightly' # it will install the latest nightly release for node 24
       - run: npm ci
@@ -186,7 +186,7 @@ jobs:
     name: Node sample
     steps:
       - uses: actions/checkout@v5
-      - uses: actions/setup-node@v5
+      - uses: actions/setup-node@v6
         with:
           node-version: '24.0.0-nightly' # it will install the latest nightly release for node 24.0.0
       - run: npm ci
@@ -202,7 +202,7 @@ jobs:
     name: Node sample
     steps:
       - uses: actions/checkout@v5
-      - uses: actions/setup-node@v5
+      - uses: actions/setup-node@v6
         with:
           node-version: '24.0.0-nightly202505066102159fa1'
       - run: npm ci
@@ -220,7 +220,7 @@ jobs:
     name: Node sample
     steps:
       - uses: actions/checkout@v5
-      - uses: actions/setup-node@v5
+      - uses: actions/setup-node@v6
         with:
           node-version: '24.0.0-rc.4'
       - run: npm ci
@@ -238,7 +238,7 @@ Yarn caching handles both Yarn Classic (v1) and Yarn Berry (v2, v3, v4+).
 ```yaml
 steps:
 - uses: actions/checkout@v5
-- uses: actions/setup-node@v5
+- uses: actions/setup-node@v6
   with:
     node-version: '24'
     cache: 'yarn'
@@ -260,7 +260,7 @@ steps:
 - uses: pnpm/action-setup@v4
   with:
     version: 10
-- uses: actions/setup-node@v5
+- uses: actions/setup-node@v6
   with:
     node-version: '24'
     cache: 'pnpm'
@@ -276,7 +276,7 @@ steps:
 ```yaml
 steps:
 - uses: actions/checkout@v5
-- uses: actions/setup-node@v5
+- uses: actions/setup-node@v6
   with:
     node-version: '24'
     cache: 'npm'
@@ -289,7 +289,7 @@ steps:
 ```yaml
 steps:
 - uses: actions/checkout@v5
-- uses: actions/setup-node@v5
+- uses: actions/setup-node@v6
   with:
     node-version: '24'
     cache: 'npm'
@@ -327,7 +327,7 @@ jobs:
     steps:
       - uses: actions/checkout@v5
       - name: Setup node
-        uses: actions/setup-node@v5
+        uses: actions/setup-node@v6
         with:
           node-version: ${{ matrix.node_version }}
           architecture: ${{ matrix.architecture }}
@@ -339,7 +339,7 @@ jobs:
 ```yaml
 steps:
 - uses: actions/checkout@v5
-- uses: actions/setup-node@v5
+- uses: actions/setup-node@v6
   with:
     node-version: '24.x'
     registry-url: 'https://registry.npmjs.org'
@@ -347,7 +347,7 @@ steps:
 - run: npm publish
   env:
     NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-- uses: actions/setup-node@v5
+- uses: actions/setup-node@v6
   with:
     registry-url: 'https://npm.pkg.github.com'
 - run: npm publish
@@ -359,7 +359,7 @@ steps:
 ```yaml
 steps:
 - uses: actions/checkout@v5
-- uses: actions/setup-node@v5
+- uses: actions/setup-node@v6
   with:
     node-version: '24.x'
     registry-url: <registry url>
@@ -367,7 +367,7 @@ steps:
 - run: yarn publish
   env:
     NODE_AUTH_TOKEN: ${{ secrets.YARN_TOKEN }}
-- uses: actions/setup-node@v5
+- uses: actions/setup-node@v6
   with:
     registry-url: 'https://npm.pkg.github.com'
 - run: yarn publish
@@ -379,7 +379,7 @@ steps:
 ```yaml
 steps:
 - uses: actions/checkout@v5
-- uses: actions/setup-node@v5
+- uses: actions/setup-node@v6
   with:
     node-version: '24.x'
     registry-url: 'https://registry.npmjs.org'
@@ -399,7 +399,7 @@ Below you can find a sample "Setup .yarnrc.yml" step, that is going to allow you
 ```yaml
 steps:
 - uses: actions/checkout@v5
-- uses: actions/setup-node@v5
+- uses: actions/setup-node@v6
   with:
     node-version: '24.x'
 - name: Setup .yarnrc.yml
@@ -428,7 +428,7 @@ It is possible to specify a token to authenticate with the mirror using the `mir
 The token will be passed as a bearer token in the `Authorization` header.
 
 ```yaml
-- uses: actions/setup-node@v5
+- uses: actions/setup-node@v6
   with:
     node-version: '24.x'
     mirror: 'https://nodejs.org/dist'

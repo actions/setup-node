@@ -149,14 +149,9 @@ export function getNameFromPackageManagerField(): string | undefined {
 
     // Check devEngines.packageManager first (object or array)
     const devPM = packageJson?.devEngines?.packageManager;
-    if (devPM) {
-      if (Array.isArray(devPM)) {
-        for (const obj of devPM) {
-          if (typeof obj?.name === 'string' && npmRegex.test(obj.name)) {
-            return 'npm';
-          }
-        }
-      } else if (typeof devPM?.name === 'string' && npmRegex.test(devPM.name)) {
+    const devPMArray = devPM ? (Array.isArray(devPM) ? devPM : [devPM]) : [];
+    for (const obj of devPMArray) {
+      if (typeof obj?.name === 'string' && npmRegex.test(obj.name)) {
         return 'npm';
       }
     }

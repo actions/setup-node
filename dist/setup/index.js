@@ -99844,15 +99844,9 @@ function getNameFromPackageManagerField() {
         const packageJson = JSON.parse(fs_1.default.readFileSync(path.join(process.env.GITHUB_WORKSPACE, 'package.json'), 'utf-8'));
         // Check devEngines.packageManager first (object or array)
         const devPM = (_a = packageJson === null || packageJson === void 0 ? void 0 : packageJson.devEngines) === null || _a === void 0 ? void 0 : _a.packageManager;
-        if (devPM) {
-            if (Array.isArray(devPM)) {
-                for (const obj of devPM) {
-                    if (typeof (obj === null || obj === void 0 ? void 0 : obj.name) === 'string' && npmRegex.test(obj.name)) {
-                        return 'npm';
-                    }
-                }
-            }
-            else if (typeof (devPM === null || devPM === void 0 ? void 0 : devPM.name) === 'string' && npmRegex.test(devPM.name)) {
+        const devPMArray = devPM ? (Array.isArray(devPM) ? devPM : [devPM]) : [];
+        for (const obj of devPMArray) {
+            if (typeof (obj === null || obj === void 0 ? void 0 : obj.name) === 'string' && npmRegex.test(obj.name)) {
                 return 'npm';
             }
         }
