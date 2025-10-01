@@ -14,7 +14,7 @@ This action provides the following functionality for GitHub Actions users:
 
 ## Breaking changes in V6
 
-- Caching is now automatically enabled for npm projects when the `packageManager` field in `package.json` is set to `npm`. For other package managers, such as Yarn and pnpm, caching is disabled by default and must be configured manually using the `cache` input.
+- Caching is now automatically enabled for npm projects when either the `devEngines.packageManager` field or the top-level `packageManager` field in `package.json` is set to `npm`. For other package managers, such as Yarn and pnpm, caching is disabled by default and must be configured manually using the `cache` input.
 
 ## Breaking changes in V5 
 
@@ -71,7 +71,7 @@ See [action.yml](action.yml)
     # Default: ''
     cache: ''
 
-    # Controls automatic caching for npm. By default, caching for npm is enabled if the packageManager field in package.json specifies npm and no explicit cache input is provided.
+    # Controls automatic caching for npm. By default, caching for npm is enabled if either the devEngines.packageManager field or the top-level packageManager field in package.json specifies npm and no explicit cache input is provided.
     # To disable automatic caching for npm, set package-manager-cache to false.
     # default: true
     package-manager-cache: true
@@ -189,7 +189,7 @@ steps:
 - run: npm test
 ```
 
-Caching for npm dependencies is automatically enabled when your `package.json` contains a `packageManager` field set to `npm` and no explicit cache input is provided.
+Caching for npm dependencies is automatically enabled when your `package.json` contains either `devEngines.packageManager` field or top-level `packageManager` field set to `npm`, and no explicit cache input is provided.
 
 This behavior is controlled by the `package-manager-cache` input, which defaults to `true`. To turn off automatic caching, set `package-manager-cache` to `false`.
 
