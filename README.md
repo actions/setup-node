@@ -139,7 +139,7 @@ Examples:
 
  - Major versions: `22`, `24`
  - More specific versions: `20.19`, `22.17.1` , `24.8.0`
- - NVM LTS syntax: `lts/erbium`, `lts/fermium`, `lts/*`, `lts/-n`
+ - NVM LTS syntax: `lts/iron`, `lts/jod`, `lts/*`, `lts/-n`
  - Latest release: `*` or `latest`/`current`/`node`
 
 **Note:** Like the other values, `*` will get the latest [locally-cached Node.js version](https://github.com/actions/runner-images/blob/main/images/ubuntu/Ubuntu2204-Readme.md#nodejs), or the latest version from [actions/node-versions](https://github.com/actions/node-versions/blob/main/versions-manifest.json), depending on the [`check-latest`](docs/advanced-usage.md#check-latest-version) input.

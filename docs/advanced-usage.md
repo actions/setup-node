@@ -320,7 +320,7 @@ jobs:
           - x64
         # an extra windows-x86 run:
         include:
-          - os: windows-2022
+          - os: windows-latest
             node_version: 24
             architecture: x86
     name: Node ${{ matrix.node_version }} - ${{ matrix.architecture }} on ${{ matrix.os }}
