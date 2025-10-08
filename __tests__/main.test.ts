@@ -285,34 +285,124 @@ describe('main tests', () => {
   });
 
   describe('cache feature tests', () => {
-    it('Should enable caching with the resolved package manager from packageManager field in package.json when the cache input is not provided', async () => {
+    it('Should enable caching when packageManager is npm and cache input is not provided', async () => {
       inputs['package-manager-cache'] = 'true';
-      inputs['cache'] = ''; // No cache input is provided
+      inputs['cache'] = '';
+      isCacheActionAvailable.mockImplementation(() => true);
 
       inSpy.mockImplementation(name => inputs[name]);
-
       const readFileSpy = jest.spyOn(fs, 'readFileSync');
       readFileSpy.mockImplementation(() =>
         JSON.stringify({
-          packageManager: 'yarn@3.2.0'
+          packageManager: 'npm@10.8.2'
         })
       );
 
       await main.run();
 
-      expect(saveStateSpy).toHaveBeenCalledWith(expect.anything(), 'yarn');
+      expect(saveStateSpy).toHaveBeenCalledWith(expect.anything(), 'npm');
     });
 
-    it('Should not enable caching if the packageManager field is missing in package.json and the cache input is not provided', async () => {
+    it('Should enable caching when devEngines.packageManager.name is "npm" and cache input is not provided', async () => {
       inputs['package-manager-cache'] = 'true';
-      inputs['cache'] = ''; // No cache input is provided
+      inputs['cache'] = '';
+      isCacheActionAvailable.mockImplementation(() => true);
 
       inSpy.mockImplementation(name => inputs[name]);
-
       const readFileSpy = jest.spyOn(fs, 'readFileSync');
       readFileSpy.mockImplementation(() =>
         JSON.stringify({
-          //packageManager field is not present
+          devEngines: {
+            packageManager: {name: 'npm'}
+          }
+        })
+      );
+
+      await main.run();
+
+      expect(saveStateSpy).toHaveBeenCalledWith(expect.anything(), 'npm');
+    });
+
+    it('Should enable caching when devEngines.packageManager is array and one entry has name "npm"', async () => {
+      inputs['package-manager-cache'] = 'true';
+      inputs['cache'] = '';
+      isCacheActionAvailable.mockImplementation(() => true);
+
+      inSpy.mockImplementation(name => inputs[name]);
+      const readFileSpy = jest.spyOn(fs, 'readFileSync');
+      readFileSpy.mockImplementation(() =>
+        JSON.stringify({
+          devEngines: {
+            packageManager: [{name: 'pnpm'}, {name: 'npm'}]
+          }
+        })
+      );
+
+      await main.run();
+
+      expect(saveStateSpy).toHaveBeenCalledWith(expect.anything(), 'npm');
+    });
+
+    it('Should not enable caching if packageManager is "pnpm@8.0.0" and cache input is not provided', async () => {
+      inputs['package-manager-cache'] = 'true';
+      inputs['cache'] = '';
+      inSpy.mockImplementation(name => inputs[name]);
+      const readFileSpy = jest.spyOn(fs, 'readFileSync');
+      readFileSpy.mockImplementation(() =>
+        JSON.stringify({
+          packageManager: 'pnpm@8.0.0'
+        })
+      );
+
+      await main.run();
+
+      expect(saveStateSpy).not.toHaveBeenCalled();
+    });
+
+    it('Should not enable caching if devEngines.packageManager.name is "pnpm"', async () => {
+      inputs['package-manager-cache'] = 'true';
+      inputs['cache'] = '';
+      inSpy.mockImplementation(name => inputs[name]);
+      const readFileSpy = jest.spyOn(fs, 'readFileSync');
+      readFileSpy.mockImplementation(() =>
+        JSON.stringify({
+          devEngines: {
+            packageManager: {name: 'pnpm'}
+          }
+        })
+      );
+
+      await main.run();
+
+      expect(saveStateSpy).not.toHaveBeenCalled();
+    });
+
+    it('Should not enable caching if devEngines.packageManager is array without "npm"', async () => {
+      inputs['package-manager-cache'] = 'true';
+      inputs['cache'] = '';
+      inSpy.mockImplementation(name => inputs[name]);
+      const readFileSpy = jest.spyOn(fs, 'readFileSync');
+      readFileSpy.mockImplementation(() =>
+        JSON.stringify({
+          devEngines: {
+            packageManager: [{name: 'pnpm'}, {name: 'yarn'}]
+          }
+        })
+      );
+
+      await main.run();
+
+      expect(saveStateSpy).not.toHaveBeenCalled();
+    });
+
+    it('Should not enable caching if packageManager field is missing in package.json and cache input is not provided', async () => {
+      inputs['package-manager-cache'] = 'true';
+      inputs['cache'] = '';
+      inSpy.mockImplementation(name => inputs[name]);
+      const readFileSpy = jest.spyOn(fs, 'readFileSync');
+      readFileSpy.mockImplementation(() =>
+        JSON.stringify({
+          // packageManager field is not present
         })
       );
 
@@ -323,24 +413,18 @@ describe('main tests', () => {
 
     it('Should skip caching when package-manager-cache is false', async () => {
       inputs['package-manager-cache'] = 'false';
-      inputs['cache'] = ''; // No cache input is provided
-
+      inputs['cache'] = '';
       inSpy.mockImplementation(name => inputs[name]);
-
       await main.run();
-
       expect(saveStateSpy).not.toHaveBeenCalled();
     });
 
     it('Should enable caching with cache input explicitly provided', async () => {
       inputs['package-manager-cache'] = 'true';
-      inputs['cache'] = 'npm'; // Explicit cache input provided
-
+      inputs['cache'] = 'npm';
       inSpy.mockImplementation(name => inputs[name]);
-      isCacheActionAvailable.mockReturnValue(true);
-
+      isCacheActionAvailable.mockImplementation(() => true);
       await main.run();
-
       expect(saveStateSpy).toHaveBeenCalledWith(expect.anything(), 'npm');
     });
   });
