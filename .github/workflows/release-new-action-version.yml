@@ -22,7 +22,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Update the ${{ env.TAG_NAME }} tag
-        uses: actions/publish-action@v0.3.0
+        uses: actions/publish-action@v0.4.0
         with:
           source-tag: ${{ env.TAG_NAME }}
           slack-webhook: ${{ secrets.SLACK_WEBHOOK }}
