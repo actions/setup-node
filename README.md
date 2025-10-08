@@ -116,6 +116,7 @@ steps:
 - uses: actions/setup-node@v5
   with:
     node-version: 18
+    check-latest: true
 - run: npm ci
 - run: npm test
 ```
@@ -132,12 +133,13 @@ The `node-version` input supports the Semantic Versioning Specification, for mor
 
 Examples:
 
- - Major versions: `18`, `20`
- - More specific versions: `10.15`, `16.15.1` , `18.4.0`
- - NVM LTS syntax: `lts/erbium`, `lts/fermium`, `lts/*`, `lts/-n`
- - Latest release: `*` or `latest`/`current`/`node`
+- Specific versions: `10.15`, `16.15.1` , `18.4.0`
+- Version ranges (see **Caching Caveat** below)
+  - Major versions: `18`, `20`
+  - NVM LTS syntax: `lts/erbium`, `lts/fermium`, `lts/*`, `lts/-n`
+  - Latest release: `*` or `latest`/`current`/`node`
 
-**Note:** Like the other values, `*` will get the latest [locally-cached Node.js version](https://github.com/actions/runner-images/blob/main/images/ubuntu/Ubuntu2204-Readme.md#nodejs), or the latest version from [actions/node-versions](https://github.com/actions/node-versions/blob/main/versions-manifest.json), depending on the [`check-latest`](docs/advanced-usage.md#check-latest-version) input.
+**Caching Caveat:** Version ranges may be cached for an indefinite time without the `check-latest: true` option - they may be stale for [durations up to 1 month](https://github.com/actions/setup-node/issues/1236#issuecomment-2704188519)
 
 `current`/`latest`/`node` always resolve to the latest [dist version](https://nodejs.org/dist/index.json).
 That version is then downloaded from actions/node-versions if possible, or directly from Node.js if not.
@@ -177,6 +179,7 @@ steps:
 - uses: actions/setup-node@v5
   with:
     node-version: 20
+    check-latest: true
     cache: 'npm'
 - run: npm ci
 - run: npm test
@@ -190,6 +193,7 @@ steps:
 - uses: actions/setup-node@v5
   with:
     node-version: 20
+    check-latest: true
     cache: 'npm'
     cache-dependency-path: subdir/package-lock.json
 - run: npm ci
@@ -212,6 +216,7 @@ jobs:
         uses: actions/setup-node@v5
         with:
           node-version: ${{ matrix.node }}
+          check-latest: true
       - run: npm ci
       - run: npm test
 ```
