@@ -135,12 +135,11 @@ export function getNameFromPackageManagerField(): string | undefined {
   // Check packageManager field in package.json
   const SUPPORTED_PACKAGE_MANAGERS = ['npm', 'yarn', 'pnpm'];
   try {
-    const packageJson = JSON.parse(
-      fs.readFileSync(
-        path.join(process.env.GITHUB_WORKSPACE!, 'package.json'),
-        'utf-8'
-      )
-    );
+    const versionFileInput = core.getInput('node-version-file');
+    const packageJsonPath =
+      versionFileInput ??
+      path.join(process.env.GITHUB_WORKSPACE!, 'package.json');
+    const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf-8'));
     const pm = packageJson.packageManager;
     if (typeof pm === 'string') {
       const regex = new RegExp(
