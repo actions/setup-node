@@ -1,5 +1,5 @@
-import BasePrereleaseNodejs from '../base-distribution-prerelease';
-import {NodeInputs} from '../base-models';
+import BasePrereleaseNodejs from '../base-distribution-prerelease.js';
+import {NodeInputs} from '../base-models.js';
 
 export default class NightlyNodejs extends BasePrereleaseNodejs {
   protected distribution = 'nightly';

@@ -3,9 +3,13 @@ import * as cache from '@actions/cache';
 import * as path from 'path';
 import * as glob from '@actions/glob';
 import osm from 'os';
+import {fileURLToPath} from 'url';
 
-import * as utils from '../src/cache-utils';
-import {restoreCache} from '../src/cache-restore';
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+import * as utils from '../src/cache-utils.js';
+import {restoreCache} from '../src/cache-restore.js';
 
 describe('cache-restore', () => {
   process.env['GITHUB_WORKSPACE'] = path.join(__dirname, 'data');

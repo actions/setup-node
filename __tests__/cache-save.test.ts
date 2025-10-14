@@ -3,10 +3,14 @@ import * as cache from '@actions/cache';
 import * as glob from '@actions/glob';
 import fs from 'fs';
 import path from 'path';
+import {fileURLToPath} from 'url';
 
-import * as utils from '../src/cache-utils';
-import {run} from '../src/cache-save';
-import {State} from '../src/constants';
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+import * as utils from '../src/cache-utils.js';
+import {run} from '../src/cache-save.js';
+import {State} from '../src/constants.js';
 
 describe('run', () => {
   const yarnFileHash =

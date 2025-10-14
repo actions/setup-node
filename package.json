@@ -14,7 +14,7 @@
     "format-check": "prettier --no-error-on-unmatched-pattern --config ./.prettierrc.js --check \"**/*.{ts,yml,yaml}\"",
     "lint": "eslint --config ./.eslintrc.js \"**/*.ts\"",
     "lint:fix": "eslint --config ./.eslintrc.js \"**/*.ts\" --fix",
-    "test": "jest --coverage",
+    "test": "node --experimental-vm-modules node_modules/.bin/jest --coverage",
     "pre-checkin": "npm run format && npm run lint:fix && npm run build && npm test"
   },
   "repository": {

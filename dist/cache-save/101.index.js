@@ -1,7 +1,6 @@
-"use strict";
-exports.id = 101;
-exports.ids = [101];
-exports.modules = {
+export const id = 101;
+export const ids = [101];
+export const modules = {
 
 /***/ 9101:
 /***/ ((__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) => {
@@ -448,4 +447,3 @@ async function toFormData(Body, ct) {
 /***/ })
 
 };
-;

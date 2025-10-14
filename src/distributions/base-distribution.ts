@@ -11,7 +11,7 @@ import * as path from 'path';
 import os from 'os';
 import fs from 'fs';
 
-import {NodeInputs, INodeVersion, INodeVersionInfo} from './base-models';
+import {NodeInputs, INodeVersion, INodeVersionInfo} from './base-models.js';
 
 export default abstract class BaseDistribution {
   protected httpClient: hc.HttpClient;

@@ -1,4 +1,4 @@
-import {MockGlobber} from './glob-mock';
+import {MockGlobber} from './glob-mock.js';
 
 describe('mocked globber tests', () => {
   it('globber should return generator', async () => {

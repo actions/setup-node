@@ -3,17 +3,22 @@ import fs from 'fs';
 import * as path from 'path';
 import * as core from '@actions/core';
 import * as io from '@actions/io';
-import * as auth from '../src/authutil';
-import * as cacheUtils from '../src/cache-utils';
+import * as auth from '../src/authutil.js';
+import * as cacheUtils from '../src/cache-utils.js';
+import {fileURLToPath} from 'url';
+import {jest, describe, beforeEach, afterEach, it, expect} from '@jest/globals';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 let rcFile: string;
 
 describe('authutil tests', () => {
   const _runnerDir = path.join(__dirname, 'runner');
 
-  let cnSpy: jest.SpyInstance;
-  let logSpy: jest.SpyInstance;
-  let dbgSpy: jest.SpyInstance;
+  let cnSpy: any;
+  let logSpy: any;
+  let dbgSpy: any;
 
   beforeAll(async () => {
     const randPath = path.join(Math.random().toString(36).substring(7));
