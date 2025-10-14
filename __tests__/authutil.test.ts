@@ -16,9 +16,9 @@ let rcFile: string;
 describe('authutil tests', () => {
   const _runnerDir = path.join(__dirname, 'runner');
 
-  let cnSpy: any;
-  let logSpy: any;
-  let dbgSpy: any;
+  let cnSpy: ReturnType<typeof jest.spyOn>;
+  let logSpy: ReturnType<typeof jest.spyOn>;
+  let dbgSpy: ReturnType<typeof jest.spyOn>;
 
   beforeAll(async () => {
     const randPath = path.join(Math.random().toString(36).substring(7));

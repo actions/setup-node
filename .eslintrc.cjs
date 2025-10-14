@@ -1,5 +1,5 @@
 // This is a reusable configuration file copied from https://github.com/actions/reusable-workflows/tree/main/reusable-configurations. Please don't make changes to this file as it's the subject of an automatic update.
-export default {
+module.exports = {
   extends: [
     'eslint:recommended',
     'plugin:@typescript-eslint/recommended',

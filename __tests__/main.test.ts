@@ -8,6 +8,7 @@ import fs from 'fs';
 import path from 'path';
 import osm from 'os';
 import {fileURLToPath} from 'url';
+import {jest, describe, beforeEach, afterEach, it, expect} from '@jest/globals';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -22,26 +23,26 @@ describe('main tests', () => {
   let inputs = {} as any;
   let os = {} as any;
 
-  let infoSpy: jest.SpyInstance;
-  let warningSpy: jest.SpyInstance;
-  let saveStateSpy: jest.SpyInstance;
-  let inSpy: jest.SpyInstance;
-  let setOutputSpy: jest.SpyInstance;
-  let startGroupSpy: jest.SpyInstance;
-  let endGroupSpy: jest.SpyInstance;
+  let infoSpy: ReturnType<typeof jest.spyOn>;
+  let warningSpy: ReturnType<typeof jest.spyOn>;
+  let saveStateSpy: ReturnType<typeof jest.spyOn>;
+  let inSpy: ReturnType<typeof jest.spyOn>;
+  let setOutputSpy: ReturnType<typeof jest.spyOn>;
+  let startGroupSpy: ReturnType<typeof jest.spyOn>;
+  let endGroupSpy: ReturnType<typeof jest.spyOn>;
 
-  let whichSpy: jest.SpyInstance;
+  let whichSpy: ReturnType<typeof jest.spyOn>;
 
-  let existsSpy: jest.SpyInstance;
+  let existsSpy: ReturnType<typeof jest.spyOn>;
 
-  let getExecOutputSpy: jest.SpyInstance;
+  let getExecOutputSpy: ReturnType<typeof jest.spyOn>;
 
-  let getNodeVersionFromFileSpy: jest.SpyInstance;
-  let cnSpy: jest.SpyInstance;
-  let findSpy: jest.SpyInstance;
-  let isCacheActionAvailable: jest.SpyInstance;
+  let getNodeVersionFromFileSpy: ReturnType<typeof jest.spyOn>;
+  let cnSpy: ReturnType<typeof jest.spyOn>;
+  let findSpy: ReturnType<typeof jest.spyOn>;
+  let isCacheActionAvailable: ReturnType<typeof jest.spyOn>;
 
-  let setupNodeJsSpy: jest.SpyInstance;
+  let setupNodeJsSpy: ReturnType<typeof jest.spyOn>;
 
   beforeEach(() => {
     inputs = {};
