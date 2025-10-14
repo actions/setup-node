@@ -99786,18 +99786,23 @@ function run() {
             if (registryUrl) {
                 auth.configAuthentication(registryUrl, alwaysAuth);
             }
-            const resolvedPackageManager = getNameFromPackageManagerField();
             const cacheDependencyPath = core.getInput('cache-dependency-path');
-            if (cache && (0, cache_utils_1.isCacheFeatureAvailable)()) {
-                core.saveState(constants_1.State.CachePackageManager, cache);
-                yield (0, cache_restore_1.restoreCache)(cache, cacheDependencyPath);
-            }
-            else if (resolvedPackageManager && packagemanagercache) {
-                core.info("Detected package manager from package.json's packageManager field: " +
-                    resolvedPackageManager +
-                    '. Auto caching has been enabled for it. If you want to disable it, set package-manager-cache input to false');
-                core.saveState(constants_1.State.CachePackageManager, resolvedPackageManager);
-                yield (0, cache_restore_1.restoreCache)(resolvedPackageManager, cacheDependencyPath);
+            if ((0, cache_utils_1.isCacheFeatureAvailable)()) {
+                // if the cache input is provided, use it for caching.
+                if (cache) {
+                    core.saveState(constants_1.State.CachePackageManager, cache);
+                    yield (0, cache_restore_1.restoreCache)(cache, cacheDependencyPath);
+                    // package manager npm is detected from package.json, enable auto-caching for npm.
+                }
+                else if (packagemanagercache) {
+                    const resolvedPackageManager = getNameFromPackageManagerField();
+                    if (resolvedPackageManager) {
+                        core.info("Detected npm as the package manager from package.json's packageManager field. " +
+                            'Auto caching has been enabled for npm. If you want to disable it, set package-manager-cache input to false');
+                        core.saveState(constants_1.State.CachePackageManager, resolvedPackageManager);
+                        yield (0, cache_restore_1.restoreCache)(resolvedPackageManager, cacheDependencyPath);
+                    }
+                }
             }
             const matchersPath = path.join(__dirname, '../..', '.github');
             core.info(`##[add-matcher]${path.join(matchersPath, 'tsc.json')}`);
@@ -99833,19 +99838,26 @@ function resolveVersionInput() {
     return version;
 }
 function getNameFromPackageManagerField() {
-    // Check packageManager field in package.json
-    const SUPPORTED_PACKAGE_MANAGERS = ['npm', 'yarn', 'pnpm'];
+    var _a;
+    const npmRegex = /^(\^)?npm(@.*)?$/; // matches "npm", "npm@...", "^npm@..."
     try {
         const packageJson = JSON.parse(fs_1.default.readFileSync(path.join(process.env.GITHUB_WORKSPACE, 'package.json'), 'utf-8'));
-        const pm = packageJson.packageManager;
-        if (typeof pm === 'string') {
-            const regex = new RegExp(`^(?:\\^)?(${SUPPORTED_PACKAGE_MANAGERS.join('|')})@`);
-            const match = pm.match(regex);
-            return match ? match[1] : undefined;
+        // Check devEngines.packageManager first (object or array)
+        const devPM = (_a = packageJson === null || packageJson === void 0 ? void 0 : packageJson.devEngines) === null || _a === void 0 ? void 0 : _a.packageManager;
+        const devPMArray = devPM ? (Array.isArray(devPM) ? devPM : [devPM]) : [];
+        for (const obj of devPMArray) {
+            if (typeof (obj === null || obj === void 0 ? void 0 : obj.name) === 'string' && npmRegex.test(obj.name)) {
+                return 'npm';
+            }
+        }
+        // Check top-level packageManager
+        const topLevelPM = packageJson === null || packageJson === void 0 ? void 0 : packageJson.packageManager;
+        if (typeof topLevelPM === 'string' && npmRegex.test(topLevelPM)) {
+            return 'npm';
         }
         return undefined;
     }
-    catch (err) {
+    catch (_b) {
         return undefined;
     }
 }
