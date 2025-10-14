@@ -10,6 +10,10 @@ import {isCacheFeatureAvailable} from './cache-utils.js';
 import {getNodejsDistribution} from './distributions/installer-factory.js';
 import {getNodeVersionFromFile, printEnvDetailsAndSetOutput} from './util.js';
 import {State} from './constants.js';
+import {fileURLToPath} from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 export async function run() {
   try {

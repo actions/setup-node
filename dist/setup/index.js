@@ -104251,6 +104251,8 @@ function v4(options, buf, offset) {
 var lib = __nccwpck_require__(4844);
 // EXTERNAL MODULE: external "assert"
 var external_assert_ = __nccwpck_require__(2613);
+// EXTERNAL MODULE: external "url"
+var external_url_ = __nccwpck_require__(7016);
 ;// CONCATENATED MODULE: ./src/distributions/base-distribution.ts
 
 
@@ -104262,6 +104264,9 @@ var external_assert_ = __nccwpck_require__(2613);
 
 
 
+
+const base_distribution_filename = (0,external_url_.fileURLToPath)(import.meta.url);
+const base_distribution_dirname = external_path_.dirname(base_distribution_filename);
 class BaseDistribution {
     nodeInfo;
     httpClient;
@@ -104805,6 +104810,9 @@ function getNodejsDistribution(installerOptions) {
 
 
 
+
+const main_filename = (0,external_url_.fileURLToPath)(import.meta.url);
+const main_dirname = external_path_.dirname(main_filename);
 async function run() {
     try {
         //
@@ -104867,7 +104875,7 @@ async function run() {
                 }
             }
         }
-        const matchersPath = external_path_.join(__dirname, '../..', '.github');
+        const matchersPath = external_path_.join(main_dirname, '../..', '.github');
         core.info(`##[add-matcher]${external_path_.join(matchersPath, 'tsc.json')}`);
         core.info(`##[add-matcher]${external_path_.join(matchersPath, 'eslint-stylish.json')}`);
         core.info(`##[add-matcher]${external_path_.join(matchersPath, 'eslint-compact.json')}`);
