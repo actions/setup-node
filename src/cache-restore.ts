@@ -5,13 +5,13 @@ import path from 'path';
 import fs from 'fs';
 import os from 'os';
 
-import {State} from './constants';
+import {State} from './constants.js';
 import {
   getCacheDirectories,
   getPackageManagerInfo,
   repoHasYarnBerryManagedDependencies,
   PackageManagerInfo
-} from './cache-utils';
+} from './cache-utils.js';
 
 export const restoreCache = async (
   packageManager: string,

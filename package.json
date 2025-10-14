@@ -2,6 +2,7 @@
   "name": "setup-node",
   "version": "6.0.0",
   "private": true,
+  "type": "module",
   "description": "setup node action",
   "main": "lib/setup-node.js",
   "engines": {
@@ -56,5 +57,8 @@
     "prettier": "^3.6.2",
     "ts-jest": "^29.4.1",
     "typescript": "^5.4.2"
+  },
+  "overrides": {
+    "node-fetch": "^3.3.2"
   }
 }
