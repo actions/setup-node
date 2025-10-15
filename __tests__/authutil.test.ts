@@ -7,6 +7,7 @@ import * as auth from '../src/authutil';
 import * as cacheUtils from '../src/cache-utils';
 
 let rcFile: string;
+let pkgJson: string;
 
 describe('authutil tests', () => {
   const _runnerDir = path.join(__dirname, 'runner');
@@ -25,10 +26,12 @@ describe('authutil tests', () => {
     process.env['GITHUB_REPOSITORY'] = 'OwnerName/repo';
     process.env['RUNNER_TEMP'] = tempDir;
     rcFile = path.join(tempDir, '.npmrc');
+    pkgJson = path.join(tempDir, 'package.json');
   }, 100000);
 
   beforeEach(async () => {
     await io.rmRF(rcFile);
+    await io.rmRF(pkgJson);
     // if (fs.existsSync(rcFile)) {
     //   fs.unlinkSync(rcFile);
     // }
@@ -111,6 +114,15 @@ describe('authutil tests', () => {
     const rc = readRcFile(rcFile);
     expect(rc['@ownername:registry']).toBe('npm.pkg.github.com/');
     expect(rc['always-auth']).toBe('false');
+  });
+
+  it('Automatically configures npm scope from package.json', async () => {
+    process.env['INPUT_SCOPE'] = '';
+    fs.writeFileSync(pkgJson, '{"name":"@myscope/mypackage"}');
+    await auth.configAuthentication('https://registry.npmjs.org', '');
+
+    const rc = readRcFile(rcFile);
+    expect(rc['@myscope:registry']).toBe('https://registry.npmjs.org/');
   });
 
   it('Sets up npmrc for always-auth true', async () => {
