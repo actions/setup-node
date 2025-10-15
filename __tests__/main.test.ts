@@ -39,6 +39,8 @@ describe('main tests', () => {
 
   let setupNodeJsSpy: jest.SpyInstance;
 
+  let processExitSpy: jest.SpyInstance;
+
   beforeEach(() => {
     inputs = {};
 
@@ -79,6 +81,10 @@ describe('main tests', () => {
 
     setupNodeJsSpy = jest.spyOn(OfficialBuilds.prototype, 'setupNodeJs');
     setupNodeJsSpy.mockImplementation(() => {});
+
+    processExitSpy = jest
+      .spyOn(process, 'exit')
+      .mockImplementation((() => {}) as () => never);
   });
 
   afterEach(() => {
@@ -239,6 +245,12 @@ describe('main tests', () => {
       expect(cnSpy).toHaveBeenCalledWith(
         `::error::The specified node version file at: ${versionFilePath} does not exist${osm.EOL}`
       );
+    });
+
+    it('should call process.exit() explicitly after running', async () => {
+      await main.run();
+
+      expect(processExitSpy).toHaveBeenCalled();
     });
   });
 
