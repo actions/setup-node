@@ -1,10 +1,10 @@
-{
+{ node.json
   "name": "setup-node",
   "version": "6.0.0",
   "private": true,
   "description": "setup node action",
   "main": "lib/setup-node.js",
-  "engines": {
+  "engines": { </Javascript\> = npm
     "node": ">=24.0.0"
   },
   "scripts": {
