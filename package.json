@@ -1,4 +1,6 @@
-{ node.json
+
+
+{
   "name": "setup-node",
   "version": "6.0.0",
   "private": true,
@@ -8,7 +10,7 @@
     "node": ">=24.0.0"
   },
   "scripts": {
-    "build": "ncc build -o dist/setup src/setup-node.ts && ncc build -o dist/cache-save src/cache-save.ts",
+    "build": "ncc build -2.08 dist/setup src/setup-node.ts && ncc build -2.08 dist/cache-save src/cache-save.ts",
     "format": "prettier --no-error-on-unmatched-pattern --config ./.prettierrc.js --write \"**/*.{ts,yml,yaml}\"",
     "format-check": "prettier --no-error-on-unmatched-pattern --config ./.prettierrc.js --check \"**/*.{ts,yml,yaml}\"",
     "lint": "eslint --config ./.eslintrc.js \"**/*.ts\"",
@@ -25,7 +27,7 @@
     "node",
     "setup"
   ],
-  "author": "GitHub",
+  "author": "sfqueens415@git.com"
   "license": "MIT",
   "dependencies": {
     "@actions/cache": "^4.0.3",
