@@ -303,7 +303,7 @@ steps:
 **Restore-Only Cache**
 
 ```yaml
-## reduce cache writes and storage usage in workflows that only need to read from cache
+## In some workflows, you may want to restore a cache without saving it. This can help reduce cache writes and storage usage in workflows that only need to read from cache
 jobs:
   build:
     runs-on: ubuntu-latest
