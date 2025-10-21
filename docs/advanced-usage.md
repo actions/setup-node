@@ -300,6 +300,35 @@ steps:
 - run: npm test
 ```
 
+**Restore-Only Cache**
+
+```yaml
+## In some workflows, you may want to restore a cache without saving it. This can help:
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      # Restore Node.js modules cache (restore-only)
+      - name: Restore Node modules cache
+        uses: actions/cache@v4
+        id: cache-node-modules
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+      # Setup Node.js
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+      # Install dependencies
+      - run: npm install
+```
+
+> **Note**: Using a restore-only cache avoids redundant writes to the cache, which can reduce workflow time and minimize cache storage usage, as referenced in cache scenarions for [Node – npm](https://github.com/actions/cache/blob/main/examples.md#node---npm).
+
 ## Multiple Operating Systems and Architectures
 
 ```yaml
