@@ -327,7 +327,7 @@ jobs:
       - run: npm install
 ```
 
-> **Note**: Using a restore-only cache avoids redundant writes to the cache, which can reduce workflow time and minimize cache storage usage, as referenced in cache scenarios for [Node – npm](https://github.com/actions/cache/blob/main/examples.md#node---npm).
+> For more details related to cache scenarios, please refer [Node – npm](https://github.com/actions/cache/blob/main/examples.md#node---npm).
 
 ## Multiple Operating Systems and Architectures
 
