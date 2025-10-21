@@ -303,7 +303,7 @@ steps:
 **Restore-Only Cache**
 
 ```yaml
-## In some workflows, you may want to restore a cache without saving it. This can help:
+## reduce cache writes and storage usage in workflows that only need to read from cache
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -327,7 +327,7 @@ jobs:
       - run: npm install
 ```
 
-> **Note**: Using a restore-only cache avoids redundant writes to the cache, which can reduce workflow time and minimize cache storage usage, as referenced in cache scenarions for [Node – npm](https://github.com/actions/cache/blob/main/examples.md#node---npm).
+> **Note**: Using a restore-only cache avoids redundant writes to the cache, which can reduce workflow time and minimize cache storage usage, as referenced in cache scenarios for [Node – npm](https://github.com/actions/cache/blob/main/examples.md#node---npm).
 
 ## Multiple Operating Systems and Architectures
 
