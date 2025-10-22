@@ -93333,7 +93333,7 @@ function getNodeVersionFromFile(versionFilePath) {
     catch (_g) {
         core.info('Node version file is not JSON file');
     }
-    // Try parsing the file as an MISE `mise.toml` file.
+    // Try parsing the file as a mise `mise.toml` file.
     try {
         const manifest = (0, js_toml_1.load)(contents);
         if ((_d = manifest === null || manifest === void 0 ? void 0 : manifest.tools) === null || _d === void 0 ? void 0 : _d.node) {
@@ -93341,7 +93341,10 @@ function getNodeVersionFromFile(versionFilePath) {
             if (typeof node === 'object' && (node === null || node === void 0 ? void 0 : node.version)) {
                 return node.version;
             }
-            return node;
+            if (typeof node === 'string') {
+                return node;
+            }
+            return null;
         }
     }
     catch (_h) {
