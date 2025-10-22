@@ -3,13 +3,17 @@ import * as core from '@actions/core';
 import os from 'os';
 import fs from 'fs';
 
-import * as auth from './authutil';
+import * as auth from './authutil.js';
 import * as path from 'path';
-import {restoreCache} from './cache-restore';
-import {isCacheFeatureAvailable} from './cache-utils';
-import {getNodejsDistribution} from './distributions/installer-factory';
-import {getNodeVersionFromFile, printEnvDetailsAndSetOutput} from './util';
-import {State} from './constants';
+import {restoreCache} from './cache-restore.js';
+import {isCacheFeatureAvailable} from './cache-utils.js';
+import {getNodejsDistribution} from './distributions/installer-factory.js';
+import {getNodeVersionFromFile, printEnvDetailsAndSetOutput} from './util.js';
+import {State} from './constants.js';
+import {fileURLToPath} from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 export async function run() {
   try {

@@ -2,8 +2,8 @@ import * as core from '@actions/core';
 import * as tc from '@actions/tool-cache';
 import path from 'path';
 
-import BaseDistribution from '../base-distribution';
-import {NodeInputs, INodeVersion, INodeVersionInfo} from '../base-models';
+import BaseDistribution from '../base-distribution.js';
+import {NodeInputs, INodeVersion, INodeVersionInfo} from '../base-models.js';
 
 interface INodeRelease extends tc.IToolRelease {
   lts?: string;

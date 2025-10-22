@@ -2,6 +2,7 @@
   "name": "setup-node",
   "version": "6.0.0",
   "private": true,
+  "type": "module",
   "description": "setup node action",
   "main": "lib/setup-node.js",
   "engines": {
@@ -11,9 +12,9 @@
     "build": "ncc build -o dist/setup src/setup-node.ts && ncc build -o dist/cache-save src/cache-save.ts",
     "format": "prettier --no-error-on-unmatched-pattern --config ./.prettierrc.js --write \"**/*.{ts,yml,yaml}\"",
     "format-check": "prettier --no-error-on-unmatched-pattern --config ./.prettierrc.js --check \"**/*.{ts,yml,yaml}\"",
-    "lint": "eslint --config ./.eslintrc.js \"**/*.ts\"",
-    "lint:fix": "eslint --config ./.eslintrc.js \"**/*.ts\" --fix",
-    "test": "jest --coverage",
+    "lint": "eslint --config ./.eslintrc.cjs \"**/*.ts\"",
+    "lint:fix": "eslint --config ./.eslintrc.cjs \"**/*.ts\" --fix",
+    "test": "node --experimental-vm-modules node_modules/.bin/jest --coverage",
     "pre-checkin": "npm run format && npm run lint:fix && npm run build && npm test"
   },
   "repository": {
@@ -40,6 +41,7 @@
     "uuid": "^11.1.0"
   },
   "devDependencies": {
+    "@jest/globals": "^30.2.0",
     "@types/jest": "^29.5.14",
     "@types/node": "^24.1.0",
     "@types/semver": "^7.5.8",
@@ -56,5 +58,8 @@
     "prettier": "^3.6.2",
     "ts-jest": "^29.4.1",
     "typescript": "^5.4.2"
+  },
+  "overrides": {
+    "node-fetch": "^3.3.2"
   }
 }

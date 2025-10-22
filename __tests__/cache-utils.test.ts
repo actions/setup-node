@@ -1,19 +1,23 @@
 import * as core from '@actions/core';
 import * as cache from '@actions/cache';
 import path from 'path';
-import * as utils from '../src/cache-utils';
+import * as utils from '../src/cache-utils.js';
 import {
   PackageManagerInfo,
   isCacheFeatureAvailable,
   supportedPackageManagers,
   isGhes,
   resetProjectDirectoriesMemoized
-} from '../src/cache-utils';
+} from '../src/cache-utils.js';
 import fs from 'fs';
-import * as cacheUtils from '../src/cache-utils';
+import * as cacheUtils from '../src/cache-utils.js';
 import * as glob from '@actions/glob';
 import {Globber} from '@actions/glob';
-import {MockGlobber} from './mock/glob-mock';
+import {MockGlobber} from './mock/glob-mock.js';
+import {fileURLToPath} from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 describe('cache-utils', () => {
   const versionYarn1 = '1.2.3';

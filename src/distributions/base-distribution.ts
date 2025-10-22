@@ -10,8 +10,12 @@ import * as assert from 'assert';
 import * as path from 'path';
 import os from 'os';
 import fs from 'fs';
+import {fileURLToPath} from 'url';
 
-import {NodeInputs, INodeVersion, INodeVersionInfo} from './base-models';
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+import {NodeInputs, INodeVersion, INodeVersionInfo} from './base-models.js';
 
 export default abstract class BaseDistribution {
   protected httpClient: hc.HttpClient;
