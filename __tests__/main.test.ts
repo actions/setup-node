@@ -94,23 +94,25 @@ describe('main tests', () => {
 
   describe('getNodeVersionFromFile', () => {
     each`
-      contents                                     | expected
-      ${'12'}                                      | ${'12'}
-      ${'12.3'}                                    | ${'12.3'}
-      ${'12.3.4'}                                  | ${'12.3.4'}
-      ${'v12.3.4'}                                 | ${'12.3.4'}
-      ${'lts/erbium'}                              | ${'lts/erbium'}
-      ${'lts/*'}                                   | ${'lts/*'}
-      ${'nodejs 12.3.4'}                           | ${'12.3.4'}
-      ${'ruby 2.3.4\nnodejs 12.3.4\npython 3.4.5'} | ${'12.3.4'}
-      ${''}                                        | ${''}
-      ${'unknown format'}                          | ${'unknown format'}
-      ${'  14.1.0  '}                              | ${'14.1.0'}
-      ${'{"volta": {"node": ">=14.0.0 <=17.0.0"}}'}| ${'>=14.0.0 <=17.0.0'}
-      ${'{"volta": {"extends": "./package.json"}}'}| ${'18.0.0'}
-      ${'{"engines": {"node": "17.0.0"}}'}         | ${'17.0.0'}
-      ${'[tools]\ngo="latest"\nnode = "24.10"'}    | ${'24.10'}
-      ${'{}'}                                      | ${null}
+      contents                                                 | expected
+      ${'12'}                                                  | ${'12'}
+      ${'12.3'}                                                | ${'12.3'}
+      ${'12.3.4'}                                              | ${'12.3.4'}
+      ${'v12.3.4'}                                             | ${'12.3.4'}
+      ${'lts/erbium'}                                          | ${'lts/erbium'}
+      ${'lts/*'}                                               | ${'lts/*'}
+      ${'nodejs 12.3.4'}                                       | ${'12.3.4'}
+      ${'ruby 2.3.4\nnodejs 12.3.4\npython 3.4.5'}             | ${'12.3.4'}
+      ${''}                                                    | ${''}
+      ${'unknown format'}                                      | ${'unknown format'}
+      ${'  14.1.0  '}                                          | ${'14.1.0'}
+      ${'{"volta": {"node": ">=14.0.0 <=17.0.0"}}'}            | ${'>=14.0.0 <=17.0.0'}
+      ${'{"volta": {"extends": "./package.json"}}'}            | ${'18.0.0'}
+      ${'{"engines": {"node": "17.0.0"}}'}                     | ${'17.0.0'}
+      ${'[tools]\ngo="latest"\nnode = "24.10"'}                | ${'24.10'}
+      ${'[tools]\nnode = { version = "22.20" }'}               | ${'22.20'}
+      ${'[tools]\nnode = { postinstall = "corepack enable" }'} | ${null}
+      ${'{}'}                                                  | ${null}
     `.it('parses "$contents"', ({contents, expected}) => {
       const existsSpy = jest.spyOn(fs, 'existsSync');
       existsSpy.mockImplementation(() => true);
