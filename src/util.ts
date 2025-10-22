@@ -57,7 +57,7 @@ export function getNodeVersionFromFile(versionFilePath: string): string | null {
     core.info('Node version file is not JSON file');
   }
 
-  // Try parsing the file as an MISE `mise.toml` file.
+  // Try parsing the file as a mise `mise.toml` file.
   try {
     const manifest: Record<string, any> = load(contents);
     if (manifest?.tools?.node) {
@@ -67,7 +67,11 @@ export function getNodeVersionFromFile(versionFilePath: string): string | null {
         return node.version;
       }
 
-      return node;
+      if (typeof node === 'string') {
+        return node;
+      }
+
+      return null;
     }
   } catch {
     core.info('Node version file is not TOML file');
