@@ -1,18 +1,18 @@
+import * as cache from '@actions/cache';
 import * as core from '@actions/core';
 import * as exec from '@actions/exec';
-import * as tc from '@actions/tool-cache';
-import * as cache from '@actions/cache';
 import * as io from '@actions/io';
+import * as tc from '@actions/tool-cache';
 
 import fs from 'fs';
-import path from 'path';
 import osm from 'os';
+import path from 'path';
 
 import each from 'jest-each';
 
+import OfficialBuilds from '../src/distributions/official_builds/official_builds';
 import * as main from '../src/main';
 import * as util from '../src/util';
-import OfficialBuilds from '../src/distributions/official_builds/official_builds';
 
 describe('main tests', () => {
   let inputs = {} as any;
@@ -109,6 +109,7 @@ describe('main tests', () => {
       ${'{"volta": {"node": ">=14.0.0 <=17.0.0"}}'}| ${'>=14.0.0 <=17.0.0'}
       ${'{"volta": {"extends": "./package.json"}}'}| ${'18.0.0'}
       ${'{"engines": {"node": "17.0.0"}}'}         | ${'17.0.0'}
+      ${'[tools]\ngo="latest"\nnode = "24.10"'}    | ${'24.10'}
       ${'{}'}                                      | ${null}
     `.it('parses "$contents"', ({contents, expected}) => {
       const existsSpy = jest.spyOn(fs, 'existsSync');
