@@ -1,4 +1,3 @@
-import {v4 as uuidv4} from 'uuid';
 import * as tc from '@actions/tool-cache';
 import * as hc from '@actions/http-client';
 import * as core from '@actions/core';
@@ -185,7 +184,7 @@ export default abstract class BaseDistribution {
     const osArch: string = this.translateArchToDistUrl(arch);
 
     // Create temporary folder to download to
-    const tempDownloadFolder = `temp_${uuidv4()}`;
+    const tempDownloadFolder = `temp_${crypto.randomUUID()}`;
     const tempDirectory = process.env['RUNNER_TEMP'] || '';
     assert.ok(tempDirectory, 'Expected RUNNER_TEMP to be defined');
     const tempDir: string = path.join(tempDirectory, tempDownloadFolder);
