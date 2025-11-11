@@ -2,9 +2,6 @@ name: 'Setup Node.js environment'
 description: 'Setup a Node.js environment by adding problem matchers and optionally downloading and adding it to the PATH.'
 author: 'GitHub'
 inputs:
-  always-auth:
-    description: 'Set always-auth in npmrc.'
-    default: 'false'
   node-version:
     description: 'Version Spec of the version to use. Examples: 12.x, 10.15.1, >=10.15.0.'
   node-version-file:

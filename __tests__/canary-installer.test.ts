@@ -227,7 +227,6 @@ describe('setup-node', () => {
     const versionSpec = '11.15.0';
 
     inputs['node-version'] = versionSpec;
-    inputs['always-auth'] = false;
     inputs['token'] = 'faketoken';
 
     // ... but not in the local cache
@@ -283,7 +282,6 @@ describe('setup-node', () => {
     const versionSpec = '19.0.0-v8-canary';
 
     inputs['node-version'] = versionSpec;
-    inputs['always-auth'] = false;
     inputs['token'] = 'faketoken';
 
     findSpy.mockImplementation(() => '');
@@ -324,7 +322,6 @@ describe('setup-node', () => {
 
       inputs['node-version'] = version;
       inputs['architecture'] = arch;
-      inputs['always-auth'] = false;
       inputs['token'] = 'faketoken';
 
       const expectedUrl = `https://nodejs.org/download/v8-canary/v${version}/node-v${version}-${platform}-${arch}.${fileExtension}`;
@@ -569,7 +566,6 @@ describe('setup-node', () => {
       const versionSpec = 'v20-v8-canary';
 
       inputs['node-version'] = versionSpec;
-      inputs['always-auth'] = false;
       inputs['token'] = 'faketoken';
 
       os.platform = 'linux';

@@ -235,7 +235,6 @@ describe('setup-node', () => {
     const resolvedVersion = versionSpec;
 
     inputs['node-version'] = versionSpec;
-    inputs['always-auth'] = false;
     inputs['token'] = 'faketoken';
 
     const expectedUrl =
@@ -290,7 +289,6 @@ describe('setup-node', () => {
     const versionSpec = '11.15.0';
     const mirror = 'https://my_mirror_url';
     inputs['node-version'] = versionSpec;
-    inputs['always-auth'] = false;
     inputs['token'] = 'faketoken';
     inputs['mirror'] = mirror;
     inputs['mirror-token'] = 'faketoken';
@@ -327,7 +325,6 @@ describe('setup-node', () => {
     const versionSpec = '11.15.0';
 
     inputs['node-version'] = versionSpec;
-    inputs['always-auth'] = false;
     inputs['token'] = 'faketoken';
 
     // ... but not in the local cache
@@ -385,7 +382,6 @@ describe('setup-node', () => {
     const resolvedVersion = versionSpec;
 
     inputs['node-version'] = versionSpec;
-    inputs['always-auth'] = false;
     inputs['token'] = 'faketoken';
 
     findSpy.mockImplementation(() => '');
@@ -405,7 +401,6 @@ describe('setup-node', () => {
     const versionSpec = '11.15.0';
 
     inputs['node-version'] = versionSpec;
-    inputs['always-auth'] = false;
     inputs['token'] = 'faketoken';
 
     // ... but not in the local cache
@@ -448,7 +443,6 @@ describe('setup-node', () => {
 
       inputs['node-version'] = version;
       inputs['architecture'] = arch;
-      inputs['always-auth'] = false;
       inputs['token'] = 'faketoken';
 
       const expectedUrl =
@@ -560,7 +554,6 @@ describe('setup-node', () => {
 
       inputs['node-version'] = versionSpec;
       inputs['check-latest'] = 'true';
-      inputs['always-auth'] = false;
       inputs['token'] = 'faketoken';
 
       // ... but not in the local cache
@@ -602,7 +595,6 @@ describe('setup-node', () => {
 
       inputs['node-version'] = versionSpec;
       inputs['check-latest'] = 'true';
-      inputs['always-auth'] = false;
       inputs['token'] = 'faketoken';
 
       // ... but not in the local cache
@@ -882,7 +874,6 @@ describe('setup-node', () => {
 
       inputs['node-version'] = version;
       inputs['architecture'] = arch;
-      inputs['always-auth'] = false;
       inputs['token'] = 'faketoken';
       inputs['mirror'] = 'https://my_mirror_url';
       inputs['mirror-token'] = 'faketoken';

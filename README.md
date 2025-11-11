@@ -92,10 +92,6 @@ See [action.yml](action.yml)
     # Default: ''
     scope: ''
 
-    # Set always-auth option in npmrc file.
-    # Default: ''
-    always-auth: ''
-
     # Optional mirror to download binaries from.
     # Artifacts need to match the official Node.js
     # Example:
