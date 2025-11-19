@@ -194,7 +194,6 @@ describe('setup-node', () => {
     const versionSpec = '13.0.0-rc.0';
 
     inputs['node-version'] = versionSpec;
-    inputs['always-auth'] = false;
     inputs['token'] = 'faketoken';
 
     // ... but not in the local cache
@@ -239,7 +238,6 @@ describe('setup-node', () => {
     const versionSpec = '14.7.0-rc.1';
 
     inputs['node-version'] = versionSpec;
-    inputs['always-auth'] = false;
     inputs['token'] = 'faketoken';
 
     findSpy.mockImplementation(() => '');
@@ -268,7 +266,6 @@ describe('setup-node', () => {
 
       inputs['node-version'] = version;
       inputs['architecture'] = arch;
-      inputs['always-auth'] = false;
       inputs['token'] = 'faketoken';
 
       const expectedUrl = `https://nodejs.org/download/rc/v${version}/node-v${version}-${platform}-${arch}.${fileExtension}`;

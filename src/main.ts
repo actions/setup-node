@@ -62,9 +62,8 @@ export async function run() {
     await printEnvDetailsAndSetOutput();
 
     const registryUrl: string = core.getInput('registry-url');
-    const alwaysAuth: string = core.getInput('always-auth');
     if (registryUrl) {
-      auth.configAuthentication(registryUrl, alwaysAuth);
+      auth.configAuthentication(registryUrl);
     }
 
     const cacheDependencyPath = core.getInput('cache-dependency-path');

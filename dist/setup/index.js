@@ -98589,15 +98589,15 @@ const os = __importStar(__nccwpck_require__(70857));
 const path = __importStar(__nccwpck_require__(16928));
 const core = __importStar(__nccwpck_require__(37484));
 const github = __importStar(__nccwpck_require__(93228));
-function configAuthentication(registryUrl, alwaysAuth) {
+function configAuthentication(registryUrl) {
     const npmrc = path.resolve(process.env['RUNNER_TEMP'] || process.cwd(), '.npmrc');
     if (!registryUrl.endsWith('/')) {
         registryUrl += '/';
     }
-    writeRegistryToFile(registryUrl, npmrc, alwaysAuth);
+    writeRegistryToFile(registryUrl, npmrc);
 }
 exports.configAuthentication = configAuthentication;
-function writeRegistryToFile(registryUrl, fileLocation, alwaysAuth) {
+function writeRegistryToFile(registryUrl, fileLocation) {
     let scope = core.getInput('scope');
     if (!scope && registryUrl.indexOf('npm.pkg.github.com') > -1) {
         scope = github.context.repo.owner;
@@ -98622,8 +98622,7 @@ function writeRegistryToFile(registryUrl, fileLocation, alwaysAuth) {
     // Remove http: or https: from front of registry.
     const authString = registryUrl.replace(/(^\w+:|^)/, '') + ':_authToken=${NODE_AUTH_TOKEN}';
     const registryString = `${scope}registry=${registryUrl}`;
-    const alwaysAuthString = `always-auth=${alwaysAuth}`;
-    newContents += `${authString}${os.EOL}${registryString}${os.EOL}${alwaysAuthString}`;
+    newContents += `${authString}${os.EOL}${registryString}`;
     fs.writeFileSync(fileLocation, newContents);
     core.exportVariable('NPM_CONFIG_USERCONFIG', fileLocation);
     // Export empty node_auth_token if didn't exist so npm doesn't complain about not being able to find it
@@ -99857,9 +99856,8 @@ function run() {
             }
             yield (0, util_1.printEnvDetailsAndSetOutput)();
             const registryUrl = core.getInput('registry-url');
-            const alwaysAuth = core.getInput('always-auth');
             if (registryUrl) {
-                auth.configAuthentication(registryUrl, alwaysAuth);
+                auth.configAuthentication(registryUrl);
             }
             const cacheDependencyPath = core.getInput('cache-dependency-path');
             if ((0, cache_utils_1.isCacheFeatureAvailable)()) {

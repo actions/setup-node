@@ -255,7 +255,6 @@ describe('setup-node', () => {
     const versionSpec = '13.13.1-nightly20200415947ddec091';
 
     inputs['node-version'] = versionSpec;
-    inputs['always-auth'] = false;
     inputs['token'] = 'faketoken';
 
     // ... but not in the local cache
@@ -291,7 +290,6 @@ describe('setup-node', () => {
     ];
 
     inputs['node-version'] = versionSpec;
-    inputs['always-auth'] = false;
     inputs['token'] = 'faketoken';
 
     // ... but not in the local cache
@@ -333,7 +331,6 @@ describe('setup-node', () => {
     ];
 
     inputs['node-version'] = versionSpec;
-    inputs['always-auth'] = false;
     inputs['token'] = 'faketoken';
 
     // ... but not in the local cache
@@ -389,7 +386,6 @@ describe('setup-node', () => {
     const versionSpec = '18.0.0-nightly202204180699150267';
 
     inputs['node-version'] = versionSpec;
-    inputs['always-auth'] = false;
     inputs['token'] = 'faketoken';
 
     findSpy.mockImplementation(() => '');
@@ -427,7 +423,6 @@ describe('setup-node', () => {
 
       inputs['node-version'] = version;
       inputs['architecture'] = arch;
-      inputs['always-auth'] = false;
       inputs['token'] = 'faketoken';
 
       const expectedUrl = `https://nodejs.org/download/nightly/v${version}/node-v${version}-${platform}-${arch}.${fileExtension}`;
@@ -473,7 +468,6 @@ describe('setup-node', () => {
 
       inputs['node-version'] = version;
       inputs['architecture'] = arch;
-      inputs['always-auth'] = false;
       inputs['token'] = 'faketoken';
       inputs['mirror'] = 'https://my-mirror.org';
       inputs['mirror-token'] = 'my-mirror-token';
