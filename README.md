@@ -16,6 +16,8 @@ This action provides the following functionality for GitHub Actions users:
 
 - Caching is now automatically enabled for npm projects when either the `devEngines.packageManager` field or the top-level `packageManager` field in `package.json` is set to `npm`. For other package managers, such as Yarn and pnpm, caching is disabled by default and must be configured manually using the `cache` input.
 
+- The `always-auth` input has been removed, as it is deprecated and will no longer be supported in future npm releases. To ensure your workflows continue to run without warnings or errors, please remove any references to `always-auth` from your configuration.  
+
 ## Breaking changes in V5 
 
 - Enabled caching by default with package manager detection if no cache input is provided.
@@ -91,10 +93,6 @@ See [action.yml](action.yml)
     # Will fall back to the repository owner when using the GitHub Packages registry (https://npm.pkg.github.com/).
     # Default: ''
     scope: ''
-
-    # Set always-auth option in npmrc file.
-    # Default: ''
-    always-auth: ''
 
     # Optional mirror to download binaries from.
     # Artifacts need to match the official Node.js
