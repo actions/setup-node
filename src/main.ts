@@ -98,6 +98,10 @@ export async function run() {
   } catch (err) {
     core.setFailed((err as Error).message);
   }
+
+  // Explicit process.exit() to not wait for hanging promises,
+  // see https://github.com/actions/setup-node/issues/878
+  process.exit();
 }
 
 function resolveVersionInput(): string {
