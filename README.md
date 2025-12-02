@@ -148,7 +148,7 @@ Since it will not be cached always, there is possibility of hitting rate limit w
 
 ### Checking in lockfiles
 
-It's **always** recommended to commit the lockfile of your package manager for security and performance reasons. For more information consult the "Working with lockfiles" section of the [Advanced usage](docs/advanced-usage.md#working-with-lockfiles) guide.
+It's **strongly recommended** to commit the lockfile of your package manager for security and performance reasons. For more information consult the "Working with lockfiles" section of the [Advanced usage](docs/advanced-usage.md#working-with-lockfiles) guide.
 
 ## Caching global packages data
 

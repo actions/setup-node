@@ -1,11 +1,13 @@
 ## Working with lockfiles
 
-All supported package managers recommend that you **always** commit the lockfile, although implementations vary doing so generally provides the following benefits:
+Most  supported package managers recommend that you **always** commit the lockfile, although implementations vary doing so generally provides the following benefits:
 
 - Enables faster installation for CI and production environments, due to being able to skip package resolution.
 - Describes a single representation of a dependency tree such that teammates, deployments, and continuous integration are guaranteed to install exactly the same dependencies.
 - Provides a facility for users to "time-travel" to previous states of `node_modules` without having to commit the directory itself.
 - Facilitates greater visibility of tree changes through readable source control diffs.
+
+**However, for libraries, not using a lockfile may be preferable to ensure testing with the latest transitive dependencies. See the [Node.js Package Maintenance Working Group documentation on dependency management guidelines](https://github.com/nodejs/package-maintenance/blob/main/docs/dependency-management-guidelines.md#using-lockfiles) for a discussion of tradeoffs.**
 
 In order to get the most out of using your lockfile on continuous integration follow the conventions outlined below for your respective package manager.
 
@@ -34,6 +36,24 @@ Ensure that `pnpm-lock.yaml` is always committed, when on CI pass `--frozen-lock
 **See also:**
 - [Working with Git - Lockfiles](https://pnpm.io/git#lockfiles)
 - [Documentation of `--frozen-lockfile` option](https://pnpm.io/cli/install#--frozen-lockfile)
+
+### Running without a lockfile
+
+If you choose not to use a lockfile, you must ensure that **caching is disabled**. The `cache` feature relies on the lockfile to generate a unique key for the cache entry.
+
+To run without a lockfile:
+1. Do not set the `cache` input.
+2. If your `package.json` specifies a `packageManager` (which enables automatic caching in v5+), explicitly disable it:
+
+```yaml
+steps:
+- uses: actions/checkout@v5
+- uses: actions/setup-node@v6
+  with:
+    node-version: '24'
+    package-manager-cache: false # Explicitly disable caching if you don't have a lockfile
+- run: npm install
+- run: npm test
 
 ## Check latest version
 
