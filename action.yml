@@ -26,13 +26,13 @@ inputs:
   cache-dependency-path:
     description: 'Used to specify the path to a dependency file: package-lock.json, yarn.lock, etc. Supports wildcards or a list of file names for caching multiple dependencies.'
   mirror:
-    description: 'Used to specify an alternative mirror to downlooad Node.js binaries from'
+    description: 'Used to specify an alternative mirror to download Node.js binaries from'
   mirror-token:
     description: 'The token used as Authorization header when fetching from the mirror'
 # TODO: add input to control forcing to pull from cloud or dist.
 #       escape valve for someone having issues or needing the absolute latest which isn't cached yet
 outputs:
-  cache-hit: 
+  cache-hit:
     description: 'A boolean value to indicate if a cache was hit.'
   node-version:
     description: 'The installed node version.'
