@@ -249,6 +249,7 @@ If the runner is not able to access github.com, any Nodejs versions requested du
  - [Publishing to npmjs and GPR with npm](docs/advanced-usage.md#publish-to-npmjs-and-gpr-with-npm)
  - [Publishing to npmjs and GPR with yarn](docs/advanced-usage.md#publish-to-npmjs-and-gpr-with-yarn)
  - [Using private packages](docs/advanced-usage.md#use-private-packages)
+ - [Using private mirror](docs/advanced-usage.md#use-private-mirror)
 
 ## Recommended permissions
 
