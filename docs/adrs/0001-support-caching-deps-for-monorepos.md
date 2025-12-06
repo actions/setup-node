@@ -8,7 +8,7 @@ Currently, `actions/setup-node` supports caching dependencies for Npm and Yarn p
 For the first iteration, we have decided to not support cases where `package-lock.json` / `yarn.lock` are located outside of repository root.  
 Current implementation searches the following file patterns in the repository root: `package-lock.json`, `yarn.lock` (in order of resolving priorities)
 
-Obviously, it made build-in caching unusable for mono-repos and repos with complex structure.  
+Obviously, it made built-in caching unusable for mono-repos and repos with complex structure.  
 We would like to revisit this decision and add customization for dependencies lock file location.
 
 ## Proposal
@@ -24,7 +24,7 @@ The second option looks more generic because it allows to:
 ## Decision
 
 Add `cache-dependency-path` input that will accept path (relative to repository root) to dependencies lock file.  
-If provided path contains wildcards, the action will search all maching files and calculate common hash like `${{ hashFiles('**/package-lock.json') }}` YAML construction does.  
+If provided path contains wildcards, the action will search all matching files and calculate common hash like `${{ hashFiles('**/package-lock.json') }}` YAML construction does.  
 The hash of provided matched files will be used as a part of cache key.
 
 Yaml examples:
