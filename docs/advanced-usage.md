@@ -7,8 +7,6 @@ Most  supported package managers recommend that you **always** commit the lockfi
 - Provides a facility for users to "time-travel" to previous states of `node_modules` without having to commit the directory itself.
 - Facilitates greater visibility of tree changes through readable source control diffs.
 
-**However, for libraries, not using a lockfile may be preferable to ensure testing with the latest transitive dependencies. See the [Node.js Package Maintenance Working Group documentation on dependency management guidelines](https://github.com/nodejs/package-maintenance/blob/main/docs/dependency-management-guidelines.md#using-lockfiles) for a discussion of tradeoffs.**
-
 In order to get the most out of using your lockfile on continuous integration follow the conventions outlined below for your respective package manager.
 
 ### NPM
@@ -43,7 +41,7 @@ If you choose not to use a lockfile, you must ensure that **caching is disabled*
 
 To run without a lockfile:
 1. Do not set the `cache` input.
-2. If your `package.json` specifies a `packageManager` (which enables automatic caching in v5+), explicitly disable it:
+2. If your `package.json` contains a ``packageManager` field set to npm (or devEngines.packageManager), automatic caching is enabled by default. Override this by setting package-manager-cache: false.
 
 ```yaml
 steps:
