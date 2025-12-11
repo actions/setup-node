@@ -311,7 +311,7 @@ jobs:
       - uses: actions/checkout@v5
       # Restore Node.js modules cache (restore-only)
       - name: Restore Node modules cache
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         id: cache-node-modules
         with:
           path: ~/.npm
