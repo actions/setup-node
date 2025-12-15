@@ -41,11 +41,11 @@ If you choose not to use a lockfile, you must ensure that **caching is disabled*
 
 To run without a lockfile:
 1. Do not set the `cache` input.
-2. If your `package.json` contains a ``packageManager` field set to npm (or devEngines.packageManager), automatic caching is enabled by default. Override this by setting package-manager-cache: false.
+2. If your `package.json` contains a `packageManager` field set to npm (or devEngines.packageManager), automatic caching is enabled by default. Override this by setting `package-manager-cache: false`.
 
 ```yaml
 steps:
-- uses: actions/checkout@v5
+- uses: actions/checkout@v6
 - uses: actions/setup-node@v6
   with:
     node-version: '24'
