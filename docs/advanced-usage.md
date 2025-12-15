@@ -52,6 +52,7 @@ steps:
     package-manager-cache: false # Explicitly disable caching if you don't have a lockfile
 - run: npm install
 - run: npm test
+```
 
 ## Check latest version
 
