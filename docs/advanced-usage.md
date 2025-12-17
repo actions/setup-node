@@ -1,6 +1,6 @@
 ## Working with lockfiles
 
-Most  supported package managers recommend that you **always** commit the lockfile, although implementations vary doing so generally provides the following benefits:
+Most supported package managers recommend that you **always** commit the lockfile, although implementations vary doing so generally provides the following benefits:
 
 - Enables faster installation for CI and production environments, due to being able to skip package resolution.
 - Describes a single representation of a dependency tree such that teammates, deployments, and continuous integration are guaranteed to install exactly the same dependencies.
