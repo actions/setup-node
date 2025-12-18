@@ -14,6 +14,6 @@ on:
 jobs:
   call-check-dist:
     name: Check dist/
-    uses: actions/reusable-workflows/.github/workflows/check-dist.yml@main
+    uses: actions/reusable-workflows/.github/workflows/check-dist.yml@1e97bade5ca12552a4d14d19ef769e9667ad73c4 # main
     with:
       node-version: '24.x'
