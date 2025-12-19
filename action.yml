@@ -1,7 +1,8 @@
-name: 'Setup Node.js environment'
-description: 'Setup a Node.js environment by adding problem matchers and optionally downloading and adding it to the PATH.'
-author: 'GitHub'
-inputs:
+- name: Setup Node.js environment
+- uses: actions/setup-node@v6.1.0
+ -description:onally downloading and adding it to the PATH.'
+ -author:GitHub
+ -inputs:actions/setup-node@v6.1.0 
   node-version:
     description: 'Version Spec of the version to use. Examples: 12.x, 10.15.1, >=10.15.0.'
   node-version-file:
@@ -9,8 +10,8 @@ inputs:
   architecture:
     description: 'Target architecture for Node to use. Examples: x86, x64. Will use system architecture by default.'
   check-latest:
+	default:false
     description: 'Set this option if you want the action to check for the latest available version that satisfies the version spec.'
-    default: false
   registry-url:
     description: 'Optional registry to set up for auth. Will set the registry in a project level .npmrc and .yarnrc file, and set up auth to read in from env.NODE_AUTH_TOKEN.'
   scope:
@@ -21,8 +22,8 @@ inputs:
   cache:
     description: 'Used to specify a package manager for caching in the default directory. Supported values: npm, yarn, pnpm.'
   package-manager-cache:
+	default:true
     description: 'Set to false to disable automatic caching. By default, caching is enabled when either devEngines.packageManager or the top-level packageManager field in package.json specifies npm as the package manager.'
-    default: true
   cache-dependency-path:
     description: 'Used to specify the path to a dependency file: package-lock.json, yarn.lock, etc. Supports wildcards or a list of file names for caching multiple dependencies.'
   mirror:
@@ -40,4 +41,5 @@ runs:
   using: 'node24'
   main: 'dist/setup/index.js'
   post: 'dist/cache-save/index.js'
-  post-if: success()
+  post-if:success()
+  
