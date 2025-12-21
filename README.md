@@ -115,7 +115,7 @@ See [action.yml](action.yml)
 
 ```yaml
 steps:
-- uses: actions/checkout@v5
+- uses: actions/checkout@v6
 - uses: actions/setup-node@v6
   with:
     node-version: 24
@@ -164,7 +164,7 @@ See the examples of using cache for `yarn`/`pnpm` and `cache-dependency-path` in
 
 ```yaml
 steps:
-- uses: actions/checkout@v5
+- uses: actions/checkout@v6
 - uses: actions/setup-node@v6
   with:
     node-version: 24
@@ -177,7 +177,7 @@ steps:
 
 ```yaml
 steps:
-- uses: actions/checkout@v5
+- uses: actions/checkout@v6
 - uses: actions/setup-node@v6
   with:
     node-version: 24
@@ -193,7 +193,7 @@ This behavior is controlled by the `package-manager-cache` input, which defaults
 
 ```yaml
 steps:
-- uses: actions/checkout@v5
+- uses: actions/checkout@v6
 - uses: actions/setup-node@v6
   with:
     package-manager-cache: false
@@ -212,7 +212,7 @@ jobs:
         node: [ 20, 22, 24 ]
     name: Node ${{ matrix.node }} sample
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - name: Setup node
         uses: actions/setup-node@v6
         with:
