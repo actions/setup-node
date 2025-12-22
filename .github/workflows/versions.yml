@@ -12,7 +12,7 @@ jobs:
         os: [ubuntu-latest, windows-latest, macos-latest, macos-latest-large]
         node-version: [20, 22, 24]
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - name: Setup Node
         uses: ./
         with:
@@ -29,7 +29,7 @@ jobs:
         os: [ubuntu-latest, windows-latest, macos-latest-large]
         node-version: [lts/dubnium, lts/erbium, lts/fermium, lts/*, lts/-1]
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - name: Setup Node
         uses: ./
         with:
@@ -56,7 +56,7 @@ jobs:
             '20.0.0-v8-canary20221101e50e45c9f8'
           ]
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - name: Setup Node
         uses: ./
         with:
@@ -76,7 +76,7 @@ jobs:
         os: [ubuntu-latest, windows-latest, macos-latest, macos-latest-large]
         node-version: [20-nightly, 25-nightly, 24.0.0-nightly]
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - name: Setup Node
         uses: ./
         with:
@@ -96,7 +96,7 @@ jobs:
         os: [ubuntu-latest, windows-latest, macos-latest, macos-latest-large]
         node-version: [20.0.0-rc.1, 22.14.0-rc.1, 24.0.0-rc.4]
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - name: Setup Node
         uses: ./
         with:
@@ -116,7 +116,7 @@ jobs:
         os: [ubuntu-latest, windows-latest, macos-latest, macos-latest-large]
         node-version: [20.10.0, 22.0.0, 24.9.0]
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - name: Setup Node
         uses: ./
         with:
@@ -133,7 +133,7 @@ jobs:
         os: [ubuntu-latest, windows-latest, macos-latest, macos-latest-large]
         node-version: [20, 22, 24]
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - name: Setup Node and check latest
         uses: ./
         with:
@@ -152,7 +152,7 @@ jobs:
         node-version-file:
           [.nvmrc, .tool-versions, .tool-versions-node, package.json]
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - name: Setup node from node version file
         uses: ./
         with:
@@ -167,7 +167,7 @@ jobs:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest, macos-latest-large]
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - name: Setup node from node version file
         uses: ./
         with:
@@ -182,7 +182,7 @@ jobs:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest, macos-latest-large]
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - name: Setup node from node version file
         uses: ./
         with:
@@ -198,7 +198,7 @@ jobs:
         os: [ubuntu-latest, windows-latest, macos-latest, macos-latest-large]
         node-version: [17, 19]
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - name: Setup Node from dist
         uses: ./
         with:
@@ -214,7 +214,7 @@ jobs:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest-large]
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       # test old versions which didn't have npm and layout different
       - name: Setup node 0.12.18 from dist
         uses: ./
@@ -227,7 +227,7 @@ jobs:
   arch:
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - name: Setup node 20 x86 from dist
         uses: ./
         with:
@@ -251,7 +251,7 @@ jobs:
           echo "LATEST_NODE_VERSION=$latestNodeVersion" >> $GITHUB_OUTPUT
         id: version
         shell: bash
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - name: Setup Node
         uses: ./
         with:
