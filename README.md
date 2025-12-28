@@ -271,3 +271,29 @@ Contributions are welcome! See [Contributor's Guide](docs/contributors.md)
 ## Code of Conduct
 
 :wave: Be nice. See [our code of conduct](CODE_OF_CONDUCT.md)
+import json_log_formatter
+
+formatter = json_log_formatter.JSONFormatter()
+
+logging_config = {
+    'version': 1,
+    'formatters': {'json': {'()': json_log_formatter.JSONFormatter}},
+    'handlers': {'console': {'class': 'logging.StreamHandler', 'formatter': 'json'}},
+    'root': {'level': 'INFO', 'handlers': ['console']}
+}
+
+logging.config.dictConfig(logging_config)
+
+# En cada log:
+logging.info("Proceso purificado", extra={
+    'tipo_evento': 'purificacion_proceso',
+    'proceso': nombre_proceso,
+    'pod_name': POD_NAME,
+    'componente': 'guardian'
+})           /  |  \
+         👑   🔑   ⚖️
+           \   |   /
+             ░░░░░░░
+       NODO SUPER TURBO x1000
+       REALEZA – ACCESO – JUSTICIA
+       PARA TODOS LOS GUERREROS
