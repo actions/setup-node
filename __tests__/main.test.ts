@@ -133,10 +133,11 @@ describe('main tests', () => {
 
   describe('printEnvDetailsAndSetOutput', () => {
     it.each([
-      [{node: '12.0.2', npm: '6.3.3', yarn: '1.22.11'}],
-      [{node: '16.0.2', npm: '7.3.3', yarn: '2.22.11'}],
-      [{node: '14.0.1', npm: '8.1.0', yarn: '3.2.1'}],
-      [{node: '17.0.2', npm: '6.3.3', yarn: ''}]
+      [{node: '12.0.2', npm: '6.3.3', yarn: '1.22.11', pnpm: ''}],
+      [{node: '16.0.2', npm: '7.3.3', yarn: '2.22.11', pnpm: ''}],
+      [{node: '14.0.1', npm: '8.1.0', yarn: '3.2.1', pnpm: ''}],
+      [{node: '17.0.2', npm: '6.3.3', yarn: '', pnpm: ''}],
+      [{node: '24.10.0', npm: '11.6.1', yarn: '', pnpm: '10.18.3'}]
     ])('Tools versions %p', async obj => {
       getExecOutputSpy.mockImplementation(async command => {
         if (Reflect.has(obj, command) && !obj[command]) {

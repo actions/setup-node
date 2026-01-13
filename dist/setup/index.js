@@ -100034,7 +100034,7 @@ exports.getNodeVersionFromFile = getNodeVersionFromFile;
 function printEnvDetailsAndSetOutput() {
     return __awaiter(this, void 0, void 0, function* () {
         core.startGroup('Environment details');
-        const promises = ['node', 'npm', 'yarn'].map((tool) => __awaiter(this, void 0, void 0, function* () {
+        const promises = ['node', 'npm', 'yarn', 'pnpm'].map((tool) => __awaiter(this, void 0, void 0, function* () {
             const pathTool = yield io.which(tool, false);
             const output = pathTool ? yield getToolVersion(tool, ['--version']) : '';
             return { tool, output };
