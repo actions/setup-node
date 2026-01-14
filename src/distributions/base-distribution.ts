@@ -103,7 +103,7 @@ export default abstract class BaseDistribution {
     const headers = {};
 
     if (this.nodeInfo.mirrorToken) {
-      headers['Authorization'] = `Bearer ${this.nodeInfo.mirrorToken}`;
+      headers['Authorization'] = this.nodeInfo.mirrorToken;
     }
 
     const response = await this.httpClient.getJson<INodeVersion[]>(
