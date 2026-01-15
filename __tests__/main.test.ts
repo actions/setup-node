@@ -8,8 +8,6 @@ import fs from 'fs';
 import path from 'path';
 import osm from 'os';
 
-import each from 'jest-each';
-
 import * as main from '../src/main';
 import * as util from '../src/util';
 import OfficialBuilds from '../src/distributions/official_builds/official_builds';
@@ -93,7 +91,7 @@ describe('main tests', () => {
   }, 100000);
 
   describe('getNodeVersionFromFile', () => {
-    each`
+    it.each`
       contents                                     | expected
       ${'12'}                                      | ${'12'}
       ${'12.3'}                                    | ${'12.3'}
@@ -110,7 +108,7 @@ describe('main tests', () => {
       ${'{"volta": {"extends": "./package.json"}}'}| ${'18.0.0'}
       ${'{"engines": {"node": "17.0.0"}}'}         | ${'17.0.0'}
       ${'{}'}                                      | ${null}
-    `.it('parses "$contents"', ({contents, expected}) => {
+    `('parses "$contents"', ({contents, expected}) => {
       const existsSpy = jest.spyOn(fs, 'existsSync');
       existsSpy.mockImplementation(() => true);
 
