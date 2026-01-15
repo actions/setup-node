@@ -470,7 +470,7 @@ Please refer to the [Ensuring workflow access to your package - Configuring a pa
 It is possible to use a private mirror hosting Node.js binaries. This mirror must be a full mirror of the official Node.js distribution.
 The mirror URL can be set using the `mirror` input.
 It is possible to specify a token to authenticate with the mirror using the `mirror-token` input.
-The token will be passed as a bearer token in the `Authorization` header.
+The token will be passed in the `Authorization` header.
 
 ```yaml
 - uses: actions/setup-node@v6
