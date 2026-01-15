@@ -94,22 +94,24 @@ describe('main tests', () => {
 
   describe('getNodeVersionFromFile', () => {
     each`
-      contents                                     | expected
-      ${'12'}                                      | ${'12'}
-      ${'12.3'}                                    | ${'12.3'}
-      ${'12.3.4'}                                  | ${'12.3.4'}
-      ${'v12.3.4'}                                 | ${'12.3.4'}
-      ${'lts/erbium'}                              | ${'lts/erbium'}
-      ${'lts/*'}                                   | ${'lts/*'}
-      ${'nodejs 12.3.4'}                           | ${'12.3.4'}
-      ${'ruby 2.3.4\nnodejs 12.3.4\npython 3.4.5'} | ${'12.3.4'}
-      ${''}                                        | ${''}
-      ${'unknown format'}                          | ${'unknown format'}
-      ${'  14.1.0  '}                              | ${'14.1.0'}
-      ${'{"volta": {"node": ">=14.0.0 <=17.0.0"}}'}| ${'>=14.0.0 <=17.0.0'}
-      ${'{"volta": {"extends": "./package.json"}}'}| ${'18.0.0'}
-      ${'{"engines": {"node": "17.0.0"}}'}         | ${'17.0.0'}
-      ${'{}'}                                      | ${null}
+      contents                                                                                   | expected
+      ${'12'}                                                                                    | ${'12'}
+      ${'12.3'}                                                                                  | ${'12.3'}
+      ${'12.3.4'}                                                                                | ${'12.3.4'}
+      ${'v12.3.4'}                                                                               | ${'12.3.4'}
+      ${'lts/erbium'}                                                                            | ${'lts/erbium'}
+      ${'lts/*'}                                                                                 | ${'lts/*'}
+      ${'nodejs 12.3.4'}                                                                         | ${'12.3.4'}
+      ${'ruby 2.3.4\nnodejs 12.3.4\npython 3.4.5'}                                               | ${'12.3.4'}
+      ${''}                                                                                      | ${''}
+      ${'unknown format'}                                                                        | ${'unknown format'}
+      ${'  14.1.0  '}                                                                            | ${'14.1.0'}
+      ${'{}'}                                                                                    | ${null}
+      ${'{"volta": {"node": ">=14.0.0 <=17.0.0"}}'}                                              | ${'>=14.0.0 <=17.0.0'}
+      ${'{"volta": {"extends": "./package.json"}}'}                                              | ${'18.0.0'}
+      ${'{"engines": {"node": "17.0.0"}}'}                                                       | ${'17.0.0'}
+      ${'{"devEngines": {"runtime": {"name": "node", "version": "22.0.0"}}}'}                    | ${'22.0.0'}
+      ${'{"devEngines": {"runtime": [{"name": "bun"}, {"name": "node", "version": "22.0.0"}]}}'} | ${'22.0.0'}
     `.it('parses "$contents"', ({contents, expected}) => {
       const existsSpy = jest.spyOn(fs, 'existsSync');
       existsSpy.mockImplementation(() => true);
