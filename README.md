@@ -270,4 +270,153 @@ Contributions are welcome! See [Contributor's Guide](docs/contributors.md)
 
 ## Code of Conduct
 
-:wave: Be nice. See [our code of conduct](CODE_OF_CONDUCT.md)
+:wave: Be nice. See [our code of conduct](CODE_OF_CONDUCT.md) && import http.server
+import socketserver
+import json
+import os
+
+PORT = 8000
+FILE_NAME = "nexus_seeds.json"
+
+class NexusHandler(http.server.SimpleHTTPRequestHandler):
+    def do_GET(self):
+        # Serve the JSON file regardless of the path for this demo
+        # This mimics the /.well-known/seeds-public.json endpoint
+        if self.path.endswith(".json") or self.path == "/":
+            if os.path.exists(FILE_NAME):
+                self.send_response(200)
+                self.send_header('Content-type', 'application/json')
+                self.end_headers()
+                with open(FILE_NAME, 'rb') as f:
+                    self.wfile.write(f.read())
+                print(f"⚡ [SERVER] Served {FILE_NAME} to Nexus Client")
+            else:
+                self.send_error(404, "Seeds file not found")
+        else:
+            self.send_error(404, "Endpoint not found")
+
+print(f"🌍 NEXUS AGI DIRECTORY ONLINE")
+print(f"📡 Listening on http://localhost:{PORT}")
+print(f"📂 Serving registry from: {FILE_NAME}")
+
+with socketserver.TCPServer(("", PORT), NexusHandler) as httpd:
+    httpd.serve_forever() && // SPDX-License-Identifier: MIT
+pragma solidity ^0.8.20;
+
+contract WrappedTestnetBTC {
+    string public constant name = "Wrapped Testnet Bitcoin";
+    string public constant symbol = "wTBTC";
+    uint8 public constant decimals = 18;
+    uint256 public totalSupply;
+    
+    address public bridgeOperator;
+    bool public paused = false;
+    
+    mapping(address => uint256) public balanceOf;
+    mapping(address => mapping(address => uint256)) public allowance;
+    
+    event Transfer(address indexed from, address indexed to, uint256 value);
+    event Approval(address indexed owner, address indexed spender, uint256 value);
+    event Mint(address indexed to, uint256 amount, string bitcoinTxId);
+    event Burn(address indexed from, uint256 amount, string bitcoinAddress);
+    event BridgeOperatorChanged(address indexed oldOperator, address indexed newOperator);
+    event Paused(bool status);
+    
+    modifier onlyBridgeOperator() {
+        require(msg.sender == bridgeOperator, "Only bridge operator");
+        _;
+    }
+    
+    modifier whenNotPaused() {
+        require(!paused, "Contract paused");
+        _;
+    }
+    
+    constructor(address _initialOperator) {
+        bridgeOperator = _initialOperator;
+        emit BridgeOperatorChanged(address(0), _initialOperator);
+    }
+    
+    function mint(address to, uint256 amount, string calldata bitcoinTxId) 
+        external 
+        onlyBridgeOperator 
+        whenNotPaused 
+    {
+        require(to != address(0), "Mint to zero address");
+        require(amount > 0, "Amount must be positive");
+        
+        balanceOf[to] += amount;
+        totalSupply += amount;
+        
+        emit Transfer(address(0), to, amount);
+        emit Mint(to, amount, bitcoinTxId);
+    }
+    
+    function burn(uint256 amount, string calldata bitcoinAddress) 
+        external 
+        whenNotPaused 
+    {
+        require(balanceOf[msg.sender] >= amount, "Insufficient balance");
+        require(bytes(bitcoinAddress).length > 0, "Bitcoin address required");
+        
+        balanceOf[msg.sender] -= amount;
+        totalSupply -= amount;
+        
+        emit Transfer(msg.sender, address(0), amount);
+        emit Burn(msg.sender, amount, bitcoinAddress);
+    }
+    
+    function approve(address spender, uint256 amount) 
+        external 
+        whenNotPaused 
+        returns (bool) 
+    {
+        allowance[msg.sender][spender] = amount;
+        emit Approval(msg.sender, spender, amount);
+        return true;
+    }
+    
+    function transfer(address to, uint256 amount) 
+        external 
+        whenNotPaused 
+        returns (bool) 
+    {
+        _transfer(msg.sender, to, amount);
+        return true;
+    }
+    
+    function transferFrom(address from, address to, uint256 amount) 
+        external 
+        whenNotPaused 
+        returns (bool) 
+    {
+        require(allowance[from][msg.sender] >= amount, "Allowance exceeded");
+        
+        allowance[from][msg.sender] -= amount;
+        _transfer(from, to, amount);
+        
+        return true;
+    }
+    
+    function changeBridgeOperator(address newOperator) external onlyBridgeOperator {
+        require(newOperator != address(0), "Zero address");
+        emit BridgeOperatorChanged(bridgeOperator, newOperator);
+        bridgeOperator = newOperator;
+    }
+    
+    function setPaused(bool _paused) external onlyBridgeOperator {
+        paused = _paused;
+        emit Paused(_paused);
+    }
+    
+    function _transfer(address from, address to, uint256 amount) internal {
+        require(from != address(0), "Transfer from zero address");
+        require(to != address(0), "Transfer to zero address");
+        require(balanceOf[from] >= amount, "Insufficient balance");
+        
+        balanceOf[from] -= amount;
+        balanceOf[to] += amount;
+        
+        emit Transfer(from, to, amount);
+    }
+}
