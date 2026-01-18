@@ -10,11 +10,15 @@ on:
       - releases/*
     paths-ignore:
       - '**.md'
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 jobs:
   node-npm-depencies-caching:
     name: Test npm (Node ${{ matrix.node-version}}, ${{ matrix.os }})
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
     strategy:
       fail-fast: false
       matrix:
@@ -38,6 +42,7 @@ jobs:
   node-pnpm-depencies-caching:
     name: Test pnpm (Node ${{ matrix.node-version}}, ${{ matrix.os }})
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
     strategy:
       fail-fast: false
       matrix:
@@ -71,6 +76,7 @@ jobs:
   node-yarn1-depencies-caching:
     name: Test yarn 1 (Node ${{ matrix.node-version}}, ${{ matrix.os }})
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
     strategy:
       fail-fast: false
       matrix:
@@ -101,6 +107,7 @@ jobs:
   node-yarn3-depencies-caching:
     name: Test yarn 3 (Node ${{ matrix.node-version}}, ${{ matrix.os }})
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
     env:
       YARN_ENABLE_IMMUTABLE_INSTALLS: false
     strategy:
@@ -141,6 +148,7 @@ jobs:
       matrix:
         node-version: [20, 22, 24]
     runs-on: ubuntu-latest
+    timeout-minutes: 30
 
     steps:
       - uses: actions/checkout@v6
@@ -168,6 +176,7 @@ jobs:
       matrix:
         node-version: [20, 22, 24]
     runs-on: ubuntu-latest
+    timeout-minutes: 30
 
     steps:
       - uses: actions/checkout@v6
@@ -195,6 +204,7 @@ jobs:
       matrix:
         node-version: [20, 22, 24]
     runs-on: ubuntu-latest
+    timeout-minutes: 30
 
     steps:
       - uses: actions/checkout@v6
@@ -222,6 +232,7 @@ jobs:
       matrix:
         node-version: [20, 22, 24]
     runs-on: ubuntu-latest
+    timeout-minutes: 30
 
     steps:
       - uses: actions/checkout@v6
@@ -247,6 +258,7 @@ jobs:
   node-npm-packageManager-auto-cache:
     name: Test auto cache with top-level packageManager
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
     strategy:
       fail-fast: false
       matrix:
@@ -272,6 +284,7 @@ jobs:
   node-npm-devEngines-auto-cache:
     name: Test auto cache with devEngines.packageManager
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
     strategy:
       fail-fast: false
       matrix:
