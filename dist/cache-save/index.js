@@ -44172,7 +44172,24 @@ exports.supportedPackageManagers = {
         name: 'yarn',
         lockFilePatterns: ['yarn.lock'],
         getCacheFolderPath: async (projectDir) => {
-            const yarnVersion = await (0, exports.getCommandOutputNotEmpty)(`yarn --version`, 'Could not retrieve version of yarn', projectDir);
+            // Try to enable corepack first if available
+            // This helps with yarn v2+ which requires corepack
+            await enableCorepackIfSupported();
+            let yarnVersion;
+            try {
+                yarnVersion = await (0, exports.getCommandOutputNotEmpty)(`yarn --version`, 'Could not retrieve version of yarn', projectDir);
+            }
+            catch (err) {
+                // Check if this is a corepack error message
+                const errorMsg = err.message;
+                if (errorMsg.includes('packageManager') &&
+                    errorMsg.includes('Corepack')) {
+                    throw new Error(`Yarn v4+ requires corepack to be enabled. Please run 'corepack enable' before using ` +
+                        `actions/setup-node with yarn, or disable caching with 'package-manager-cache: false'. ` +
+                        `See: https://github.com/actions/setup-node/issues/1027 for more information.`);
+                }
+                throw err;
+            }
             core.debug(`Consumed yarn version is ${yarnVersion} (working dir: "${projectDir || ''}")`);
             const stdOut = yarnVersion.startsWith('1.')
                 ? await (0, exports.getCommandOutput)('yarn cache dir', projectDir)
@@ -44182,6 +44199,24 @@ exports.supportedPackageManagers = {
             }
             return stdOut;
         }
+    }
+};
+/**
+ * Tries to enable corepack for Node.js versions that support it (16.9+)
+ * This helps with yarn v2+ which requires corepack
+ * See: https://github.com/actions/setup-node/issues/1027
+ */
+const enableCorepackIfSupported = async () => {
+    try {
+        await exec.exec('corepack', ['enable'], {
+            ignoreReturnCode: true,
+            silent: true
+        });
+        core.debug('Corepack enabled successfully');
+    }
+    catch {
+        // Corepack not available or failed silently
+        core.debug('Corepack not available on this system');
     }
 };
 const getCommandOutput = async (toolCommand, cwd) => {
