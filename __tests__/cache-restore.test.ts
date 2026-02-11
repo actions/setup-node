@@ -8,7 +8,9 @@ import * as utils from '../src/cache-utils';
 import {restoreCache} from '../src/cache-restore';
 
 describe('cache-restore', () => {
-  process.env['GITHUB_WORKSPACE'] = path.join(__dirname, 'data');
+  const setWorkspaceFor = (pm: 'npm' | 'yarn' | 'pnpm') => {
+    process.env['GITHUB_WORKSPACE'] = path.join(__dirname, 'data', pm);
+  };
   if (!process.env.RUNNER_OS) {
     process.env.RUNNER_OS = 'Linux';
   }
@@ -25,7 +27,7 @@ describe('cache-restore', () => {
     'abf7c9b306a3149dcfba4673e2362755503bcceaab46f0e4e6fee0ade493e20c';
   const pnpmFileHash =
     '26309058093e84713f38869c50cf1cee9b08155ede874ec1b44ce3fca8c68c70';
-  const cachesObject = {
+  const cachesObject: Record<string, string> = {
     [npmCachePath]: npmFileHash,
     [pnpmCachePath]: pnpmFileHash,
     [yarn1CachePath]: yarnFileHash,
@@ -131,6 +133,8 @@ describe('cache-restore', () => {
     ])(
       'restored dependencies for %s',
       async (packageManager, toolVersion, fileHash) => {
+        // Set workspace to the appropriate fixture folder
+        setWorkspaceFor(packageManager as 'npm' | 'yarn' | 'pnpm');
         getCommandOutputSpy.mockImplementation((command: string) => {
           if (command.includes('version')) {
             return toolVersion;
@@ -161,6 +165,8 @@ describe('cache-restore', () => {
     ])(
       'dependencies are changed %s',
       async (packageManager, toolVersion, fileHash) => {
+        // Set workspace to the appropriate fixture folder
+        setWorkspaceFor(packageManager as 'npm' | 'yarn' | 'pnpm');
         getCommandOutputSpy.mockImplementation((command: string) => {
           if (command.includes('version')) {
             return toolVersion;
