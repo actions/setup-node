@@ -112,6 +112,7 @@ When using the `package.json` input, the action will look in the following field
   }
 }
 ```
+**Note:** The devEngines.runtime can either be an object or an array of objects
 
 ## Architecture
 
