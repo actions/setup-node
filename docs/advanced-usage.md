@@ -92,41 +92,25 @@ steps:
 
 When using the `package.json` input, the action will look in the following fields for a specified Node version:
 1. It checks `volta.node` first.
-2. Then it checks `devEngines.runtime`.
+2. Then it checks `devEngines.runtime` for an entry with `"name": "node"`.
 3. Then it will look for `engines.node`.
 4. Otherwise it tries to resolve the file defined by [`volta.extends`](https://docs.volta.sh/advanced/workspaces)
    and look for `volta.node`, `devEngines.runtime`, or `engines.node` recursively.
 
-### Example with `devEngines`
-
-When a runtime engine (`engines.node`) is defined but also a development engine (`devEngines.runtime`) then the `devEngines.runtime` version is used.
-This example will install a Node version based on the `^20.10` pattern.
 
 ```json
 {
   "engines": {
-    "node": "^19"
+    "node": "^22 || ^24"
   },
   "devEngines": {
     "runtime": {
       "name": "node",
-      "version": "^20.10"
+      "version": "^24.3"
     }
-  }
-}
-```
-
-### Example with volta pinned Node version
-
-When both `engines.node` and `volta.node` is defined the value in `volta.node` is used.
-
-```json
-{
-  "engines": {
-    "node": ">=16.0.0"
   },
   "volta": {
-    "node": "16.0.0"
+    "node": "24.11.1"
   }
 }
 ```
