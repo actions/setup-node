@@ -93,3 +93,18 @@ typings/
 
 # DynamoDB Local files
 .dynamodb/
+
+# Ignore everything inside fixture package-manager folders
+__tests__/data/npm/**
+__tests__/data/pnpm/**
+__tests__/data/yarn/**
+
+# Keep only fixture manifests + lockfiles
+!__tests__/data/npm/package.json
+!__tests__/data/npm/package-lock.json
+
+!__tests__/data/pnpm/package.json
+!__tests__/data/pnpm/pnpm-lock.yaml
+
+!__tests__/data/yarn/package.json
+!__tests__/data/yarn/yarn.lock
