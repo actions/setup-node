@@ -8,9 +8,13 @@ import * as utils from '../src/cache-utils';
 import {restoreCache} from '../src/cache-restore';
 
 describe('cache-restore', () => {
-  const setWorkspaceFor = (pm: 'npm' | 'yarn' | 'pnpm') => {
+  const packageManagers = ['yarn', 'npm', 'pnpm'] as const;
+  type PackageManager = (typeof packageManagers)[number];
+
+  const setWorkspaceFor = (pm: PackageManager) => {
     process.env['GITHUB_WORKSPACE'] = path.join(__dirname, 'data', pm);
   };
+  const originalGithubWorkspace = process.env['GITHUB_WORKSPACE'];
   if (!process.env.RUNNER_OS) {
     process.env.RUNNER_OS = 'Linux';
   }
@@ -130,11 +134,11 @@ describe('cache-restore', () => {
       ['yarn', '1.2.3', yarnFileHash],
       ['npm', '', npmFileHash],
       ['pnpm', '', pnpmFileHash]
-    ])(
+    ] as const)(
       'restored dependencies for %s',
       async (packageManager, toolVersion, fileHash) => {
         // Set workspace to the appropriate fixture folder
-        setWorkspaceFor(packageManager as 'npm' | 'yarn' | 'pnpm');
+        setWorkspaceFor(packageManager);
         getCommandOutputSpy.mockImplementation((command: string) => {
           if (command.includes('version')) {
             return toolVersion;
@@ -162,11 +166,11 @@ describe('cache-restore', () => {
       ['yarn', '1.2.3', yarnFileHash],
       ['npm', '', npmFileHash],
       ['pnpm', '', pnpmFileHash]
-    ])(
+    ] as const)(
       'dependencies are changed %s',
       async (packageManager, toolVersion, fileHash) => {
         // Set workspace to the appropriate fixture folder
-        setWorkspaceFor(packageManager as 'npm' | 'yarn' | 'pnpm');
+        setWorkspaceFor(packageManager);
         getCommandOutputSpy.mockImplementation((command: string) => {
           if (command.includes('version')) {
             return toolVersion;
@@ -187,6 +191,11 @@ describe('cache-restore', () => {
   });
 
   afterEach(() => {
+    if (originalGithubWorkspace === undefined) {
+      delete process.env['GITHUB_WORKSPACE'];
+    } else {
+      process.env['GITHUB_WORKSPACE'] = originalGithubWorkspace;
+    }
     jest.resetAllMocks();
     jest.clearAllMocks();
   });
