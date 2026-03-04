@@ -123,7 +123,7 @@ describe('authutil tests', () => {
     await auth.configAuthentication('https://registry.npmjs.org/');
     const contents = fs.readFileSync(rcFile, {encoding: 'utf8'});
     expect(contents).toBe(
-      `//registry.npmjs.org/:_authToken=\${NODE_AUTH_TOKEN}${os.EOL}registry=https://registry.npmjs.org/`
+      `//registry.npmjs.org/:_authToken=\${NODE_AUTH_TOKEN}${os.EOL}registry=https://registry.npmjs.org/${os.EOL}`
     );
   });
 
@@ -132,7 +132,7 @@ describe('authutil tests', () => {
     await auth.configAuthentication('https://registry.npmjs.org/');
     const contents = fs.readFileSync(rcFile, {encoding: 'utf8'});
     expect(contents).toBe(
-      `@myscope:registry=MMM${os.EOL}//registry.npmjs.org/:_authToken=\${NODE_AUTH_TOKEN}${os.EOL}registry=https://registry.npmjs.org/`
+      `@myscope:registry=MMM${os.EOL}//registry.npmjs.org/:_authToken=\${NODE_AUTH_TOKEN}${os.EOL}registry=https://registry.npmjs.org/${os.EOL}`
     );
   });
 
@@ -141,7 +141,7 @@ describe('authutil tests', () => {
     await auth.configAuthentication('https://registry.npmjs.org/');
     const contents = fs.readFileSync(rcFile, {encoding: 'utf8'});
     expect(contents).toBe(
-      `@myscope:registry=NNN${os.EOL}//registry.npmjs.org/:_authToken=\${NODE_AUTH_TOKEN}${os.EOL}registry=https://registry.npmjs.org/`
+      `@myscope:registry=NNN${os.EOL}//registry.npmjs.org/:_authToken=\${NODE_AUTH_TOKEN}${os.EOL}registry=https://registry.npmjs.org/${os.EOL}`
     );
   });
 
@@ -151,7 +151,7 @@ describe('authutil tests', () => {
     await auth.configAuthentication('https://registry.npmjs.org/');
     const contents = fs.readFileSync(rcFile, {encoding: 'utf8'});
     expect(contents).toBe(
-      `//registry.npmjs.org/:_authToken=\${NODE_AUTH_TOKEN}${os.EOL}@myscope:registry=https://registry.npmjs.org/`
+      `//registry.npmjs.org/:_authToken=\${NODE_AUTH_TOKEN}${os.EOL}@myscope:registry=https://registry.npmjs.org/${os.EOL}`
     );
   });
 
@@ -161,7 +161,7 @@ describe('authutil tests', () => {
     await auth.configAuthentication('https://registry.npmjs.org/');
     const contents = fs.readFileSync(rcFile, {encoding: 'utf8'});
     expect(contents).toBe(
-      `registry=NNN${os.EOL}//registry.npmjs.org/:_authToken=\${NODE_AUTH_TOKEN}${os.EOL}@myscope:registry=https://registry.npmjs.org/`
+      `registry=NNN${os.EOL}//registry.npmjs.org/:_authToken=\${NODE_AUTH_TOKEN}${os.EOL}@myscope:registry=https://registry.npmjs.org/${os.EOL}`
     );
   });
 
@@ -171,7 +171,7 @@ describe('authutil tests', () => {
     await auth.configAuthentication('https://registry.npmjs.org/');
     const contents = fs.readFileSync(rcFile, {encoding: 'utf8'});
     expect(contents).toBe(
-      `registry=MMM${os.EOL}//registry.npmjs.org/:_authToken=\${NODE_AUTH_TOKEN}${os.EOL}@myscope:registry=https://registry.npmjs.org/`
+      `registry=MMM${os.EOL}//registry.npmjs.org/:_authToken=\${NODE_AUTH_TOKEN}${os.EOL}@myscope:registry=https://registry.npmjs.org/${os.EOL}`
     );
   });
 
@@ -184,7 +184,7 @@ describe('authutil tests', () => {
     await auth.configAuthentication('https://registry.npmjs.org/');
     const contents = fs.readFileSync(rcFile, {encoding: 'utf8'});
     expect(contents).toBe(
-      `@otherscope:registry=NNN${os.EOL}//registry.npmjs.org/:_authToken=\${NODE_AUTH_TOKEN}${os.EOL}@myscope:registry=https://registry.npmjs.org/`
+      `@otherscope:registry=NNN${os.EOL}//registry.npmjs.org/:_authToken=\${NODE_AUTH_TOKEN}${os.EOL}@myscope:registry=https://registry.npmjs.org/${os.EOL}`
     );
   });
 
@@ -194,7 +194,7 @@ describe('authutil tests', () => {
     await auth.configAuthentication('https://registry.npmjs.org/');
     const contents = fs.readFileSync(rcFile, {encoding: 'utf8'});
     expect(contents).toBe(
-      `@otherscope:registry=MMM${os.EOL}//registry.npmjs.org/:_authToken=\${NODE_AUTH_TOKEN}${os.EOL}@myscope:registry=https://registry.npmjs.org/`
+      `@otherscope:registry=MMM${os.EOL}//registry.npmjs.org/:_authToken=\${NODE_AUTH_TOKEN}${os.EOL}@myscope:registry=https://registry.npmjs.org/${os.EOL}`
     );
   });
 });
