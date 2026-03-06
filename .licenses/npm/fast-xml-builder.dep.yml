@@ -1,8 +1,8 @@
 ---
-name: fast-xml-parser
-version: 5.4.1
+name: fast-xml-builder
+version: 1.0.0
 type: npm
-summary: Validate XML, Parse XML, Build XML without C/C++ based libraries
+summary: Build XML from JSON without C/C++ based libraries
 homepage:
 license: mit
 licenses:
@@ -10,7 +10,7 @@ licenses:
   text: |
     MIT License
 
-    Copyright (c) 2017 Amit Kumar Gupta
+    Copyright (c) 2026 Natural Intelligence
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
     of this software and associated documentation files (the "Software"), to deal
@@ -29,9 +29,4 @@ licenses:
     LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
     OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
     SOFTWARE.
-- sources: README.md
-  text: |-
-    * MIT License
-
-    ![Donate $5](static/img/donation_quote.png)
 notices: []
