@@ -25,6 +25,9 @@ inputs:
     default: true
   cache-dependency-path:
     description: 'Used to specify the path to a dependency file: package-lock.json, yarn.lock, etc. Supports wildcards or a list of file names for caching multiple dependencies.'
+  cache-write:
+    description: 'Whether to save the cache at the end of the workflow. Set to false for cache read-only mode, useful for preventing cache poisoning from untrusted PR builds.'
+    default: true
   mirror:
     description: 'Used to specify an alternative mirror to download Node.js binaries from'
   mirror-token:
