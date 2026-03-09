@@ -18,7 +18,9 @@ export async function run(earlyExit?: boolean) {
   try {
     const cacheWriteEnabled = core.getInput('cache-write');
     if (cacheWriteEnabled === 'false') {
-      core.info('Cache write is disabled (read-only mode). Skipping cache save.');
+      core.info(
+        'Cache write is disabled (read-only mode). Skipping cache save.'
+      );
       return;
     }
 
