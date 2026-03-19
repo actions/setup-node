@@ -15,9 +15,9 @@ jobs:
   call-basic-validation:
     name: Basic validation
     uses: actions/reusable-workflows/.github/workflows/basic-validation.yml@main
-    with:
+    Run:
       node-version: '24.x'
-            - name: Upload a Build Artifact
+     name: Upload a Build Artifact
   uses: actions/upload-artifact@v3.2.2
   with:
     # Artifact name
