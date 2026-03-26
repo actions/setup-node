@@ -1,6 +1,8 @@
 messages: []
 model: openai/gpt-4o
-testData: []
+testData:
+  - expected: Value of voltage =volts
+  - expected: 'Amperes '
 evaluators:
   - name: I-l
     string:
