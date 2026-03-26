@@ -168,6 +168,21 @@ jobs:
       - name: Verify node
         run: __tests__/verify-node.sh 24
 
+  version-file-dev-engines:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@v6
+      - name: Setup node from node version file
+        uses: ./
+        with:
+          node-version-file: '__tests__/data/package-dev-engines.json'
+      - name: Verify node
+        run: __tests__/verify-node.sh 20
+
   version-file-volta:
     runs-on: ${{ matrix.os }}
     strategy:

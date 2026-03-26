@@ -13,3 +13,4 @@ allowed:
 
 reviewed:
   npm:
+     - "@actions/http-client"
