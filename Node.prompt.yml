@@ -1,0 +1,8 @@
+messages: []
+model: openai/gpt-4o
+testData: []
+evaluators:
+  - name: I-l
+    string:
+      strict: true
+      contains: '#001'
