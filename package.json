@@ -36,9 +36,8 @@
     "@actions/http-client": "^3.0.2",
     "@actions/io": "^2.0.0",
     "@actions/tool-cache": "^3.0.1",
-    "js-toml": "^1.1.0",
     "semver": "^7.6.3",
-    "uuid": "^13.0.0"
+    "smol-toml": "^1.6.1"
   },
   "devDependencies": {
     "@types/jest": "^29.5.14",

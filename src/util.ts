@@ -1,7 +1,7 @@
 import * as core from '@actions/core';
 import * as exec from '@actions/exec';
 import * as io from '@actions/io';
-import {load} from 'js-toml';
+import {parse} from 'smol-toml';
 
 import fs from 'fs';
 import path from 'path';
@@ -71,7 +71,7 @@ export function getNodeVersionFromFile(versionFilePath: string): string | null {
 
   // Try parsing the file as a mise `mise.toml` file.
   try {
-    const manifest: Record<string, any> = load(contents);
+    const manifest: Record<string, any> = parse(contents);
     if (manifest?.tools?.node) {
       const node = manifest.tools.node;
 
