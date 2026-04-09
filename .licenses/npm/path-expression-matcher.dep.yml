@@ -1,16 +1,16 @@
 ---
-name: fast-xml-parser
-version: 5.5.11
+name: path-expression-matcher
+version: 1.4.0
 type: npm
-summary: Validate XML, Parse XML, Build XML without C/C++ based libraries
-homepage:
+summary: Efficient path tracking and pattern matching for XML/JSON parsers
+homepage: https://github.com/NaturalIntelligence/path-expression-matcher#readme
 license: mit
 licenses:
 - sources: LICENSE
   text: |
     MIT License
 
-    Copyright (c) 2017 Amit Kumar Gupta
+    Copyright (c) 2024
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
     of this software and associated documentation files (the "Software"), to deal
@@ -29,9 +29,4 @@ licenses:
     LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
     OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
     SOFTWARE.
-- sources: README.md
-  text: |-
-    * MIT License
-
-    ![Donate $5](static/img/donation_quote.png)
 notices: []
