@@ -46368,6 +46368,14 @@ const cachePackages = async (packageManager) => {
         core.debug(`Caching for '${packageManager}' is not supported`);
         return;
     }
+    // Check if the package manager is installed before attempting to save cache
+    // This prevents cache save failures for package managers that may not be installed
+    const isInstalled = await (0, cache_utils_1.isPackageManagerInstalled)(packageManager);
+    if (!isInstalled) {
+        core.warning(`Package manager '${packageManager}' was not found in the PATH. ` +
+            `Skipping cache save.`);
+        return;
+    }
     if (!cachePaths.length) {
         // TODO: core.getInput has a bug - it can return undefined despite its definition (tests only?)
         //       export declare function getInput(name: string, options?: InputOptions): string;
@@ -46431,7 +46439,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.repoHasYarnBerryManagedDependencies = exports.getCacheDirectories = exports.resetProjectDirectoriesMemoized = exports.getPackageManagerInfo = exports.getCommandOutputNotEmpty = exports.getCommandOutput = exports.supportedPackageManagers = void 0;
+exports.repoHasYarnBerryManagedDependencies = exports.getCacheDirectories = exports.resetProjectDirectoriesMemoized = exports.isPackageManagerInstalled = exports.getPackageManagerInfo = exports.getCommandOutputNotEmpty = exports.getCommandOutput = exports.supportedPackageManagers = void 0;
 exports.isGhes = isGhes;
 exports.isCacheFeatureAvailable = isCacheFeatureAvailable;
 const core = __importStar(__nccwpck_require__(37484));
@@ -46502,6 +46510,25 @@ const getPackageManagerInfo = async (packageManager) => {
     }
 };
 exports.getPackageManagerInfo = getPackageManagerInfo;
+/**
+ * Checks if a package manager is installed and available on the PATH
+ * This helps prevent cache failures when a package manager is specified
+ * but not yet installed (e.g., pnpm via corepack)
+ * See: https://github.com/actions/setup-node/issues/1357
+ */
+const isPackageManagerInstalled = async (packageManager) => {
+    try {
+        const { exitCode } = await exec.getExecOutput(`${packageManager} --version`, undefined, {
+            ignoreReturnCode: true,
+            silent: true
+        });
+        return exitCode === 0;
+    }
+    catch {
+        return false;
+    }
+};
+exports.isPackageManagerInstalled = isPackageManagerInstalled;
 /**
  * getProjectDirectoriesFromCacheDependencyPath is called twice during `restoreCache`
  *  - first through `getCacheDirectories`
