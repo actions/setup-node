@@ -46788,7 +46788,7 @@ function getNodeVersionFromFile(versionFilePath) {
 }
 async function printEnvDetailsAndSetOutput() {
     core.startGroup('Environment details');
-    const promises = ['node', 'npm', 'yarn'].map(async (tool) => {
+    const promises = ['node', 'npm', 'yarn', 'pnpm'].map(async (tool) => {
         const pathTool = await io.which(tool, false);
         const output = pathTool ? await getToolVersion(tool, ['--version']) : '';
         return { tool, output };
