@@ -12,4 +12,4 @@ on:
 jobs:
   call-licensed:
     name: Licensed
-    uses: actions/reusable-workflows/.github/workflows/licensed.yml@main
+    uses: actions/reusable-workflows/.github/workflows/licensed.yml@1e97bade5ca12552a4d14d19ef769e9667ad73c4 # main
