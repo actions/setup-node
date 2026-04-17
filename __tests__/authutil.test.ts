@@ -118,6 +118,24 @@ describe('authutil tests', () => {
     expect(process.env.NODE_AUTH_TOKEN).toEqual('foobar');
   });
 
+  it('should not export NODE_AUTH_TOKEN if not set (OIDC support)', async () => {
+    // Clean NODE_AUTH_TOKEN from environment
+    delete process.env.NODE_AUTH_TOKEN;
+    await auth.configAuthentication('https://registry.npmjs.org/');
+    expect(fs.statSync(rcFile)).toBeDefined();
+    // NODE_AUTH_TOKEN should not be exported to environment if not initially set
+    // This allows OIDC authentication to work properly
+    const rc = readRcFile(rcFile);
+    expect(rc['registry']).toBe('https://registry.npmjs.org/');
+  });
+
+  it('should export empty string NODE_AUTH_TOKEN if explicitly set to empty (OIDC support)', async () => {
+    process.env.NODE_AUTH_TOKEN = '';
+    await auth.configAuthentication('https://registry.npmjs.org/');
+    expect(fs.statSync(rcFile)).toBeDefined();
+    expect(process.env.NODE_AUTH_TOKEN).toEqual('');
+  });
+
   it('configAuthentication should overwrite non-scoped with non-scoped', async () => {
     fs.writeFileSync(rcFile, 'registry=NNN');
     await auth.configAuthentication('https://registry.npmjs.org/');
