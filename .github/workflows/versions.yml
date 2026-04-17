@@ -219,7 +219,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest, macos-latest-large]
-        node-version: [17, 19]
+        node-version: [22, 24]
     steps:
       - uses: actions/checkout@v6
       - name: Setup Node from dist
