@@ -16,6 +16,14 @@ process.on('uncaughtException', e => {
 // Added early exit to resolve issue with slow post action step:
 export async function run(earlyExit?: boolean) {
   try {
+    const cacheWriteEnabled = core.getInput('cache-write');
+    if (cacheWriteEnabled === 'false') {
+      core.info(
+        'Cache write is disabled (read-only mode). Skipping cache save.'
+      );
+      return;
+    }
+
     const cacheLock = core.getState(State.CachePackageManager);
 
     if (cacheLock) {
