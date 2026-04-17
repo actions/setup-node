@@ -1,6 +1,6 @@
 ---
 name: fast-xml-builder
-version: 1.0.0
+version: 1.1.4
 type: npm
 summary: Build XML from JSON without C/C++ based libraries
 homepage:
