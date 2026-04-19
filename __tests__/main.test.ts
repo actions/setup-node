@@ -1,18 +1,18 @@
+import * as cache from '@actions/cache';
 import * as core from '@actions/core';
 import * as exec from '@actions/exec';
-import * as tc from '@actions/tool-cache';
-import * as cache from '@actions/cache';
 import * as io from '@actions/io';
+import * as tc from '@actions/tool-cache';
 
 import fs from 'fs';
-import path from 'path';
 import osm from 'os';
+import path from 'path';
 
 import each from 'jest-each';
 
+import OfficialBuilds from '../src/distributions/official_builds/official_builds';
 import * as main from '../src/main';
 import * as util from '../src/util';
-import OfficialBuilds from '../src/distributions/official_builds/official_builds';
 
 describe('main tests', () => {
   let inputs = {} as any;
@@ -112,6 +112,11 @@ describe('main tests', () => {
       ${'{"engines": {"node": "17.0.0"}}'}                                                       | ${'17.0.0'}
       ${'{"devEngines": {"runtime": {"name": "node", "version": "22.0.0"}}}'}                    | ${'22.0.0'}
       ${'{"devEngines": {"runtime": [{"name": "bun"}, {"name": "node", "version": "22.0.0"}]}}'} | ${'22.0.0'}
+      ${'[tools]\ngo="latest"\nnode = "24.10"'}                                                  | ${'24.10'}
+      ${'[tools]\nnode = "22.12"'}                                                               | ${'22.12'}
+      ${'[tools]\ngo="latest"\nnode = "24.10"'}                                                  | ${'24.10'}
+      ${'[tools]\nnode = { version = "22.20" }'}                                                 | ${'22.20'}
+      ${'[tools]\nnode = { postinstall = "corepack enable" }'}                                   | ${null}
     `.it('parses "$contents"', ({contents, expected}) => {
       const existsSpy = jest.spyOn(fs, 'existsSync');
       existsSpy.mockImplementation(() => true);

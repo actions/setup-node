@@ -1,6 +1,7 @@
 import * as core from '@actions/core';
 import * as exec from '@actions/exec';
 import * as io from '@actions/io';
+import {parse} from 'smol-toml';
 
 import fs from 'fs';
 import path from 'path';
@@ -66,6 +67,26 @@ export function getNodeVersionFromFile(versionFilePath: string): string | null {
     }
   } catch {
     core.info('Node version file is not JSON file');
+  }
+
+  // Try parsing the file as a mise `mise.toml` file.
+  try {
+    const manifest: Record<string, any> = parse(contents);
+    if (manifest?.tools?.node) {
+      const node = manifest.tools.node;
+
+      if (typeof node === 'object' && node?.version) {
+        return node.version;
+      }
+
+      if (typeof node === 'string') {
+        return node;
+      }
+
+      return null;
+    }
+  } catch {
+    core.info('Node version file is not TOML file');
   }
 
   const found = contents.match(/^(?:node(js)?\s+)?v?(?<version>[^\s]+)$/m);
