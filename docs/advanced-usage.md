@@ -475,6 +475,53 @@ To access private GitHub Packages within the same organization, go to "Manage Ac
 
 Please refer to the [Ensuring workflow access to your package - Configuring a package's access control and visibility](https://docs.github.com/en/packages/learn-github-packages/configuring-a-packages-access-control-and-visibility#ensuring-workflow-access-to-your-package) for more details.
 
+## Publishing to npm with Trusted Publisher (OIDC)
+
+Npm supports Trusted Publishers, enabling packages to be published from GitHub Actions using OpenID Connect (OIDC) instead of long-lived npm tokens. This improves security by replacing static credentials with short-lived tokens, reducing the risk of credential leakage and simplifying authentication in CI/CD workflows.
+
+### Requirements
+
+Trusted publishing requires a compatible npm version:
+
+* **npm ≥ 11.5.1 (required)**
+* **Node.js 24 or newer (recommended)** — includes a compatible npm version by default
+
+> If npm is below 11.5.1, publishing will fail even if OIDC permissions are correctly configured.
+
+You must also configure a **Trusted Publisher** in npm for your package/scope that matches your GitHub repository and workflow (and optional environment, if used).
+
+### Example workflow
+
+```yaml
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+          registry-url: 'https://registry.npmjs.org'
+
+      - run: npm ci
+      - run: npm run build --if-present
+      - run: npm publish
+```
+
+### Important
+
+* `id-token: write` is required for OIDC authentication
+* `contents: read` is required for repository access
+* If a Trusted Publisher is configured with a GitHub Actions **environment**, it must also be set on the job (e.g. `environment: release`).
+
+OIDC authentication is handled automatically via GitHub’s identity token.
+
+> **Note**: If the Trusted Publisher configuration (GitHub owner/repo/workflow file, and optional environment) does not match the workflow run identity exactly, publishing may fail with **E404 Not Found** even if the package exists on npm.
+
+For more details, see the [npm Trusted Publishers documentation](https://docs.npmjs.com/trusted-publishers) and the [GitHub Actions OpenID Connect (OIDC) overview](https://docs.github.com/en/actions/concepts/security/openid-connect).
+
 ## Use private mirror
 
 It is possible to use a private mirror hosting Node.js binaries. This mirror must be a full mirror of the official Node.js distribution.
