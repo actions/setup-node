@@ -477,7 +477,7 @@ Please refer to the [Ensuring workflow access to your package - Configuring a pa
 
 ## Publishing to npm with Trusted Publisher (OIDC)
 
-Npm supports Trusted Publishers, enabling packages to be published from GitHub Actions using OpenID Connect (OIDC) instead of long-lived npm tokens. This improves security by replacing static credentials with short-lived tokens, reducing the risk of credential leakage and simplifying authentication in CI/CD workflows.
+npm supports Trusted Publishers, enabling packages to be published from GitHub Actions using OpenID Connect (OIDC) instead of long-lived npm tokens. This improves security by replacing static credentials with short-lived tokens, reducing the risk of credential leakage and simplifying authentication in CI/CD workflows.
 
 ### Requirements
 
@@ -516,7 +516,7 @@ You must also configure a **Trusted Publisher** in npm for your package/scope th
 * `contents: read` is required for repository access
 * If a Trusted Publisher is configured with a GitHub Actions **environment**, it must also be set on the job (e.g. `environment: release`).
 
-OIDC authentication is handled automatically via GitHub’s identity token.
+OIDC authentication is handled automatically via GitHub's identity token.
 
 > **Note**: If the Trusted Publisher configuration (GitHub owner/repo/workflow file, and optional environment) does not match the workflow run identity exactly, publishing may fail with **E404 Not Found** even if the package exists on npm.
 
