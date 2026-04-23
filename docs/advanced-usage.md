@@ -495,7 +495,7 @@ You must also configure a **Trusted Publisher** in npm for your package/scope th
 ```yaml
     permissions:
       contents: read
-      id-token: write
+      id-token: write  # Required for OIDC
 
     steps:
       - uses: actions/checkout@v6
@@ -509,14 +509,6 @@ You must also configure a **Trusted Publisher** in npm for your package/scope th
       - run: npm run build --if-present
       - run: npm publish
 ```
-
-### Important
-
-* `id-token: write` is required for OIDC authentication
-* `contents: read` is required for repository access
-* If a Trusted Publisher is configured with a GitHub Actions **environment**, it must also be set on the job (e.g. `environment: release`).
-
-OIDC authentication is handled automatically via GitHub's identity token.
 
 > **Note**: If the Trusted Publisher configuration (GitHub owner/repo/workflow file, and optional environment) does not match the workflow run identity exactly, publishing may fail with **E404 Not Found** even if the package exists on npm.
 
