@@ -11,7 +11,7 @@ In order to get the most out of using your lockfile on continuous integration fo
 
 ### NPM
 
-Ensure that `package-lock.json` is always committed, use `npm ci` instead of `npm install` when installing packages.
+Ensure that `package-lock.json` is always committed; use `npm ci` instead of `npm install` when installing packages.
 
 **See also:**
 - [Documentation of `package-lock.json`](https://docs.npmjs.com/cli/v8/configuring-npm/package-lock-json)
@@ -29,7 +29,7 @@ To ensure that `yarn.lock` is always committed, use `yarn install --immutable` w
 
 ### PNPM
 
-Ensure that `pnpm-lock.yaml` is always committed, when on CI pass `--frozen-lockfile` to `pnpm install` when installing packages.
+Ensure that `pnpm-lock.yaml` is always committed; when on CI, pass `--frozen-lockfile` to `pnpm install` when installing packages.
 
 **See also:**
 - [Working with Git - Lockfiles](https://pnpm.io/git#lockfiles)
@@ -58,7 +58,7 @@ steps:
 
 The `check-latest` flag defaults to `false`. When set to `false`, the action will first check the local cache for a semver match. If unable to find a specific version in the cache, the action will attempt to download a version of Node.js. It will pull LTS versions from [node-versions releases](https://github.com/actions/node-versions/releases) and on miss or failure will fall back to the previous behavior of downloading directly from [node dist](https://nodejs.org/dist/). Use the default or set `check-latest` to `false` if you prefer stability and if you want to ensure a specific version of Node.js is always used.
 
-If `check-latest` is set to `true`, the action first checks if the cached version is the latest one. If the locally cached version is not the most up-to-date, a version of Node.js will then be downloaded. Set `check-latest` to `true` it you want the most up-to-date version of Node.js to always be used.
+If `check-latest` is set to `true`, the action first checks if the cached version is the latest one. If the locally cached version is not the most up-to-date, a version of Node.js will then be downloaded. Set `check-latest` to `true` if you want the most up-to-date version of Node.js to always be used.
 
 > Setting `check-latest` to `true` has performance implications as downloading versions of Node is slower than using cached versions.
 
@@ -240,7 +240,7 @@ jobs:
 
 ## RC versions
 
-You can use specify a rc version to download it from https://nodejs.org/download/rc.
+You can use specify a RC version to download it from https://nodejs.org/download/rc.
 
 ```yaml
 jobs:
@@ -259,7 +259,7 @@ jobs:
 **Note:** Unlike nightly versions, which support version range specifiers, you must specify the exact version for a release candidate: `24.0.0-rc.4`.
 
 ## Caching packages data
-The action follows [actions/cache](https://github.com/actions/cache/blob/main/examples.md#node---npm) guidelines, and caches global cache on the machine instead of `node_modules`, so cache can be reused between different Node.js versions.
+The action follows [actions/cache](https://github.com/actions/cache/blob/main/examples.md#node---npm) guidelines and caches the global cache on the machine instead of `node_modules`, so the cache can be reused between different Node.js versions.
 
 **Caching yarn dependencies:**
 Yarn caching handles both Yarn Classic (v1) and Yarn Berry (v2, v3, v4+).
@@ -332,7 +332,7 @@ steps:
 **Restore-Only Cache**
 
 ```yaml
-## In some workflows, you may want to restore a cache without saving it. This can help reduce cache writes and storage usage in workflows that only need to read from cache
+## In some workflows, you may want to restore a cache without saving it. This can help reduce cache writes and storage usage in workflows that only need to read from cache.
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -384,7 +384,7 @@ jobs:
     name: Node ${{ matrix.node_version }} - ${{ matrix.architecture }} on ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v6
-      - name: Setup node
+      - name: Setup Node.js
         uses: actions/setup-node@v6
         with:
           node-version: ${{ matrix.node_version }}
@@ -449,8 +449,8 @@ steps:
 # `npm rebuild` will run all those post-install scripts for us.
 - run: npm rebuild && npm run prepare --if-present
 ```
-### Yarn2 configuration
-Yarn2 ignores both .npmrc and .yarnrc files created by the action, so before installing dependencies from the private repo it is necessary either to create or to modify existing yarnrc.yml file with `yarn config set` commands.
+### Yarn 2 configuration
+Yarn 2 ignores both `.npmrc` and `.yarnrc` files created by the action, so before installing dependencies from the private repo it is necessary either to create or to modify an existing `yarnrc.yml` file with `yarn config set` commands.
 
 Below you can find a sample "Setup .yarnrc.yml" step, that is going to allow you to configure a private GitHub registry for 'my-org' organisation.
 
