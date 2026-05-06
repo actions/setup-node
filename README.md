@@ -63,7 +63,7 @@ See [action.yml](action.yml)
     # We recommend using a service account with the least permissions necessary. Also
     # when generating a new PAT, select the least scopes necessary.
     #
-    # [Learn more about creating and using encrypted secrets](https://help.github.com/en/actions/automating-your-workflow-with-github-actions/creating-and-using-encrypted-secrets)
+    # [Learn more about creating and using encrypted secrets](https://docs.github.com/en/actions/how-tos/write-workflows/choose-what-workflows-do/use-secrets)
     #
     # Default: ${{ github.server_url == 'https://github.com' && github.token || '' }}
     token: ''
@@ -223,7 +223,7 @@ jobs:
 
 ## Using `setup-node` on GHES
 
-`setup-node` comes pre-installed on the appliance with GHES if Actions is enabled. When dynamically downloading Nodejs distributions, `setup-node` downloads distributions from [`actions/node-versions`](https://github.com/actions/node-versions) on github.com (outside of the appliance). These calls to `actions/node-versions` are made via unauthenticated requests, which are limited to [60 requests per hour per IP](https://docs.github.com/en/rest/overview/resources-in-the-rest-api#rate-limiting). If more requests are made within the time frame, then you will start to see rate-limit errors during downloading that looks like: `##[error]API rate limit exceeded for...`. After that error the action will try to download versions directly from the official site, but it also can have rate limit so it's better to put token.
+`setup-node` comes pre-installed on the appliance with GHES if Actions is enabled. When dynamically downloading Nodejs distributions, `setup-node` downloads distributions from [`actions/node-versions`](https://github.com/actions/node-versions) on github.com (outside of the appliance). These calls to `actions/node-versions` are made via unauthenticated requests, which are limited to [60 requests per hour per IP](https://docs.github.com/en/rest/using-the-rest-api/getting-started-with-the-rest-api?apiVersion=2026-03-10#rate-limiting). If more requests are made within the time frame, then you will start to see rate-limit errors during downloading that looks like: `##[error]API rate limit exceeded for...`. After that error the action will try to download versions directly from the official site, but it also can have rate limit so it's better to put token.
 
 To get a higher rate limit, you can [generate a personal access token on github.com](https://github.com/settings/tokens/new) and pass it as the `token` input for the action:
 
