@@ -401,6 +401,7 @@ steps:
   with:
     node-version: '24.x'
     registry-url: 'https://registry.npmjs.org'
+    package-manager-cache: false # Prevent cache poisoning issues
 - run: npm ci
 - run: npm publish
   env:
@@ -408,6 +409,7 @@ steps:
 - uses: actions/setup-node@v6
   with:
     registry-url: 'https://npm.pkg.github.com'
+    package-manager-cache: false # Prevent cache poisoning issues
 - run: npm publish
   env:
     NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -421,6 +423,7 @@ steps:
   with:
     node-version: '24.x'
     registry-url: <registry url>
+    package-manager-cache: false # Prevent cache poisoning issues
 - run: yarn install --frozen-lockfile
 - run: yarn publish
   env:
@@ -428,6 +431,7 @@ steps:
 - uses: actions/setup-node@v6
   with:
     registry-url: 'https://npm.pkg.github.com'
+    package-manager-cache: false # Prevent cache poisoning issues
 - run: yarn publish
   env:
     NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -504,6 +508,7 @@ You must also configure a **Trusted Publisher** in npm for your package/scope th
         with:
           node-version: '24'
           registry-url: 'https://registry.npmjs.org'
+          package-manager-cache: false # Prevent cache poisoning issues
 
       - run: npm ci
       - run: npm run build --if-present
