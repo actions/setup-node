@@ -329,34 +329,49 @@ steps:
 - run: npm test
 ```
 
-**Restore-Only Cache**
+**Restore-Only Cache:**
+
+You can restore caches without saving new entries, which helps reduce cache writes and storage usage in read-only cache workflows.
 
 ```yaml
-## In some workflows, you may want to restore a cache without saving it. This can help reduce cache writes and storage usage in workflows that only need to read from cache
-jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v6
-      # Restore Node.js modules cache (restore-only)
-      - name: Restore Node modules cache
-        uses: actions/cache@v5
-        id: cache-node-modules
-        with:
-          path: ~/.npm
-          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-node-
-      # Setup Node.js
-      - name: Setup Node.js
-        uses: actions/setup-node@v6
-        with:
-          node-version: '24'
-      # Install dependencies
-      - run: npm install
-```
+steps:
+- uses: actions/checkout@v6
+# - uses: pnpm/action-setup@v6 
+#   with:
+#     version: 10
 
-> For more details related to cache scenarios, please refer [Node – npm](https://github.com/actions/cache/blob/main/examples.md#node---npm).
+- name: Setup Node.js
+  uses: actions/setup-node@v6
+  with:
+    node-version: '24'
+
+- name: Normalize runner architecture
+  shell: bash
+  run: echo "ARCH=$(echo '${{ runner.arch }}' | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
+    
+- name: Output of cache path
+  id: cachepath
+  shell: bash
+  run: echo "path=$(npm config get cache)" >> $GITHUB_OUTPUT
+  # run: echo "path=$(pnpm store path --silent)" >> $GITHUB_OUTPUT
+  # For yarn workflow, output of yarn cache dir (v1) or yarn config get cacheFolder (v2+)
+  # run: echo "path=$(yarn cache dir)" >> $GITHUB_OUTPUT 
+    
+- name: Restore Node cache
+  uses: actions/cache/restore@v5
+  with:
+    path: ${{ steps.cachepath.outputs.path }}
+    key: node-cache-${{ runner.os }}-${{ env.ARCH }}-npm-${{ hashFiles('**/package-lock.json') }}
+    # key: node-cache-${{ runner.os }}-${{ env.ARCH }}-yarn-${{ hashFiles('**/yarn.lock') }}
+    # key: node-cache-${{ runner.os }}-${{ env.ARCH }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
+    
+- run: npm ci
+# - run: yarn install --frozen-lockfile # optional, --immutable
+# - run: pnpm install
+```
+> **Note**: Uncomment the commands relevant to your project’s package manager.
+
+> For more details related to cache scenarios, please refer [actions/cache/restore](https://github.com/actions/cache/tree/main/restore#only-restore-cache).
 
 ## Multiple Operating Systems and Architectures
 
