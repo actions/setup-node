@@ -369,7 +369,7 @@ steps:
 # - run: yarn install --frozen-lockfile # optional, --immutable
 # - run: pnpm install
 ```
-> **Note**: Uncomment the commands relevant to your project’s package manager.
+> **Note**: Uncomment the commands relevant to your project's package manager.
 
 > For more details related to cache scenarios, please refer [actions/cache/restore](https://github.com/actions/cache/tree/main/restore#only-restore-cache).
 
