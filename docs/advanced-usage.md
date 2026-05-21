@@ -329,7 +329,7 @@ steps:
 - run: npm test
 ```
 
-**Restore-Only Cache:**
+**Restore-only cache**
 
 You can restore caches without saving new entries, which helps reduce cache writes and storage usage in read-only cache workflows.
 
@@ -373,7 +373,7 @@ steps:
 
 > For more details related to cache scenarios, please refer [actions/cache/restore](https://github.com/actions/cache/tree/main/restore#only-restore-cache).
 
-## Multiple Operating Systems and Architectures
+## Multiple operating systems and architectures
 
 ```yaml
 jobs:
