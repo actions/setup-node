@@ -118,6 +118,27 @@ describe('authutil tests', () => {
     expect(process.env.NODE_AUTH_TOKEN).toEqual('foobar');
   });
 
+  it('should not export NODE_AUTH_TOKEN if not set in environment', async () => {
+    const exportSpy = jest.spyOn(core, 'exportVariable');
+    delete process.env.NODE_AUTH_TOKEN;
+    await auth.configAuthentication('https://registry.npmjs.org/');
+    expect(fs.statSync(rcFile)).toBeDefined();
+    const rc = readRcFile(rcFile);
+    expect(rc['registry']).toBe('https://registry.npmjs.org/');
+    expect(exportSpy).not.toHaveBeenCalledWith(
+      'NODE_AUTH_TOKEN',
+      expect.anything()
+    );
+  });
+
+  it('should export NODE_AUTH_TOKEN if set to empty string', async () => {
+    const exportSpy = jest.spyOn(core, 'exportVariable');
+    process.env.NODE_AUTH_TOKEN = '';
+    await auth.configAuthentication('https://registry.npmjs.org/');
+    expect(fs.statSync(rcFile)).toBeDefined();
+    expect(exportSpy).toHaveBeenCalledWith('NODE_AUTH_TOKEN', '');
+  });
+
   it('configAuthentication should overwrite non-scoped with non-scoped', async () => {
     fs.writeFileSync(rcFile, 'registry=NNN');
     await auth.configAuthentication('https://registry.npmjs.org/');
