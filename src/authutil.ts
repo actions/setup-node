@@ -46,9 +46,8 @@ function writeRegistryToFile(registryUrl: string, fileLocation: string) {
   newContents += `${authString}${os.EOL}${registryString}`;
   fs.writeFileSync(fileLocation, newContents);
   core.exportVariable('NPM_CONFIG_USERCONFIG', fileLocation);
-  // Export empty node_auth_token if didn't exist so npm doesn't complain about not being able to find it
-  core.exportVariable(
-    'NODE_AUTH_TOKEN',
-    process.env.NODE_AUTH_TOKEN || 'XXXXX-XXXXX-XXXXX-XXXXX'
-  );
+  // Only export NODE_AUTH_TOKEN if explicitly provided by user
+  if (Object.prototype.hasOwnProperty.call(process.env, 'NODE_AUTH_TOKEN')) {
+    core.exportVariable('NODE_AUTH_TOKEN', process.env.NODE_AUTH_TOKEN);
+  }
 }
