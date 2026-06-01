@@ -240,7 +240,7 @@ jobs:
 
 ## RC versions
 
-You can use specify a RC version to download it from https://nodejs.org/download/rc.
+You can specify an RC version to download it from https://nodejs.org/download/rc.
 
 ```yaml
 jobs:
