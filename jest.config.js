@@ -9,6 +9,6 @@ module.exports = {
   },
   verbose: true,
   moduleNameMapper: {
-    '^@actions/github$': '<rootDir>/__mocks__/@actions/github.js'
+    '^@actions/github$': '<rootDir>/__tests__/mock/github-mock.ts'
   }
 }
