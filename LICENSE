@@ -20,3 +20,58 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
+BSD 3-Clause License with Additional Use Restriction
+
+Copyright (c) 2025-2026 Wshao777 (https://github.com/Wshao777)
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
+
+1. Redistributions of source code must retain the above copyright notice,
+   this list of conditions and the following disclaimer.
+
+2. Redistributions in binary form must reproduce the above copyright notice,
+   this list of conditions and the following disclaimer in the documentation
+   and/or other materials provided with the distribution.
+
+3. Neither the name of the copyright holder nor the names of its
+   contributors may be used to endorse or promote products derived from
+   this software without specific prior written permission.
+
+*** ADDITIONAL USE RESTRICTION ***
+
+4. PROHIBITED USE: This software is designed and intended for use in
+   renewable energy simulation, wind power research, green energy SaaS,
+   and related clean energy applications.
+
+   This software SHALL NOT be used, directly or indirectly, in or for:
+   (a) Any food delivery platform automation, order grabbing, dispatch
+       automation, or related systems;
+   (b) Any automated task dispatching system that competes with or
+       circumvents delivery platform rules;
+   (c) Any commercial activity related to delivery order interception,
+       priority manipulation, or unauthorized dispatch optimization;
+   (d) Training, development, or operation of any AI model intended for
+       the purposes described in (a) through (c).
+
+   Any use of this software in violation of this restriction constitutes
+   a material breach of this license and shall result in automatic
+   termination of all rights granted hereunder.
+
+   The copyright holder reserves the right to pursue legal action,
+   including but not limited to claims for copyright infringement,
+   breach of contract, and/or violation of the Fair Trade Act,
+   against any party violating this restriction.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+POSSIBILITY OF SUCH DAMAGE.
