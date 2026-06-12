@@ -256,7 +256,7 @@ jobs:
       - run: npm test
 ```
 
-**Note:** Unlike nightly versions, which support version range specifiers, you must specify the exact version for a release candidate: `24.0.0-rc.4`.
+**Note**: Unlike nightly versions, which support version range specifiers, you must specify the exact version for a release candidate: `24.0.0-rc.4`.
 
 ## Caching packages data
 The action follows [actions/cache](https://github.com/actions/cache/blob/main/examples.md#node---npm) guidelines, and caches global cache on the machine instead of `node_modules`, so cache can be reused between different Node.js versions.
@@ -416,6 +416,7 @@ steps:
   with:
     node-version: '24.x'
     registry-url: 'https://registry.npmjs.org'
+    package-manager-cache: false  # Disable automatic npm dependency caching to reduce cache poisoning risk
 - run: npm ci
 - run: npm publish
   env:
@@ -423,6 +424,7 @@ steps:
 - uses: actions/setup-node@v6
   with:
     registry-url: 'https://npm.pkg.github.com'
+    package-manager-cache: false  # Disable automatic npm dependency caching to reduce cache poisoning risk
 - run: npm publish
   env:
     NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -505,6 +507,8 @@ Trusted publishing requires a compatible npm version:
 
 You must also configure a **Trusted Publisher** in npm for your package/scope that matches your GitHub repository and workflow (and optional environment, if used).
 
+> **Note**: Set `package-manager-cache: false` in publishing workflows because automatic npm caching can activate even without the `cache:` input, and a poisoned cache may expose credentials (including OIDC tokens) to attacker-controlled code.
+
 ### Example workflow
 
 ```yaml
@@ -519,6 +523,7 @@ You must also configure a **Trusted Publisher** in npm for your package/scope th
         with:
           node-version: '24'
           registry-url: 'https://registry.npmjs.org'
+          package-manager-cache: false  # Disable automatic npm dependency caching to reduce cache poisoning risk
 
       - run: npm ci
       - run: npm run build --if-present
