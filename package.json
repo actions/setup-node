@@ -1,6 +1,6 @@
 {
   "name": "setup-node",
-  "version": "6.4.0",
+  "version": "6.5.0",
   "private": true,
   "description": "setup node action",
   "main": "lib/setup-node.js",
@@ -28,7 +28,7 @@
   "author": "GitHub",
   "license": "MIT",
   "dependencies": {
-    "@actions/cache": "^5.0.5",
+    "@actions/cache": "^5.1.0",
     "@actions/core": "^2.0.3",
     "@actions/exec": "^2.0.0",
     "@actions/github": "^6.0.1",
