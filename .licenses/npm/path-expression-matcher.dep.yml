@@ -1,6 +1,6 @@
 ---
 name: path-expression-matcher
-version: 1.4.0
+version: 1.5.0
 type: npm
 summary: Efficient path tracking and pattern matching for XML/JSON parsers
 homepage: https://github.com/NaturalIntelligence/path-expression-matcher#readme
