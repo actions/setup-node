@@ -12,18 +12,18 @@ This action provides the following functionality for GitHub Actions users:
 - Registering problem matchers for error output
 - Configuring authentication for GPR or npm
 
-## Breaking changes in V6
+## Breaking changes in v6
 
 - Caching is now automatically enabled for npm projects when either the `devEngines.packageManager` field or the top-level `packageManager` field in `package.json` is set to `npm`. For other package managers, such as Yarn and pnpm, caching is disabled by default and must be configured manually using the `cache` input.
 
 - The `always-auth` input has been removed, as it is deprecated and will no longer be supported in future npm releases. To ensure your workflows continue to run without warnings or errors, please remove any references to `always-auth` from your configuration.
 
-## Breaking changes in V5
+## Breaking changes in v5
 
 - Enabled caching by default with package manager detection if no cache input is provided.
   > For workflows with elevated privileges or access to sensitive information, we recommend disabling automatic caching by setting `package-manager-cache: false` when caching is not needed for secure operation.
 
-- Upgraded action from node20 to node24.
+- Upgraded action from Node.js 20 to Node.js 24.
   > Make sure your runner is on version v2.327.1 or later to ensure compatibility with this release. [See Release Notes](https://github.com/actions/runner/releases/tag/v2.327.1)
 
 For more details, see the full release notes on the [releases page](https://github.com/actions/setup-node/releases/v5.0.0)
@@ -47,12 +47,12 @@ See [action.yml](action.yml)
 
     # Set this option if you want the action to check for the latest available version
     # that satisfies the version spec.
-    # It will only get affect for lts Nodejs versions (12.x, >=10.15.0, lts/Hydrogen).
+    # It will only take effect for LTS Node.js versions (12.x, >=10.15.0, lts/Hydrogen).
     # Default: false
     check-latest: false
 
     # Target architecture for Node to use. Examples: x86, x64. Will use system architecture by default.
-    # Default: ''. The action use system architecture by default
+    # Default: ''. The action uses system architecture by default
     architecture: ''
 
     # Used to pull node distributions from https://github.com/actions/node-versions.
@@ -97,9 +97,9 @@ See [action.yml](action.yml)
     # Optional mirror to download binaries from.
     # Artifacts need to match the official Node.js
     # Example:
-    # V8 Canary Build: <mirror_url>/download/v8-canary
-    # RC Build: <mirror_url>/download/rc
-    # Official: Build <mirror_url>/dist
+    # V8 Canary build: <mirror_url>/download/v8-canary
+    # RC build: <mirror_url>/download/rc
+    # Official build: <mirror_url>/dist
     # Nightly build: <mirror_url>/download/nightly
     # Default: ''
     mirror: ''
@@ -123,7 +123,7 @@ steps:
 - run: npm test
 ```
 
-The `node-version` input is optional. If not supplied, the node version from PATH will be used. However, it is recommended to always specify Node.js version and not rely on the system one.
+The `node-version` input is optional. If not supplied, the Node.js version from PATH will be used. However, it is recommended to always specify the Node.js version and not rely on the system one.
 
 The action will first check the local cache for a semver match. If unable to find a specific version in the cache, the action will attempt to download a version of Node.js. It will pull LTS versions from [node-versions releases](https://github.com/actions/node-versions/releases) and on miss or failure will fall back to the previous behavior of downloading directly from [node dist](https://nodejs.org/dist/).
 
@@ -144,7 +144,7 @@ Examples:
 
 `current`/`latest`/`node` always resolve to the latest [dist version](https://nodejs.org/dist/index.json).
 That version is then downloaded from actions/node-versions if possible, or directly from Node.js if not.
-Since it will not be cached always, there is possibility of hitting rate limit when downloading from dist
+Since it will not always be cached, there is a possibility of hitting a rate limit when downloading from dist
 
 ### Checking in lockfiles
 
@@ -213,7 +213,7 @@ jobs:
     name: Node ${{ matrix.node }} sample
     steps:
       - uses: actions/checkout@v6
-      - name: Setup node
+      - name: Setup Node.js
         uses: actions/setup-node@v6
         with:
           node-version: ${{ matrix.node }}
@@ -223,7 +223,7 @@ jobs:
 
 ## Using `setup-node` on GHES
 
-`setup-node` comes pre-installed on the appliance with GHES if Actions is enabled. When dynamically downloading Nodejs distributions, `setup-node` downloads distributions from [`actions/node-versions`](https://github.com/actions/node-versions) on github.com (outside of the appliance). These calls to `actions/node-versions` are made via unauthenticated requests, which are limited to [60 requests per hour per IP](https://docs.github.com/en/rest/overview/resources-in-the-rest-api#rate-limiting). If more requests are made within the time frame, then you will start to see rate-limit errors during downloading that looks like: `##[error]API rate limit exceeded for...`. After that error the action will try to download versions directly from the official site, but it also can have rate limit so it's better to put token.
+`setup-node` comes pre-installed on the appliance with GHES if Actions is enabled. When dynamically downloading Node.js distributions, `setup-node` downloads distributions from [`actions/node-versions`](https://github.com/actions/node-versions) on github.com (outside of the appliance). These calls to `actions/node-versions` are made via unauthenticated requests, which are limited to [60 requests per hour per IP](https://docs.github.com/en/rest/overview/resources-in-the-rest-api#rate-limiting). If more requests are made within the time frame, then you will start to see rate-limit errors during downloading that looks like: `##[error]API rate limit exceeded for...`. After that error the action will try to download versions directly from the official site, but it also can have rate limit so it's better to put token.
 
 To get a higher rate limit, you can [generate a personal access token on github.com](https://github.com/settings/tokens/new) and pass it as the `token` input for the action:
 
@@ -234,7 +234,7 @@ with:
   node-version: 24
 ```
 
-If the runner is not able to access github.com, any Nodejs versions requested during a workflow run must come from the runner's tool cache. See "[Setting up the tool cache on self-hosted runners without internet access](https://docs.github.com/en/enterprise-server@3.2/admin/github-actions/managing-access-to-actions-from-githubcom/setting-up-the-tool-cache-on-self-hosted-runners-without-internet-access)" for more information.
+If the runner is not able to access github.com, any Node.js versions requested during a workflow run must come from the runner's tool cache. See "[Setting up the tool cache on self-hosted runners without internet access](https://docs.github.com/en/enterprise-server@3.2/admin/github-actions/managing-access-to-actions-from-githubcom/setting-up-the-tool-cache-on-self-hosted-runners-without-internet-access)" for more information.
 
 ## Advanced usage
 

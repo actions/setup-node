@@ -1,8 +1,8 @@
-Files located in data directory are used only for testing purposes. 
+Files located in the data directory are used only for testing purposes.
 
 
-## Here the list of files in the data directory
- - `.nvmrc`, `.tools-versions` and `package.json` are used to test node-version-file logic
+## Here is the list of files in the data directory
+ - `.nvmrc`, `.tool-versions` and `package.json` are used to test node-version-file logic
  - `package-lock.json`, `pnpm-lock.yaml` and `yarn.lock` are used to test cache logic 
  - `versions-manifest.json` is used for unit testing to check downloading Node.js versions from the node-versions repository.
  - `node-dist-index.json` is used for unit testing to check downloading Node.js versions from the official site. The file was constructed from https://nodejs.org/dist/index.json
