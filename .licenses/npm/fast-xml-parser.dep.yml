@@ -1,9 +1,9 @@
 ---
 name: fast-xml-parser
-version: 5.9.2
+version: 5.7.2
 type: npm
 summary: Validate XML, Parse XML, Build XML without C/C++ based libraries
-homepage: 
+homepage:
 license: mit
 licenses:
 - sources: LICENSE

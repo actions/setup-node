@@ -1,11 +1,67 @@
-import * as core from '@actions/core';
-import * as cache from '@actions/cache';
+import {jest, describe, it, expect, beforeEach, afterEach} from '@jest/globals';
+import {fileURLToPath} from 'url';
 import * as path from 'path';
-import * as glob from '@actions/glob';
 import osm from 'os';
 
-import * as utils from '../src/cache-utils';
-import {restoreCache} from '../src/cache-restore';
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+// Mock @actions modules before importing anything that depends on them
+jest.unstable_mockModule('@actions/core', () => ({
+  info: jest.fn(),
+  warning: jest.fn(),
+  debug: jest.fn(),
+  error: jest.fn(),
+  notice: jest.fn(),
+  setFailed: jest.fn(),
+  setOutput: jest.fn(),
+  getInput: jest.fn(),
+  getBooleanInput: jest.fn(),
+  getMultilineInput: jest.fn(),
+  addPath: jest.fn(),
+  exportVariable: jest.fn(),
+  saveState: jest.fn(),
+  getState: jest.fn(),
+  setSecret: jest.fn(),
+  isDebug: jest.fn(() => false),
+  startGroup: jest.fn(),
+  endGroup: jest.fn(),
+  group: jest.fn((_name: string, fn: () => Promise<unknown>) => fn()),
+  toPlatformPath: jest.fn((p: string) => p),
+  toWin32Path: jest.fn((p: string) => p),
+  toPosixPath: jest.fn((p: string) => p)
+}));
+
+jest.unstable_mockModule('@actions/cache', () => ({
+  saveCache: jest.fn(),
+  restoreCache: jest.fn(),
+  isFeatureAvailable: jest.fn()
+}));
+
+jest.unstable_mockModule('@actions/glob', () => ({
+  hashFiles: jest.fn(),
+  create: jest.fn()
+}));
+
+jest.unstable_mockModule('@actions/exec', () => ({
+  exec: jest.fn(),
+  getExecOutput: jest.fn()
+}));
+
+jest.unstable_mockModule('@actions/io', () => ({
+  which: jest.fn(),
+  mkdirP: jest.fn(),
+  rmRF: jest.fn(),
+  mv: jest.fn(),
+  cp: jest.fn()
+}));
+
+// Dynamic imports after mocking
+const core = await import('@actions/core');
+const cache = await import('@actions/cache');
+const glob = await import('@actions/glob');
+const exec = await import('@actions/exec');
+const utils = await import('../src/cache-utils.js');
+const {restoreCache} = await import('../src/cache-restore.js');
 
 describe('cache-restore', () => {
   const packageManagers = ['yarn', 'npm', 'pnpm'] as const;
@@ -53,64 +109,66 @@ describe('cache-restore', () => {
     }
   }
 
-  let saveStateSpy: jest.SpyInstance;
-  let infoSpy: jest.SpyInstance;
-  let debugSpy: jest.SpyInstance;
-  let setOutputSpy: jest.SpyInstance;
-  let getCommandOutputSpy: jest.SpyInstance;
-  let restoreCacheSpy: jest.SpyInstance;
-  let hashFilesSpy: jest.SpyInstance;
-  let archSpy: jest.SpyInstance;
+  let saveStateSpy: jest.Mock;
+  let infoSpy: jest.Mock;
+  let debugSpy: jest.Mock;
+  let setOutputSpy: jest.Mock;
+  let getExecOutputSpy: jest.Mock;
+  let restoreCacheSpy: jest.Mock;
+  let hashFilesSpy: jest.Mock;
+  let archSpy: jest.SpiedFunction<typeof osm.arch>;
 
   beforeEach(() => {
     // core
-    infoSpy = jest.spyOn(core, 'info');
+    infoSpy = core.info as jest.Mock;
     infoSpy.mockImplementation(() => undefined);
 
-    debugSpy = jest.spyOn(core, 'debug');
+    debugSpy = core.debug as jest.Mock;
     debugSpy.mockImplementation(() => undefined);
 
-    setOutputSpy = jest.spyOn(core, 'setOutput');
+    setOutputSpy = core.setOutput as jest.Mock;
     setOutputSpy.mockImplementation(() => undefined);
 
-    saveStateSpy = jest.spyOn(core, 'saveState');
+    saveStateSpy = core.saveState as jest.Mock;
     saveStateSpy.mockImplementation(() => undefined);
 
     // glob
-    hashFilesSpy = jest.spyOn(glob, 'hashFiles');
-    hashFilesSpy.mockImplementation((pattern: string) => {
-      if (pattern.includes('package-lock.json')) {
-        return npmFileHash;
-      } else if (pattern.includes('pnpm-lock.yaml')) {
-        return pnpmFileHash;
-      } else if (pattern.includes('yarn.lock')) {
-        return yarnFileHash;
-      } else {
-        return '';
-      }
-    });
-
-    // cache
-    restoreCacheSpy = jest.spyOn(cache, 'restoreCache');
-    restoreCacheSpy.mockImplementation(
-      (cachePaths: Array<string>, key: string) => {
-        if (!cachePaths || cachePaths.length === 0) {
-          return undefined;
+    hashFilesSpy = glob.hashFiles as jest.Mock;
+    (hashFilesSpy as jest.Mock<typeof glob.hashFiles>).mockImplementation(
+      async (pattern: string) => {
+        if (pattern.includes('package-lock.json')) {
+          return npmFileHash;
+        } else if (pattern.includes('pnpm-lock.yaml')) {
+          return pnpmFileHash;
+        } else if (pattern.includes('yarn.lock')) {
+          return yarnFileHash;
+        } else {
+          return '';
         }
-
-        const cachPath = cachePaths[0];
-        const fileHash = cachesObject[cachPath];
-
-        if (key.includes(fileHash)) {
-          return key;
-        }
-
-        return undefined;
       }
     );
 
-    // cache-utils
-    getCommandOutputSpy = jest.spyOn(utils, 'getCommandOutput');
+    // cache
+    restoreCacheSpy = cache.restoreCache as jest.Mock;
+    (
+      restoreCacheSpy as jest.Mock<typeof cache.restoreCache>
+    ).mockImplementation(async (cachePaths: string[], key: string) => {
+      if (!cachePaths || cachePaths.length === 0) {
+        return undefined;
+      }
+
+      const cachPath = cachePaths[0];
+      const fileHash = cachesObject[cachPath];
+
+      if (key.includes(fileHash)) {
+        return key;
+      }
+
+      return undefined;
+    });
+
+    // exec
+    getExecOutputSpy = exec.getExecOutput as jest.Mock;
 
     // os
     archSpy = jest.spyOn(osm, 'arch');
@@ -134,18 +192,17 @@ describe('cache-restore', () => {
       ['yarn', '1.2.3', yarnFileHash],
       ['npm', '', npmFileHash],
       ['pnpm', '', pnpmFileHash]
-    ] as const)(
+    ])(
       'restored dependencies for %s',
       async (packageManager, toolVersion, fileHash) => {
-        // Set workspace to the appropriate fixture folder
-        setWorkspaceFor(packageManager);
-        getCommandOutputSpy.mockImplementation((command: string) => {
-          if (command.includes('version')) {
-            return toolVersion;
-          } else {
-            return findCacheFolder(command);
-          }
-        });
+        setWorkspaceFor(packageManager as PackageManager);
+        getExecOutputSpy.mockImplementation(async (command: any) => ({
+          stdout: command.includes('version')
+            ? toolVersion
+            : findCacheFolder(command),
+          stderr: '',
+          exitCode: 0
+        }));
 
         await restoreCache(packageManager, '');
         expect(hashFilesSpy).toHaveBeenCalled();
@@ -166,18 +223,17 @@ describe('cache-restore', () => {
       ['yarn', '1.2.3', yarnFileHash],
       ['npm', '', npmFileHash],
       ['pnpm', '', pnpmFileHash]
-    ] as const)(
+    ])(
       'dependencies are changed %s',
       async (packageManager, toolVersion, fileHash) => {
-        // Set workspace to the appropriate fixture folder
-        setWorkspaceFor(packageManager);
-        getCommandOutputSpy.mockImplementation((command: string) => {
-          if (command.includes('version')) {
-            return toolVersion;
-          } else {
-            return findCacheFolder(command);
-          }
-        });
+        setWorkspaceFor(packageManager as PackageManager);
+        getExecOutputSpy.mockImplementation(async (command: any) => ({
+          stdout: command.includes('version')
+            ? toolVersion
+            : findCacheFolder(command),
+          stderr: '',
+          exitCode: 0
+        }));
 
         restoreCacheSpy.mockImplementationOnce(() => undefined);
         await restoreCache(packageManager, '');

@@ -1,8 +1,8 @@
 import * as core from '@actions/core';
 import * as cache from '@actions/cache';
 
-import {State} from './constants';
-import {getPackageManagerInfo} from './cache-utils';
+import {State} from './constants.js';
+import {getPackageManagerInfo} from './cache-utils.js';
 
 // Catch and log any unhandled exceptions.  These exceptions can leak out of the uploadChunk method in
 // @actions/toolkit when a failed upload closes the file descriptor causing any in-process reads to

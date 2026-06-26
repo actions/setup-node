@@ -1,6 +1,6 @@
 ---
 name: "@azure/core-xml"
-version: 1.5.0
+version: 1.5.1
 type: npm
 summary: Core library for interacting with XML payloads
 homepage: https://github.com/Azure/azure-sdk-for-js/blob/main/sdk/core/core-xml/
