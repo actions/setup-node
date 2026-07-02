@@ -69,6 +69,7 @@ steps:
   with:
     node-version: '24'
     check-latest: true
+    package-manager-cache: false # Disable automatic npm caching if not required
 - run: npm ci
 - run: npm test
 ```
@@ -86,6 +87,7 @@ steps:
 - uses: actions/setup-node@v6
   with:
     node-version-file: '.nvmrc'
+    package-manager-cache: false # Disable automatic npm caching if not required
 - run: npm ci
 - run: npm test
 ```
@@ -131,6 +133,7 @@ jobs:
         with:
           node-version: '24'
           architecture: 'x64' # optional, x64 or x86. If not specified, x64 will be used by default
+          package-manager-cache: false # Disable automatic npm caching if not required
       - run: npm ci
       - run: npm test
 ```
@@ -151,6 +154,7 @@ jobs:
       - uses: actions/setup-node@v6
         with:
           node-version: '24.0.0-v8-canary' # it will install the latest v8 canary release for node 24.0.0
+          package-manager-cache: false # Disable automatic npm caching if not required
       - run: npm ci
       - run: npm test
 ```
@@ -166,6 +170,7 @@ jobs:
       - uses: actions/setup-node@v6
         with:
           node-version: '24-v8-canary' # it will install the latest v8 canary release for node 24
+          package-manager-cache: false # Disable automatic npm caching if not required
       - run: npm ci
       - run: npm test
 ```
@@ -182,6 +187,7 @@ jobs:
       - uses: actions/setup-node@v6
         with:
           node-version: 'v24.0.0-v8-canary2025030537242e55ac'
+          package-manager-cache: false # Disable automatic npm caching if not required
       - run: npm ci
       - run: npm test
 ```
@@ -202,6 +208,7 @@ jobs:
       - uses: actions/setup-node@v6
         with:
           node-version: '24-nightly' # it will install the latest nightly release for node 24
+          package-manager-cache: false # Disable automatic npm caching if not required
       - run: npm ci
       - run: npm test
 ```
@@ -218,6 +225,7 @@ jobs:
       - uses: actions/setup-node@v6
         with:
           node-version: '24.0.0-nightly' # it will install the latest nightly release for node 24.0.0
+          package-manager-cache: false # Disable automatic npm caching if not required
       - run: npm ci
       - run: npm test
 ```
@@ -234,6 +242,7 @@ jobs:
       - uses: actions/setup-node@v6
         with:
           node-version: '24.0.0-nightly202505066102159fa1'
+          package-manager-cache: false # Disable automatic npm caching if not required
       - run: npm ci
       - run: npm test
 ```
@@ -252,11 +261,12 @@ jobs:
       - uses: actions/setup-node@v6
         with:
           node-version: '24.0.0-rc.4'
+          package-manager-cache: false # Disable automatic npm caching if not required
       - run: npm ci
       - run: npm test
 ```
 
-**Note:** Unlike nightly versions, which support version range specifiers, you must specify the exact version for a release candidate: `24.0.0-rc.4`.
+**Note**: Unlike nightly versions, which support version range specifiers, you must specify the exact version for a release candidate: `24.0.0-rc.4`.
 
 ## Caching packages data
 The action follows [actions/cache](https://github.com/actions/cache/blob/main/examples.md#node---npm) guidelines, and caches global cache on the machine instead of `node_modules`, so cache can be reused between different Node.js versions.
@@ -344,6 +354,7 @@ steps:
   uses: actions/setup-node@v6
   with:
     node-version: '24'
+    package-manager-cache: false # Disable automatic npm caching if not required
 
 - name: Normalize runner architecture
   shell: bash
@@ -404,6 +415,7 @@ jobs:
         with:
           node-version: ${{ matrix.node_version }}
           architecture: ${{ matrix.architecture }}
+          package-manager-cache: false # Disable automatic npm caching if not required
       - run: npm ci
       - run: npm test
 ```
@@ -416,6 +428,7 @@ steps:
   with:
     node-version: '24.x'
     registry-url: 'https://registry.npmjs.org'
+    package-manager-cache: false # Disable automatic npm dependency caching to reduce cache poisoning risk
 - run: npm ci
 - run: npm publish
   env:
@@ -423,6 +436,7 @@ steps:
 - uses: actions/setup-node@v6
   with:
     registry-url: 'https://npm.pkg.github.com'
+    package-manager-cache: false # Disable automatic npm dependency caching to reduce cache poisoning risk
 - run: npm publish
   env:
     NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -436,6 +450,7 @@ steps:
   with:
     node-version: '24.x'
     registry-url: <registry url>
+    package-manager-cache: false # Disable automatic npm dependency caching to reduce cache poisoning risk
 - run: yarn install --frozen-lockfile
 - run: yarn publish
   env:
@@ -443,6 +458,7 @@ steps:
 - uses: actions/setup-node@v6
   with:
     registry-url: 'https://npm.pkg.github.com'
+    package-manager-cache: false # Disable automatic npm dependency caching to reduce cache poisoning risk
 - run: yarn publish
   env:
     NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -456,6 +472,7 @@ steps:
   with:
     node-version: '24.x'
     registry-url: 'https://registry.npmjs.org'
+    package-manager-cache: false # Disable automatic npm dependency caching to reduce cache poisoning risk
 # Skip post-install scripts here, as a malicious
 # script could steal NODE_AUTH_TOKEN.
 - run: npm ci --ignore-scripts
@@ -475,6 +492,7 @@ steps:
 - uses: actions/setup-node@v6
   with:
     node-version: '24.x'
+    package-manager-cache: false # Disable automatic npm dependency caching to reduce cache poisoning risk
 - name: Setup .yarnrc.yml
   run: |
     yarn config set npmScopes.my-org.npmRegistryServer "https://npm.pkg.github.com"
@@ -505,6 +523,8 @@ Trusted publishing requires a compatible npm version:
 
 You must also configure a **Trusted Publisher** in npm for your package/scope that matches your GitHub repository and workflow (and optional environment, if used).
 
+> **Note**: In publishing workflows, set `package-manager-cache: false` because setup-node enables npm caching automatically when `package.json` specifies npm via `packageManager` or `devEngines.packageManager` (see [Running without a lockfile](#running-without-a-lockfile)), and a poisoned cache may expose credentials (including OIDC tokens) to attacker-controlled code.
+
 ### Example workflow
 
 ```yaml
@@ -519,6 +539,7 @@ You must also configure a **Trusted Publisher** in npm for your package/scope th
         with:
           node-version: '24'
           registry-url: 'https://registry.npmjs.org'
+          package-manager-cache: false # Disable automatic npm dependency caching to reduce cache poisoning risk
 
       - run: npm ci
       - run: npm run build --if-present
@@ -542,4 +563,5 @@ The token will be passed in the `Authorization` header.
     node-version: '24.x'
     mirror: 'https://nodejs.org/dist'
     mirror-token: 'your-mirror-token'
+    cache-package-manager: false # Disable automatic npm caching if not required
 ```
