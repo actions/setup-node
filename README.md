@@ -51,6 +51,11 @@ See [action.yml](action.yml)
     # Default: false
     check-latest: false
 
+    # When true, only stable releases are matched when resolving LTS aliases and version
+    # manifest lookups. Set to false to allow pre-release builds.
+    # Default: true
+    stable: true
+
     # Target architecture for Node to use. Examples: x86, x64. Will use system architecture by default.
     # Default: ''. The action use system architecture by default
     architecture: ''

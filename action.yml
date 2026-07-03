@@ -11,6 +11,9 @@ inputs:
   check-latest:
     description: 'Set this option if you want the action to check for the latest available version that satisfies the version spec.'
     default: false
+  stable:
+    description: 'When true, only stable releases are matched when resolving LTS aliases and version manifest lookups. Set to false to allow pre-release builds.'
+    default: true
   registry-url:
     description: 'Optional registry to set up for auth. Will set the registry in a project level .npmrc and .yarnrc file, and set up auth to read in from env.NODE_AUTH_TOKEN.'
   scope:
@@ -19,9 +22,9 @@ inputs:
     description: Used to pull node distributions from node-versions. Since there's a default, this is typically not supplied by the user. When running this action on github.com, the default value is sufficient. When running on GHES, you can pass a personal access token for github.com if you are experiencing rate limiting.
     default: ${{ github.server_url == 'https://github.com' && github.token || '' }}
   cache:
-    description: 'Used to specify a package manager for caching in the default directory. Supported values: npm, yarn, pnpm.'
+    description: 'Used to specify a package manager for caching in the default directory. Supported values: npm, yarn, pnpm. The package manager must be pre-installed.'
   package-manager-cache:
-    description: 'Set to false to disable automatic caching. By default, caching is enabled when either devEngines.packageManager or the top-level packageManager field in package.json specifies npm as the package manager.'
+    description: 'Set to false to disable automatic caching. By default, caching is enabled when either devEngines.packageManager or the top-level packageManager field in package.json specifies npm as the package manager. Yarn and pnpm are not auto-detected; use the cache input instead.'
     default: true
   cache-dependency-path:
     description: 'Used to specify the path to a dependency file: package-lock.json, yarn.lock, etc. Supports wildcards or a list of file names for caching multiple dependencies.'
@@ -33,9 +36,9 @@ inputs:
 #       escape valve for someone having issues or needing the absolute latest which isn't cached yet
 outputs:
   cache-hit:
-    description: 'A boolean value to indicate if a cache was hit.'
+    description: "A string 'true' if a cache entry was restored, 'false' otherwise. Only set when the cache or package-manager-cache feature is active."
   node-version:
-    description: 'The installed node version.'
+    description: 'The installed node version. Always set, including when no node-version input is provided.'
 runs:
   using: 'node24'
   main: 'dist/setup/index.js'
