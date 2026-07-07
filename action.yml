@@ -34,6 +34,10 @@ inputs:
 outputs:
   cache-hit:
     description: 'A boolean value to indicate if a cache was hit.'
+  cache-primary-key:
+    description: 'The key used to restore and save the cache.'
+  cache-matched-key:
+    description: 'The key of the cache that was restored. Empty when no cache is found.'
   node-version:
     description: 'The installed node version.'
 runs:
