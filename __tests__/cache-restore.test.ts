@@ -137,6 +137,7 @@ describe('cache-restore', () => {
     ] as const)(
       'restored dependencies for %s',
       async (packageManager, toolVersion, fileHash) => {
+        const expectedCacheKey = `node-cache-${platform}-${arch}-${packageManager}-${fileHash}`;
         // Set workspace to the appropriate fixture folder
         setWorkspaceFor(packageManager);
         getCommandOutputSpy.mockImplementation((command: string) => {
@@ -150,12 +151,20 @@ describe('cache-restore', () => {
         await restoreCache(packageManager, '');
         expect(hashFilesSpy).toHaveBeenCalled();
         expect(infoSpy).toHaveBeenCalledWith(
-          `Cache restored from key: node-cache-${platform}-${arch}-${packageManager}-${fileHash}`
+          `Cache restored from key: ${expectedCacheKey}`
         );
         expect(infoSpy).not.toHaveBeenCalledWith(
           `${packageManager} cache is not found`
         );
         expect(setOutputSpy).toHaveBeenCalledWith('cache-hit', true);
+        expect(setOutputSpy).toHaveBeenCalledWith(
+          'cache-primary-key',
+          expectedCacheKey
+        );
+        expect(setOutputSpy).toHaveBeenCalledWith(
+          'cache-matched-key',
+          expectedCacheKey
+        );
       }
     );
   });
@@ -169,6 +178,7 @@ describe('cache-restore', () => {
     ] as const)(
       'dependencies are changed %s',
       async (packageManager, toolVersion, fileHash) => {
+        const expectedCacheKey = `node-cache-${platform}-${arch}-${packageManager}-${fileHash}`;
         // Set workspace to the appropriate fixture folder
         setWorkspaceFor(packageManager);
         getCommandOutputSpy.mockImplementation((command: string) => {
@@ -186,6 +196,14 @@ describe('cache-restore', () => {
           `${packageManager} cache is not found`
         );
         expect(setOutputSpy).toHaveBeenCalledWith('cache-hit', false);
+        expect(setOutputSpy).toHaveBeenCalledWith(
+          'cache-primary-key',
+          expectedCacheKey
+        );
+        expect(setOutputSpy).toHaveBeenCalledWith(
+          'cache-matched-key',
+          undefined
+        );
       }
     );
   });
