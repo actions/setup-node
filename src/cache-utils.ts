@@ -111,6 +111,30 @@ export const getPackageManagerInfo = async (packageManager: string) => {
 };
 
 /**
+ * Checks if a package manager is installed and available on the PATH
+ * This helps prevent cache failures when a package manager is specified
+ * but not yet installed (e.g., pnpm via corepack)
+ * See: https://github.com/actions/setup-node/issues/1357
+ */
+export const isPackageManagerInstalled = async (
+  packageManager: string
+): Promise<boolean> => {
+  try {
+    const {exitCode} = await exec.getExecOutput(
+      `${packageManager} --version`,
+      undefined,
+      {
+        ignoreReturnCode: true,
+        silent: true
+      }
+    );
+    return exitCode === 0;
+  } catch {
+    return false;
+  }
+};
+
+/**
  * getProjectDirectoriesFromCacheDependencyPath is called twice during `restoreCache`
  *  - first through `getCacheDirectories`
  *  - second from `repoHasYarn3ManagedCache`

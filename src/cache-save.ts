@@ -2,7 +2,7 @@ import * as core from '@actions/core';
 import * as cache from '@actions/cache';
 
 import {State} from './constants';
-import {getPackageManagerInfo} from './cache-utils';
+import {getPackageManagerInfo, isPackageManagerInstalled} from './cache-utils';
 
 // Catch and log any unhandled exceptions.  These exceptions can leak out of the uploadChunk method in
 // @actions/toolkit when a failed upload closes the file descriptor causing any in-process reads to
@@ -42,6 +42,17 @@ const cachePackages = async (packageManager: string) => {
   const packageManagerInfo = await getPackageManagerInfo(packageManager);
   if (!packageManagerInfo) {
     core.debug(`Caching for '${packageManager}' is not supported`);
+    return;
+  }
+
+  // Check if the package manager is installed before attempting to save cache
+  // This prevents cache save failures for package managers that may not be installed
+  const isInstalled = await isPackageManagerInstalled(packageManager);
+  if (!isInstalled) {
+    core.warning(
+      `Package manager '${packageManager}' was not found in the PATH. ` +
+        `Skipping cache save.`
+    );
     return;
   }
 

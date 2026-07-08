@@ -9,6 +9,7 @@ import {State} from './constants';
 import {
   getCacheDirectories,
   getPackageManagerInfo,
+  isPackageManagerInstalled,
   repoHasYarnBerryManagedDependencies,
   PackageManagerInfo
 } from './cache-utils';
@@ -21,6 +22,20 @@ export const restoreCache = async (
   if (!packageManagerInfo) {
     throw new Error(`Caching for '${packageManager}' is not supported`);
   }
+
+  // Check if the package manager is installed before attempting to cache
+  // This prevents cache failures for package managers that need to be installed first
+  // See: https://github.com/actions/setup-node/issues/1357
+  const isInstalled = await isPackageManagerInstalled(packageManager);
+  if (!isInstalled) {
+    core.warning(
+      `Package manager '${packageManager}' was not found in the PATH. ` +
+        `Skipping cache restore. Please ensure the package manager is installed ` +
+        `before running this action or set 'package-manager-cache: false' to disable caching.`
+    );
+    return;
+  }
+
   const platform = process.env.RUNNER_OS;
   const arch = os.arch();
 
