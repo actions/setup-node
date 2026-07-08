@@ -345,7 +345,8 @@ describe('run', () => {
       expect(getCommandOutputSpy).toHaveBeenCalledTimes(0);
       expect(debugSpy).toHaveBeenLastCalledWith(
         `Cache was not saved for the key: ${yarnFileHash}`
-      );      expect(infoSpy).not.toHaveBeenCalledWith(
+      );
+      expect(infoSpy).not.toHaveBeenCalledWith(
         `Cache hit occurred on the primary key ${npmFileHash}, not saving cache.`
       );
       expect(saveCacheSpy).toHaveBeenCalled();
