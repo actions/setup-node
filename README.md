@@ -123,6 +123,7 @@ steps:
 - uses: actions/setup-node@v6
   with:
     node-version: 24
+    package-manager-cache: false # Disable automatic npm caching if not required
 - run: npm ci
 - run: npm test
 ```
@@ -221,6 +222,7 @@ jobs:
         uses: actions/setup-node@v6
         with:
           node-version: ${{ matrix.node }}
+          package-manager-cache: false # Disable automatic npm caching if not required
       - run: npm ci
       - run: npm test
 ```
@@ -236,6 +238,7 @@ uses: actions/setup-node@v6
 with:
   token: ${{ secrets.GH_DOTCOM_TOKEN }}
   node-version: 24
+  package-manager-cache: false # Disable automatic npm caching if not required
 ```
 
 If the runner is not able to access github.com, any Nodejs versions requested during a workflow run must come from the runner's tool cache. See "[Setting up the tool cache on self-hosted runners without internet access](https://docs.github.com/en/enterprise-server@3.2/admin/github-actions/managing-access-to-actions-from-githubcom/setting-up-the-tool-cache-on-self-hosted-runners-without-internet-access)" for more information.

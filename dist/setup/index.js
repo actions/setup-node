@@ -98303,6 +98303,7 @@ const cache_restore_restoreCache = async (packageManager, cacheDependencyPath) =
     const primaryKey = `${keyPrefix}-${fileHash}`;
     core_debug(`primary key is ${primaryKey}`);
     saveState(State.CachePrimaryKey, primaryKey);
+    setOutput('cache-primary-key', primaryKey);
     const isManagedByYarnBerry = await repoHasYarnBerryManagedDependencies(packageManagerInfo, cacheDependencyPath);
     let cacheKey;
     if (isManagedByYarnBerry) {
@@ -98313,6 +98314,8 @@ const cache_restore_restoreCache = async (packageManager, cacheDependencyPath) =
         cacheKey = await restoreCache(cachePaths, primaryKey);
     }
     setOutput('cache-hit', Boolean(cacheKey));
+    setOutput('cache-matched-key', cacheKey);
+    core_debug(`cache-matched-key is ${cacheKey}`);
     if (!cacheKey) {
         core_info(`${packageManager} cache is not found`);
         return;
