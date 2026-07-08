@@ -1,6 +1,6 @@
 {
   "name": "setup-node",
-  "version": "6.4.0",
+  "version": "6.5.0",
   "private": true,
   "description": "setup node action",
   "main": "lib/setup-node.js",
@@ -27,10 +27,6 @@
   ],
   "author": "GitHub",
   "license": "MIT",
-  "overrides": {
-    "undici": "^6.24.1",
-    "fast-xml-parser": "^5.9.2"
-  },
   "dependencies": {
     "@actions/cache": "5.1.0",
     "@actions/core": "^2.0.3",
@@ -59,5 +55,9 @@
     "prettier": "^3.6.2",
     "ts-jest": "^29.4.1",
     "typescript": "^5.4.2"
+  },
+  "overrides": {
+    "undici": "^6.24.1",
+    "fast-xml-parser": "^5.9.2"
   }
 }
