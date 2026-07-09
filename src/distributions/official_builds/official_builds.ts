@@ -342,6 +342,8 @@ export default class OfficialBuilds extends BaseDistribution {
         `Node installation failed. Node may not be installed or not on PATH: ${(err as Error).message}`
       );
     }
+    core.debug(`Expected Node version: ${expectedVersion}`);
+    core.debug(`Actual Node version: ${actualVersion}`);
     if (actualVersion !== expectedVersion) {
       throw new Error(
         `Node ${expectedVersion} installation failed, likely due to an incomplete or corrupted download.`
