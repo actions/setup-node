@@ -1,6 +1,7 @@
 import * as core from '@actions/core';
 import * as tc from '@actions/tool-cache';
 import path from 'path';
+import * as exec from '@actions/exec';
 
 import BaseDistribution from '../base-distribution';
 import {NodeInputs, INodeVersion, INodeVersionInfo} from '../base-models';
@@ -62,7 +63,9 @@ export default class OfficialBuilds extends BaseDistribution {
 
     if (toolPath) {
       core.info(`Found in cache @ ${toolPath}`);
+      const installedDir = toolPath;
       this.addToolPath(toolPath);
+      await this.verifyNodeVersion(installedDir);
       return;
     }
 
@@ -123,11 +126,13 @@ export default class OfficialBuilds extends BaseDistribution {
       toolPath = await this.downloadDirectlyFromNode();
     }
 
+    const installedDir = toolPath;
     if (this.osPlat != 'win32') {
       toolPath = path.join(toolPath, 'bin');
     }
 
     core.addPath(toolPath);
+    await this.verifyNodeVersion(installedDir);
   }
 
   protected addToolPath(toolPath: string) {
@@ -185,15 +190,39 @@ export default class OfficialBuilds extends BaseDistribution {
     return `${url}/dist`;
   }
 
-  private getManifest(): Promise<tc.IToolRelease[]> {
-    core.debug('Getting manifest from actions/node-versions@main');
-    return tc.getManifestFromRepo(
-      'actions',
-      'node-versions',
-      this.nodeInfo.mirror && this.nodeInfo.mirrorToken
-        ? this.nodeInfo.mirrorToken
-        : this.nodeInfo.auth,
-      'main'
+  private async getManifest(): Promise<tc.IToolRelease[]> {
+    let lastError: Error | undefined;
+    const maxAttempts = 3;
+    core.debug(`Getting manifest from actions/node-versions@main`);
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      try {
+        const manifest = await tc.getManifestFromRepo(
+          'actions',
+          'node-versions',
+          this.nodeInfo.mirror && this.nodeInfo.mirrorToken
+            ? this.nodeInfo.mirrorToken
+            : this.nodeInfo.auth,
+          'main'
+        );
+        if (Array.isArray(manifest) && manifest.length > 0) {
+          return manifest;
+        }
+        lastError = new Error(
+          `The manifest fetched is empty, truncated, or does not contain any valid tool release entries.`
+        );
+      } catch (err) {
+        lastError = err instanceof Error ? err : new Error(String(err));
+      }
+      core.debug(
+        `Attempt ${attempt}/${maxAttempts} to fetch the manifest failed: ${lastError.message}`
+      );
+      if (attempt < maxAttempts) {
+        core.info(`Retrying to fetch the manifest...`);
+        await new Promise(resolve => setTimeout(resolve, 1000 * attempt)); // Retry after a delay
+      }
+    }
+    throw new Error(
+      `Failed to fetch a valid manifest after ${maxAttempts} attempts. Last error: ${lastError?.message}`
     );
   }
 
@@ -297,5 +326,26 @@ export default class OfficialBuilds extends BaseDistribution {
 
   private isLatestSyntax(versionSpec): boolean {
     return ['current', 'latest', 'node'].includes(versionSpec);
+  }
+
+  private async verifyNodeVersion(installedDir: string) {
+    // tool-cache layout: <root>/node/<version>/<arch>
+    const expectedVersion = 'v' + path.basename(path.dirname(installedDir));
+    let actualVersion = '';
+    try {
+      const {stdout} = await exec.getExecOutput('node', ['--version'], {
+        silent: true
+      });
+      actualVersion = stdout.trim();
+    } catch (err) {
+      throw new Error(
+        `Node installation failed. Node may not be installed or not on PATH: ${(err as Error).message}`
+      );
+    }
+    if (actualVersion !== expectedVersion) {
+      throw new Error(
+        `Node ${expectedVersion} installation failed, likely due to an incomplete or corrupted download.`
+      );
+    }
   }
 }
