@@ -58061,8 +58061,7 @@ class OfficialBuilds extends base_distribution_1.default {
         catch (err) {
             throw new Error(`Node installation failed. Node may not be installed or not on PATH: ${err.message}`);
         }
-        core.debug(`Expected Node version: ${expectedVersion}`);
-        core.debug(`Actual Node version: ${actualVersion}`);
+        core.debug(`Node installation failed: expected ${expectedVersion} but "node --version" reported ${actualVersion || '(empty)'} (installedDir: ${installedDir}).`);
         if (actualVersion !== expectedVersion) {
             throw new Error(`Node ${expectedVersion} installation failed, likely due to an incomplete or corrupted download.`);
         }
