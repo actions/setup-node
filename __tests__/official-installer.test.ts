@@ -255,7 +255,12 @@ describe('setup-node', () => {
       return `some/${cmd}/path`;
     });
     getExecOutputSpy.mockImplementation(async (cmd: string) => ({
-      stdout: cmd === 'node' ? `v${resolvedVersion}` : cmd === 'npm' ? '11.12.1' : '4.17.1',
+      stdout:
+        cmd === 'node'
+          ? `v${resolvedVersion}`
+          : cmd === 'npm'
+            ? '11.12.1'
+            : '4.17.1',
       stderr: '',
       exitCode: 0
     }));
