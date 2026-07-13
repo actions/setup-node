@@ -255,7 +255,7 @@ describe('setup-node', () => {
       return `some/${cmd}/path`;
     });
     getExecOutputSpy.mockImplementation(async (cmd: string) => ({
-      stdout: cmd === 'node' ? `v${resolvedVersion}` : '1.0.0',
+      stdout: cmd === 'node' ? `v${resolvedVersion}` : cmd === 'npm' ? '11.12.1' : '4.17.1',
       stderr: '',
       exitCode: 0
     }));
@@ -971,7 +971,7 @@ describe('setup-node', () => {
       const toolPath = path.normalize('/cache/node/12.16.1/x64');
       findSpy.mockReturnValue(toolPath);
       getExecOutputSpy.mockImplementation(async () => ({
-        stdout: 'v10.0.0\n',
+        stdout: 'v22.22.3\n',
         stderr: '',
         exitCode: 0
       }));
