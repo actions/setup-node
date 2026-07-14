@@ -3,8 +3,8 @@ import * as tc from '@actions/tool-cache';
 import path from 'path';
 import * as exec from '@actions/exec';
 
-import BaseDistribution from '../base-distribution';
-import {NodeInputs, INodeVersion, INodeVersionInfo} from '../base-models';
+import BaseDistribution from '../base-distribution.js';
+import {NodeInputs, INodeVersion, INodeVersionInfo} from '../base-models.js';
 
 interface INodeRelease extends tc.IToolRelease {
   lts?: string;
@@ -218,7 +218,9 @@ export default class OfficialBuilds extends BaseDistribution {
       );
       if (attempt < maxAttempts) {
         core.info(`Retrying to fetch the manifest...`);
-        await new Promise(resolve => setTimeout(resolve, 1000 * attempt)); // Retry after a delay
+        await new Promise(resolve =>
+          setTimeout(resolve, 1000 * 2 ** (attempt - 1))
+        ); // Retry after a delay
       }
     }
     throw new Error(
@@ -339,13 +341,15 @@ export default class OfficialBuilds extends BaseDistribution {
       actualVersion = stdout.trim();
     } catch (err) {
       throw new Error(
-        `Node installation failed. Node may not be installed or not on PATH: ${(err as Error).message}`
+        `Node installation failed. Node may not be installed or not on PATH: ${(err as Error).message}`,
+        {cause: err}
       );
     }
-    core.debug(
-      `Node installation failed: expected ${expectedVersion} but "node --version" reported ${actualVersion || '(empty)'} (installedDir: ${installedDir}).`
-    );
     if (actualVersion !== expectedVersion) {
+      core.debug(
+        `Node installation failed: expected ${expectedVersion} but "node --version" reported ${actualVersion || '(empty)'} (installedDir: ${installedDir}).`
+      );
+
       throw new Error(
         `Node ${expectedVersion} installation failed, likely due to an incomplete or corrupted download.`
       );

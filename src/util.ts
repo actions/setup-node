@@ -105,7 +105,7 @@ async function getToolVersion(tool: string, options: string[]) {
     }
 
     return stdout.trim();
-  } catch (err) {
+  } catch {
     return '';
   }
 }

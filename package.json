@@ -1,6 +1,7 @@
 {
   "name": "setup-node",
-  "version": "6.5.0",
+  "version": "7.0.0",
+  "type": "module",
   "private": true,
   "description": "setup node action",
   "main": "lib/setup-node.js",
@@ -9,11 +10,11 @@
   },
   "scripts": {
     "build": "ncc build -o dist/setup src/setup-node.ts && ncc build -o dist/cache-save src/cache-save.ts",
-    "format": "prettier --no-error-on-unmatched-pattern --config ./.prettierrc.js --write \"**/*.{ts,yml,yaml}\"",
-    "format-check": "prettier --no-error-on-unmatched-pattern --config ./.prettierrc.js --check \"**/*.{ts,yml,yaml}\"",
-    "lint": "eslint --config ./.eslintrc.js \"**/*.ts\"",
-    "lint:fix": "eslint --config ./.eslintrc.js \"**/*.ts\" --fix",
-    "test": "jest --coverage",
+    "format": "prettier --no-error-on-unmatched-pattern --write \"**/*.{ts,yml,yaml}\"",
+    "format-check": "prettier --no-error-on-unmatched-pattern --check \"**/*.{ts,yml,yaml}\"",
+    "lint": "eslint \"**/*.ts\"",
+    "lint:fix": "eslint \"**/*.ts\" --fix",
+    "test": "node --experimental-vm-modules ./node_modules/jest/bin/jest.js --runInBand --coverage",
     "pre-checkin": "npm run format && npm run lint:fix && npm run build && npm test"
   },
   "repository": {
@@ -28,36 +29,33 @@
   "author": "GitHub",
   "license": "MIT",
   "dependencies": {
-    "@actions/cache": "^5.1.0",
-    "@actions/core": "^2.0.3",
-    "@actions/exec": "^2.0.0",
-    "@actions/github": "^6.0.1",
-    "@actions/glob": "^0.5.1",
-    "@actions/http-client": "^3.0.2",
-    "@actions/io": "^2.0.0",
-    "@actions/tool-cache": "^3.0.1",
-    "semver": "^7.6.3"
+    "@actions/cache": "^6.1.0",
+    "@actions/core": "^3.0.1",
+    "@actions/exec": "^3.0.0",
+    "@actions/github": "^9.1.1",
+    "@actions/glob": "^0.7.0",
+    "@actions/http-client": "^4.0.1",
+    "@actions/io": "^3.0.2",
+    "@actions/tool-cache": "^4.0.0",
+    "semver": "^7.8.5"
   },
   "devDependencies": {
-    "@types/jest": "^29.5.14",
-    "@types/node": "^24.1.0",
-    "@types/semver": "^7.5.8",
-    "@typescript-eslint/eslint-plugin": "^5.54.0",
-    "@typescript-eslint/parser": "^5.54.0",
-    "@vercel/ncc": "^0.38.3",
-    "eslint": "^8.57.0",
-    "eslint-config-prettier": "^8.6.0",
-    "eslint-plugin-jest": "^27.9.0",
-    "eslint-plugin-node": "^11.1.0",
-    "jest": "^29.7.0",
-    "jest-circus": "^29.7.0",
-    "jest-each": "^29.7.0",
-    "prettier": "^3.6.2",
-    "ts-jest": "^29.4.1",
-    "typescript": "^5.4.2"
-  },
-  "overrides": {
-    "undici": "^6.24.1",
-    "fast-xml-parser": "^5.9.2"
+    "@eslint/js": "^10.0.1",
+    "@jest/globals": "^30.4.1",
+    "@types/node": "^26.0.0",
+    "@types/semver": "^7.7.0",
+    "@typescript-eslint/eslint-plugin": "^8.62.0",
+    "@typescript-eslint/parser": "^8.62.0",
+    "@vercel/ncc": "^0.44.0",
+    "eslint": "^10.5.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-jest": "^29.15.2",
+    "eslint-plugin-n": "^18.1.0",
+    "globals": "^17.7.0",
+    "jest": "^30.4.2",
+    "jest-each": "^30.4.1",
+    "prettier": "^3.8.4",
+    "ts-jest": "^29.4.11",
+    "typescript": "^6.0.3"
   }
 }

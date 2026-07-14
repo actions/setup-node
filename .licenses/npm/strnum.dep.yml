@@ -1,9 +1,9 @@
 ---
 name: strnum
-version: 2.4.1
+version: 2.2.3
 type: npm
 summary: Parse String to Number based on configuration
-homepage: 
+homepage:
 license: mit
 licenses:
 - sources: LICENSE

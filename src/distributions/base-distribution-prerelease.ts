@@ -2,8 +2,8 @@ import * as tc from '@actions/tool-cache';
 
 import semver from 'semver';
 
-import BaseDistribution from './base-distribution';
-import {NodeInputs} from './base-models';
+import BaseDistribution from './base-distribution.js';
+import {NodeInputs} from './base-models.js';
 
 export default abstract class BasePrereleaseNodejs extends BaseDistribution {
   protected abstract distribution: string;

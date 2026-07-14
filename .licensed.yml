@@ -10,7 +10,11 @@ allowed:
   - mit
   - cc0-1.0
   - unlicense
+  - blueoak-1.0.0
 
 reviewed:
   npm:
      - "@actions/http-client"
+     - balanced-match
+     - brace-expansion
+     - fast-content-type-parse

@@ -1,5 +1,5 @@
-import BaseDistribution from '../base-distribution';
-import {NodeInputs} from '../base-models';
+import BaseDistribution from '../base-distribution.js';
+import {NodeInputs} from '../base-models.js';
 
 export default class RcBuild extends BaseDistribution {
   constructor(nodeInfo: NodeInputs) {

@@ -1,43 +1,125 @@
-import * as core from '@actions/core';
-import * as exec from '@actions/exec';
-import * as tc from '@actions/tool-cache';
-import * as cache from '@actions/cache';
-import * as io from '@actions/io';
-
+import {
+  jest,
+  describe,
+  it,
+  expect,
+  beforeEach,
+  afterEach,
+  afterAll
+} from '@jest/globals';
+import {fileURLToPath} from 'url';
 import fs from 'fs';
 import path from 'path';
 import osm from 'os';
 
-import each from 'jest-each';
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-import * as main from '../src/main';
-import * as util from '../src/util';
-import OfficialBuilds from '../src/distributions/official_builds/official_builds';
+// Mock @actions modules before importing anything that depends on them
+jest.unstable_mockModule('@actions/core', () => ({
+  info: jest.fn(),
+  warning: jest.fn(),
+  debug: jest.fn(),
+  error: jest.fn(),
+  notice: jest.fn(),
+  setFailed: jest.fn(),
+  setOutput: jest.fn(),
+  getInput: jest.fn(),
+  getBooleanInput: jest.fn(),
+  getMultilineInput: jest.fn(),
+  addPath: jest.fn(),
+  exportVariable: jest.fn(),
+  saveState: jest.fn(),
+  getState: jest.fn(),
+  setSecret: jest.fn(),
+  isDebug: jest.fn(() => false),
+  startGroup: jest.fn(),
+  endGroup: jest.fn(),
+  group: jest.fn((_name: string, fn: () => Promise<unknown>) => fn()),
+  toPlatformPath: jest.fn((p: string) => p),
+  toWin32Path: jest.fn((p: string) => p),
+  toPosixPath: jest.fn((p: string) => p)
+}));
+
+jest.unstable_mockModule('@actions/exec', () => ({
+  exec: jest.fn(),
+  getExecOutput: jest.fn()
+}));
+
+jest.unstable_mockModule('@actions/tool-cache', () => ({
+  find: jest.fn(),
+  findAllVersions: jest.fn(),
+  downloadTool: jest.fn(),
+  extractTar: jest.fn(),
+  extractZip: jest.fn(),
+  extractXar: jest.fn(),
+  extract7z: jest.fn(),
+  cacheDir: jest.fn(),
+  cacheFile: jest.fn(),
+  getManifestFromRepo: jest.fn(),
+  findFromManifest: jest.fn()
+}));
+
+jest.unstable_mockModule('@actions/cache', () => ({
+  saveCache: jest.fn(),
+  restoreCache: jest.fn(),
+  isFeatureAvailable: jest.fn()
+}));
+
+jest.unstable_mockModule('@actions/io', () => ({
+  which: jest.fn(),
+  mkdirP: jest.fn(),
+  rmRF: jest.fn(),
+  mv: jest.fn(),
+  cp: jest.fn()
+}));
+
+// Pre-import real util before mocking so we can spread it
+const realUtil = await import('../src/util.js');
+
+jest.unstable_mockModule('../src/util.js', () => ({
+  ...realUtil,
+  getNodeVersionFromFile: jest.fn(realUtil.getNodeVersionFromFile)
+}));
+
+// Dynamic imports after mocking
+const core = await import('@actions/core');
+const exec = await import('@actions/exec');
+const tc = await import('@actions/tool-cache');
+const cache = await import('@actions/cache');
+const io = await import('@actions/io');
+const main = await import('../src/main.js');
+const util = await import('../src/util.js');
+const {default: OfficialBuilds} =
+  await import('../src/distributions/official_builds/official_builds.js');
+
+import each from 'jest-each';
 
 describe('main tests', () => {
   let inputs = {} as any;
   let os = {} as any;
 
-  let infoSpy: jest.SpyInstance;
-  let warningSpy: jest.SpyInstance;
-  let saveStateSpy: jest.SpyInstance;
-  let inSpy: jest.SpyInstance;
-  let setOutputSpy: jest.SpyInstance;
-  let startGroupSpy: jest.SpyInstance;
-  let endGroupSpy: jest.SpyInstance;
+  let infoSpy: jest.Mock;
+  let warningSpy: jest.Mock;
+  let saveStateSpy: jest.Mock;
+  let inSpy: jest.Mock;
+  let setOutputSpy: jest.Mock;
+  let startGroupSpy: jest.Mock;
+  let endGroupSpy: jest.Mock;
 
-  let whichSpy: jest.SpyInstance;
+  let whichSpy: jest.Mock;
 
-  let existsSpy: jest.SpyInstance;
+  let existsSpy: jest.Mock;
 
-  let getExecOutputSpy: jest.SpyInstance;
+  let getExecOutputSpy: jest.Mock;
 
-  let getNodeVersionFromFileSpy: jest.SpyInstance;
-  let cnSpy: jest.SpyInstance;
-  let findSpy: jest.SpyInstance;
-  let isCacheActionAvailable: jest.SpyInstance;
+  let getNodeVersionFromFileSpy: jest.Mock;
+  let cnSpy: jest.SpiedFunction<typeof process.stdout.write>;
+  let findSpy: jest.Mock;
+  let isCacheActionAvailable: jest.Mock;
 
-  let setupNodeJsSpy: jest.SpyInstance;
+  let setupNodeJsSpy: jest.SpiedFunction<
+    typeof OfficialBuilds.prototype.setupNodeJs
+  >;
 
   beforeEach(() => {
     inputs = {};
@@ -48,37 +130,34 @@ describe('main tests', () => {
     process.env['GITHUB_WORKSPACE'] = path.join(__dirname, 'data');
     process.env['GITHUB_PATH'] = ''; // Stub out ENV file functionality so we can verify it writes to standard out
     process.env['GITHUB_OUTPUT'] = ''; // Stub out ENV file functionality so we can verify it writes to standard out
-    infoSpy = jest.spyOn(core, 'info');
+    infoSpy = core.info as jest.Mock;
     infoSpy.mockImplementation(() => {});
-    setOutputSpy = jest.spyOn(core, 'setOutput');
+    setOutputSpy = core.setOutput as jest.Mock;
     setOutputSpy.mockImplementation(() => {});
-    warningSpy = jest.spyOn(core, 'warning');
+    warningSpy = core.warning as jest.Mock;
     warningSpy.mockImplementation(() => {});
-    saveStateSpy = jest.spyOn(core, 'saveState');
+    saveStateSpy = core.saveState as jest.Mock;
     saveStateSpy.mockImplementation(() => {});
-    startGroupSpy = jest.spyOn(core, 'startGroup');
+    startGroupSpy = core.startGroup as jest.Mock;
     startGroupSpy.mockImplementation(() => {});
-    endGroupSpy = jest.spyOn(core, 'endGroup');
+    endGroupSpy = core.endGroup as jest.Mock;
     endGroupSpy.mockImplementation(() => {});
-    inSpy = jest.spyOn(core, 'getInput');
-    inSpy.mockImplementation(name => inputs[name]);
+    inSpy = core.getInput as jest.Mock;
+    inSpy.mockImplementation((name: any) => inputs[name]);
 
-    whichSpy = jest.spyOn(io, 'which');
+    whichSpy = io.which as jest.Mock;
 
-    getExecOutputSpy = jest.spyOn(exec, 'getExecOutput');
+    getExecOutputSpy = exec.getExecOutput as jest.Mock;
 
-    findSpy = jest.spyOn(tc, 'find');
+    findSpy = tc.find as jest.Mock;
 
-    isCacheActionAvailable = jest.spyOn(cache, 'isFeatureAvailable');
+    isCacheActionAvailable = cache.isFeatureAvailable as jest.Mock;
 
     cnSpy = jest.spyOn(process.stdout, 'write');
-    cnSpy.mockImplementation(line => {
-      // uncomment to debug
-      process.stderr.write('write:' + line + '\n');
-    });
+    cnSpy.mockImplementation(() => true);
 
     setupNodeJsSpy = jest.spyOn(OfficialBuilds.prototype, 'setupNodeJs');
-    setupNodeJsSpy.mockImplementation(() => {});
+    setupNodeJsSpy.mockImplementation(async () => {});
   });
 
   afterEach(() => {
@@ -93,6 +172,12 @@ describe('main tests', () => {
   }, 100000);
 
   describe('getNodeVersionFromFile', () => {
+    beforeEach(() => {
+      (util.getNodeVersionFromFile as jest.Mock).mockImplementation(
+        realUtil.getNodeVersionFromFile as any
+      );
+    });
+
     each`
       contents                                                                                   | expected
       ${'12'}                                                                                    | ${'12'}
@@ -112,12 +197,12 @@ describe('main tests', () => {
       ${'{"engines": {"node": "17.0.0"}}'}                                                       | ${'17.0.0'}
       ${'{"devEngines": {"runtime": {"name": "node", "version": "22.0.0"}}}'}                    | ${'22.0.0'}
       ${'{"devEngines": {"runtime": [{"name": "bun"}, {"name": "node", "version": "22.0.0"}]}}'} | ${'22.0.0'}
-    `.it('parses "$contents"', ({contents, expected}) => {
+    `.it('parses "$contents"', ({contents, expected}: any) => {
       const existsSpy = jest.spyOn(fs, 'existsSync');
       existsSpy.mockImplementation(() => true);
 
       const readFileSpy = jest.spyOn(fs, 'readFileSync');
-      readFileSpy.mockImplementation(filePath => {
+      readFileSpy.mockImplementation((filePath: any) => {
         if (
           typeof filePath === 'string' &&
           path.basename(filePath) === 'package.json'
@@ -139,8 +224,10 @@ describe('main tests', () => {
       [{node: '16.0.2', npm: '7.3.3', yarn: '2.22.11'}],
       [{node: '14.0.1', npm: '8.1.0', yarn: '3.2.1'}],
       [{node: '17.0.2', npm: '6.3.3', yarn: ''}]
-    ])('Tools versions %p', async obj => {
-      getExecOutputSpy.mockImplementation(async command => {
+    ])('Tools versions %p', async (obj: any) => {
+      (
+        getExecOutputSpy as jest.Mock<typeof exec.getExecOutput>
+      ).mockImplementation(async (command: string) => {
         if (Reflect.has(obj, command) && !obj[command]) {
           return {
             stdout: '',
@@ -152,14 +239,14 @@ describe('main tests', () => {
         return {stdout: obj[command], stderr: '', exitCode: 0};
       });
 
-      whichSpy.mockImplementation(cmd => {
+      whichSpy.mockImplementation((cmd: any) => {
         return `some/${cmd}/path`;
       });
 
       await util.printEnvDetailsAndSetOutput();
 
       expect(setOutputSpy).toHaveBeenCalledWith('node-version', obj['node']);
-      Object.getOwnPropertyNames(obj).forEach(name => {
+      Object.getOwnPropertyNames(obj).forEach((name: any) => {
         if (!obj[name]) {
           expect(infoSpy).toHaveBeenCalledWith(
             `[warning]${name} does not exist`
@@ -175,11 +262,16 @@ describe('main tests', () => {
       delete inputs['node-version'];
       inputs['node-version-file'] = '.nvmrc';
 
-      getNodeVersionFromFileSpy = jest.spyOn(util, 'getNodeVersionFromFile');
+      getNodeVersionFromFileSpy = util.getNodeVersionFromFile as jest.Mock;
+      getNodeVersionFromFileSpy.mockImplementation(
+        realUtil.getNodeVersionFromFile as any
+      );
     });
 
     afterEach(() => {
-      getNodeVersionFromFileSpy.mockRestore();
+      getNodeVersionFromFileSpy.mockImplementation(
+        realUtil.getNodeVersionFromFile as any
+      );
     });
 
     it('does not read node-version-file if node-version is provided', async () => {
@@ -238,8 +330,8 @@ describe('main tests', () => {
 
       // Assert
       expect(getNodeVersionFromFileSpy).toHaveBeenCalled();
-      expect(cnSpy).toHaveBeenCalledWith(
-        `::error::The specified node version file at: ${versionFilePath} does not exist${osm.EOL}`
+      expect(core.setFailed as jest.Mock).toHaveBeenCalledWith(
+        `The specified node version file at: ${versionFilePath} does not exist`
       );
     });
   });
@@ -249,7 +341,7 @@ describe('main tests', () => {
       inputs['node-version'] = '12';
       inputs['cache'] = 'npm';
 
-      inSpy.mockImplementation(name => inputs[name]);
+      inSpy.mockImplementation((name: any) => inputs[name]);
 
       const toolPath = path.normalize('/cache/node/12.16.1/x64');
       findSpy.mockImplementation(() => toolPath);
@@ -269,7 +361,7 @@ describe('main tests', () => {
       inputs['node-version'] = '12';
       inputs['cache'] = 'npm';
 
-      inSpy.mockImplementation(name => inputs[name]);
+      inSpy.mockImplementation((name: any) => inputs[name]);
 
       const toolPath = path.normalize('/cache/node/12.16.1/x64');
       findSpy.mockImplementation(() => toolPath);
@@ -292,7 +384,7 @@ describe('main tests', () => {
       inputs['cache'] = '';
       isCacheActionAvailable.mockImplementation(() => true);
 
-      inSpy.mockImplementation(name => inputs[name]);
+      inSpy.mockImplementation((name: any) => inputs[name]);
       const readFileSpy = jest.spyOn(fs, 'readFileSync');
       readFileSpy.mockImplementation(() =>
         JSON.stringify({
@@ -310,7 +402,7 @@ describe('main tests', () => {
       inputs['cache'] = '';
       isCacheActionAvailable.mockImplementation(() => true);
 
-      inSpy.mockImplementation(name => inputs[name]);
+      inSpy.mockImplementation((name: any) => inputs[name]);
       const readFileSpy = jest.spyOn(fs, 'readFileSync');
       readFileSpy.mockImplementation(() =>
         JSON.stringify({
@@ -330,7 +422,7 @@ describe('main tests', () => {
       inputs['cache'] = '';
       isCacheActionAvailable.mockImplementation(() => true);
 
-      inSpy.mockImplementation(name => inputs[name]);
+      inSpy.mockImplementation((name: any) => inputs[name]);
       const readFileSpy = jest.spyOn(fs, 'readFileSync');
       readFileSpy.mockImplementation(() =>
         JSON.stringify({
@@ -348,7 +440,7 @@ describe('main tests', () => {
     it('Should not enable caching if packageManager is "pnpm@8.0.0" and cache input is not provided', async () => {
       inputs['package-manager-cache'] = 'true';
       inputs['cache'] = '';
-      inSpy.mockImplementation(name => inputs[name]);
+      inSpy.mockImplementation((name: any) => inputs[name]);
       const readFileSpy = jest.spyOn(fs, 'readFileSync');
       readFileSpy.mockImplementation(() =>
         JSON.stringify({
@@ -364,7 +456,7 @@ describe('main tests', () => {
     it('Should not enable caching if devEngines.packageManager.name is "pnpm"', async () => {
       inputs['package-manager-cache'] = 'true';
       inputs['cache'] = '';
-      inSpy.mockImplementation(name => inputs[name]);
+      inSpy.mockImplementation((name: any) => inputs[name]);
       const readFileSpy = jest.spyOn(fs, 'readFileSync');
       readFileSpy.mockImplementation(() =>
         JSON.stringify({
@@ -382,7 +474,7 @@ describe('main tests', () => {
     it('Should not enable caching if devEngines.packageManager is array without "npm"', async () => {
       inputs['package-manager-cache'] = 'true';
       inputs['cache'] = '';
-      inSpy.mockImplementation(name => inputs[name]);
+      inSpy.mockImplementation((name: any) => inputs[name]);
       const readFileSpy = jest.spyOn(fs, 'readFileSync');
       readFileSpy.mockImplementation(() =>
         JSON.stringify({
@@ -400,7 +492,7 @@ describe('main tests', () => {
     it('Should not enable caching if packageManager field is missing in package.json and cache input is not provided', async () => {
       inputs['package-manager-cache'] = 'true';
       inputs['cache'] = '';
-      inSpy.mockImplementation(name => inputs[name]);
+      inSpy.mockImplementation((name: any) => inputs[name]);
       const readFileSpy = jest.spyOn(fs, 'readFileSync');
       readFileSpy.mockImplementation(() =>
         JSON.stringify({
@@ -416,7 +508,7 @@ describe('main tests', () => {
     it('Should skip caching when package-manager-cache is false', async () => {
       inputs['package-manager-cache'] = 'false';
       inputs['cache'] = '';
-      inSpy.mockImplementation(name => inputs[name]);
+      inSpy.mockImplementation((name: any) => inputs[name]);
       await main.run();
       expect(saveStateSpy).not.toHaveBeenCalled();
     });
@@ -424,7 +516,7 @@ describe('main tests', () => {
     it('Should enable caching with cache input explicitly provided', async () => {
       inputs['package-manager-cache'] = 'true';
       inputs['cache'] = 'npm';
-      inSpy.mockImplementation(name => inputs[name]);
+      inSpy.mockImplementation((name: any) => inputs[name]);
       isCacheActionAvailable.mockImplementation(() => true);
       await main.run();
       expect(saveStateSpy).toHaveBeenCalledWith(expect.anything(), 'npm');

@@ -12,6 +12,10 @@ This action provides the following functionality for GitHub Actions users:
 - Registering problem matchers for error output
 - Configuring authentication for GPR or npm
 
+## Breaking changes in V7
+
+- **Migrated to ESM** to enable support for the latest `@actions/*` package versions.
+
 ## Breaking changes in V6
 
 - Caching is now automatically enabled for npm projects when either the `devEngines.packageManager` field or the top-level `packageManager` field in `package.json` is set to `npm`. For other package managers, such as Yarn and pnpm, caching is disabled by default and must be configured manually using the `cache` input.
