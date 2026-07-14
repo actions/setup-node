@@ -1,4 +1,5 @@
-import tscMatcher from '../.github/tsc.json';
+import {describe, it, expect} from '@jest/globals';
+import tscMatcher from '../.github/tsc.json' with {type: 'json'};
 
 describe('problem matcher tests', () => {
   it('tsc: matches TypeScript "pretty" error message', () => {

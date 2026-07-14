@@ -1,19 +1,57 @@
+import {
+  jest,
+  describe,
+  it,
+  expect,
+  beforeAll,
+  beforeEach,
+  afterAll
+} from '@jest/globals';
+import {fileURLToPath} from 'url';
 import os from 'os';
 import fs from 'fs';
 import * as path from 'path';
-import * as core from '@actions/core';
 import * as io from '@actions/io';
-import * as auth from '../src/authutil';
-import * as cacheUtils from '../src/cache-utils';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+jest.unstable_mockModule('@actions/core', () => ({
+  info: jest.fn(),
+  warning: jest.fn(),
+  debug: jest.fn(),
+  error: jest.fn(),
+  notice: jest.fn(),
+  setFailed: jest.fn(),
+  setOutput: jest.fn(),
+  getInput: jest.fn((name: string) => {
+    const val =
+      process.env[`INPUT_${name.replace(/ /g, '_').toUpperCase()}`] || '';
+    return val.trim();
+  }),
+  getBooleanInput: jest.fn(),
+  getMultilineInput: jest.fn(),
+  addPath: jest.fn(),
+  exportVariable: jest.fn(),
+  saveState: jest.fn(),
+  getState: jest.fn(),
+  setSecret: jest.fn(),
+  isDebug: jest.fn(() => false),
+  startGroup: jest.fn(),
+  endGroup: jest.fn(),
+  group: jest.fn((_name: string, fn: () => Promise<unknown>) => fn())
+}));
+
+// Dynamic imports AFTER mocking so authutil sees the mocked core.
+const core = await import('@actions/core');
+const auth = await import('../src/authutil.js');
 
 let rcFile: string;
 
 describe('authutil tests', () => {
   const _runnerDir = path.join(__dirname, 'runner');
 
-  let cnSpy: jest.SpyInstance;
-  let logSpy: jest.SpyInstance;
-  let dbgSpy: jest.SpyInstance;
+  let cnSpy: jest.SpiedFunction<typeof process.stdout.write>;
+  let logSpy: jest.SpiedFunction<typeof console.log>;
 
   beforeAll(async () => {
     const randPath = path.join(Math.random().toString(36).substring(7));
@@ -37,19 +75,8 @@ describe('authutil tests', () => {
     // writes
     cnSpy = jest.spyOn(process.stdout, 'write');
     logSpy = jest.spyOn(console, 'log');
-    dbgSpy = jest.spyOn(core, 'debug');
-    cnSpy.mockImplementation(line => {
-      // uncomment to debug
-      // process.stderr.write('write:' + line + '\n');
-    });
-    logSpy.mockImplementation(line => {
-      // uncomment to debug
-      // process.stderr.write('log:' + line + '\n');
-    });
-    dbgSpy.mockImplementation(msg => {
-      // uncomment to see debug output
-      // process.stderr.write(msg + '\n');
-    });
+    cnSpy.mockImplementation(() => true);
+    logSpy.mockImplementation(() => {});
   }, 100000);
 
   function dbg(message: string) {
@@ -119,7 +146,8 @@ describe('authutil tests', () => {
   });
 
   it('should not export NODE_AUTH_TOKEN if not set in environment', async () => {
-    const exportSpy = jest.spyOn(core, 'exportVariable');
+    const exportSpy = core.exportVariable as jest.Mock;
+    exportSpy.mockClear();
     delete process.env.NODE_AUTH_TOKEN;
     await auth.configAuthentication('https://registry.npmjs.org/');
     expect(fs.statSync(rcFile)).toBeDefined();
@@ -132,7 +160,8 @@ describe('authutil tests', () => {
   });
 
   it('should export NODE_AUTH_TOKEN if set to empty string', async () => {
-    const exportSpy = jest.spyOn(core, 'exportVariable');
+    const exportSpy = core.exportVariable as jest.Mock;
+    exportSpy.mockClear();
     process.env.NODE_AUTH_TOKEN = '';
     await auth.configAuthentication('https://registry.npmjs.org/');
     expect(fs.statSync(rcFile)).toBeDefined();

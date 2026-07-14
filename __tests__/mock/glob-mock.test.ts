@@ -1,4 +1,5 @@
-import {MockGlobber} from './glob-mock';
+import {describe, it, expect} from '@jest/globals';
+import {MockGlobber} from './glob-mock.js';
 
 describe('mocked globber tests', () => {
   it('globber should return generator', async () => {

@@ -1,51 +1,162 @@
-import * as core from '@actions/core';
-import * as io from '@actions/io';
-import * as tc from '@actions/tool-cache';
-import * as httpm from '@actions/http-client';
-import * as exec from '@actions/exec';
-import * as cache from '@actions/cache';
+import {
+  jest,
+  describe,
+  it,
+  expect,
+  beforeEach,
+  afterEach,
+  afterAll
+} from '@jest/globals';
+import {fileURLToPath} from 'url';
 import fs from 'fs';
 import cp from 'child_process';
 import osm from 'os';
 import path from 'path';
-import * as main from '../src/main';
-import * as auth from '../src/authutil';
-import {INodeVersion} from '../src/distributions/base-models';
 
-import nodeTestManifest from './data/versions-manifest.json';
-import nodeTestDist from './data/node-dist-index.json';
-import nodeTestDistNightly from './data/node-nightly-index.json';
-import nodeTestDistRc from './data/node-rc-index.json';
-import nodeV8CanaryTestDist from './data/v8-canary-dist-index.json';
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+// Mock @actions modules before importing anything that depends on them
+jest.unstable_mockModule('@actions/core', () => ({
+  info: jest.fn(),
+  warning: jest.fn(),
+  debug: jest.fn(),
+  error: jest.fn(),
+  notice: jest.fn(),
+  setFailed: jest.fn(),
+  setOutput: jest.fn(),
+  getInput: jest.fn(),
+  getBooleanInput: jest.fn(),
+  getMultilineInput: jest.fn(),
+  addPath: jest.fn(),
+  exportVariable: jest.fn(),
+  saveState: jest.fn(),
+  getState: jest.fn(),
+  setSecret: jest.fn(),
+  isDebug: jest.fn(() => false),
+  startGroup: jest.fn(),
+  endGroup: jest.fn(),
+  group: jest.fn((_name: string, fn: () => Promise<unknown>) => fn()),
+  toPlatformPath: jest.fn((p: string) => p),
+  toWin32Path: jest.fn((p: string) => p),
+  toPosixPath: jest.fn((p: string) => p)
+}));
+
+jest.unstable_mockModule('@actions/io', () => ({
+  which: jest.fn(),
+  mkdirP: jest.fn(),
+  rmRF: jest.fn(),
+  mv: jest.fn(),
+  cp: jest.fn()
+}));
+
+jest.unstable_mockModule('@actions/tool-cache', () => ({
+  find: jest.fn(),
+  findAllVersions: jest.fn(),
+  downloadTool: jest.fn(),
+  extractTar: jest.fn(),
+  extractZip: jest.fn(),
+  extractXar: jest.fn(),
+  extract7z: jest.fn(),
+  cacheDir: jest.fn(),
+  cacheFile: jest.fn(),
+  getManifestFromRepo: jest.fn(),
+  findFromManifest: jest.fn(),
+  HTTPError: class HTTPError extends Error {
+    readonly httpStatusCode: number;
+    constructor(httpStatusCode?: number) {
+      super(`Unexpected HTTP response: ${httpStatusCode}`);
+      this.httpStatusCode = httpStatusCode ?? 0;
+    }
+  }
+}));
+
+const _mockGetJson = jest.fn();
+jest.unstable_mockModule('@actions/http-client', () => ({
+  HttpClient: jest.fn().mockImplementation(() => ({
+    getJson: _mockGetJson
+  }))
+}));
+
+jest.unstable_mockModule('@actions/exec', () => ({
+  exec: jest.fn(),
+  getExecOutput: jest.fn()
+}));
+
+jest.unstable_mockModule('@actions/cache', () => ({
+  saveCache: jest.fn(),
+  restoreCache: jest.fn(),
+  isFeatureAvailable: jest.fn()
+}));
+
+// Pre-import real authutil before mocking
+const realAuth = await import('../src/authutil.js');
+jest.unstable_mockModule('../src/authutil.js', () => ({
+  ...realAuth,
+  configAuthentication: jest.fn()
+}));
+
+// Dynamic imports after mocking
+const core = await import('@actions/core');
+const io = await import('@actions/io');
+const tc = await import('@actions/tool-cache');
+const httpm = await import('@actions/http-client');
+const exec = await import('@actions/exec');
+const cache = await import('@actions/cache');
+const main = await import('../src/main.js');
+const auth = await import('../src/authutil.js');
+
+const {default: nodeTestManifest} = await import(
+  './data/versions-manifest.json',
+  {with: {type: 'json'}}
+);
+const {default: nodeTestDist} = await import('./data/node-dist-index.json', {
+  with: {type: 'json'}
+});
+const {default: nodeTestDistNightly} = await import(
+  './data/node-nightly-index.json',
+  {with: {type: 'json'}}
+);
+const {default: nodeTestDistRc} = await import('./data/node-rc-index.json', {
+  with: {type: 'json'}
+});
+const {default: nodeV8CanaryTestDist} = await import(
+  './data/v8-canary-dist-index.json',
+  {with: {type: 'json'}}
+);
+
+import type {INodeVersion} from '../src/distributions/base-models.js';
+import type {IToolRelease} from '@actions/tool-cache';
 
 describe('setup-node', () => {
   let inputs = {} as any;
   let os = {} as any;
 
-  let inSpy: jest.SpyInstance;
-  let findSpy: jest.SpyInstance;
-  let findAllVersionsSpy: jest.SpyInstance;
-  let cnSpy: jest.SpyInstance;
-  let logSpy: jest.SpyInstance;
-  let warningSpy: jest.SpyInstance;
-  let getManifestSpy: jest.SpyInstance;
-  let getDistSpy: jest.SpyInstance;
-  let platSpy: jest.SpyInstance;
-  let archSpy: jest.SpyInstance;
-  let dlSpy: jest.SpyInstance;
-  let exSpy: jest.SpyInstance;
-  let cacheSpy: jest.SpyInstance;
-  let dbgSpy: jest.SpyInstance;
-  let whichSpy: jest.SpyInstance;
-  let existsSpy: jest.SpyInstance;
-  let readFileSyncSpy: jest.SpyInstance;
-  let mkdirpSpy: jest.SpyInstance;
-  let execSpy: jest.SpyInstance;
-  let authSpy: jest.SpyInstance;
-  let parseNodeVersionSpy: jest.SpyInstance;
-  let isCacheActionAvailable: jest.SpyInstance;
-  let getExecOutputSpy: jest.SpyInstance;
-  let getJsonSpy: jest.SpyInstance;
+  let inSpy: jest.Mock;
+  let findSpy: jest.Mock;
+  let findAllVersionsSpy: jest.Mock;
+  let cnSpy: jest.SpiedFunction<typeof process.stdout.write>;
+  let logSpy: jest.Mock;
+  let warningSpy: jest.Mock;
+  let addPathSpy: jest.Mock;
+  let setFailedSpy: jest.Mock;
+  let getManifestSpy: jest.Mock;
+  let getDistSpy: jest.Mock;
+  let platSpy: jest.SpiedFunction<typeof osm.platform>;
+  let archSpy: jest.SpiedFunction<typeof osm.arch>;
+  let dlSpy: jest.Mock;
+  let exSpy: jest.Mock;
+  let cacheSpy: jest.Mock;
+  let dbgSpy: jest.Mock;
+  let whichSpy: jest.Mock;
+  let existsSpy: jest.SpiedFunction<typeof fs.existsSync>;
+  let readFileSyncSpy: jest.Mock;
+  let mkdirpSpy: jest.Mock;
+  let execSpy: jest.SpiedFunction<typeof cp.execSync>;
+  let authSpy: jest.Mock;
+  let parseNodeVersionSpy: jest.Mock;
+  let isCacheActionAvailable: jest.Mock;
+  let getExecOutputSpy: jest.Mock;
+  let getJsonSpy: jest.Mock;
 
   beforeEach(() => {
     // @actions/core
@@ -53,8 +164,8 @@ describe('setup-node', () => {
     process.env['GITHUB_PATH'] = ''; // Stub out ENV file functionality so we can verify it writes to standard out
     process.env['GITHUB_OUTPUT'] = ''; // Stub out ENV file functionality so we can verify it writes to standard out
     inputs = {};
-    inSpy = jest.spyOn(core, 'getInput');
-    inSpy.mockImplementation(name => inputs[name]);
+    inSpy = core.getInput as jest.Mock;
+    inSpy.mockImplementation((name: any) => inputs[name]);
 
     // node
     os = {};
@@ -65,34 +176,35 @@ describe('setup-node', () => {
     execSpy = jest.spyOn(cp, 'execSync');
 
     // @actions/tool-cache
-    findSpy = jest.spyOn(tc, 'find');
-    findAllVersionsSpy = jest.spyOn(tc, 'findAllVersions');
-    dlSpy = jest.spyOn(tc, 'downloadTool');
-    exSpy = jest.spyOn(tc, 'extractTar');
-    cacheSpy = jest.spyOn(tc, 'cacheDir');
-    getManifestSpy = jest.spyOn(tc, 'getManifestFromRepo');
+    findSpy = tc.find as jest.Mock;
+    findAllVersionsSpy = tc.findAllVersions as jest.Mock;
+    dlSpy = tc.downloadTool as jest.Mock;
+    exSpy = tc.extractTar as jest.Mock;
+    cacheSpy = tc.cacheDir as jest.Mock;
+    getManifestSpy = tc.getManifestFromRepo as jest.Mock;
 
     // http-client
-    getJsonSpy = jest.spyOn(httpm.HttpClient.prototype, 'getJson');
+    getJsonSpy = _mockGetJson;
+    (httpm.HttpClient as jest.Mock).mockImplementation(() => ({
+      getJson: _mockGetJson
+    }));
 
     // io
-    whichSpy = jest.spyOn(io, 'which');
+    whichSpy = io.which as jest.Mock;
     existsSpy = jest.spyOn(fs, 'existsSync');
-    mkdirpSpy = jest.spyOn(io, 'mkdirP');
+    mkdirpSpy = io.mkdirP as jest.Mock;
 
     // @actions/tool-cache
-    isCacheActionAvailable = jest.spyOn(cache, 'isFeatureAvailable');
+    isCacheActionAvailable = cache.isFeatureAvailable as jest.Mock;
 
     // disable authentication portion for installer tests
-    authSpy = jest.spyOn(auth, 'configAuthentication');
+    authSpy = auth.configAuthentication as jest.Mock;
     authSpy.mockImplementation(() => {});
 
     // gets
-    getManifestSpy.mockImplementation(
-      () => <tc.IToolRelease[]>nodeTestManifest
-    );
+    getManifestSpy.mockImplementation(() => <IToolRelease[]>nodeTestManifest);
 
-    getJsonSpy.mockImplementation(url => {
+    getJsonSpy.mockImplementation((url: any) => {
       let res: any;
       if (url.includes('/rc')) {
         res = <INodeVersion[]>nodeTestDistRc;
@@ -109,28 +221,18 @@ describe('setup-node', () => {
 
     // writes
     cnSpy = jest.spyOn(process.stdout, 'write');
-    logSpy = jest.spyOn(core, 'info');
-    dbgSpy = jest.spyOn(core, 'debug');
-    warningSpy = jest.spyOn(core, 'warning');
-    cnSpy.mockImplementation(line => {
-      // uncomment to debug
-      // process.stderr.write('write:' + line + '\n');
-    });
-    logSpy.mockImplementation(line => {
-      // uncomment to debug
-      // process.stderr.write('log:' + line + '\n');
-    });
-    dbgSpy.mockImplementation(msg => {
-      // uncomment to see debug output
-      // process.stderr.write(msg + '\n');
-    });
-    warningSpy.mockImplementation(msg => {
-      // uncomment to debug
-      // process.stderr.write('log:' + msg + '\n');
-    });
+    logSpy = core.info as jest.Mock;
+    dbgSpy = core.debug as jest.Mock;
+    warningSpy = core.warning as jest.Mock;
+    addPathSpy = core.addPath as jest.Mock;
+    setFailedSpy = core.setFailed as jest.Mock;
+    cnSpy.mockImplementation(() => true);
+    logSpy.mockImplementation(() => {});
+    dbgSpy.mockImplementation(() => {});
+    warningSpy.mockImplementation(() => {});
 
     // @actions/exec
-    getExecOutputSpy = jest.spyOn(exec, 'getExecOutput');
+    getExecOutputSpy = exec.getExecOutput as jest.Mock;
     getExecOutputSpy.mockImplementation(() => 'v16.15.0');
   });
 
@@ -178,7 +280,7 @@ describe('setup-node', () => {
     inputs['node-version'] = '20-v8-canary';
     os['arch'] = 'x64';
 
-    inSpy.mockImplementation(name => inputs[name]);
+    inSpy.mockImplementation((name: any) => inputs[name]);
 
     const toolPath = path.normalize(
       '/cache/node/20.0.0-v8-canary20221103f7e2421e91/x64'
@@ -193,7 +295,7 @@ describe('setup-node', () => {
     await main.run();
 
     const expPath = path.join(toolPath, 'bin');
-    expect(cnSpy).toHaveBeenCalledWith(`::add-path::${expPath}${osm.EOL}`);
+    expect(addPathSpy).toHaveBeenCalledWith(expPath);
   });
 
   it('handles unhandled find error and reports error', async () => {
@@ -213,7 +315,7 @@ describe('setup-node', () => {
 
     await main.run();
 
-    expect(cnSpy).toHaveBeenCalledWith('::error::' + errMsg + osm.EOL);
+    expect(setFailedSpy).toHaveBeenCalledWith(errMsg);
   });
 
   //--------------------------------------------------
@@ -249,7 +351,7 @@ describe('setup-node', () => {
     expect(logSpy).toHaveBeenCalledWith(
       `Attempting to download ${versionSpec}...`
     );
-    expect(cnSpy).toHaveBeenCalledWith(`::add-path::${expPath}${osm.EOL}`);
+    expect(addPathSpy).toHaveBeenCalledWith(expPath);
   });
 
   it('does not find a version that does not exist', async () => {
@@ -268,8 +370,8 @@ describe('setup-node', () => {
     ]);
     await main.run();
 
-    expect(cnSpy).toHaveBeenCalledWith(
-      `::error::Unable to find Node version '${versionSpec}' for platform ${os.platform} and architecture ${os.arch}.${osm.EOL}`
+    expect(setFailedSpy).toHaveBeenCalledWith(
+      `Unable to find Node version '${versionSpec}' for platform ${os.platform} and architecture ${os.arch}.`
     );
   });
 
@@ -295,7 +397,7 @@ describe('setup-node', () => {
     });
     await main.run();
 
-    expect(cnSpy).toHaveBeenCalledWith(`::error::${errMsg}${osm.EOL}`);
+    expect(setFailedSpy).toHaveBeenCalledWith(errMsg);
   });
 
   it('acquires specified architecture of node', async () => {
@@ -319,7 +421,6 @@ describe('setup-node', () => {
         darwin: 'darwin',
         win32: 'win'
       }[os.platform];
-
       inputs['node-version'] = version;
       inputs['architecture'] = arch;
       inputs['token'] = 'faketoken';
@@ -393,9 +494,7 @@ describe('setup-node', () => {
         );
         expect(logSpy).toHaveBeenCalledWith('Extracting ...');
         expect(logSpy).toHaveBeenCalledWith('Adding to the cache ...');
-        expect(cnSpy).toHaveBeenCalledWith(
-          `::add-path::${path.join(toolPath, 'bin')}${osm.EOL}`
-        );
+        expect(addPathSpy).toHaveBeenCalledWith(path.join(toolPath, 'bin'));
       }
     );
 
@@ -428,9 +527,7 @@ describe('setup-node', () => {
         // assert
         expect(findAllVersionsSpy).toHaveBeenCalled();
         expect(logSpy).toHaveBeenCalledWith(`Found in cache @ ${toolPath}`);
-        expect(cnSpy).toHaveBeenCalledWith(
-          `::add-path::${path.join(toolPath, 'bin')}${osm.EOL}`
-        );
+        expect(addPathSpy).toHaveBeenCalledWith(path.join(toolPath, 'bin'));
       }
     );
 
@@ -490,9 +587,7 @@ describe('setup-node', () => {
         );
         expect(logSpy).toHaveBeenCalledWith('Extracting ...');
         expect(logSpy).toHaveBeenCalledWith('Adding to the cache ...');
-        expect(cnSpy).toHaveBeenCalledWith(
-          `::add-path::${path.join(toolPath, 'bin')}${osm.EOL}`
-        );
+        expect(addPathSpy).toHaveBeenCalledWith(path.join(toolPath, 'bin'));
       }
     );
 
@@ -554,9 +649,7 @@ describe('setup-node', () => {
         );
         expect(logSpy).toHaveBeenCalledWith('Extracting ...');
         expect(logSpy).toHaveBeenCalledWith('Adding to the cache ...');
-        expect(cnSpy).toHaveBeenCalledWith(
-          `::add-path::${path.join(toolPath, 'bin')}${osm.EOL}`
-        );
+        expect(addPathSpy).toHaveBeenCalledWith(path.join(toolPath, 'bin'));
       }
     );
   });
@@ -575,13 +668,11 @@ describe('setup-node', () => {
       findAllVersionsSpy.mockImplementation(() => [versionExpected]);
 
       const toolPath = path.normalize(`/cache/node/${versionExpected}/x64`);
-      findSpy.mockImplementation(version => toolPath);
+      findSpy.mockImplementation((version: any) => toolPath);
 
       await main.run();
 
-      expect(cnSpy).toHaveBeenCalledWith(
-        `::add-path::${toolPath}${path.sep}bin${osm.EOL}`
-      );
+      expect(addPathSpy).toHaveBeenCalledWith(`${toolPath}${path.sep}bin`);
 
       expect(dlSpy).not.toHaveBeenCalled();
       expect(exSpy).not.toHaveBeenCalled();
