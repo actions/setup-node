@@ -258,7 +258,11 @@ describe('setup-node', () => {
 
     // @actions/exec
     getExecOutputSpy = exec.getExecOutput as jest.Mock;
-    getExecOutputSpy.mockImplementation(() => 'v16.15.0');
+    getExecOutputSpy.mockImplementation(async () => ({
+      stdout: 'v16.15.0',
+      stderr: '',
+      exitCode: 0
+    }));
   });
 
   afterEach(() => {
@@ -379,6 +383,16 @@ describe('setup-node', () => {
     whichSpy.mockImplementation((cmd: any) => {
       return `some/${cmd}/path`;
     });
+    getExecOutputSpy.mockImplementation(async (cmd: string) => ({
+      stdout:
+        cmd === 'node'
+          ? `v${resolvedVersion}`
+          : cmd === 'npm'
+            ? '11.12.1'
+            : '4.17.1',
+      stderr: '',
+      exitCode: 0
+    }));
 
     await main.run();
 
@@ -756,7 +770,7 @@ describe('setup-node', () => {
         `Attempting to download ${versionSpec}...`
       );
       expect(addPathSpy).toHaveBeenCalledWith(expPath);
-    });
+    }, 10000);
   });
 
   describe('LTS version', () => {
@@ -924,8 +938,10 @@ describe('setup-node', () => {
       expect(dbgSpy).toHaveBeenCalledWith(
         'Getting manifest from actions/node-versions@main'
       );
-      expect(setFailedSpy).toHaveBeenCalledWith('Unable to download manifest');
-    });
+      expect(setFailedSpy).toHaveBeenCalledWith(
+        `Failed to fetch a valid manifest after 3 attempts. Last error: Unable to download manifest`
+      );
+    }, 10000);
   });
 
   describe('latest alias syntax', () => {
@@ -947,10 +963,13 @@ describe('setup-node', () => {
         await main.run();
 
         // assert
-        expect(logSpy).toHaveBeenCalledWith('Unable to download manifest');
+        expect(logSpy).toHaveBeenCalledWith(
+          'Failed to fetch a valid manifest after 3 attempts. Last error: Unable to download manifest'
+        );
 
         expect(logSpy).toHaveBeenCalledWith('getting latest node version...');
-      }
+      },
+      10000
     );
   });
 
@@ -1020,4 +1039,91 @@ describe('setup-node', () => {
       );
     }
   }, 100000);
+
+  describe('manifest retry and validation', () => {
+    beforeEach(() => {
+      os.platform = 'linux';
+      os.arch = 'x64';
+      inputs['node-version'] = 'lts/erbium';
+      findSpy.mockImplementation(() => '');
+    });
+
+    it('retries fetching the manifest and succeeds on a later attempt', async () => {
+      let calls = 0;
+      getManifestSpy.mockImplementation(() => {
+        calls++;
+        if (calls < 2) {
+          throw new Error('transient network failure');
+        }
+        return <tc.IToolRelease[]>nodeTestManifest;
+      });
+
+      dlSpy.mockImplementation(async () => '/some/temp/path');
+      const toolPath = path.normalize('/cache/node/12.16.2/x64');
+      exSpy.mockImplementation(async () => '/some/other/temp/path');
+      cacheSpy.mockImplementation(async () => toolPath);
+      getExecOutputSpy.mockImplementation(async () => ({
+        stdout: `v${path.basename(path.dirname(toolPath))}\n`,
+        stderr: '',
+        exitCode: 0
+      }));
+
+      await main.run();
+
+      expect(calls).toBe(2);
+      expect(logSpy).toHaveBeenCalledWith('Retrying to fetch the manifest...');
+      expect(dbgSpy).toHaveBeenCalledWith(
+        `Found LTS release '12.16.2' for Node version 'lts/erbium'`
+      );
+    }, 10000);
+
+    it('rejects an empty manifest as invalid and retries', async () => {
+      getManifestSpy.mockImplementation(() => []);
+
+      await main.run();
+
+      expect(getManifestSpy).toHaveBeenCalledTimes(3);
+      expect(setFailedSpy).toHaveBeenCalledWith(
+        `Failed to fetch a valid manifest after 3 attempts. Last error: The manifest fetched is empty, truncated, or does not contain any valid tool release entries.`
+      );
+    }, 10000);
+  });
+
+  describe('node version verification', () => {
+    beforeEach(() => {
+      os.platform = 'linux';
+      os.arch = 'x64';
+      inputs['node-version'] = '12';
+    });
+
+    it('fails when the installed node version does not match the expected version', async () => {
+      const toolPath = path.normalize('/cache/node/12.16.1/x64');
+      findSpy.mockReturnValue(toolPath);
+      getExecOutputSpy.mockImplementation(async () => ({
+        stdout: 'v22.22.3\n',
+        stderr: '',
+        exitCode: 0
+      }));
+
+      await main.run();
+
+      expect(setFailedSpy).toHaveBeenCalledWith(
+        `Node v12.16.1 installation failed, likely due to an incomplete or corrupted download.`
+      );
+    });
+
+    it('fails when the node executable cannot be invoked', async () => {
+      const toolPath = path.normalize('/cache/node/12.16.1/x64');
+      findSpy.mockReturnValue(toolPath);
+      getExecOutputSpy.mockImplementation(async () => {
+        throw new Error('node not found');
+      });
+
+      await main.run();
+
+      expect(setFailedSpy).toHaveBeenCalledWith(
+        `Node installation failed. Node may not be installed or not on PATH: node not found`
+      );
+    });
+  });
 });

@@ -99439,6 +99439,7 @@ class NightlyNodejs extends BasePrereleaseNodejs {
 
 
 
+
 class OfficialBuilds extends BaseDistribution {
     constructor(nodeInfo) {
         super(nodeInfo);
@@ -99473,7 +99474,9 @@ class OfficialBuilds extends BaseDistribution {
         let toolPath = this.findVersionInHostedToolCacheDirectory();
         if (toolPath) {
             core_info(`Found in cache @ ${toolPath}`);
+            const installedDir = toolPath;
             this.addToolPath(toolPath);
+            await this.verifyNodeVersion(installedDir);
             return;
         }
         let downloadPath = '';
@@ -99508,10 +99511,12 @@ class OfficialBuilds extends BaseDistribution {
         if (!toolPath) {
             toolPath = await this.downloadDirectlyFromNode();
         }
+        const installedDir = toolPath;
         if (this.osPlat != 'win32') {
             toolPath = external_path_default().join(toolPath, 'bin');
         }
         addPath(toolPath);
+        await this.verifyNodeVersion(installedDir);
     }
     addToolPath(toolPath) {
         if (this.osPlat != 'win32') {
@@ -99553,11 +99558,30 @@ class OfficialBuilds extends BaseDistribution {
         const url = mirror || 'https://nodejs.org';
         return `${url}/dist`;
     }
-    getManifest() {
-        core_debug('Getting manifest from actions/node-versions@main');
-        return getManifestFromRepo('actions', 'node-versions', this.nodeInfo.mirror && this.nodeInfo.mirrorToken
-            ? this.nodeInfo.mirrorToken
-            : this.nodeInfo.auth, 'main');
+    async getManifest() {
+        let lastError;
+        const maxAttempts = 3;
+        core_debug(`Getting manifest from actions/node-versions@main`);
+        for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+            try {
+                const manifest = await getManifestFromRepo('actions', 'node-versions', this.nodeInfo.mirror && this.nodeInfo.mirrorToken
+                    ? this.nodeInfo.mirrorToken
+                    : this.nodeInfo.auth, 'main');
+                if (Array.isArray(manifest) && manifest.length > 0) {
+                    return manifest;
+                }
+                lastError = new Error(`The manifest fetched is empty, truncated, or does not contain any valid tool release entries.`);
+            }
+            catch (err) {
+                lastError = err instanceof Error ? err : new Error(String(err));
+            }
+            core_debug(`Attempt ${attempt}/${maxAttempts} to fetch the manifest failed: ${lastError.message}`);
+            if (attempt < maxAttempts) {
+                core_info(`Retrying to fetch the manifest...`);
+                await new Promise(resolve => setTimeout(resolve, 1000 * 2 ** (attempt - 1))); // Retry after a delay
+            }
+        }
+        throw new Error(`Failed to fetch a valid manifest after ${maxAttempts} attempts. Last error: ${lastError?.message}`);
     }
     resolveLtsAliasFromManifest(versionSpec, stable, manifest) {
         const alias = versionSpec.split('lts/')[1]?.toLowerCase();
@@ -99614,6 +99638,24 @@ class OfficialBuilds extends BaseDistribution {
     }
     isLatestSyntax(versionSpec) {
         return ['current', 'latest', 'node'].includes(versionSpec);
+    }
+    async verifyNodeVersion(installedDir) {
+        // tool-cache layout: <root>/node/<version>/<arch>
+        const expectedVersion = 'v' + external_path_default().basename(external_path_default().dirname(installedDir));
+        let actualVersion = '';
+        try {
+            const { stdout } = await getExecOutput('node', ['--version'], {
+                silent: true
+            });
+            actualVersion = stdout.trim();
+        }
+        catch (err) {
+            throw new Error(`Node installation failed. Node may not be installed or not on PATH: ${err.message}`, { cause: err });
+        }
+        if (actualVersion !== expectedVersion) {
+            core_debug(`Node installation failed: expected ${expectedVersion} but "node --version" reported ${actualVersion || '(empty)'} (installedDir: ${installedDir}).`);
+            throw new Error(`Node ${expectedVersion} installation failed, likely due to an incomplete or corrupted download.`);
+        }
     }
 }
 
