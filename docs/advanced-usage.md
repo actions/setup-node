@@ -296,7 +296,7 @@ steps:
 
 steps:
 - uses: actions/checkout@v6
-- uses: pnpm/action-setup@v4
+- uses: pnpm/action-setup@v6
   with:
     version: 10
 - uses: actions/setup-node@v7
