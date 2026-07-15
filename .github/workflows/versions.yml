@@ -61,7 +61,7 @@ jobs:
           [
             '26-v8-canary',
             '26.0.0-v8-canary',
-            'v26.0.0-v8-canary20251016054584e5cf'
+            '26.0.0-v8-canary20251016054584e5cf'
           ]
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
@@ -251,10 +251,10 @@ jobs:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
-      - name: Setup node 26 x86 from dist
+      - name: Setup node 22 x86 from dist
         uses: ./
         with:
-          node-version: '26'
+          node-version: '22'
           architecture: 'x86'
       - name: Verify node
         run: __tests__/verify-arch.sh "ia32"
