@@ -17,10 +17,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest, macos-latest-large]
-        node-version: [20, 22, 24]
+        os: [ubuntu-latest, windows-latest, macos-latest, macos-15-intel]
+        node-version: [22, 24, 26]
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
       - name: Setup Node
         uses: ./
         with:
@@ -34,10 +34,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest-large]
-        node-version: [lts/dubnium, lts/erbium, lts/fermium, lts/*, lts/-1]
+        os: [ubuntu-latest, windows-latest, macos-15-intel]
+        node-version: [lts/*, lts/-1]
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
       - name: Setup Node
         uses: ./
         with:
@@ -56,15 +56,15 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest, macos-latest-large]
+        os: [ubuntu-latest, windows-latest, macos-latest, macos-15-intel]
         node-version:
           [
-            '20-v8-canary',
-            '20.0.0-v8-canary',
-            '20.0.0-v8-canary20221101e50e45c9f8'
+            '26-v8-canary',
+            '26.0.0-v8-canary',
+            '26.0.0-v8-canary20251016054584e5cf'
           ]
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
       - name: Setup Node
         uses: ./
         with:
@@ -81,10 +81,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest, macos-latest-large]
-        node-version: [20-nightly, 25-nightly, 24.0.0-nightly]
+        os: [ubuntu-latest, windows-latest, macos-latest, macos-15-intel]
+        node-version: [26-nightly, 25-nightly, 24.0.0-nightly]
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
       - name: Setup Node
         uses: ./
         with:
@@ -101,10 +101,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest, macos-latest-large]
-        node-version: [20.0.0-rc.1, 22.14.0-rc.1, 24.0.0-rc.4]
+        os: [ubuntu-latest, windows-latest, macos-latest, macos-15-intel]
+        node-version: [26.0.0-rc.1, 22.14.0-rc.1, 24.0.0-rc.4]
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
       - name: Setup Node
         uses: ./
         with:
@@ -121,10 +121,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest, macos-latest-large]
-        node-version: [20.10.0, 22.0.0, 24.9.0]
+        os: [ubuntu-latest, windows-latest, macos-latest, macos-15-intel]
+        node-version: [26.5.0, 22.0.0, 24.9.0]
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
       - name: Setup Node
         uses: ./
         with:
@@ -138,10 +138,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest, macos-latest-large]
-        node-version: [20, 22, 24]
+        os: [ubuntu-latest, windows-latest, macos-latest, macos-15-intel]
+        node-version: [22, 24, 26]
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
       - name: Setup Node and check latest
         uses: ./
         with:
@@ -156,11 +156,11 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest, macos-latest-large]
+        os: [ubuntu-latest, windows-latest, macos-latest, macos-15-intel]
         node-version-file:
           [.nvmrc, .tool-versions, .tool-versions-node, package.json]
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
       - name: Setup node from node version file
         uses: ./
         with:
@@ -175,22 +175,22 @@ jobs:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
       - name: Setup node from node version file
         uses: ./
         with:
           node-version-file: '__tests__/data/package-dev-engines.json'
       - name: Verify node
-        run: __tests__/verify-node.sh 20
+        run: __tests__/verify-node.sh 26
 
   version-file-volta:
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest, macos-latest-large]
+        os: [ubuntu-latest, windows-latest, macos-latest, macos-15-intel]
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
       - name: Setup node from node version file
         uses: ./
         with:
@@ -203,9 +203,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest, macos-latest-large]
+        os: [ubuntu-latest, windows-latest, macos-latest, macos-15-intel]
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
       - name: Setup node from node version file
         uses: ./
         with:
@@ -218,10 +218,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest, macos-latest-large]
+        os: [ubuntu-latest, windows-latest, macos-latest, macos-15-intel]
         node-version: [21, 23]
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
       - name: Setup Node from dist
         uses: ./
         with:
@@ -235,9 +235,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest-large]
+        os: [ubuntu-latest, windows-latest, macos-15-intel]
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
       # test old versions which didn't have npm and layout different
       - name: Setup node 0.12.18 from dist
         uses: ./
@@ -250,11 +250,11 @@ jobs:
   arch:
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v6
-      - name: Setup node 20 x86 from dist
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - name: Setup node 22 x86 from dist
         uses: ./
         with:
-          node-version: '20'
+          node-version: '22'
           architecture: 'x86'
       - name: Verify node
         run: __tests__/verify-arch.sh "ia32"
@@ -265,7 +265,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest, macos-latest-large]
+        os: [ubuntu-latest, windows-latest, macos-latest, macos-15-intel]
         node-version: [current, latest, node]
     steps:
       - name: Get node version
@@ -274,7 +274,7 @@ jobs:
           echo "LATEST_NODE_VERSION=$latestNodeVersion" >> $GITHUB_OUTPUT
         id: version
         shell: bash
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
       - name: Setup Node
         uses: ./
         with:
