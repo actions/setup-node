@@ -4,7 +4,7 @@ import * as cache from '@actions/cache';
 import * as glob from '@actions/glob';
 import path from 'path';
 import fs from 'fs';
-import {unique} from './util';
+import {unique} from './util.js';
 
 export interface PackageManagerInfo {
   name: string;
@@ -91,7 +91,7 @@ export const getCommandOutputNotEmpty = async (
   error: string,
   cwd?: string
 ): Promise<string> => {
-  const stdOut = getCommandOutput(toolCommand, cwd);
+  const stdOut = await getCommandOutput(toolCommand, cwd);
   if (!stdOut) {
     throw new Error(error);
   }

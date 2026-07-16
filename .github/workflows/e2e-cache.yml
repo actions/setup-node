@@ -18,10 +18,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest, macos-latest-large]
-        node-version: [20, 22, 24]
+        os: [ubuntu-latest, windows-latest, macos-latest, macos-15-intel]
+        node-version: [22, 24, 26]
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
       - name: Clean global cache
         run: npm cache clean --force
       - name: Setup Node
@@ -41,14 +41,14 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest, macos-latest-large]
-        node-version: [20, 22, 24]
+        os: [ubuntu-latest, windows-latest, macos-latest, macos-15-intel]
+        node-version: [22, 24, 26]
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
       - name: Install pnpm
-        uses: pnpm/action-setup@v4
+        uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6.0.9
         with:
-          version: 6.10.0
+          version: 10
       - name: Generate pnpm file
         run: pnpm install
       - name: Remove dependencies
@@ -74,10 +74,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest, macos-latest-large]
-        node-version: [20, 22, 24]
+        os: [ubuntu-latest, windows-latest, macos-latest, macos-15-intel]
+        node-version: [22, 24, 26]
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
       - name: Yarn version
         run: yarn --version
       - name: Generate yarn file
@@ -106,10 +106,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest, macos-latest-large]
-        node-version: [20, 22, 24]
+        os: [ubuntu-latest, windows-latest, macos-latest, macos-15-intel]
+        node-version: [22, 24, 26]
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
       - name: Update yarn
         run: yarn set version 3.6.4
       - name: Yarn version
@@ -139,11 +139,11 @@ jobs:
     name: Test yarn subprojects
     strategy:
       matrix:
-        node-version: [20, 22, 24]
+        node-version: [22, 24, 26]
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
 
       - name: prepare sub-projects
         run: __tests__/prepare-yarn-subprojects.sh yarn1
@@ -166,11 +166,11 @@ jobs:
     name: Test yarn subprojects all locally managed
     strategy:
       matrix:
-        node-version: [20, 22, 24]
+        node-version: [22, 24, 26]
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
 
       - name: prepare sub-projects
         run: __tests__/prepare-yarn-subprojects.sh keepcache keepcache
@@ -193,11 +193,11 @@ jobs:
     name: Test yarn subprojects some locally managed
     strategy:
       matrix:
-        node-version: [20, 22, 24]
+        node-version: [22, 24, 26]
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
 
       - name: prepare sub-projects
         run: __tests__/prepare-yarn-subprojects.sh global
@@ -220,11 +220,11 @@ jobs:
     name: Test yarn subprojects managed by git
     strategy:
       matrix:
-        node-version: [20, 22, 24]
+        node-version: [22, 24, 26]
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
 
       - name: prepare sub-projects
         run: /bin/bash __tests__/prepare-yarn-subprojects.sh keepcache
@@ -250,10 +250,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest, macos-latest-large]
-        node-version: [20, 22, 24]
+        os: [ubuntu-latest, windows-latest, macos-latest, macos-15-intel]
+        node-version: [22, 24, 26]
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
       - name: Create package.json with packageManager field
         run: |
           echo '{ "name": "test-project", "version": "1.0.0", "packageManager": "npm@8.0.0" }' > package.json
@@ -275,10 +275,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest, macos-latest-large]
-        node-version: [20, 22, 24]
+        os: [ubuntu-latest, windows-latest, macos-latest, macos-15-intel]
+        node-version: [22, 24, 26]
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
       - name: Create package.json with devEngines field
         run: |
           echo '{

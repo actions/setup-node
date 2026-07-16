@@ -1,45 +1,133 @@
-import * as core from '@actions/core';
-import * as cache from '@actions/cache';
-import path from 'path';
-import * as utils from '../src/cache-utils';
 import {
-  PackageManagerInfo,
+  jest,
+  describe,
+  it,
+  expect,
+  beforeEach,
+  afterEach,
+  afterAll
+} from '@jest/globals';
+import {fileURLToPath} from 'url';
+import path from 'path';
+import fs from 'fs';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+// Mock @actions modules before importing anything that depends on them
+jest.unstable_mockModule('@actions/core', () => ({
+  info: jest.fn(),
+  warning: jest.fn(),
+  debug: jest.fn(),
+  error: jest.fn(),
+  notice: jest.fn(),
+  setFailed: jest.fn(),
+  setOutput: jest.fn(),
+  getInput: jest.fn(),
+  getBooleanInput: jest.fn(),
+  getMultilineInput: jest.fn(),
+  addPath: jest.fn(),
+  exportVariable: jest.fn(),
+  saveState: jest.fn(),
+  getState: jest.fn(),
+  setSecret: jest.fn(),
+  isDebug: jest.fn(() => false),
+  startGroup: jest.fn(),
+  endGroup: jest.fn(),
+  group: jest.fn((_name: string, fn: () => Promise<unknown>) => fn()),
+  toPlatformPath: jest.fn((p: string) => p),
+  toWin32Path: jest.fn((p: string) => p),
+  toPosixPath: jest.fn((p: string) => p)
+}));
+
+jest.unstable_mockModule('@actions/cache', () => ({
+  saveCache: jest.fn(),
+  restoreCache: jest.fn(),
+  isFeatureAvailable: jest.fn()
+}));
+
+jest.unstable_mockModule('@actions/glob', () => ({
+  hashFiles: jest.fn(),
+  create: jest.fn()
+}));
+
+jest.unstable_mockModule('@actions/exec', () => ({
+  exec: jest.fn(),
+  getExecOutput: jest.fn()
+}));
+
+jest.unstable_mockModule('@actions/io', () => ({
+  which: jest.fn(),
+  mkdirP: jest.fn(),
+  rmRF: jest.fn(),
+  mv: jest.fn(),
+  cp: jest.fn()
+}));
+
+// Dynamic imports after mocking
+const core = await import('@actions/core');
+const cache = await import('@actions/cache');
+const glob = await import('@actions/glob');
+const exec = await import('@actions/exec');
+const utils = await import('../src/cache-utils.js');
+const cacheUtils = await import('../src/cache-utils.js');
+// @ts-ignore - test file outside rootDir
+const {MockGlobber} = await import('./mock/glob-mock.js');
+
+import type {PackageManagerInfo} from '../src/cache-utils.js';
+
+const {
   isCacheFeatureAvailable,
   supportedPackageManagers,
   isGhes,
   resetProjectDirectoriesMemoized
-} from '../src/cache-utils';
-import fs from 'fs';
-import * as cacheUtils from '../src/cache-utils';
-import * as glob from '@actions/glob';
-import {Globber} from '@actions/glob';
-import {MockGlobber} from './mock/glob-mock';
+} = utils;
+
+// Helper: mock exec.getExecOutput to simulate getCommandOutput behavior
+function mockGetCommandOutput(
+  spy: jest.Mock,
+  fn: (command: string, cwd?: string) => string
+) {
+  spy.mockImplementation(async (command: any, _args: any, options: any) => ({
+    stdout: fn(command, options?.cwd),
+    stderr: '',
+    exitCode: 0
+  }));
+}
+
+function mockGetCommandOutputOnce(spy: jest.Mock, result: string) {
+  spy.mockImplementationOnce(async () => ({
+    stdout: result,
+    stderr: '',
+    exitCode: 0
+  }));
+}
 
 describe('cache-utils', () => {
   const versionYarn1 = '1.2.3';
 
-  let debugSpy: jest.SpyInstance;
-  let getCommandOutputSpy: jest.SpyInstance;
-  let isFeatureAvailable: jest.SpyInstance;
-  let info: jest.SpyInstance;
-  let warningSpy: jest.SpyInstance;
-  let fsRealPathSyncSpy: jest.SpyInstance;
+  let debugSpy: jest.Mock;
+  let getExecOutputSpy: jest.Mock;
+  let isFeatureAvailable: jest.Mock;
+  let info: jest.Mock;
+  let warningSpy: jest.Mock;
+  let fsRealPathSyncSpy: jest.SpiedFunction<typeof fs.realpathSync>;
 
   beforeEach(() => {
     console.log('::stop-commands::stoptoken');
     process.env['GITHUB_WORKSPACE'] = path.join(__dirname, 'data');
-    debugSpy = jest.spyOn(core, 'debug');
-    debugSpy.mockImplementation(msg => {});
 
-    info = jest.spyOn(core, 'info');
-    warningSpy = jest.spyOn(core, 'warning');
+    debugSpy = core.debug as jest.Mock;
+    debugSpy.mockImplementation((_msg: any) => {});
 
-    isFeatureAvailable = jest.spyOn(cache, 'isFeatureAvailable');
+    info = core.info as jest.Mock;
+    warningSpy = core.warning as jest.Mock;
 
-    getCommandOutputSpy = jest.spyOn(utils, 'getCommandOutput');
+    isFeatureAvailable = cache.isFeatureAvailable as jest.Mock;
+
+    getExecOutputSpy = exec.getExecOutput as jest.Mock;
 
     fsRealPathSyncSpy = jest.spyOn(fs, 'realpathSync');
-    fsRealPathSyncSpy.mockImplementation(dirName => {
+    fsRealPathSyncSpy.mockImplementation((dirName: any) => {
       return dirName;
     });
   });
@@ -47,7 +135,6 @@ describe('cache-utils', () => {
   afterEach(() => {
     jest.resetAllMocks();
     jest.clearAllMocks();
-    //jest.restoreAllMocks();
   });
 
   afterAll(async () => {
@@ -64,7 +151,7 @@ describe('cache-utils', () => {
       ['yarn2', null],
       ['npm7', null]
     ])('getPackageManagerInfo for %s is %o', async (packageManager, result) => {
-      getCommandOutputSpy.mockImplementationOnce(() => versionYarn1);
+      mockGetCommandOutputOnce(getExecOutputSpy, versionYarn1);
       await expect(utils.getPackageManagerInfo(packageManager)).resolves.toBe(
         result
       );
@@ -92,7 +179,6 @@ describe('cache-utils', () => {
 
   it('isCacheFeatureAvailable for GHES is available', () => {
     isFeatureAvailable.mockImplementation(() => true);
-
     expect(isCacheFeatureAvailable()).toStrictEqual(true);
   });
 
@@ -103,24 +189,22 @@ describe('cache-utils', () => {
   });
 
   describe('getCacheDirectoriesPaths', () => {
-    let existsSpy: jest.SpyInstance;
-    let lstatSpy: jest.SpyInstance;
-    let globCreateSpy: jest.SpyInstance;
+    let existsSpy: jest.SpiedFunction<typeof fs.existsSync>;
+    let lstatSpy: jest.SpiedFunction<typeof fs.lstatSync>;
+    let globCreateSpy: jest.Mock;
 
     beforeEach(() => {
       existsSpy = jest.spyOn(fs, 'existsSync');
       existsSpy.mockImplementation(() => true);
 
       lstatSpy = jest.spyOn(fs, 'lstatSync');
-      lstatSpy.mockImplementation(arg => ({
-        isDirectory: () => true
-      }));
+      lstatSpy.mockImplementation(
+        (_arg: any) => ({isDirectory: () => true}) as any
+      );
 
-      globCreateSpy = jest.spyOn(glob, 'create');
-
-      globCreateSpy.mockImplementation(
-        (pattern: string): Promise<Globber> =>
-          MockGlobber.create(['/foo', '/bar'])
+      globCreateSpy = glob.create as jest.Mock;
+      globCreateSpy.mockImplementation((_pattern: any) =>
+        MockGlobber.create(['/foo', '/bar'])
       );
 
       resetProjectDirectoriesMemoized();
@@ -129,7 +213,6 @@ describe('cache-utils', () => {
     afterEach(() => {
       existsSpy.mockRestore();
       lstatSpy.mockRestore();
-      globCreateSpy.mockRestore();
     });
 
     it.each([
@@ -142,22 +225,18 @@ describe('cache-utils', () => {
     ])(
       'getCacheDirectoriesPaths should return one dir for non yarn',
       async (packageManagerInfo, cacheDependency) => {
-        getCommandOutputSpy.mockImplementation(() => 'foo');
-
+        mockGetCommandOutput(getExecOutputSpy, () => 'foo');
         const dirs = await cacheUtils.getCacheDirectories(
           packageManagerInfo,
           cacheDependency
         );
         expect(dirs).toEqual(['foo']);
-        // to do not call for a version
-        // call once for get cache folder
-        expect(getCommandOutputSpy).toHaveBeenCalledTimes(1);
+        expect(getExecOutputSpy).toHaveBeenCalledTimes(1);
       }
     );
 
     it('getCacheDirectoriesPaths should return one dir for yarn without cacheDependency', async () => {
-      getCommandOutputSpy.mockImplementation(() => 'foo');
-
+      mockGetCommandOutput(getExecOutputSpy, () => 'foo');
       const dirs = await cacheUtils.getCacheDirectories(
         supportedPackageManagers.yarn,
         ''
@@ -178,15 +257,12 @@ describe('cache-utils', () => {
     ])(
       'getCacheDirectoriesPaths should throw for getCommandOutput returning empty',
       async (packageManagerInfo, cacheDependency) => {
-        getCommandOutputSpy.mockImplementation((command: string) =>
-          // return empty string to indicate getCacheFolderPath failed
-          //        --version still works
+        mockGetCommandOutput(getExecOutputSpy, (command: string) =>
           command.includes('version') ? '1.' : ''
         );
-
         await expect(
           cacheUtils.getCacheDirectories(packageManagerInfo, cacheDependency)
-        ).rejects.toThrow(); //'Could not get cache folder path for /dir');
+        ).rejects.toThrow();
       }
     );
 
@@ -196,10 +272,9 @@ describe('cache-utils', () => {
     ])(
       'getCacheDirectoriesPaths should nothrow in case of having not directories',
       async (packageManagerInfo, cacheDependency) => {
-        lstatSpy.mockImplementation(arg => ({
-          isDirectory: () => false
-        }));
-
+        lstatSpy.mockImplementation(
+          (_arg: any) => ({isDirectory: () => false}) as any
+        );
         await cacheUtils.getCacheDirectories(
           packageManagerInfo,
           cacheDependency
@@ -214,9 +289,8 @@ describe('cache-utils', () => {
     it.each(['1.1.1', '2.2.2'])(
       'getCacheDirectoriesPaths yarn v%s should return one dir without cacheDependency',
       async version => {
-        getCommandOutputSpy.mockImplementationOnce(() => version);
-        getCommandOutputSpy.mockImplementationOnce(() => `foo${version}`);
-
+        mockGetCommandOutputOnce(getExecOutputSpy, version);
+        mockGetCommandOutputOnce(getExecOutputSpy, `foo${version}`);
         const dirs = await cacheUtils.getCacheDirectories(
           supportedPackageManagers.yarn,
           ''
@@ -229,14 +303,12 @@ describe('cache-utils', () => {
       'getCacheDirectoriesPaths yarn v%s should return 2 dirs with globbed cacheDependency',
       async version => {
         let dirNo = 1;
-        getCommandOutputSpy.mockImplementation((command: string) =>
+        mockGetCommandOutput(getExecOutputSpy, (command: string) =>
           command.includes('version') ? version : `file_${version}_${dirNo++}`
         );
-        globCreateSpy.mockImplementation(
-          (pattern: string): Promise<Globber> =>
-            MockGlobber.create(['/tmp/dir1/file', '/tmp/dir2/file'])
+        globCreateSpy.mockImplementation((_pattern: any) =>
+          MockGlobber.create(['/tmp/dir1/file', '/tmp/dir2/file'])
         );
-
         const dirs = await cacheUtils.getCacheDirectories(
           supportedPackageManagers.yarn,
           '/tmp/**/file'
@@ -249,18 +321,16 @@ describe('cache-utils', () => {
       'getCacheDirectoriesPaths yarn v%s should return 2 dirs  with globbed cacheDependency expanding to duplicates',
       async version => {
         let dirNo = 1;
-        getCommandOutputSpy.mockImplementation((command: string) =>
+        mockGetCommandOutput(getExecOutputSpy, (command: string) =>
           command.includes('version') ? version : `file_${version}_${dirNo++}`
         );
-        globCreateSpy.mockImplementation(
-          (pattern: string): Promise<Globber> =>
-            MockGlobber.create([
-              '/tmp/dir1/file',
-              '/tmp/dir2/file',
-              '/tmp/dir1/file'
-            ])
+        globCreateSpy.mockImplementation((_pattern: any) =>
+          MockGlobber.create([
+            '/tmp/dir1/file',
+            '/tmp/dir2/file',
+            '/tmp/dir1/file'
+          ])
         );
-
         const dirs = await cacheUtils.getCacheDirectories(
           supportedPackageManagers.yarn,
           '/tmp/**/file'
@@ -273,55 +343,59 @@ describe('cache-utils', () => {
       'getCacheDirectoriesPaths yarn v%s should return 2 uniq dirs despite duplicate cache directories',
       async version => {
         let dirNo = 1;
-        getCommandOutputSpy.mockImplementation((command: string) =>
+        mockGetCommandOutput(getExecOutputSpy, (command: string) =>
           command.includes('version')
             ? version
             : `file_${version}_${dirNo++ % 2}`
         );
-        globCreateSpy.mockImplementation(
-          (pattern: string): Promise<Globber> =>
-            MockGlobber.create([
-              '/tmp/dir1/file',
-              '/tmp/dir2/file',
-              '/tmp/dir3/file'
-            ])
+        globCreateSpy.mockImplementation((_pattern: any) =>
+          MockGlobber.create([
+            '/tmp/dir1/file',
+            '/tmp/dir2/file',
+            '/tmp/dir3/file'
+          ])
         );
-
         const dirs = await cacheUtils.getCacheDirectories(
           supportedPackageManagers.yarn,
           '/tmp/**/file'
         );
         expect(dirs).toEqual([`file_${version}_1`, `file_${version}_0`]);
-        expect(getCommandOutputSpy).toHaveBeenCalledTimes(6);
-        expect(getCommandOutputSpy).toHaveBeenCalledWith(
+        expect(getExecOutputSpy).toHaveBeenCalledTimes(6);
+        expect(getExecOutputSpy).toHaveBeenCalledWith(
           'yarn --version',
-          '/tmp/dir1'
+          undefined,
+          expect.objectContaining({cwd: '/tmp/dir1'})
         );
-        expect(getCommandOutputSpy).toHaveBeenCalledWith(
+        expect(getExecOutputSpy).toHaveBeenCalledWith(
           'yarn --version',
-          '/tmp/dir2'
+          undefined,
+          expect.objectContaining({cwd: '/tmp/dir2'})
         );
-        expect(getCommandOutputSpy).toHaveBeenCalledWith(
+        expect(getExecOutputSpy).toHaveBeenCalledWith(
           'yarn --version',
-          '/tmp/dir3'
+          undefined,
+          expect.objectContaining({cwd: '/tmp/dir3'})
         );
-        expect(getCommandOutputSpy).toHaveBeenCalledWith(
+        expect(getExecOutputSpy).toHaveBeenCalledWith(
           version.startsWith('1.')
             ? 'yarn cache dir'
             : 'yarn config get cacheFolder',
-          '/tmp/dir1'
+          undefined,
+          expect.objectContaining({cwd: '/tmp/dir1'})
         );
-        expect(getCommandOutputSpy).toHaveBeenCalledWith(
+        expect(getExecOutputSpy).toHaveBeenCalledWith(
           version.startsWith('1.')
             ? 'yarn cache dir'
             : 'yarn config get cacheFolder',
-          '/tmp/dir2'
+          undefined,
+          expect.objectContaining({cwd: '/tmp/dir2'})
         );
-        expect(getCommandOutputSpy).toHaveBeenCalledWith(
+        expect(getExecOutputSpy).toHaveBeenCalledWith(
           version.startsWith('1.')
             ? 'yarn cache dir'
             : 'yarn config get cacheFolder',
-          '/tmp/dir3'
+          undefined,
+          expect.objectContaining({cwd: '/tmp/dir3'})
         );
       }
     );
@@ -329,22 +403,20 @@ describe('cache-utils', () => {
     it.each(['1.1.1', '2.2.2'])(
       'getCacheDirectoriesPaths yarn v%s should return 4 dirs with multiple globs',
       async version => {
-        // simulate wrong indents
         const cacheDependencyPath = `/tmp/dir1/file
           /tmp/dir2/file
 /tmp/**/file
           `;
-        globCreateSpy.mockImplementation(
-          (pattern: string): Promise<Globber> =>
-            MockGlobber.create([
-              '/tmp/dir1/file',
-              '/tmp/dir2/file',
-              '/tmp/dir3/file',
-              '/tmp/dir4/file'
-            ])
+        globCreateSpy.mockImplementation((_pattern: any) =>
+          MockGlobber.create([
+            '/tmp/dir1/file',
+            '/tmp/dir2/file',
+            '/tmp/dir3/file',
+            '/tmp/dir4/file'
+          ])
         );
         let dirNo = 1;
-        getCommandOutputSpy.mockImplementation((command: string) =>
+        mockGetCommandOutput(getExecOutputSpy, (command: string) =>
           command.includes('version') ? version : `file_${version}_${dirNo++}`
         );
         const dirs = await cacheUtils.getCacheDirectories(

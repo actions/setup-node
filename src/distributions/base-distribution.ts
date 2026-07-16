@@ -9,8 +9,8 @@ import * as assert from 'assert';
 import * as path from 'path';
 import os from 'os';
 import fs from 'fs';
-
-import {NodeInputs, INodeVersion, INodeVersionInfo} from './base-models';
+import {fileURLToPath} from 'url';
+import {NodeInputs, INodeVersion, INodeVersionInfo} from './base-models.js';
 
 export default abstract class BaseDistribution {
   protected httpClient: hc.HttpClient;
@@ -26,9 +26,8 @@ export default abstract class BaseDistribution {
   protected abstract getDistributionUrl(mirror: string): string;
 
   public async setupNodeJs() {
-    let nodeJsVersions: INodeVersion[] | undefined;
     if (this.nodeInfo.checkLatest) {
-      const evaluatedVersion = await this.findVersionInDist(nodeJsVersions);
+      const evaluatedVersion = await this.findVersionInDist(undefined);
       this.nodeInfo.versionSpec = evaluatedVersion;
     }
 
@@ -36,7 +35,7 @@ export default abstract class BaseDistribution {
     if (toolPath) {
       core.info(`Found in cache @ ${toolPath}`);
     } else {
-      const evaluatedVersion = await this.findVersionInDist(nodeJsVersions);
+      const evaluatedVersion = await this.findVersionInDist(undefined);
       const toolName = this.getNodejsDistInfo(evaluatedVersion);
       toolPath = await this.downloadNodejs(toolName);
     }
@@ -168,12 +167,14 @@ export default abstract class BaseDistribution {
     return toolPath;
   }
 
-  protected validRange(versionSpec: string) {
-    let options: semver.RangeOptions | undefined;
+  protected validRange(versionSpec: string): {
+    range: string;
+    options: semver.RangeOptions | undefined;
+  } {
     const c = semver.clean(versionSpec) || '';
     const valid = semver.valid(c) ?? versionSpec;
 
-    return {range: valid, options};
+    return {range: valid, options: undefined};
   }
 
   protected async acquireWindowsNodeFromFallbackLocation(
@@ -259,7 +260,12 @@ export default abstract class BaseDistribution {
         fs.renameSync(downloadPath, renamedArchive);
         extPath = await tc.extractZip(renamedArchive);
       } else {
-        const _7zPath = path.join(__dirname, '../..', 'externals', '7zr.exe');
+        const _7zPath = path.join(
+          path.dirname(fileURLToPath(import.meta.url)),
+          '../..',
+          'externals',
+          '7zr.exe'
+        );
         extPath = await tc.extract7z(downloadPath, undefined, _7zPath);
       }
       // 7z extracts to folder matching file name
