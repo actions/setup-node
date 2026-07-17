@@ -98103,8 +98103,19 @@ function getNodeVersionFromFile(versionFilePath) {
     catch {
         core_info('Node version file is not JSON file');
     }
-    const found = contents.match(/^(?:node(js)?\s+)?v?(?<version>[^\s]+)$/m);
-    return found?.groups?.version ?? contents.trim();
+    let versionFileContents = contents;
+    if (external_path_default().basename(versionFilePath) === '.nvmrc') {
+        versionFileContents = contents
+            .split(/\r?\n/)
+            .map(line => line.replace(/#.*/, '').trim())
+            .filter(Boolean)
+            .join('\n');
+        if (!versionFileContents) {
+            return null;
+        }
+    }
+    const found = versionFileContents.match(/^(?:node(js)?\s+)?v?(?<version>[^\s]+)$/m);
+    return found?.groups?.version ?? versionFileContents.trim();
 }
 async function printEnvDetailsAndSetOutput() {
     startGroup('Environment details');

@@ -92709,8 +92709,19 @@ function getNodeVersionFromFile(versionFilePath) {
     catch {
         core.info('Node version file is not JSON file');
     }
-    const found = contents.match(/^(?:node(js)?\s+)?v?(?<version>[^\s]+)$/m);
-    return found?.groups?.version ?? contents.trim();
+    let versionFileContents = contents;
+    if (path.basename(versionFilePath) === '.nvmrc') {
+        versionFileContents = contents
+            .split(/\r?\n/)
+            .map(line => line.replace(/#.*/, '').trim())
+            .filter(Boolean)
+            .join('\n');
+        if (!versionFileContents) {
+            return null;
+        }
+    }
+    const found = versionFileContents.match(/^(?:node(js)?\s+)?v?(?<version>[^\s]+)$/m);
+    return found?.groups?.version ?? versionFileContents.trim();
 }
 async function printEnvDetailsAndSetOutput() {
     core.startGroup('Environment details');

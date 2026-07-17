@@ -216,6 +216,35 @@ describe('main tests', () => {
 
       expect(util.getNodeVersionFromFile('file')).toBe(expected);
     });
+
+    each`
+      name                                      | contents                                                       | expected
+      ${'ignores blank lines and comments'}     | ${'# use the version below\n\n  20.16.0 # maintenance release\n'} | ${'20.16.0'}
+      ${'strips an inline comment'}             | ${'v20.16.0 # maintenance release'}                            | ${'20.16.0'}
+      ${'preserves an alias before a comment'}  | ${'lts/* # use the latest LTS'}                                | ${'lts/*'}
+      ${'rejects a comment-only file'}          | ${'# comment only'}                                            | ${null}
+      ${'rejects comments and whitespace only'} | ${'#\r\n  # another comment\r\n'}                            | ${null}
+    `.it('$name', ({contents, expected}: any) => {
+      const existsSpy = jest.spyOn(fs, 'existsSync');
+      existsSpy.mockImplementation(() => true);
+
+      const readFileSpy = jest.spyOn(fs, 'readFileSync');
+      readFileSpy.mockImplementation(() => contents);
+
+      expect(util.getNodeVersionFromFile('.nvmrc')).toBe(expected);
+    });
+
+    it('preserves .tool-versions parsing', () => {
+      const existsSpy = jest.spyOn(fs, 'existsSync');
+      existsSpy.mockImplementation(() => true);
+
+      const readFileSpy = jest.spyOn(fs, 'readFileSync');
+      readFileSpy.mockImplementation(
+        () => 'ruby 3.3.0\nnodejs 20.16.0\npython 3.12.0'
+      );
+
+      expect(util.getNodeVersionFromFile('.tool-versions')).toBe('20.16.0');
+    });
   });
 
   describe('printEnvDetailsAndSetOutput', () => {
