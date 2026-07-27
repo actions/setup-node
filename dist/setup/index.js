@@ -98103,6 +98103,10 @@ function getNodeVersionFromFile(versionFilePath) {
     catch {
         core_info('Node version file is not JSON file');
     }
+    const actionRuntime = contents.match(/^runs\s*:\s*$(?:\r?\n(?:[ \t]+[^\r\n]*|[ \t]*))*?\r?\n[ \t]+using:\s*['"]?node(?<version>\d+)['"]?\s*(?:#.*)?$/m);
+    if (actionRuntime?.groups?.version) {
+        return actionRuntime.groups.version;
+    }
     const found = contents.match(/^(?:node(js)?\s+)?v?(?<version>[^\s]+)$/m);
     return found?.groups?.version ?? contents.trim();
 }
