@@ -92709,36 +92709,9 @@ function getNodeVersionFromFile(versionFilePath) {
     catch {
         core.info('Node version file is not JSON file');
     }
-    const nodePrefix = 'node';
-    let inRunsSection = false;
-    for (const line of contents.split(/\r?\n/)) {
-        const trimmedLine = line.trim();
-        if (!inRunsSection) {
-            inRunsSection =
-                trimmedLine === 'runs:' || trimmedLine.startsWith('runs: #');
-            continue;
-        }
-        if (!trimmedLine || trimmedLine.startsWith('#')) {
-            continue;
-        }
-        if (!line.match(/^\s/)) {
-            break;
-        }
-        const separatorIndex = trimmedLine.indexOf(':');
-        if (separatorIndex <= 0 ||
-            trimmedLine.slice(0, separatorIndex) !== 'using') {
-            continue;
-        }
-        let runtime = trimmedLine.slice(separatorIndex + 1).trim();
-        runtime = runtime.split('#', 1)[0].trim();
-        if ((runtime.startsWith("'") && runtime.endsWith("'")) ||
-            (runtime.startsWith('"') && runtime.endsWith('"'))) {
-            runtime = runtime.slice(1, -1);
-        }
-        if (runtime.startsWith(nodePrefix) &&
-            /^\d+$/.test(runtime.slice(nodePrefix.length))) {
-            return runtime.slice(nodePrefix.length);
-        }
+    const actionYmlNodeVersion = contents.match(/^\s+using:\s*['"]?node(?<version>\d+)['"]?\s*(?:#.*)?$/m);
+    if (actionYmlNodeVersion) {
+        return actionYmlNodeVersion.groups?.version ?? null;
     }
     const found = contents.match(/^(?:node(js)?\s+)?v?(?<version>[^\s]+)$/m);
     return found?.groups?.version ?? contents.trim();
