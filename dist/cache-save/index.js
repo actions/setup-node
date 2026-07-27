@@ -92709,6 +92709,7 @@ function getNodeVersionFromFile(versionFilePath) {
     catch {
         core.info('Node version file is not JSON file');
     }
+    const nodePrefix = 'node';
     let inRunsSection = false;
     for (const line of contents.split(/\r?\n/)) {
         const trimmedLine = line.trim();
@@ -92724,7 +92725,8 @@ function getNodeVersionFromFile(versionFilePath) {
             break;
         }
         const separatorIndex = trimmedLine.indexOf(':');
-        if (trimmedLine.slice(0, separatorIndex) !== 'using') {
+        if (separatorIndex <= 0 ||
+            trimmedLine.slice(0, separatorIndex) !== 'using') {
             continue;
         }
         let runtime = trimmedLine.slice(separatorIndex + 1).trim();
@@ -92733,8 +92735,9 @@ function getNodeVersionFromFile(versionFilePath) {
             (runtime.startsWith('"') && runtime.endsWith('"'))) {
             runtime = runtime.slice(1, -1);
         }
-        if (runtime.startsWith('node') && /^\d+$/.test(runtime.slice(4))) {
-            return runtime.slice(4);
+        if (runtime.startsWith(nodePrefix) &&
+            /^\d+$/.test(runtime.slice(nodePrefix.length))) {
+            return runtime.slice(nodePrefix.length);
         }
     }
     const found = contents.match(/^(?:node(js)?\s+)?v?(?<version>[^\s]+)$/m);
