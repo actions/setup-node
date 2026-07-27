@@ -198,6 +198,7 @@ describe('main tests', () => {
       ${'{"devEngines": {"runtime": {"name": "node", "version": "22.0.0"}}}'}                    | ${'22.0.0'}
       ${'{"devEngines": {"runtime": [{"name": "bun"}, {"name": "node", "version": "22.0.0"}]}}'} | ${'22.0.0'}
       ${"name: 'My Action'\nruns:\n  using: 'node24'\n  main: 'dist/index.js'\n"}                 | ${'24'}
+      ${'runs:\n  using: node24 # action runtime\n'}                                               | ${'24'}
     `.it('parses "$contents"', ({contents, expected}: any) => {
       const existsSpy = jest.spyOn(fs, 'existsSync');
       existsSpy.mockImplementation(() => true);

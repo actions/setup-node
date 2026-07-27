@@ -98103,9 +98103,33 @@ function getNodeVersionFromFile(versionFilePath) {
     catch {
         core_info('Node version file is not JSON file');
     }
-    const actionRuntime = contents.match(/^runs\s*:\s*$(?:\r?\n(?:[ \t]+[^\r\n]*|[ \t]*))*?\r?\n[ \t]+using:\s*['"]?node(?<version>\d+)['"]?\s*(?:#.*)?$/m);
-    if (actionRuntime?.groups?.version) {
-        return actionRuntime.groups.version;
+    let inRunsSection = false;
+    for (const line of contents.split(/\r?\n/)) {
+        const trimmedLine = line.trim();
+        if (!inRunsSection) {
+            inRunsSection =
+                trimmedLine === 'runs:' || trimmedLine.startsWith('runs: #');
+            continue;
+        }
+        if (!trimmedLine || trimmedLine.startsWith('#')) {
+            continue;
+        }
+        if (!line.match(/^\s/)) {
+            break;
+        }
+        const separatorIndex = trimmedLine.indexOf(':');
+        if (trimmedLine.slice(0, separatorIndex) !== 'using') {
+            continue;
+        }
+        let runtime = trimmedLine.slice(separatorIndex + 1).trim();
+        runtime = runtime.split('#', 1)[0].trim();
+        if ((runtime.startsWith("'") && runtime.endsWith("'")) ||
+            (runtime.startsWith('"') && runtime.endsWith('"'))) {
+            runtime = runtime.slice(1, -1);
+        }
+        if (runtime.startsWith('node') && /^\d+$/.test(runtime.slice(4))) {
+            return runtime.slice(4);
+        }
     }
     const found = contents.match(/^(?:node(js)?\s+)?v?(?<version>[^\s]+)$/m);
     return found?.groups?.version ?? contents.trim();
