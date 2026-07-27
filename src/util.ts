@@ -68,6 +68,16 @@ export function getNodeVersionFromFile(versionFilePath: string): string | null {
     core.info('Node version file is not JSON file');
   }
 
+  const runsSection = contents.match(
+    /^runs\s*:\s*$(?<contents>[\s\S]*?)(?=^[^\s].*?:|\s*$)/m
+  )?.groups?.contents;
+  const actionRuntime = runsSection?.match(
+    /^\s+using:\s*['"]?node(?<version>\d+)['"]?\s*(?:#.*)?$/m
+  );
+  if (actionRuntime?.groups?.version) {
+    return actionRuntime.groups.version;
+  }
+
   const found = contents.match(/^(?:node(js)?\s+)?v?(?<version>[^\s]+)$/m);
   return found?.groups?.version ?? contents.trim();
 }
