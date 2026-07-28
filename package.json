@@ -40,11 +40,7 @@
     "semver": "^7.8.5"
   },
   "overrides": {
-    "@actions/glob": "$@actions/glob",
-    "glob": {
-      "minimatch": "^10.2.5"
-    },
-    "test-exclude": "^7.0.2"
+    "brace-expansion": "5.0.8"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
