@@ -39,6 +39,13 @@
     "@actions/tool-cache": "^4.0.0",
     "semver": "^7.8.5"
   },
+  "overrides": {
+    "@actions/glob": "$@actions/glob",
+    "glob": {
+      "minimatch": "^10.2.5"
+    },
+    "test-exclude": "^7.0.2"
+  },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@jest/globals": "^30.4.1",
