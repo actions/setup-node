@@ -13899,7 +13899,13 @@ function processHeader (request, key, val) {
       } else if (typeof val[i] === 'object') {
         throw new InvalidArgumentError(`invalid ${key} header`)
       } else {
-        arr.push(`${val[i]}`)
+        // Coerce primitives (and reject unsafe coercions such as functions
+        // with a crafted toString/Symbol.toPrimitive).
+        const str = `${val[i]}`
+        if (!isValidHeaderValue(str)) {
+          throw new InvalidArgumentError(`invalid ${key} header`)
+        }
+        arr.push(str)
       }
     }
     val = arr
@@ -13910,7 +13916,12 @@ function processHeader (request, key, val) {
   } else if (val === null) {
     val = ''
   } else {
+    // Coerce primitives (and reject unsafe coercions such as functions
+    // with a crafted toString/Symbol.toPrimitive).
     val = `${val}`
+    if (!isValidHeaderValue(val)) {
+      throw new InvalidArgumentError(`invalid ${key} header`)
+    }
   }
 
   if (headerName === 'host') {
@@ -15282,6 +15293,7 @@ const {
   RequestContentLengthMismatchError,
   ResponseContentLengthMismatchError,
   RequestAbortedError,
+  InvalidArgumentError,
   HeadersTimeoutError,
   HeadersOverflowError,
   SocketError,
@@ -16265,8 +16277,16 @@ function writeH1 (client, request) {
     }
     body = bodyStream.stream
     contentLength = bodyStream.length
-  } else if (util.isBlobLike(body) && request.contentType == null && body.type) {
-    headers.push('content-type', body.type)
+  } else if (util.isBlobLike(body) && request.contentType == null) {
+    const contentType = body.type
+    if (contentType) {
+      const contentTypeValue = `${contentType}`
+      if (!util.isValidHeaderValue(contentTypeValue)) {
+        util.errorRequest(client, request, new InvalidArgumentError('invalid content-type header'))
+        return false
+      }
+      headers.push('content-type', contentTypeValue)
+    }
   }
 
   if (body && typeof body.read === 'function') {
@@ -19739,6 +19759,28 @@ function calculateRetryAfterHeader (retryAfter) {
   return new Date(retryAfter).getTime() - current
 }
 
+function validatePartialResponseContentLength (headers, range, statusCode, retryCount) {
+  const contentLength = headers['content-length']
+  if (contentLength == null) {
+    return null
+  }
+
+  if (!Number.isFinite(range.start) || !Number.isFinite(range.end)) {
+    return null
+  }
+
+  const length = Number(contentLength)
+  const expectedLength = range.end - range.start + 1
+  if (!Number.isFinite(length) || length !== expectedLength) {
+    return new RequestRetryError('Content-Length mismatch', statusCode, {
+      headers,
+      data: { count: retryCount }
+    })
+  }
+
+  return null
+}
+
 class RetryHandler {
   constructor (opts, handlers) {
     const { retryOptions, ...dispatchOpts } = opts
@@ -19953,6 +19995,12 @@ class RetryHandler {
         return false
       }
 
+      const contentLengthError = validatePartialResponseContentLength(headers, contentRange, statusCode, this.retryCount)
+      if (contentLengthError != null) {
+        this.abort(contentLengthError)
+        return false
+      }
+
       const { start, size, end = size - 1 } = contentRange
 
       assert(this.start === start, 'content-range mismatch')
@@ -19974,6 +20022,12 @@ class RetryHandler {
             resume,
             statusMessage
           )
+        }
+
+        const contentLengthError = validatePartialResponseContentLength(headers, range, statusCode, this.retryCount)
+        if (contentLengthError != null) {
+          this.abort(contentLengthError)
+          return false
         }
 
         const { start, size, end = size - 1 } = range
@@ -24220,7 +24274,7 @@ function validateCookiePath (path) {
 
     if (
       code < 0x20 || // exclude CTLs (0-31)
-      code === 0x7F || // DEL
+      code > 0x7E || // exclude DEL and non-ascii
       code === 0x3B // ;
     ) {
       throw new Error('Invalid cookie path')
@@ -24229,16 +24283,80 @@ function validateCookiePath (path) {
 }
 
 /**
- * I have no idea why these values aren't allowed to be honest,
- * but Deno tests these. - Khafra
+ * <let-dig> ::= <letter> | <digit>
+ *
+ * <letter> ::= any one of the 52 alphabetic characters A through Z in
+ * upper case and a through z in lower case
+ *
+ * <digit> ::= any one of the ten digits 0 through 9r
+ *
+ * @see https://www.rfc-editor.org/rfc/rfc1034#section-3.5
+ * @param {number} code
+ */
+function isLetterOrDigit (code) {
+  return (
+    (code >= 0x30 && code <= 0x39) || // 0-9
+    (code >= 0x41 && code <= 0x5A) || // A-Z
+    (code >= 0x61 && code <= 0x7A) // a-z
+  )
+}
+
+/**
+ * Validates a cookie domain against the "preferred name syntax".
+ *
+ * <domain>      ::= <subdomain> | " "
+ * <subdomain>   ::= <label> | <subdomain> "." <label>
+ * <label>       ::= <let-dig> [ [ <ldh-str> ] <let-dig> ]
+ * <ldh-str>     ::= <let-dig-hyp> | <let-dig-hyp> <ldh-str>
+ * <let-dig-hyp> ::= <let-dig> | "-"
+ *
+ * @see https://www.rfc-editor.org/rfc/rfc1034#section-3.5
+ * @see https://www.rfc-editor.org/rfc/rfc1123#section-2.1
+ * @see https://www.rfc-editor.org/rfc/rfc1035#section-2.3.4
  * @param {string} domain
  */
 function validateCookieDomain (domain) {
-  if (
-    domain.startsWith('-') ||
-    domain.endsWith('.') ||
-    domain.endsWith('-')
-  ) {
+  // <domain> ::= <subdomain> | " "
+  if (domain === ' ') {
+    return
+  }
+
+  if (domain.length > 255) {
+    throw new Error('Invalid cookie domain')
+  }
+
+  let labelLength = 0
+
+  for (let i = 0; i < domain.length; ++i) {
+    const code = domain.charCodeAt(i)
+
+    if (code === 0x2E) {
+      if (labelLength === 0) {
+        throw new Error('Invalid cookie domain')
+      }
+
+      if (domain.charCodeAt(i - 1) === 0x2D) { // "-"
+        throw new Error('Invalid cookie domain')
+      }
+
+      labelLength = 0
+      continue
+    }
+
+    if (labelLength === 0 && !isLetterOrDigit(code)) {
+      throw new Error('Invalid cookie domain')
+    }
+
+    if (!isLetterOrDigit(code) && code !== 0x2D) { // "-"
+      throw new Error('Invalid cookie domain')
+    }
+
+    if (++labelLength > 63) {
+      throw new Error('Invalid cookie domain')
+    }
+  }
+
+  if (labelLength === 0 || domain.charCodeAt(domain.length - 1) === 0x2D) { // "-"
     throw new Error('Invalid cookie domain')
   }
 }
@@ -24381,7 +24499,13 @@ function stringify (cookie) {
 
     const [key, ...value] = part.split('=')
 
-    out.push(`${key.trim()}=${value.join('=')}`)
+    const trimmedKey = key.trim()
+    const joinedValue = value.join('=')
+
+    validateCookieName(trimmedKey)
+    validateCookieValue(joinedValue)
+
+    out.push(`${trimmedKey}=${joinedValue}`)
   }
 
   return out.join('; ')
@@ -38907,7 +39031,7 @@ function combine(acc, pre, values, max, maxLength, dropEmpties) {
 }
 // The expansion values of a single numeric (`1..5`) or alphabetic (`a..e..2`)
 // sequence body.
-function expandSequence(body, isAlphaSequence, max) {
+function expandSequence(body, isAlphaSequence, max, maxLength) {
     const n = body.split(/\.\./);
     const N = [];
     // A sequence body always splits into two or three parts, but the compiler
@@ -38930,6 +39054,7 @@ function expandSequence(body, isAlphaSequence, max) {
         test = gte;
     }
     const pad = n.some(isPadded);
+    let length = 0;
     for (let i = x; test(i, y) && N.length < max; i += incr) {
         let c;
         if (isAlphaSequence) {
@@ -38953,7 +39078,10 @@ function expandSequence(body, isAlphaSequence, max) {
                 }
             }
         }
+        if (length + c.length > maxLength)
+            break;
         N.push(c);
+        length += c.length;
     }
     return N;
 }
@@ -39007,7 +39135,7 @@ function expand_(str, max, maxLength, isTop) {
         }
         let values;
         if (isSequence) {
-            values = expandSequence(m.body, isAlphaSequence, max);
+            values = expandSequence(m.body, isAlphaSequence, max, maxLength);
         }
         else {
             let n = parseCommaParts(m.body);
@@ -39025,9 +39153,31 @@ function expand_(str, max, maxLength, isTop) {
                 }
                 /* c8 ignore stop */
             }
+            // Values that `combine` is going to drop as empty produce no result, so
+            // they must not count against `max` - otherwise `{a,,b}` with `max: 2`
+            // would stop at `['a', '']` and yield one result instead of two. Skipping
+            // them outright keeps `values` bounded while leaving `max` a bound on
+            // *kept* results.
+            let dropsEmpties = dropEmpties && !m.post.length && !pre;
+            for (let d = 0; dropsEmpties && d < acc.length; d++) {
+                if (acc[d]) {
+                    dropsEmpties = false;
+                }
+            }
             values = [];
-            for (let j = 0; j < n.length; j++) {
-                values.push.apply(values, expand_(n[j], max, maxLength, false));
+            let valuesLength = 0;
+            outer: for (let j = 0; j < n.length; j++) {
+                const expanded = expand_(n[j], max, maxLength, false);
+                for (let k = 0; k < expanded.length; k++) {
+                    const v = expanded[k];
+                    if (dropsEmpties && !v)
+                        continue;
+                    if (values.length >= max || valuesLength + v.length > maxLength) {
+                        break outer;
+                    }
+                    values.push(v);
+                    valuesLength += v.length;
+                }
             }
         }
         acc = combine(acc, pre, values, max, maxLength, dropEmpties && !m.post.length);
@@ -50312,7 +50462,7 @@ function shouldDeserializeResponse(parsedResponse) {
     return result;
 }
 async function deserializeResponseBody(jsonContentTypes, xmlContentTypes, response, options, parseXML) {
-    const parsedResponse = await parse(jsonContentTypes, xmlContentTypes, response, options, parseXML);
+    const parsedResponse = await deserializationPolicy_parse(jsonContentTypes, xmlContentTypes, response, options, parseXML);
     if (!shouldDeserializeResponse(parsedResponse)) {
         return parsedResponse;
     }
@@ -50437,7 +50587,7 @@ function handleErrorResponse(parsedResponse, operationSpec, responseSpec, option
     }
     return { error, shouldReturnResponse: false };
 }
-async function parse(jsonContentTypes, xmlContentTypes, operationResponse, opts, parseXML) {
+async function deserializationPolicy_parse(jsonContentTypes, xmlContentTypes, operationResponse, opts, parseXML) {
     if (!operationResponse.request.streamResponseStatusCodes?.has(operationResponse.status) &&
         operationResponse.bodyAsText) {
         const text = operationResponse.bodyAsText;
@@ -89787,7 +89937,7 @@ function combine(acc, pre, values, max, maxLength, dropEmpties) {
 }
 // The expansion values of a single numeric (`1..5`) or alphabetic (`a..e..2`)
 // sequence body.
-function expandSequence(body, isAlphaSequence, max) {
+function expandSequence(body, isAlphaSequence, max, maxLength) {
     const n = body.split(/\.\./);
     const N = [];
     // A sequence body always splits into two or three parts, but the compiler
@@ -89810,6 +89960,7 @@ function expandSequence(body, isAlphaSequence, max) {
         test = gte;
     }
     const pad = n.some(isPadded);
+    let length = 0;
     for (let i = x; test(i, y) && N.length < max; i += incr) {
         let c;
         if (isAlphaSequence) {
@@ -89833,7 +89984,10 @@ function expandSequence(body, isAlphaSequence, max) {
                 }
             }
         }
+        if (length + c.length > maxLength)
+            break;
         N.push(c);
+        length += c.length;
     }
     return N;
 }
@@ -89887,7 +90041,7 @@ function expand_(str, max, maxLength, isTop) {
         }
         let values;
         if (isSequence) {
-            values = expandSequence(m.body, isAlphaSequence, max);
+            values = expandSequence(m.body, isAlphaSequence, max, maxLength);
         }
         else {
             let n = parseCommaParts(m.body);
@@ -89905,9 +90059,31 @@ function expand_(str, max, maxLength, isTop) {
                 }
                 /* c8 ignore stop */
             }
+            // Values that `combine` is going to drop as empty produce no result, so
+            // they must not count against `max` - otherwise `{a,,b}` with `max: 2`
+            // would stop at `['a', '']` and yield one result instead of two. Skipping
+            // them outright keeps `values` bounded while leaving `max` a bound on
+            // *kept* results.
+            let dropsEmpties = dropEmpties && !m.post.length && !pre;
+            for (let d = 0; dropsEmpties && d < acc.length; d++) {
+                if (acc[d]) {
+                    dropsEmpties = false;
+                }
+            }
             values = [];
-            for (let j = 0; j < n.length; j++) {
-                values.push.apply(values, expand_(n[j], max, maxLength, false));
+            let valuesLength = 0;
+            outer: for (let j = 0; j < n.length; j++) {
+                const expanded = expand_(n[j], max, maxLength, false);
+                for (let k = 0; k < expanded.length; k++) {
+                    const v = expanded[k];
+                    if (dropsEmpties && !v)
+                        continue;
+                    if (values.length >= max || valuesLength + v.length > maxLength) {
+                        break outer;
+                    }
+                    values.push(v);
+                    valuesLength += v.length;
+                }
             }
         }
         acc = combine(acc, pre, values, max, maxLength, dropEmpties && !m.post.length);
@@ -92752,7 +92928,1174 @@ function lib_glob_hashFiles(patterns_1) {
     });
 }
 //# sourceMappingURL=glob.js.map
+;// CONCATENATED MODULE: ./node_modules/smol-toml/dist/date.js
+/*!
+ * Copyright (c) Squirrel Chat et al., All rights reserved.
+ * SPDX-License-Identifier: BSD-3-Clause
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright notice, this
+ *    list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ *    this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ * 3. Neither the name of the copyright holder nor the names of its contributors
+ *    may be used to endorse or promote products derived from this software without
+ *    specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+ * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+ * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+let DATE_TIME_RE = /^(\d{4}-\d{2}-\d{2})?[T ]?(?:(\d{2}):\d{2}(?::\d{2}(?:\.\d+)?)?)?(Z|[-+]\d{2}:\d{2})?$/i;
+class TomlDate extends Date {
+    #hasDate = false;
+    #hasTime = false;
+    #offset = null;
+    constructor(date) {
+        let hasDate = true;
+        let hasTime = true;
+        let offset = 'Z';
+        if (typeof date === 'string') {
+            let match = date.match(DATE_TIME_RE);
+            if (match) {
+                if (!match[1]) {
+                    hasDate = false;
+                    date = `0000-01-01T${date}`;
+                }
+                hasTime = !!match[2];
+                // Make sure to use T instead of a space. Breaks in case of extreme values otherwise.
+                hasTime && date[10] === ' ' && (date = date.replace(' ', 'T'));
+                // Do not allow rollover hours.
+                if (match[2] && +match[2] > 23) {
+                    date = '';
+                }
+                else {
+                    offset = match[3] || null;
+                    date = date.toUpperCase();
+                    if (!offset && hasTime)
+                        date += 'Z';
+                }
+            }
+            else {
+                date = '';
+            }
+        }
+        super(date);
+        if (!isNaN(this.getTime())) {
+            this.#hasDate = hasDate;
+            this.#hasTime = hasTime;
+            this.#offset = offset;
+        }
+    }
+    isDateTime() {
+        return this.#hasDate && this.#hasTime;
+    }
+    isLocal() {
+        return !this.#hasDate || !this.#hasTime || !this.#offset;
+    }
+    isDate() {
+        return this.#hasDate && !this.#hasTime;
+    }
+    isTime() {
+        return this.#hasTime && !this.#hasDate;
+    }
+    isValid() {
+        return this.#hasDate || this.#hasTime;
+    }
+    toISOString() {
+        let iso = super.toISOString();
+        // Local Date
+        if (this.isDate())
+            return iso.slice(0, 10);
+        // Local Time
+        if (this.isTime())
+            return iso.slice(11, 23);
+        // Local DateTime
+        if (this.#offset === null)
+            return iso.slice(0, -1);
+        // Offset DateTime
+        if (this.#offset === 'Z')
+            return iso;
+        // This part is quite annoying: JS strips the original timezone from the ISO string representation
+        // Instead of using a "modified" date and "Z", we restore the representation "as authored"
+        let offset = (+(this.#offset.slice(1, 3)) * 60) + +(this.#offset.slice(4, 6));
+        offset = this.#offset[0] === '-' ? offset : -offset;
+        let offsetDate = new Date(this.getTime() - (offset * 60e3));
+        return offsetDate.toISOString().slice(0, -1) + this.#offset;
+    }
+    static wrapAsOffsetDateTime(jsDate, offset = 'Z') {
+        let date = new TomlDate(jsDate);
+        date.#offset = offset;
+        return date;
+    }
+    static wrapAsLocalDateTime(jsDate) {
+        let date = new TomlDate(jsDate);
+        date.#offset = null;
+        return date;
+    }
+    static wrapAsLocalDate(jsDate) {
+        let date = new TomlDate(jsDate);
+        date.#hasTime = false;
+        date.#offset = null;
+        return date;
+    }
+    static wrapAsLocalTime(jsDate) {
+        let date = new TomlDate(jsDate);
+        date.#hasDate = false;
+        date.#offset = null;
+        return date;
+    }
+}
+//# sourceMappingURL=date.js.map
+;// CONCATENATED MODULE: ./node_modules/smol-toml/dist/error.js
+/*!
+ * Copyright (c) Squirrel Chat et al., All rights reserved.
+ * SPDX-License-Identifier: BSD-3-Clause
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright notice, this
+ *    list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ *    this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ * 3. Neither the name of the copyright holder nor the names of its contributors
+ *    may be used to endorse or promote products derived from this software without
+ *    specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+ * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+ * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+function getLineColFromPtr(string, ptr) {
+    let lines = string.slice(0, ptr).split(/\r\n|\n|\r/g);
+    return [lines.length, lines.pop().length + 1];
+}
+function makeCodeBlock(string, line, column) {
+    let lines = string.split(/\r\n|\n|\r/g);
+    let codeblock = '';
+    let numberLen = (Math.log10(line + 1) | 0) + 1;
+    for (let i = line - 1; i <= line + 1; i++) {
+        let l = lines[i - 1];
+        if (!l)
+            continue;
+        codeblock += i.toString().padEnd(numberLen, ' ');
+        codeblock += ':  ';
+        codeblock += l;
+        codeblock += '\n';
+        if (i === line) {
+            codeblock += ' '.repeat(numberLen + column + 2);
+            codeblock += '^\n';
+        }
+    }
+    return codeblock;
+}
+class TomlError extends Error {
+    line;
+    column;
+    codeblock;
+    constructor(message, options) {
+        const [line, column] = getLineColFromPtr(options.toml, options.ptr);
+        const codeblock = makeCodeBlock(options.toml, line, column);
+        super(`Invalid TOML document: ${message}\n\n${codeblock}`, options);
+        this.line = line;
+        this.column = column;
+        this.codeblock = codeblock;
+    }
+}
+//# sourceMappingURL=error.js.map
+;// CONCATENATED MODULE: ./node_modules/smol-toml/dist/primitive.js
+/*!
+ * Copyright (c) Squirrel Chat et al., All rights reserved.
+ * SPDX-License-Identifier: BSD-3-Clause
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright notice, this
+ *    list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ *    this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ * 3. Neither the name of the copyright holder nor the names of its contributors
+ *    may be used to endorse or promote products derived from this software without
+ *    specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+ * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+ * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+
+
+// let CTRL_REGEX = /[\x00-\x08\x0f-\x1f\x7f]/
+let INT_REGEX = /^((0x[0-9a-fA-F](_?[0-9a-fA-F])*)|(([+-]|0[ob])?\d(_?\d)*))$/;
+let FLOAT_REGEX = /^[+-]?\d(_?\d)*(\.\d(_?\d)*)?([eE][+-]?\d(_?\d)*)?$/;
+let LEADING_ZERO = /^[+-]?0[0-9_]/;
+/** @internal */
+function parseString(str, ptr) {
+    let c = str[ptr++];
+    let first = c;
+    let isLiteral = c === "'";
+    let isMultiline = c === str[ptr] && c === str[ptr + 1];
+    if (isMultiline) {
+        // Trim initial newline
+        if (str[ptr += 2] === '\n')
+            ptr++;
+        else if (str[ptr] === '\r' && str[ptr + 1] === '\n')
+            ptr += 2;
+    }
+    /*
+    The fast path does not seem to bring significant performance gains, so it's commented out.
+    Kept for reference and/or future fafoing.
+
+    Without: spec  5.08 µs/iter    3.88 ipc (99.44% cache)   23.90 branch misses   28.61k cycles    111.01k instructions
+             5MB   115.73 ms/iter  2.51 ipc (98.36% cache)   3.12M branch misses   619.30M cycles   1.56G instructions
+
+    With:    spec  5.09 µs/iter    3.90 ipc (99.46% cache)   24.42 branch misses   28.57k cycles    111.49k instructions
+             5MB   113.89 ms/iter  2.47 ipc (98.38% cache)   3.12M branch misses   611.94M cycles   1.51G instructions
+
+    if (c === "'") {
+        // Literal strings fast path - no transform needs to occur; just grab the str and that's it
+        let endPtr = str.indexOf(isMultiline ? "'''" : "'", ptr)
+        if (endPtr < 0) {
+            throw new TomlError("unfinished string literal", { toml: str, ptr })
+        }
+
+        if (isMultiline) {
+            // If the string ends with 4-5 quotes, then the first 1-2 are part of the string
+            if (str[endPtr + 3] === "'") endPtr++
+            if (str[endPtr + 3] === "'") endPtr++
+        }
+
+        let string = str.slice(ptr, endPtr)
+        if (CTRL_REGEX.test(string)) {
+            let match = string.match(CTRL_REGEX)!
+            throw new TomlError('control characters are not allowed in strings', { toml: str, ptr: ptr + (match.index ?? 0) })
+        }
+        return [string, endPtr + (isMultiline ? 3 : 1)]
+    }
+    */
+    let parsed = '';
+    let sliceStart = ptr;
+    // states:
+    //   0 - decoding
+    //   1 - decoding escape
+    //   2 - whitespace escape (no newline encountered yet, must fail on non-whitespace)
+    //   3 - whitespace escape (newline encountered, allowed to transition back to normal decode)
+    let state = 0;
+    for (let i = ptr; i < str.length; i++) {
+        c = str[i];
+        // Deal with newlines first, since that simplifies control character checking and handling across all states
+        if (isMultiline && (c === '\n' || (c === '\r' && str[i + 1] === '\n'))) {
+            state = state && 3;
+        }
+        // Control characters are banned in TOML, so we throw an error if we encounter them
+        else if ((c < '\x20' && c !== '\t') || c === '\x7f') {
+            throw new TomlError('control characters are not allowed in strings', {
+                toml: str,
+                ptr: i,
+            });
+        }
+        // The string might terminate while we're parsing through a newline escape.
+        // It must have encountered a newline; otherwise, it'll simply fail in another branch.
+        else if ((!state || state === 3) && c === first && (!isMultiline || (str[i + 1] === first && str[i + 2] === first))) {
+            if (isMultiline) {
+                // If the string ends with 4-5 quotes, then the first 1-2 are part of the string
+                if (str[i + 3] === first)
+                    i++;
+                if (str[i + 3] === first)
+                    i++;
+            }
+            return [
+                // If we're in a newline escape still, then there's nothing to add.
+                // Also try to avoid concat if there's nothing to add to parsed, or nothing has been added to parsed.
+                state ? parsed : parsed + str.slice(sliceStart, i),
+                i + (isMultiline ? 3 : 1),
+            ];
+        }
+        else if (!state) {
+            if (!isLiteral && c === '\\') {
+                parsed += str.slice(sliceStart, (sliceStart = i));
+                state = 1;
+            }
+        }
+        else if (state === 1) {
+            if (c === 'x' || c === 'u' || c === 'U') { // Unicode escape
+                let value = 0;
+                let len = c === 'x' ? 2 : c === 'u' ? 4 : 8;
+                for (let j = 0; j < len; j++, i++) {
+                    let hex = str.charCodeAt(i + 1);
+                    let digit = 
+                    /* 0-9 */ hex >= 0x30 && hex <= 0x39 ? hex - 0x30 :
+                        /* A-F */ hex >= 0x41 && hex <= 0x46 ? hex - 0x41 + 10 :
+                            /* a-f */ hex >= 0x61 && hex <= 0x66 ? hex - 0x61 + 10 : -1;
+                    if (digit < 0)
+                        throw new TomlError('invalid non-hex character in unicode escape', { toml: str, ptr: i + 1 });
+                    value = (value << 4) | digit;
+                }
+                // Because JS does bitwise on signed 32bit integers, all 0xfzzzzzzz values are actually seen as negative
+                if (value < 0 || value > 0x10ffff || (value >= 0xd800 && value <= 0xdfff)) {
+                    throw new TomlError('invalid unicode escape', { toml: str, ptr: i });
+                }
+                parsed += String.fromCodePoint(value);
+                sliceStart = i + 1;
+                state = 0;
+            }
+            else if (c === ' ' || c === '\t') { // If it was a newline, it'd have been handled earlier
+                state = 2;
+            }
+            else {
+                if (c === 'b')
+                    parsed += '\b';
+                else if (c === 't')
+                    parsed += '\t';
+                else if (c === 'n')
+                    parsed += '\n';
+                else if (c === 'f')
+                    parsed += '\f';
+                else if (c === 'r')
+                    parsed += '\r';
+                else if (c === 'e')
+                    parsed += '\x1b';
+                else if (c === '"')
+                    parsed += '"';
+                else if (c === '\\')
+                    parsed += '\\';
+                else
+                    throw new TomlError('unrecognized escape sequence', { toml: str, ptr: i });
+                sliceStart = i + 1;
+                state = 0;
+            }
+        }
+        else if (c !== ' ' && c !== '\t') {
+            if (state === 2) {
+                throw new TomlError('invalid escape: only line-ending whitespace may be escaped', {
+                    toml: str,
+                    ptr: sliceStart,
+                });
+            }
+            // State cannot be zero, or we'd have branched earlier already.
+            // If it's a backslash, immediately transition to the escape state so it can be processed.
+            state = !isLiteral && c === '\\' ? 1 : 0;
+            sliceStart = i;
+        }
+    }
+    throw new TomlError('unfinished string', { toml: str, ptr });
+}
+/** @internal */
+function primitive_parseValue(value, toml, ptr, integersAsBigInt) {
+    // Constant values
+    if (value === 'true')
+        return true;
+    if (value === 'false')
+        return false;
+    if (value === '-inf')
+        return -Infinity;
+    if (value === 'inf' || value === '+inf')
+        return Infinity;
+    if (value === 'nan' || value === '+nan' || value === '-nan')
+        return NaN;
+    // Avoid FP representation of -0
+    if (value === '-0')
+        return integersAsBigInt ? 0n : 0;
+    // Numbers
+    let isInt = INT_REGEX.test(value);
+    if (isInt || FLOAT_REGEX.test(value)) {
+        if (LEADING_ZERO.test(value)) {
+            throw new TomlError('leading zeroes are not allowed', {
+                toml: toml,
+                ptr: ptr,
+            });
+        }
+        value = value.replace(/_/g, '');
+        let numeric = +value;
+        if (isNaN(numeric)) {
+            throw new TomlError('invalid number', {
+                toml: toml,
+                ptr: ptr,
+            });
+        }
+        if (isInt) {
+            if ((isInt = !Number.isSafeInteger(numeric)) && !integersAsBigInt) {
+                throw new TomlError('integer value cannot be represented losslessly', {
+                    toml: toml,
+                    ptr: ptr,
+                });
+            }
+            if (isInt || integersAsBigInt === true)
+                numeric = BigInt(value);
+        }
+        return numeric;
+    }
+    const date = new TomlDate(value);
+    if (!date.isValid()) {
+        throw new TomlError('invalid value', {
+            toml: toml,
+            ptr: ptr,
+        });
+    }
+    return date;
+}
+//# sourceMappingURL=primitive.js.map
+;// CONCATENATED MODULE: ./node_modules/smol-toml/dist/util.js
+/*!
+ * Copyright (c) Squirrel Chat et al., All rights reserved.
+ * SPDX-License-Identifier: BSD-3-Clause
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright notice, this
+ *    list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ *    this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ * 3. Neither the name of the copyright holder nor the names of its contributors
+ *    may be used to endorse or promote products derived from this software without
+ *    specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+ * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+ * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+
+/** @internal */
+function indexOfNewline(str, start = 0, end = str.length) {
+    let idx = str.indexOf('\n', start);
+    if (str[idx - 1] === '\r')
+        idx--;
+    return idx <= end ? idx : -1;
+}
+/** @internal */
+function skipComment(str, ptr) {
+    for (let i = ptr; i < str.length; i++) {
+        let c = str[i];
+        if (c === '\n')
+            return i;
+        if (c === '\r' && str[i + 1] === '\n')
+            return i + 1;
+        if ((c < '\x20' && c !== '\t') || c === '\x7f') {
+            throw new TomlError('control characters are not allowed in comments', {
+                toml: str,
+                ptr: ptr,
+            });
+        }
+    }
+    return str.length;
+}
+/** @internal */
+function skipVoid(str, ptr, banNewLines, banComments) {
+    let c;
+    while (1) {
+        while ((c = str[ptr]) === ' ' || c === '\t' || (!banNewLines && (c === '\n' || (c === '\r' && str[ptr + 1] === '\n'))))
+            ptr++;
+        // Tucking the return statement here would save 5 characters >:)
+        // But TypeScript fails to detect there is no way to exit the loop so it complains about the lack of final return
+        if (banComments || c !== '#')
+            break;
+        ptr = skipComment(str, ptr);
+    }
+    return ptr;
+}
+/** @internal */
+function skipUntil(str, ptr, sep, end, banNewLines = false) {
+    if (!end) {
+        ptr = indexOfNewline(str, ptr);
+        return ptr < 0 ? str.length : ptr;
+    }
+    for (let i = ptr; i < str.length; i++) {
+        let c = str[i];
+        if (c === '#') {
+            i = indexOfNewline(str, i);
+            if (i < 0)
+                break;
+        }
+        else if (c === sep) {
+            return i + 1;
+        }
+        else if (c === end || (banNewLines && (c === '\n' || (c === '\r' && str[i + 1] === '\n')))) {
+            return i;
+        }
+    }
+    throw new TomlError('cannot find end of structure', {
+        toml: str,
+        ptr: ptr,
+    });
+}
+//# sourceMappingURL=util.js.map
+;// CONCATENATED MODULE: ./node_modules/smol-toml/dist/extract.js
+/*!
+ * Copyright (c) Squirrel Chat et al., All rights reserved.
+ * SPDX-License-Identifier: BSD-3-Clause
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright notice, this
+ *    list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ *    this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ * 3. Neither the name of the copyright holder nor the names of its contributors
+ *    may be used to endorse or promote products derived from this software without
+ *    specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+ * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+ * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+
+
+
+
+function sliceAndTrimEndOf(str, startPtr, endPtr) {
+    let value = str.slice(startPtr, endPtr);
+    let commentIdx = value.indexOf('#');
+    if (commentIdx > -1) {
+        // The call to skipComment allows to "validate" the comment
+        // (absence of control characters)
+        skipComment(str, commentIdx);
+        value = value.slice(0, commentIdx);
+    }
+    return [value.trimEnd(), commentIdx];
+}
+/** @internal */
+function extractValue(str, ptr, end, depth, integersAsBigInt) {
+    if (depth === 0) {
+        throw new TomlError('document contains excessively nested structures. aborting.', {
+            toml: str,
+            ptr: ptr,
+        });
+    }
+    let c = str[ptr];
+    if (c === '[' || c === '{') {
+        let [value, endPtr] = c === '['
+            ? parseArray(str, ptr, depth, integersAsBigInt)
+            : parseInlineTable(str, ptr, depth, integersAsBigInt);
+        if (end) {
+            endPtr = skipVoid(str, endPtr);
+            if (str[endPtr] === ',')
+                endPtr++;
+            else if (str[endPtr] !== end) {
+                throw new TomlError('expected comma or end of structure', {
+                    toml: str,
+                    ptr: endPtr,
+                });
+            }
+        }
+        return [value, endPtr];
+    }
+    if (c === '"' || c === "'") {
+        let [parsed, endPtr] = parseString(str, ptr);
+        if (end) {
+            endPtr = skipVoid(str, endPtr);
+            if (str[endPtr] && str[endPtr] !== ',' && str[endPtr] !== end && str[endPtr] !== '\n' && str[endPtr] !== '\r') {
+                throw new TomlError('unexpected character encountered', {
+                    toml: str,
+                    ptr: endPtr,
+                });
+            }
+            if (str[endPtr] === ',')
+                endPtr++;
+        }
+        return [parsed, endPtr];
+    }
+    let endPtr = skipUntil(str, ptr, ',', end);
+    let slice = sliceAndTrimEndOf(str, ptr, endPtr - (str[endPtr - 1] === ',' ? 1 : 0));
+    if (!slice[0]) {
+        throw new TomlError('incomplete key-value declaration: no value specified', {
+            toml: str,
+            ptr: ptr,
+        });
+    }
+    if (end && slice[1] > -1) {
+        endPtr = skipVoid(str, ptr + slice[1]);
+        if (str[endPtr] === ',')
+            endPtr++;
+    }
+    return [
+        primitive_parseValue(slice[0], str, ptr, integersAsBigInt),
+        endPtr,
+    ];
+}
+//# sourceMappingURL=extract.js.map
+;// CONCATENATED MODULE: ./node_modules/smol-toml/dist/struct.js
+/*!
+ * Copyright (c) Squirrel Chat et al., All rights reserved.
+ * SPDX-License-Identifier: BSD-3-Clause
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright notice, this
+ *    list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ *    this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ * 3. Neither the name of the copyright holder nor the names of its contributors
+ *    may be used to endorse or promote products derived from this software without
+ *    specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+ * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+ * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+
+
+
+
+let KEY_PART_RE = /^[a-zA-Z0-9-_]+[ \t]*$/;
+/** @internal */
+function parseKey(str, ptr, end = '=') {
+    let dot = ptr - 1;
+    let parsed = [];
+    let endPtr = str.indexOf(end, ptr);
+    if (endPtr < 0) {
+        throw new TomlError('incomplete key-value: cannot find end of key', {
+            toml: str,
+            ptr: ptr,
+        });
+    }
+    do {
+        let c = str[(ptr = ++dot)];
+        // If it's whitespace, ignore
+        if (c !== ' ' && c !== '\t') {
+            // If it's a string
+            if (c === '"' || c === "'") {
+                if (c === str[ptr + 1] && c === str[ptr + 2]) {
+                    throw new TomlError('multiline strings are not allowed in keys', {
+                        toml: str,
+                        ptr: ptr,
+                    });
+                }
+                let [part, eos] = parseString(str, ptr);
+                dot = str.indexOf('.', eos);
+                let strEnd = str.slice(eos, dot < 0 || dot > endPtr ? endPtr : dot);
+                let newLine = indexOfNewline(strEnd);
+                if (newLine > -1) {
+                    throw new TomlError('newlines are not allowed in keys', {
+                        toml: str,
+                        ptr: ptr + dot + newLine,
+                    });
+                }
+                if (strEnd.trimStart()) {
+                    throw new TomlError('found extra tokens after the string part', {
+                        toml: str,
+                        ptr: eos,
+                    });
+                }
+                if (endPtr < eos) {
+                    endPtr = str.indexOf(end, eos);
+                    if (endPtr < 0) {
+                        throw new TomlError('incomplete key-value: cannot find end of key', {
+                            toml: str,
+                            ptr: ptr,
+                        });
+                    }
+                }
+                parsed.push(part);
+            }
+            else {
+                // Normal raw key part consumption and validation
+                dot = str.indexOf('.', ptr);
+                let part = str.slice(ptr, dot < 0 || dot > endPtr ? endPtr : dot);
+                if (!KEY_PART_RE.test(part)) {
+                    throw new TomlError('only letter, numbers, dashes and underscores are allowed in keys', {
+                        toml: str,
+                        ptr: ptr,
+                    });
+                }
+                parsed.push(part.trimEnd());
+            }
+        }
+        // Until there's no more dot
+    } while (dot + 1 && dot < endPtr);
+    return [parsed, skipVoid(str, endPtr + 1, true, true)];
+}
+/** @internal */
+function parseInlineTable(str, ptr, depth, integersAsBigInt) {
+    let res = {};
+    let seen = new Set();
+    let c;
+    ptr++;
+    while ((c = str[ptr++]) !== '}' && c) {
+        if (c === ',') {
+            throw new TomlError('expected value, found comma', {
+                toml: str,
+                ptr: ptr - 1,
+            });
+        }
+        else if (c === '#')
+            ptr = skipComment(str, ptr);
+        else if (c !== ' ' && c !== '\t' && c !== '\n' && c !== '\r') {
+            let k;
+            let t = res;
+            let hasOwn = false;
+            let [key, keyEndPtr] = parseKey(str, ptr - 1);
+            for (let i = 0; i < key.length; i++) {
+                if (i)
+                    t = hasOwn ? t[k] : (t[k] = {});
+                k = key[i];
+                if ((hasOwn = Object.hasOwn(t, k)) && (typeof t[k] !== 'object' || seen.has(t[k]))) {
+                    throw new TomlError('trying to redefine an already defined value', {
+                        toml: str,
+                        ptr: ptr,
+                    });
+                }
+                if (!hasOwn && k === '__proto__') {
+                    Object.defineProperty(t, k, { enumerable: true, configurable: true, writable: true });
+                }
+            }
+            if (hasOwn) {
+                throw new TomlError('trying to redefine an already defined value', {
+                    toml: str,
+                    ptr: ptr,
+                });
+            }
+            let [value, valueEndPtr] = extractValue(str, keyEndPtr, '}', depth - 1, integersAsBigInt);
+            seen.add(value);
+            t[k] = value;
+            ptr = valueEndPtr;
+        }
+    }
+    if (!c) {
+        throw new TomlError('unfinished table encountered', {
+            toml: str,
+            ptr: ptr,
+        });
+    }
+    return [res, ptr];
+}
+/** @internal */
+function parseArray(str, ptr, depth, integersAsBigInt) {
+    let res = [];
+    let c;
+    ptr++;
+    while ((c = str[ptr++]) !== ']' && c) {
+        if (c === ',') {
+            throw new TomlError('expected value, found comma', {
+                toml: str,
+                ptr: ptr - 1,
+            });
+        }
+        else if (c === '#')
+            ptr = skipComment(str, ptr);
+        else if (c !== ' ' && c !== '\t' && c !== '\n' && c !== '\r') {
+            let e = extractValue(str, ptr - 1, ']', depth - 1, integersAsBigInt);
+            res.push(e[0]);
+            ptr = e[1];
+        }
+    }
+    if (!c) {
+        throw new TomlError('unfinished array encountered', {
+            toml: str,
+            ptr: ptr,
+        });
+    }
+    return [res, ptr];
+}
+//# sourceMappingURL=struct.js.map
+;// CONCATENATED MODULE: ./node_modules/smol-toml/dist/parse.js
+/*!
+ * Copyright (c) Squirrel Chat et al., All rights reserved.
+ * SPDX-License-Identifier: BSD-3-Clause
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright notice, this
+ *    list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ *    this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ * 3. Neither the name of the copyright holder nor the names of its contributors
+ *    may be used to endorse or promote products derived from this software without
+ *    specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+ * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+ * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+
+
+
+
+function peekTable(key, table, meta, type) {
+    let t = table;
+    let m = meta;
+    let k;
+    let hasOwn = false;
+    let state;
+    for (let i = 0; i < key.length; i++) {
+        if (i) {
+            t = hasOwn ? t[k] : (t[k] = {});
+            m = (state = m[k]).c;
+            if (type === 0 /* Type.DOTTED */ && (state.t === 1 /* Type.EXPLICIT */ || state.t === 2 /* Type.ARRAY */)) {
+                return null;
+            }
+            if (state.t === 2 /* Type.ARRAY */) {
+                let l = t.length - 1;
+                t = t[l];
+                m = m[l].c;
+            }
+        }
+        k = key[i];
+        if ((hasOwn = Object.hasOwn(t, k)) && m[k]?.t === 0 /* Type.DOTTED */ && m[k]?.d) {
+            return null;
+        }
+        if (!hasOwn) {
+            if (k === '__proto__') {
+                Object.defineProperty(t, k, { enumerable: true, configurable: true, writable: true });
+                Object.defineProperty(m, k, { enumerable: true, configurable: true, writable: true });
+            }
+            m[k] = {
+                t: i < key.length - 1 && type === 2 /* Type.ARRAY */
+                    ? 3 /* Type.ARRAY_DOTTED */ : type,
+                d: false,
+                i: 0,
+                c: {},
+            };
+        }
+    }
+    state = m[k];
+    if (state.t !== type && !(type === 1 /* Type.EXPLICIT */ && state.t === 3 /* Type.ARRAY_DOTTED */)) {
+        // Bad key type!
+        return null;
+    }
+    if (type === 2 /* Type.ARRAY */) {
+        if (!state.d) {
+            state.d = true;
+            t[k] = [];
+        }
+        t[k].push(t = {});
+        state.c[state.i++] = (state = { t: 1 /* Type.EXPLICIT */, d: false, i: 0, c: {} });
+    }
+    if (state.d) {
+        // Redefining a table!
+        return null;
+    }
+    state.d = true;
+    if (type === 1 /* Type.EXPLICIT */) {
+        t = hasOwn ? t[k] : (t[k] = {});
+    }
+    else if (type === 0 /* Type.DOTTED */ && hasOwn) {
+        return null;
+    }
+    return [k, t, state.c];
+}
+function parse_parse(toml, { maxDepth = 1000, integersAsBigInt } = {}) {
+    let res = {};
+    let meta = {};
+    let tbl = res;
+    let m = meta;
+    for (let ptr = skipVoid(toml, 0); ptr < toml.length;) {
+        if (toml[ptr] === '[') {
+            let isTableArray = toml[++ptr] === '[';
+            let k = parseKey(toml, (ptr += +isTableArray), ']');
+            if (isTableArray) {
+                if (toml[k[1] - 1] !== ']') {
+                    throw new TomlError('expected end of table declaration', {
+                        toml: toml,
+                        ptr: k[1] - 1,
+                    });
+                }
+                k[1]++;
+            }
+            let p = peekTable(k[0], res, meta, isTableArray ? 2 /* Type.ARRAY */ : 1 /* Type.EXPLICIT */);
+            if (!p) {
+                throw new TomlError('trying to redefine an already defined table or value', {
+                    toml: toml,
+                    ptr: ptr,
+                });
+            }
+            m = p[2];
+            tbl = p[1];
+            ptr = k[1];
+        }
+        else {
+            let k = parseKey(toml, ptr);
+            let p = peekTable(k[0], tbl, m, 0 /* Type.DOTTED */);
+            if (!p) {
+                throw new TomlError('trying to redefine an already defined table or value', {
+                    toml: toml,
+                    ptr: ptr,
+                });
+            }
+            let v = extractValue(toml, k[1], void 0, maxDepth, integersAsBigInt);
+            p[1][p[0]] = v[0];
+            ptr = v[1];
+        }
+        ptr = skipVoid(toml, ptr, true);
+        if (toml[ptr] && toml[ptr] !== '\n' && toml[ptr] !== '\r') {
+            throw new TomlError('each key-value declaration must be followed by an end-of-line', {
+                toml: toml,
+                ptr: ptr,
+            });
+        }
+        ptr = skipVoid(toml, ptr);
+    }
+    return res;
+}
+//# sourceMappingURL=parse.js.map
+;// CONCATENATED MODULE: ./node_modules/smol-toml/dist/stringify.js
+/*!
+ * Copyright (c) Squirrel Chat et al., All rights reserved.
+ * SPDX-License-Identifier: BSD-3-Clause
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright notice, this
+ *    list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ *    this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ * 3. Neither the name of the copyright holder nor the names of its contributors
+ *    may be used to endorse or promote products derived from this software without
+ *    specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+ * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+ * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+let BARE_KEY = /^[a-z0-9-_]+$/i;
+function extendedTypeOf(obj) {
+    let type = typeof obj;
+    if (type === 'object') {
+        if (Array.isArray(obj))
+            return 'array';
+        if (obj instanceof Date)
+            return 'date';
+    }
+    return type;
+}
+function isArrayOfTables(obj) {
+    for (let i = 0; i < obj.length; i++) {
+        if (extendedTypeOf(obj[i]) !== 'object')
+            return false;
+    }
+    return obj.length != 0;
+}
+function formatString(s) {
+    return JSON.stringify(s).replace(/\x7f/g, '\\u007f');
+}
+function stringifyValue(val, type, depth, numberAsFloat) {
+    if (depth === 0) {
+        throw new Error('Could not stringify the object: maximum object depth exceeded');
+    }
+    if (type === 'number') {
+        if (isNaN(val))
+            return 'nan';
+        if (val === Infinity)
+            return 'inf';
+        if (val === -Infinity)
+            return '-inf';
+        if (Number.isInteger(val) && (numberAsFloat || !Number.isSafeInteger(val)))
+            return val.toFixed(1);
+        return val.toString();
+    }
+    if (type === 'bigint' || type === 'boolean') {
+        return val.toString();
+    }
+    if (type === 'string') {
+        return formatString(val);
+    }
+    if (type === 'date') {
+        if (isNaN(val.getTime())) {
+            throw new TypeError('cannot serialize invalid date');
+        }
+        return val.toISOString();
+    }
+    if (type === 'object') {
+        return stringifyInlineTable(val, depth, numberAsFloat);
+    }
+    if (type === 'array') {
+        return stringifyArray(val, depth, numberAsFloat);
+    }
+}
+function stringifyInlineTable(obj, depth, numberAsFloat) {
+    let keys = Object.keys(obj);
+    if (keys.length === 0)
+        return '{}';
+    let res = '{ ';
+    for (let i = 0; i < keys.length; i++) {
+        let k = keys[i];
+        if (i)
+            res += ', ';
+        res += BARE_KEY.test(k) ? k : formatString(k);
+        res += ' = ';
+        res += stringifyValue(obj[k], extendedTypeOf(obj[k]), depth - 1, numberAsFloat);
+    }
+    return res + ' }';
+}
+function stringifyArray(array, depth, numberAsFloat) {
+    if (array.length === 0)
+        return '[]';
+    let res = '[ ';
+    for (let i = 0; i < array.length; i++) {
+        if (i)
+            res += ', ';
+        if (array[i] === null || array[i] === void 0) {
+            throw new TypeError('arrays cannot contain null or undefined values');
+        }
+        res += stringifyValue(array[i], extendedTypeOf(array[i]), depth - 1, numberAsFloat);
+    }
+    return res + ' ]';
+}
+function stringifyArrayTable(array, key, depth, numberAsFloat) {
+    if (depth === 0) {
+        throw new Error('Could not stringify the object: maximum object depth exceeded');
+    }
+    let res = '';
+    for (let i = 0; i < array.length; i++) {
+        res += `${res && '\n'}[[${key}]]\n`;
+        res += stringifyTable(0, array[i], key, depth, numberAsFloat);
+    }
+    return res;
+}
+function stringifyTable(tableKey, obj, prefix, depth, numberAsFloat) {
+    if (depth === 0) {
+        throw new Error('Could not stringify the object: maximum object depth exceeded');
+    }
+    let preamble = '';
+    let tables = '';
+    let keys = Object.keys(obj);
+    for (let i = 0; i < keys.length; i++) {
+        let k = keys[i];
+        if (obj[k] !== null && obj[k] !== void 0) {
+            let type = extendedTypeOf(obj[k]);
+            if (type === 'symbol' || type === 'function') {
+                throw new TypeError(`cannot serialize values of type '${type}'`);
+            }
+            let key = BARE_KEY.test(k) ? k : formatString(k);
+            if (type === 'array' && isArrayOfTables(obj[k])) {
+                tables += (tables && '\n') + stringifyArrayTable(obj[k], prefix ? `${prefix}.${key}` : key, depth - 1, numberAsFloat);
+            }
+            else if (type === 'object') {
+                let tblKey = prefix ? `${prefix}.${key}` : key;
+                tables += (tables && '\n') + stringifyTable(tblKey, obj[k], tblKey, depth - 1, numberAsFloat);
+            }
+            else {
+                preamble += key;
+                preamble += ' = ';
+                preamble += stringifyValue(obj[k], type, depth, numberAsFloat);
+                preamble += '\n';
+            }
+        }
+    }
+    if (tableKey && (preamble || !tables)) // Create table only if necessary
+        preamble = preamble ? `[${tableKey}]\n${preamble}` : `[${tableKey}]`;
+    return preamble && tables
+        ? `${preamble}\n${tables}`
+        : preamble || tables;
+}
+function stringify(obj, { maxDepth = 1000, numbersAsFloat = false } = {}) {
+    if (extendedTypeOf(obj) !== 'object') {
+        throw new TypeError('stringify can only be called with an object');
+    }
+    let str = stringifyTable(0, obj, '', maxDepth, numbersAsFloat);
+    if (str[str.length - 1] !== '\n')
+        return str + '\n';
+    return str;
+}
+//# sourceMappingURL=stringify.js.map
+;// CONCATENATED MODULE: ./node_modules/smol-toml/dist/index.js
+/*!
+ * Copyright (c) Squirrel Chat et al., All rights reserved.
+ * SPDX-License-Identifier: BSD-3-Clause
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright notice, this
+ *    list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ *    this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ * 3. Neither the name of the copyright holder nor the names of its contributors
+ *    may be used to endorse or promote products derived from this software without
+ *    specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+ * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+ * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+
+
+
+
+/* harmony default export */ const smol_toml_dist = ({ parse: parse_parse, stringify: stringify, TomlDate: TomlDate, TomlError: TomlError });
+
+//# sourceMappingURL=index.js.map
 ;// CONCATENATED MODULE: ./src/util.ts
+
 
 
 
@@ -92808,6 +94151,23 @@ function getNodeVersionFromFile(versionFilePath) {
     }
     catch {
         core.info('Node version file is not JSON file');
+    }
+    // Try parsing the file as a mise `mise.toml` file.
+    try {
+        const manifest = parse(contents);
+        if (manifest?.tools?.node) {
+            const node = manifest.tools.node;
+            if (typeof node === 'object' && node?.version) {
+                return node.version;
+            }
+            if (typeof node === 'string') {
+                return node;
+            }
+            return null;
+        }
+    }
+    catch {
+        core.info('Node version file is not TOML file');
     }
     const found = contents.match(/^(?:node(js)?\s+)?v?(?<version>[^\s]+)$/m);
     return found?.groups?.version ?? contents.trim();

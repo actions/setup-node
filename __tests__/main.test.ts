@@ -1,16 +1,15 @@
 import {
-  jest,
-  describe,
-  it,
-  expect,
-  beforeEach,
+  afterAll,
   afterEach,
-  afterAll
+  beforeEach,
+  describe,
+  expect,
+  it,
+  jest
 } from '@jest/globals';
-import {fileURLToPath} from 'url';
 import fs from 'fs';
 import path from 'path';
-import osm from 'os';
+import {fileURLToPath} from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -197,6 +196,11 @@ describe('main tests', () => {
       ${'{"engines": {"node": "17.0.0"}}'}                                                       | ${'17.0.0'}
       ${'{"devEngines": {"runtime": {"name": "node", "version": "22.0.0"}}}'}                    | ${'22.0.0'}
       ${'{"devEngines": {"runtime": [{"name": "bun"}, {"name": "node", "version": "22.0.0"}]}}'} | ${'22.0.0'}
+      ${'[tools]\ngo="latest"\nnode = "24.10"'}                                                  | ${'24.10'}
+      ${'[tools]\nnode = "22.12"'}                                                               | ${'22.12'}
+      ${'[tools]\ngo="latest"\nnode = "24.10"'}                                                  | ${'24.10'}
+      ${'[tools]\nnode = { version = "22.20" }'}                                                 | ${'22.20'}
+      ${'[tools]\nnode = { postinstall = "corepack enable" }'}                                   | ${null}
     `.it('parses "$contents"', ({contents, expected}: any) => {
       const existsSpy = jest.spyOn(fs, 'existsSync');
       existsSpy.mockImplementation(() => true);
