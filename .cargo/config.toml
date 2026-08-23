@@ -1,0 +1,7 @@
+[build]
+rustflags = ["-D", "warnings"]
+
+[alias]
+ck = "check --all-targets"
+ckf = "check --all-targets --all-features"
+fmt-check = "fmt -- --check"
