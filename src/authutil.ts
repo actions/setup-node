@@ -44,6 +44,9 @@ function writeRegistryToFile(registryUrl: string, fileLocation: string) {
     registryUrl.replace(/(^\w+:|^)/, '') + ':_authToken=${NODE_AUTH_TOKEN}';
   const registryString = `${scope}registry=${registryUrl}`;
   newContents += `${authString}${os.EOL}${registryString}`;
+  if (newContents && !newContents.endsWith(os.EOL)) {
+    newContents += os.EOL;
+  }
   fs.writeFileSync(fileLocation, newContents);
   core.exportVariable('NPM_CONFIG_USERCONFIG', fileLocation);
   // Only export NODE_AUTH_TOKEN if explicitly provided by user
