@@ -56,4 +56,4 @@ steps:
 # Release process
 
 As soon as functionality is implemented, we will release minor update of action. No need to bump major version since there are no breaking changes for existing users.
-After that, we will update [starter-workflows](https://github.com/actions/starter-workflows/blob/main/ci/node.js.yml) and [GitHub Action documentation](https://docs.github.com/en/actions/guides/building-and-testing-nodejs#example-caching-dependencies).
+After that, we will update [starter-workflows](https://github.com/actions/starter-workflows/blob/main/ci/node.js.yml) and [GitHub Action documentation](https://docs.github.com/en/actions/tutorials/build-and-test-code/nodejs#example-caching-dependencies).
