@@ -14,6 +14,9 @@ import osm from 'os';
 import path from 'path';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const initialRunnerTemp = process.env['RUNNER_TEMP'];
+const nodeVersionsManifestUrl =
+  'https://raw.githubusercontent.com/actions/node-versions/main/versions-manifest.json';
 
 // Mock @actions modules before importing anything that depends on them
 jest.unstable_mockModule('@actions/core', () => ({
@@ -164,6 +167,7 @@ describe('setup-node', () => {
     console.log('::stop-commands::stoptoken'); // Disable executing of runner commands when running tests in actions
     process.env['GITHUB_PATH'] = ''; // Stub out ENV file functionality so we can verify it writes to standard out
     process.env['GITHUB_OUTPUT'] = ''; // Stub out ENV file functionality so we can verify it writes to standard out
+    delete process.env['RUNNER_TEMP'];
     inputs = {};
     inSpy = core.getInput as jest.Mock;
     inSpy.mockImplementation((name: any) => inputs[name]);
@@ -233,7 +237,9 @@ describe('setup-node', () => {
 
     getJsonSpy.mockImplementation((url: any) => {
       let res: any;
-      if (url.includes('/rc')) {
+      if (url === nodeVersionsManifestUrl) {
+        throw new Error('Unable to download raw manifest');
+      } else if (url.includes('/rc')) {
         res = <INodeVersion[]>nodeTestDistRc;
       } else if (url.includes('/nightly')) {
         res = <INodeVersion[]>nodeTestDistNightly;
@@ -273,6 +279,9 @@ describe('setup-node', () => {
 
   afterAll(async () => {
     console.log('::stoptoken::'); // Re-enable executing of runner commands when running tests in actions
+    if (initialRunnerTemp !== undefined) {
+      process.env['RUNNER_TEMP'] = initialRunnerTemp;
+    }
     jest.restoreAllMocks();
   }, 100000);
 
@@ -649,7 +658,7 @@ describe('setup-node', () => {
       expect(logSpy).toHaveBeenCalledWith(
         'Attempt to resolve the latest version from manifest...'
       );
-      expect(dbgSpy).toHaveBeenCalledWith('No manifest cached');
+      expect(dbgSpy).not.toHaveBeenCalledWith('No manifest cached');
       expect(dbgSpy).toHaveBeenCalledWith(
         'Getting manifest from actions/node-versions@main'
       );
@@ -677,7 +686,7 @@ describe('setup-node', () => {
       expect(logSpy).toHaveBeenCalledWith(
         'Attempt to resolve the latest version from manifest...'
       );
-      expect(dbgSpy).toHaveBeenCalledWith('No manifest cached');
+      expect(dbgSpy).not.toHaveBeenCalledWith('No manifest cached');
       expect(dbgSpy).toHaveBeenCalledWith(
         'Getting manifest from actions/node-versions@main'
       );
@@ -716,7 +725,7 @@ describe('setup-node', () => {
       expect(logSpy).toHaveBeenCalledWith(
         'Attempt to resolve the latest version from manifest...'
       );
-      expect(dbgSpy).toHaveBeenCalledWith('No manifest cached');
+      expect(dbgSpy).not.toHaveBeenCalledWith('No manifest cached');
       expect(dbgSpy).toHaveBeenCalledWith(
         'Getting manifest from actions/node-versions@main'
       );
@@ -1087,6 +1096,166 @@ describe('setup-node', () => {
         `Failed to fetch a valid manifest after 3 attempts. Last error: The manifest fetched is empty, truncated, or does not contain any valid tool release entries.`
       );
     }, 10000);
+  });
+
+  describe('manifest retrieval', () => {
+    let runnerTemp: string;
+
+    beforeEach(() => {
+      runnerTemp = fs.mkdtempSync(path.join(osm.tmpdir(), 'setup-node-test-'));
+      process.env['RUNNER_TEMP'] = runnerTemp;
+      os.platform = 'linux';
+      os.arch = 'x64';
+      inputs['node-version'] = 'lts/erbium';
+      findSpy.mockImplementation(() => '');
+      getJsonSpy.mockImplementation((url: string) => ({
+        result:
+          url === nodeVersionsManifestUrl ? nodeTestManifest : nodeTestDist
+      }));
+      dlSpy.mockImplementation(async () => '/some/temp/path');
+      const toolPath = path.normalize('/cache/node/12.16.2/x64');
+      exSpy.mockImplementation(async () => '/some/other/temp/path');
+      cacheSpy.mockImplementation(async () => toolPath);
+      getExecOutputSpy.mockImplementation(async () => ({
+        stdout: 'v12.16.2\n',
+        stderr: '',
+        exitCode: 0
+      }));
+    });
+
+    afterEach(() => {
+      fs.rmSync(runnerTemp, {recursive: true, force: true});
+      delete process.env['RUNNER_TEMP'];
+    });
+
+    it('fetches the raw manifest without a GitHub API call', async () => {
+      await main.run();
+
+      expect(getJsonSpy).toHaveBeenCalledWith(nodeVersionsManifestUrl);
+      expect(getManifestSpy).not.toHaveBeenCalled();
+      expect(setFailedSpy).not.toHaveBeenCalled();
+    });
+
+    it('reuses the manifest across action invocations', async () => {
+      await main.run();
+      getJsonSpy.mockClear();
+      getManifestSpy.mockClear();
+
+      await main.run();
+
+      expect(getJsonSpy).not.toHaveBeenCalled();
+      expect(getManifestSpy).not.toHaveBeenCalled();
+      expect(setFailedSpy).not.toHaveBeenCalled();
+    });
+
+    it('refreshes the manifest when check-latest is enabled', async () => {
+      let installedVersion = '12.16.2';
+      let manifest = <IToolRelease[]>nodeTestManifest;
+      getJsonSpy.mockImplementation((url: string) => ({
+        result: url === nodeVersionsManifestUrl ? manifest : nodeTestDist
+      }));
+      cacheSpy.mockImplementation(
+        async (
+          _sourceDirectory: string,
+          _tool: string,
+          version: string,
+          arch: string
+        ) => {
+          installedVersion = version;
+          return path.normalize(`/cache/node/${version}/${arch}`);
+        }
+      );
+      getExecOutputSpy.mockImplementation(async () => ({
+        stdout: `v${installedVersion}\n`,
+        stderr: '',
+        exitCode: 0
+      }));
+      inputs['node-version'] = '12';
+
+      await main.run();
+
+      const latestVersion = '12.17.0';
+      manifest = [
+        {
+          version: latestVersion,
+          stable: true,
+          release_url: `https://github.com/actions/node-versions/releases/tag/${latestVersion}`,
+          files: [
+            {
+              filename: `node-${latestVersion}-linux-x64.tar.gz`,
+              arch: 'x64',
+              platform: 'linux',
+              download_url: `https://github.com/actions/node-versions/releases/download/${latestVersion}/node-${latestVersion}-linux-x64.tar.gz`
+            }
+          ]
+        },
+        ...nodeTestManifest
+      ];
+      inputs['check-latest'] = 'true';
+
+      await main.run();
+
+      expect(getJsonSpy).toHaveBeenCalledTimes(2);
+      expect(logSpy).toHaveBeenCalledWith(`Resolved as '${latestVersion}'`);
+      expect(setFailedSpy).not.toHaveBeenCalled();
+    });
+
+    it('reuses the LTS manifest when check-latest is enabled', async () => {
+      inputs['check-latest'] = 'true';
+
+      await main.run();
+
+      expect(getJsonSpy).toHaveBeenCalledTimes(1);
+      expect(getManifestSpy).not.toHaveBeenCalled();
+      expect(setFailedSpy).not.toHaveBeenCalled();
+    });
+
+    it.each([
+      ['empty', '[]'],
+      ['malformed', '{']
+    ])('replaces an %s cached manifest', async (_, cachedManifest) => {
+      await main.run();
+      const [manifestFile] = fs.readdirSync(runnerTemp);
+      fs.writeFileSync(path.join(runnerTemp, manifestFile), cachedManifest);
+      getJsonSpy.mockClear();
+      getManifestSpy.mockClear();
+
+      await main.run();
+
+      expect(getJsonSpy).toHaveBeenCalledWith(nodeVersionsManifestUrl);
+      expect(getManifestSpy).not.toHaveBeenCalled();
+      expect(setFailedSpy).not.toHaveBeenCalled();
+
+      getJsonSpy.mockClear();
+      await main.run();
+      expect(getJsonSpy).not.toHaveBeenCalled();
+    });
+
+    it('continues when the manifest cannot be cached', async () => {
+      fs.rmSync(runnerTemp, {recursive: true, force: true});
+
+      await main.run();
+
+      expect(getJsonSpy).toHaveBeenCalledWith(nodeVersionsManifestUrl);
+      expect(getManifestSpy).not.toHaveBeenCalled();
+      expect(setFailedSpy).not.toHaveBeenCalled();
+    });
+
+    it.each([
+      ['fails', () => Promise.reject(new Error('Unable to download manifest'))],
+      ['is invalid', () => Promise.resolve({result: []})]
+    ])(
+      'falls back to the GitHub API when the raw manifest %s',
+      async (_, result) => {
+        getJsonSpy.mockImplementationOnce(result);
+
+        await main.run();
+
+        expect(getJsonSpy).toHaveBeenCalledWith(nodeVersionsManifestUrl);
+        expect(getManifestSpy).toHaveBeenCalledTimes(1);
+        expect(setFailedSpy).not.toHaveBeenCalled();
+      }
+    );
   });
 
   describe('node version verification', () => {
