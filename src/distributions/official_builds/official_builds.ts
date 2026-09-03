@@ -1,13 +1,26 @@
+import fs from 'node:fs';
+import path from 'node:path';
+
 import * as core from '@actions/core';
-import * as tc from '@actions/tool-cache';
-import path from 'path';
 import * as exec from '@actions/exec';
+import * as tc from '@actions/tool-cache';
 
 import BaseDistribution from '../base-distribution.js';
 import {NodeInputs, INodeVersion, INodeVersionInfo} from '../base-models.js';
 
 interface INodeRelease extends tc.IToolRelease {
   lts?: string;
+}
+
+const nodeVersionsManifestFile = 'setup-node-versions-manifest.json';
+const nodeVersionsManifestUrl =
+  'https://raw.githubusercontent.com/actions/node-versions/main/versions-manifest.json';
+const invalidManifestMessage =
+  'The manifest fetched is empty, truncated, or does not contain any valid tool release entries.';
+
+/** @param {unknown} manifest */
+function isValidManifest(manifest: unknown): manifest is tc.IToolRelease[] {
+  return Array.isArray(manifest) && manifest.length > 0;
 }
 
 export default class OfficialBuilds extends BaseDistribution {
@@ -43,12 +56,20 @@ export default class OfficialBuilds extends BaseDistribution {
 
     if (this.nodeInfo.checkLatest) {
       core.info('Attempt to resolve the latest version from manifest...');
-      const resolvedVersion = await this.resolveVersionFromManifest(
-        this.nodeInfo.versionSpec,
-        this.nodeInfo.stable,
-        osArch,
-        manifest
-      );
+      let resolvedVersion: string | undefined;
+      try {
+        manifest ??= await this.getManifest();
+        const info = await this.getInfoFromManifest(
+          this.nodeInfo.versionSpec,
+          this.nodeInfo.stable,
+          osArch,
+          manifest
+        );
+        resolvedVersion = info?.resolvedVersion;
+      } catch (error) {
+        core.info('Unable to resolve version from manifest...');
+        core.debug((error as Error).message);
+      }
       if (resolvedVersion) {
         this.nodeInfo.versionSpec = resolvedVersion;
         core.info(`Resolved as '${resolvedVersion}'`);
@@ -191,6 +212,33 @@ export default class OfficialBuilds extends BaseDistribution {
   }
 
   private async getManifest(): Promise<tc.IToolRelease[]> {
+    const runnerTemp = process.env['RUNNER_TEMP'];
+    const manifestPath = runnerTemp
+      ? path.join(runnerTemp, nodeVersionsManifestFile)
+      : undefined;
+    const cachedManifest = this.nodeInfo.checkLatest
+      ? undefined
+      : this.getCachedManifest(manifestPath);
+    if (cachedManifest) {
+      return cachedManifest;
+    }
+
+    core.debug(`Getting manifest from ${nodeVersionsManifestUrl}`);
+    try {
+      const {result} = await this.httpClient.getJson<tc.IToolRelease[]>(
+        nodeVersionsManifestUrl
+      );
+      if (!isValidManifest(result)) {
+        throw new Error(invalidManifestMessage);
+      }
+      this.cacheManifest(manifestPath, result);
+      return result;
+    } catch (error) {
+      core.debug(
+        `Unable to get manifest from ${nodeVersionsManifestUrl}: ${error instanceof Error ? error.message : String(error)}`
+      );
+    }
+
     let lastError: Error | undefined;
     const maxAttempts = 3;
     core.debug(`Getting manifest from actions/node-versions@main`);
@@ -204,14 +252,13 @@ export default class OfficialBuilds extends BaseDistribution {
             : this.nodeInfo.auth,
           'main'
         );
-        if (Array.isArray(manifest) && manifest.length > 0) {
+        if (isValidManifest(manifest)) {
+          this.cacheManifest(manifestPath, manifest);
           return manifest;
         }
-        lastError = new Error(
-          `The manifest fetched is empty, truncated, or does not contain any valid tool release entries.`
-        );
-      } catch (err) {
-        lastError = err instanceof Error ? err : new Error(String(err));
+        lastError = new Error(invalidManifestMessage);
+      } catch (error) {
+        lastError = error instanceof Error ? error : new Error(String(error));
       }
       core.debug(
         `Attempt ${attempt}/${maxAttempts} to fetch the manifest failed: ${lastError.message}`
@@ -226,6 +273,55 @@ export default class OfficialBuilds extends BaseDistribution {
     throw new Error(
       `Failed to fetch a valid manifest after ${maxAttempts} attempts. Last error: ${lastError?.message}`
     );
+  }
+
+  /** @param {string | undefined} manifestPath */
+  private getCachedManifest(
+    manifestPath: string | undefined
+  ): tc.IToolRelease[] | undefined {
+    if (!manifestPath) {
+      return undefined;
+    }
+
+    try {
+      const manifest: unknown = JSON.parse(
+        fs.readFileSync(manifestPath, 'utf8')
+      );
+      if (isValidManifest(manifest)) {
+        core.debug(`Found manifest in ${manifestPath}`);
+        return manifest;
+      }
+      core.debug(`Ignoring invalid manifest in ${manifestPath}`);
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== 'ENOENT') {
+        core.debug(
+          `Unable to read manifest from ${manifestPath}: ${error instanceof Error ? error.message : String(error)}`
+        );
+      }
+    }
+
+    return undefined;
+  }
+
+  /**
+   * @param {string | undefined} manifestPath
+   * @param {tc.IToolRelease[]} manifest
+   */
+  private cacheManifest(
+    manifestPath: string | undefined,
+    manifest: tc.IToolRelease[]
+  ): void {
+    if (!manifestPath) {
+      return;
+    }
+
+    try {
+      fs.writeFileSync(manifestPath, JSON.stringify(manifest));
+    } catch (error) {
+      core.debug(
+        `Unable to cache manifest in ${manifestPath}: ${error instanceof Error ? error.message : String(error)}`
+      );
+    }
   }
 
   private resolveLtsAliasFromManifest(
@@ -270,26 +366,6 @@ export default class OfficialBuilds extends BaseDistribution {
     );
 
     return release.version.split('.')[0];
-  }
-
-  private async resolveVersionFromManifest(
-    versionSpec: string,
-    stable: boolean,
-    osArch: string,
-    manifest: tc.IToolRelease[] | undefined
-  ): Promise<string | undefined> {
-    try {
-      const info = await this.getInfoFromManifest(
-        versionSpec,
-        stable,
-        osArch,
-        manifest
-      );
-      return info?.resolvedVersion;
-    } catch (err) {
-      core.info('Unable to resolve version from manifest...');
-      core.debug((err as Error).message);
-    }
   }
 
   private async getInfoFromManifest(
