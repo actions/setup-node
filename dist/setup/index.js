@@ -85937,6 +85937,7 @@ class Batch {
 //# sourceMappingURL=Batch.js.map
 ;// CONCATENATED MODULE: external "node:fs"
 const external_node_fs_namespaceObject = __WEBPACK_EXTERNAL_createRequire(import.meta.url)("node:fs");
+var external_node_fs_default = /*#__PURE__*/__nccwpck_require__.n(external_node_fs_namespaceObject);
 ;// CONCATENATED MODULE: ./node_modules/@azure/storage-blob/dist/esm/utils/utils.js
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
@@ -100979,12 +100980,23 @@ class NightlyNodejs extends BasePrereleaseNodejs {
     }
 }
 
+;// CONCATENATED MODULE: external "node:path"
+const external_node_path_namespaceObject = __WEBPACK_EXTERNAL_createRequire(import.meta.url)("node:path");
+var external_node_path_default = /*#__PURE__*/__nccwpck_require__.n(external_node_path_namespaceObject);
 ;// CONCATENATED MODULE: ./src/distributions/official_builds/official_builds.ts
 
 
 
 
 
+
+const nodeVersionsManifestFile = 'setup-node-versions-manifest.json';
+const nodeVersionsManifestUrl = 'https://raw.githubusercontent.com/actions/node-versions/main/versions-manifest.json';
+const invalidManifestMessage = 'The manifest fetched is empty, truncated, or does not contain any valid tool release entries.';
+/** @param {unknown} manifest */
+function isValidManifest(manifest) {
+    return Array.isArray(manifest) && manifest.length > 0;
+}
 class OfficialBuilds extends BaseDistribution {
     constructor(nodeInfo) {
         super(nodeInfo);
@@ -101007,7 +101019,16 @@ class OfficialBuilds extends BaseDistribution {
         }
         if (this.nodeInfo.checkLatest) {
             core_info('Attempt to resolve the latest version from manifest...');
-            const resolvedVersion = await this.resolveVersionFromManifest(this.nodeInfo.versionSpec, this.nodeInfo.stable, osArch, manifest);
+            let resolvedVersion;
+            try {
+                manifest ??= await this.getManifest();
+                const info = await this.getInfoFromManifest(this.nodeInfo.versionSpec, this.nodeInfo.stable, osArch, manifest);
+                resolvedVersion = info?.resolvedVersion;
+            }
+            catch (error) {
+                core_info('Unable to resolve version from manifest...');
+                core_debug(error.message);
+            }
             if (resolvedVersion) {
                 this.nodeInfo.versionSpec = resolvedVersion;
                 core_info(`Resolved as '${resolvedVersion}'`);
@@ -101058,14 +101079,14 @@ class OfficialBuilds extends BaseDistribution {
         }
         const installedDir = toolPath;
         if (this.osPlat != 'win32') {
-            toolPath = external_path_default().join(toolPath, 'bin');
+            toolPath = external_node_path_default().join(toolPath, 'bin');
         }
         addPath(toolPath);
         await this.verifyNodeVersion(installedDir);
     }
     addToolPath(toolPath) {
         if (this.osPlat != 'win32') {
-            toolPath = external_path_default().join(toolPath, 'bin');
+            toolPath = external_node_path_default().join(toolPath, 'bin');
         }
         addPath(toolPath);
     }
@@ -101104,6 +101125,28 @@ class OfficialBuilds extends BaseDistribution {
         return `${url}/dist`;
     }
     async getManifest() {
+        const runnerTemp = process.env['RUNNER_TEMP'];
+        const manifestPath = runnerTemp
+            ? external_node_path_default().join(runnerTemp, nodeVersionsManifestFile)
+            : undefined;
+        const cachedManifest = this.nodeInfo.checkLatest
+            ? undefined
+            : this.getCachedManifest(manifestPath);
+        if (cachedManifest) {
+            return cachedManifest;
+        }
+        core_debug(`Getting manifest from ${nodeVersionsManifestUrl}`);
+        try {
+            const { result } = await this.httpClient.getJson(nodeVersionsManifestUrl);
+            if (!isValidManifest(result)) {
+                throw new Error(invalidManifestMessage);
+            }
+            this.cacheManifest(manifestPath, result);
+            return result;
+        }
+        catch (error) {
+            core_debug(`Unable to get manifest from ${nodeVersionsManifestUrl}: ${error instanceof Error ? error.message : String(error)}`);
+        }
         let lastError;
         const maxAttempts = 3;
         core_debug(`Getting manifest from actions/node-versions@main`);
@@ -101112,13 +101155,14 @@ class OfficialBuilds extends BaseDistribution {
                 const manifest = await getManifestFromRepo('actions', 'node-versions', this.nodeInfo.mirror && this.nodeInfo.mirrorToken
                     ? this.nodeInfo.mirrorToken
                     : this.nodeInfo.auth, 'main');
-                if (Array.isArray(manifest) && manifest.length > 0) {
+                if (isValidManifest(manifest)) {
+                    this.cacheManifest(manifestPath, manifest);
                     return manifest;
                 }
-                lastError = new Error(`The manifest fetched is empty, truncated, or does not contain any valid tool release entries.`);
+                lastError = new Error(invalidManifestMessage);
             }
-            catch (err) {
-                lastError = err instanceof Error ? err : new Error(String(err));
+            catch (error) {
+                lastError = error instanceof Error ? error : new Error(String(error));
             }
             core_debug(`Attempt ${attempt}/${maxAttempts} to fetch the manifest failed: ${lastError.message}`);
             if (attempt < maxAttempts) {
@@ -101127,6 +101171,41 @@ class OfficialBuilds extends BaseDistribution {
             }
         }
         throw new Error(`Failed to fetch a valid manifest after ${maxAttempts} attempts. Last error: ${lastError?.message}`);
+    }
+    /** @param {string | undefined} manifestPath */
+    getCachedManifest(manifestPath) {
+        if (!manifestPath) {
+            return undefined;
+        }
+        try {
+            const manifest = JSON.parse(external_node_fs_default().readFileSync(manifestPath, 'utf8'));
+            if (isValidManifest(manifest)) {
+                core_debug(`Found manifest in ${manifestPath}`);
+                return manifest;
+            }
+            core_debug(`Ignoring invalid manifest in ${manifestPath}`);
+        }
+        catch (error) {
+            if (error.code !== 'ENOENT') {
+                core_debug(`Unable to read manifest from ${manifestPath}: ${error instanceof Error ? error.message : String(error)}`);
+            }
+        }
+        return undefined;
+    }
+    /**
+     * @param {string | undefined} manifestPath
+     * @param {tc.IToolRelease[]} manifest
+     */
+    cacheManifest(manifestPath, manifest) {
+        if (!manifestPath) {
+            return;
+        }
+        try {
+            external_node_fs_default().writeFileSync(manifestPath, JSON.stringify(manifest));
+        }
+        catch (error) {
+            core_debug(`Unable to cache manifest in ${manifestPath}: ${error instanceof Error ? error.message : String(error)}`);
+        }
     }
     resolveLtsAliasFromManifest(versionSpec, stable, manifest) {
         const alias = versionSpec.split('lts/')[1]?.toLowerCase();
@@ -101152,16 +101231,6 @@ class OfficialBuilds extends BaseDistribution {
         core_debug(`Found LTS release '${release.version}' for Node version '${versionSpec}'`);
         return release.version.split('.')[0];
     }
-    async resolveVersionFromManifest(versionSpec, stable, osArch, manifest) {
-        try {
-            const info = await this.getInfoFromManifest(versionSpec, stable, osArch, manifest);
-            return info?.resolvedVersion;
-        }
-        catch (err) {
-            core_info('Unable to resolve version from manifest...');
-            core_debug(err.message);
-        }
-    }
     async getInfoFromManifest(versionSpec, stable, osArch, manifest) {
         let info = null;
         if (!manifest) {
@@ -101186,7 +101255,7 @@ class OfficialBuilds extends BaseDistribution {
     }
     async verifyNodeVersion(installedDir) {
         // tool-cache layout: <root>/node/<version>/<arch>
-        const expectedVersion = 'v' + external_path_default().basename(external_path_default().dirname(installedDir));
+        const expectedVersion = 'v' + external_node_path_default().basename(external_node_path_default().dirname(installedDir));
         let actualVersion = '';
         try {
             const { stdout } = await getExecOutput('node', ['--version'], {
