@@ -101361,7 +101361,7 @@ function resolveVersionInput() {
         else {
             warning(`Could not determine node version from ${versionFilePath}. Falling back`);
         }
-        core_info(`Resolved ${versionFilePath} as ${version}`);
+        core_info(`Resolved ${versionFileInput} as ${version}`);
     }
     return version;
 }

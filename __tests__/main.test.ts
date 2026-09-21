@@ -324,10 +324,7 @@ describe('main tests', () => {
         path.join(process.env['GITHUB_WORKSPACE']!, '.nvmrc')
       );
       expect(infoSpy).toHaveBeenCalledWith(
-        `Resolved ${path.join(
-          process.env['GITHUB_WORKSPACE']!,
-          '.nvmrc'
-        )} as ${expectedVersionSpec}`
+        `Resolved ${inputs['node-version-file']} as ${expectedVersionSpec}`
       );
     }, 10000);
 
