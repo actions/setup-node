@@ -177,6 +177,10 @@ describe('main tests', () => {
       );
     });
 
+    afterEach(() => {
+      jest.restoreAllMocks();
+    });
+
     each`
       contents                                                                                   | expected
       ${'12'}                                                                                    | ${'12'}
@@ -315,9 +319,40 @@ describe('main tests', () => {
 
       // Assert
       expect(getNodeVersionFromFileSpy).toHaveBeenCalled();
-      expect(infoSpy).toHaveBeenCalledWith(
-        `Resolved ${inputs['node-version-file']} as ${expectedVersionSpec}`
+      // A relative input is still resolved against the workspace.
+      expect(getNodeVersionFromFileSpy).toHaveBeenCalledWith(
+        path.join(process.env['GITHUB_WORKSPACE']!, '.nvmrc')
       );
+      expect(infoSpy).toHaveBeenCalledWith(
+        `Resolved ${path.join(
+          process.env['GITHUB_WORKSPACE']!,
+          '.nvmrc'
+        )} as ${expectedVersionSpec}`
+      );
+    }, 10000);
+
+    it('reads node-version-file given as an absolute path outside the workspace', async () => {
+      // Arrange: a composite action passes `${{ github.action_path }}/.nvmrc`,
+      // which is absolute and may sit outside GITHUB_WORKSPACE.
+      // The workspace deliberately points at a different existing directory,
+      // so the absolute version file lies outside it.
+      const workspace = path.join(__dirname, 'mock');
+      process.env['GITHUB_WORKSPACE'] = workspace;
+      const versionFilePath = path.join(__dirname, 'data', '.nvmrc');
+      // Guard the premise: the version file lives outside the workspace.
+      expect(path.relative(workspace, versionFilePath).startsWith('..')).toBe(
+        true
+      );
+      inputs['node-version-file'] = versionFilePath;
+
+      // Act
+      await main.run();
+
+      // Assert: the path is used as provided and the real file is read.
+      // The expected `24` comes from `__tests__/data/.nvmrc` (`v24`).
+      expect(getNodeVersionFromFileSpy).toHaveBeenCalledWith(versionFilePath);
+      expect(infoSpy).toHaveBeenCalledWith(`Resolved ${versionFilePath} as 24`);
+      expect(core.setFailed as jest.Mock).not.toHaveBeenCalled();
     }, 10000);
 
     it('should throw an error if node-version-file is not accessible', async () => {
