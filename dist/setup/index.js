@@ -100993,7 +100993,6 @@ var external_node_path_default = /*#__PURE__*/__nccwpck_require__.n(external_nod
 const nodeVersionsManifestFile = 'setup-node-versions-manifest.json';
 const nodeVersionsManifestUrl = 'https://raw.githubusercontent.com/actions/node-versions/main/versions-manifest.json';
 const invalidManifestMessage = 'The manifest fetched is empty, truncated, or does not contain any valid tool release entries.';
-/** @param {unknown} manifest */
 function isValidManifest(manifest) {
     return Array.isArray(manifest) && manifest.length > 0;
 }
@@ -101129,23 +101128,23 @@ class OfficialBuilds extends BaseDistribution {
         const manifestPath = runnerTemp
             ? external_node_path_default().join(runnerTemp, nodeVersionsManifestFile)
             : undefined;
-        const cachedManifest = this.nodeInfo.checkLatest
-            ? undefined
-            : this.getCachedManifest(manifestPath);
-        if (cachedManifest) {
-            return cachedManifest;
-        }
-        core_debug(`Getting manifest from ${nodeVersionsManifestUrl}`);
-        try {
-            const { result } = await this.httpClient.getJson(nodeVersionsManifestUrl);
-            if (!isValidManifest(result)) {
-                throw new Error(invalidManifestMessage);
+        if (!this.nodeInfo.checkLatest) {
+            const cachedManifest = this.getCachedManifest(manifestPath);
+            if (cachedManifest) {
+                return cachedManifest;
             }
-            this.cacheManifest(manifestPath, result);
-            return result;
-        }
-        catch (error) {
-            core_debug(`Unable to get manifest from ${nodeVersionsManifestUrl}: ${error instanceof Error ? error.message : String(error)}`);
+            core_debug(`Getting manifest from ${nodeVersionsManifestUrl}`);
+            try {
+                const { result } = await this.httpClient.getJson(nodeVersionsManifestUrl);
+                if (!isValidManifest(result)) {
+                    throw new Error(invalidManifestMessage);
+                }
+                this.cacheManifest(manifestPath, result);
+                return result;
+            }
+            catch (error) {
+                core_debug(`Unable to get manifest from ${nodeVersionsManifestUrl}: ${error instanceof Error ? error.message : String(error)}`);
+            }
         }
         let lastError;
         const maxAttempts = 3;
@@ -101172,7 +101171,6 @@ class OfficialBuilds extends BaseDistribution {
         }
         throw new Error(`Failed to fetch a valid manifest after ${maxAttempts} attempts. Last error: ${lastError?.message}`);
     }
-    /** @param {string | undefined} manifestPath */
     getCachedManifest(manifestPath) {
         if (!manifestPath) {
             return undefined;
@@ -101192,10 +101190,6 @@ class OfficialBuilds extends BaseDistribution {
         }
         return undefined;
     }
-    /**
-     * @param {string | undefined} manifestPath
-     * @param {tc.IToolRelease[]} manifest
-     */
     cacheManifest(manifestPath, manifest) {
         if (!manifestPath) {
             return;

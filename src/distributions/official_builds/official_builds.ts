@@ -18,7 +18,6 @@ const nodeVersionsManifestUrl =
 const invalidManifestMessage =
   'The manifest fetched is empty, truncated, or does not contain any valid tool release entries.';
 
-/** @param {unknown} manifest */
 function isValidManifest(manifest: unknown): manifest is tc.IToolRelease[] {
   return Array.isArray(manifest) && manifest.length > 0;
 }
@@ -216,27 +215,27 @@ export default class OfficialBuilds extends BaseDistribution {
     const manifestPath = runnerTemp
       ? path.join(runnerTemp, nodeVersionsManifestFile)
       : undefined;
-    const cachedManifest = this.nodeInfo.checkLatest
-      ? undefined
-      : this.getCachedManifest(manifestPath);
-    if (cachedManifest) {
-      return cachedManifest;
-    }
-
-    core.debug(`Getting manifest from ${nodeVersionsManifestUrl}`);
-    try {
-      const {result} = await this.httpClient.getJson<tc.IToolRelease[]>(
-        nodeVersionsManifestUrl
-      );
-      if (!isValidManifest(result)) {
-        throw new Error(invalidManifestMessage);
+    if (!this.nodeInfo.checkLatest) {
+      const cachedManifest = this.getCachedManifest(manifestPath);
+      if (cachedManifest) {
+        return cachedManifest;
       }
-      this.cacheManifest(manifestPath, result);
-      return result;
-    } catch (error) {
-      core.debug(
-        `Unable to get manifest from ${nodeVersionsManifestUrl}: ${error instanceof Error ? error.message : String(error)}`
-      );
+
+      core.debug(`Getting manifest from ${nodeVersionsManifestUrl}`);
+      try {
+        const {result} = await this.httpClient.getJson<tc.IToolRelease[]>(
+          nodeVersionsManifestUrl
+        );
+        if (!isValidManifest(result)) {
+          throw new Error(invalidManifestMessage);
+        }
+        this.cacheManifest(manifestPath, result);
+        return result;
+      } catch (error) {
+        core.debug(
+          `Unable to get manifest from ${nodeVersionsManifestUrl}: ${error instanceof Error ? error.message : String(error)}`
+        );
+      }
     }
 
     let lastError: Error | undefined;
@@ -275,7 +274,6 @@ export default class OfficialBuilds extends BaseDistribution {
     );
   }
 
-  /** @param {string | undefined} manifestPath */
   private getCachedManifest(
     manifestPath: string | undefined
   ): tc.IToolRelease[] | undefined {
@@ -303,10 +301,6 @@ export default class OfficialBuilds extends BaseDistribution {
     return undefined;
   }
 
-  /**
-   * @param {string | undefined} manifestPath
-   * @param {tc.IToolRelease[]} manifest
-   */
   private cacheManifest(
     manifestPath: string | undefined,
     manifest: tc.IToolRelease[]
