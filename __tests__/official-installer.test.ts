@@ -1150,9 +1150,9 @@ describe('setup-node', () => {
 
     it('refreshes the manifest when check-latest is enabled', async () => {
       let installedVersion = '12.16.2';
-      let manifest = <IToolRelease[]>nodeTestManifest;
       getJsonSpy.mockImplementation((url: string) => ({
-        result: url === nodeVersionsManifestUrl ? manifest : nodeTestDist
+        result:
+          url === nodeVersionsManifestUrl ? nodeTestManifest : nodeTestDist
       }));
       cacheSpy.mockImplementation(
         async (
@@ -1175,7 +1175,7 @@ describe('setup-node', () => {
       await main.run();
 
       const latestVersion = '12.17.0';
-      manifest = [
+      getManifestSpy.mockImplementation(() => [
         {
           version: latestVersion,
           stable: true,
@@ -1190,13 +1190,14 @@ describe('setup-node', () => {
           ]
         },
         ...nodeTestManifest
-      ];
+      ]);
       inputs['check-latest'] = 'true';
 
       await main.run();
 
-      expect(getJsonSpy).toHaveBeenCalledTimes(2);
       expect(logSpy).toHaveBeenCalledWith(`Resolved as '${latestVersion}'`);
+      expect(getJsonSpy).toHaveBeenCalledTimes(1);
+      expect(getManifestSpy).toHaveBeenCalledTimes(1);
       expect(setFailedSpy).not.toHaveBeenCalled();
     });
 
@@ -1205,8 +1206,8 @@ describe('setup-node', () => {
 
       await main.run();
 
-      expect(getJsonSpy).toHaveBeenCalledTimes(1);
-      expect(getManifestSpy).not.toHaveBeenCalled();
+      expect(getJsonSpy).not.toHaveBeenCalled();
+      expect(getManifestSpy).toHaveBeenCalledTimes(1);
       expect(setFailedSpy).not.toHaveBeenCalled();
     });
 
@@ -1254,6 +1255,12 @@ describe('setup-node', () => {
         expect(getJsonSpy).toHaveBeenCalledWith(nodeVersionsManifestUrl);
         expect(getManifestSpy).toHaveBeenCalledTimes(1);
         expect(setFailedSpy).not.toHaveBeenCalled();
+
+        getJsonSpy.mockClear();
+        getManifestSpy.mockClear();
+        await main.run();
+        expect(getJsonSpy).not.toHaveBeenCalled();
+        expect(getManifestSpy).not.toHaveBeenCalled();
       }
     );
   });
