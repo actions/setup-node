@@ -120,7 +120,9 @@ function resolveVersionInput(): string {
   }
 
   if (versionFileInput) {
-    const versionFilePath = path.join(
+    // `path.resolve` (unlike `path.join`) keeps an already-absolute input as-is,
+    // so a composite action can pass `${{ github.action_path }}/.nvmrc`.
+    const versionFilePath = path.resolve(
       process.env.GITHUB_WORKSPACE!,
       versionFileInput
     );

@@ -101351,7 +101351,9 @@ function resolveVersionInput() {
         return version;
     }
     if (versionFileInput) {
-        const versionFilePath = external_path_.join(process.env.GITHUB_WORKSPACE, versionFileInput);
+        // `path.resolve` (unlike `path.join`) keeps an already-absolute input as-is,
+        // so a composite action can pass `${{ github.action_path }}/.nvmrc`.
+        const versionFilePath = external_path_.resolve(process.env.GITHUB_WORKSPACE, versionFileInput);
         const parsedVersion = getNodeVersionFromFile(versionFilePath);
         if (parsedVersion) {
             version = parsedVersion;

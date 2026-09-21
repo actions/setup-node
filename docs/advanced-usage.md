@@ -79,7 +79,7 @@ steps:
 The `node-version-file` input accepts a path to a file containing the version of Node.js to be used by a project, for example `.nvmrc`, `.node-version`, `.tool-versions`, `mise.toml`, or `package.json`. If both the `node-version` and the `node-version-file` inputs are provided then the `node-version` input is used.
 See [supported version syntax](https://github.com/actions/setup-node#supported-version-syntax).
 
-> The action will search for the node version file relative to the repository root.
+> The action resolves a relative `node-version-file` path against `GITHUB_WORKSPACE`, which is the repository root by default. If the input is a full absolute path, the action uses that path directly instead of appending it to the workspace.
 
 ```yaml
 steps:
