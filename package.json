@@ -60,6 +60,6 @@
     "jest-each": "^30.4.1",
     "prettier": "^3.9.6",
     "ts-jest": "^29.4.11",
-    "typescript": "^6.0.3"
+    "typescript": "^7.0.2"
   }
 }
