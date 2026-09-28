@@ -1,6 +1,6 @@
 {
   "name": "setup-node",
-  "version": "7.0.0",
+  "version": "7.1.0",
   "type": "module",
   "private": true,
   "description": "setup node action",
