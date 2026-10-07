@@ -85937,7 +85937,6 @@ class Batch {
 //# sourceMappingURL=Batch.js.map
 ;// CONCATENATED MODULE: external "node:fs"
 const external_node_fs_namespaceObject = __WEBPACK_EXTERNAL_createRequire(import.meta.url)("node:fs");
-var external_node_fs_default = /*#__PURE__*/__nccwpck_require__.n(external_node_fs_namespaceObject);
 ;// CONCATENATED MODULE: ./node_modules/@azure/storage-blob/dist/esm/utils/utils.js
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
@@ -100989,8 +100988,6 @@ var external_node_path_default = /*#__PURE__*/__nccwpck_require__.n(external_nod
 
 
 
-
-const nodeVersionsManifestFile = 'setup-node-versions-manifest.json';
 const nodeVersionsManifestUrl = 'https://raw.githubusercontent.com/actions/node-versions/main/versions-manifest.json';
 const invalidManifestMessage = 'The manifest fetched is empty, truncated, or does not contain any valid tool release entries.';
 function isValidManifest(manifest) {
@@ -101124,81 +101121,45 @@ class OfficialBuilds extends BaseDistribution {
         return `${url}/dist`;
     }
     async getManifest() {
-        const runnerTemp = process.env['RUNNER_TEMP'];
-        const manifestPath = runnerTemp
-            ? external_node_path_default().join(runnerTemp, nodeVersionsManifestFile)
-            : undefined;
-        if (!this.nodeInfo.checkLatest) {
-            const cachedManifest = this.getCachedManifest(manifestPath);
-            if (cachedManifest) {
-                return cachedManifest;
-            }
-            core_debug(`Getting manifest from ${nodeVersionsManifestUrl}`);
-            try {
-                const { result } = await this.httpClient.getJson(nodeVersionsManifestUrl);
-                if (!isValidManifest(result)) {
-                    throw new Error(invalidManifestMessage);
-                }
-                this.cacheManifest(manifestPath, result);
-                return result;
-            }
-            catch (error) {
-                core_debug(`Unable to get manifest from ${nodeVersionsManifestUrl}: ${error instanceof Error ? error.message : String(error)}`);
-            }
-        }
         let lastError;
         const maxAttempts = 3;
-        core_debug(`Getting manifest from actions/node-versions@main`);
+        core_debug('Getting manifest from actions/node-versions@main');
         for (let attempt = 1; attempt <= maxAttempts; attempt++) {
             try {
                 const manifest = await getManifestFromRepo('actions', 'node-versions', this.nodeInfo.mirror && this.nodeInfo.mirrorToken
                     ? this.nodeInfo.mirrorToken
                     : this.nodeInfo.auth, 'main');
                 if (isValidManifest(manifest)) {
-                    this.cacheManifest(manifestPath, manifest);
                     return manifest;
                 }
                 lastError = new Error(invalidManifestMessage);
             }
             catch (error) {
                 lastError = error instanceof Error ? error : new Error(String(error));
+                const status = error?.statusCode;
+                if (status === 403 || status === 429) {
+                    core_debug(`GitHub API returned HTTP ${status}; trying raw manifest.`);
+                    break;
+                }
             }
             core_debug(`Attempt ${attempt}/${maxAttempts} to fetch the manifest failed: ${lastError.message}`);
             if (attempt < maxAttempts) {
-                core_info(`Retrying to fetch the manifest...`);
-                await new Promise(resolve => setTimeout(resolve, 1000 * 2 ** (attempt - 1))); // Retry after a delay
+                core_info('Retrying to fetch the manifest...');
+                await new Promise(resolve => setTimeout(resolve, 1000 * 2 ** (attempt - 1)));
             }
         }
-        throw new Error(`Failed to fetch a valid manifest after ${maxAttempts} attempts. Last error: ${lastError?.message}`);
-    }
-    getCachedManifest(manifestPath) {
-        if (!manifestPath) {
-            return undefined;
-        }
+        core_debug(`GitHub API manifest fetch failed: ${lastError?.message}`);
+        core_debug(`Getting manifest from ${nodeVersionsManifestUrl}`);
         try {
-            const manifest = JSON.parse(external_node_fs_default().readFileSync(manifestPath, 'utf8'));
-            if (isValidManifest(manifest)) {
-                core_debug(`Found manifest in ${manifestPath}`);
-                return manifest;
+            const { result } = await this.httpClient.getJson(nodeVersionsManifestUrl);
+            if (!isValidManifest(result)) {
+                throw new Error(invalidManifestMessage);
             }
-            core_debug(`Ignoring invalid manifest in ${manifestPath}`);
+            return result;
         }
         catch (error) {
-            if (error.code !== 'ENOENT') {
-                core_debug(`Unable to read manifest from ${manifestPath}: ${error instanceof Error ? error.message : String(error)}`);
-            }
-        }
-        return undefined;
-    }
-    cacheManifest(manifestPath, manifest) {
-        if (!manifestPath) {
-            return;
-        }
-        try {
-            external_node_fs_default().writeFileSync(manifestPath, JSON.stringify(manifest));
-        }
-        catch (error) {
-            core_debug(`Unable to cache manifest in ${manifestPath}: ${error instanceof Error ? error.message : String(error)}`);
+            const message = error.message;
+            throw new Error(`Failed to fetch a valid manifest from the GitHub API and raw URL. API: ${lastError?.message}. Raw: ${message}`, { cause: error });
         }
     }
     resolveLtsAliasFromManifest(versionSpec, stable, manifest) {

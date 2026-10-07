@@ -1,4 +1,3 @@
-import fs from 'node:fs';
 import path from 'node:path';
 
 import * as core from '@actions/core';
@@ -12,7 +11,6 @@ interface INodeRelease extends tc.IToolRelease {
   lts?: string;
 }
 
-const nodeVersionsManifestFile = 'setup-node-versions-manifest.json';
 const nodeVersionsManifestUrl =
   'https://raw.githubusercontent.com/actions/node-versions/main/versions-manifest.json';
 const invalidManifestMessage =
@@ -211,36 +209,9 @@ export default class OfficialBuilds extends BaseDistribution {
   }
 
   private async getManifest(): Promise<tc.IToolRelease[]> {
-    const runnerTemp = process.env['RUNNER_TEMP'];
-    const manifestPath = runnerTemp
-      ? path.join(runnerTemp, nodeVersionsManifestFile)
-      : undefined;
-    if (!this.nodeInfo.checkLatest) {
-      const cachedManifest = this.getCachedManifest(manifestPath);
-      if (cachedManifest) {
-        return cachedManifest;
-      }
-
-      core.debug(`Getting manifest from ${nodeVersionsManifestUrl}`);
-      try {
-        const {result} = await this.httpClient.getJson<tc.IToolRelease[]>(
-          nodeVersionsManifestUrl
-        );
-        if (!isValidManifest(result)) {
-          throw new Error(invalidManifestMessage);
-        }
-        this.cacheManifest(manifestPath, result);
-        return result;
-      } catch (error) {
-        core.debug(
-          `Unable to get manifest from ${nodeVersionsManifestUrl}: ${error instanceof Error ? error.message : String(error)}`
-        );
-      }
-    }
-
     let lastError: Error | undefined;
     const maxAttempts = 3;
-    core.debug(`Getting manifest from actions/node-versions@main`);
+    core.debug('Getting manifest from actions/node-versions@main');
     for (let attempt = 1; attempt <= maxAttempts; attempt++) {
       try {
         const manifest = await tc.getManifestFromRepo(
@@ -252,68 +223,45 @@ export default class OfficialBuilds extends BaseDistribution {
           'main'
         );
         if (isValidManifest(manifest)) {
-          this.cacheManifest(manifestPath, manifest);
           return manifest;
         }
         lastError = new Error(invalidManifestMessage);
       } catch (error) {
         lastError = error instanceof Error ? error : new Error(String(error));
+        const status = (error as {statusCode?: number})?.statusCode;
+        if (status === 403 || status === 429) {
+          core.debug(
+            `GitHub API returned HTTP ${status}; trying raw manifest.`
+          );
+          break;
+        }
       }
       core.debug(
         `Attempt ${attempt}/${maxAttempts} to fetch the manifest failed: ${lastError.message}`
       );
       if (attempt < maxAttempts) {
-        core.info(`Retrying to fetch the manifest...`);
+        core.info('Retrying to fetch the manifest...');
         await new Promise(resolve =>
           setTimeout(resolve, 1000 * 2 ** (attempt - 1))
-        ); // Retry after a delay
-      }
-    }
-    throw new Error(
-      `Failed to fetch a valid manifest after ${maxAttempts} attempts. Last error: ${lastError?.message}`
-    );
-  }
-
-  private getCachedManifest(
-    manifestPath: string | undefined
-  ): tc.IToolRelease[] | undefined {
-    if (!manifestPath) {
-      return undefined;
-    }
-
-    try {
-      const manifest: unknown = JSON.parse(
-        fs.readFileSync(manifestPath, 'utf8')
-      );
-      if (isValidManifest(manifest)) {
-        core.debug(`Found manifest in ${manifestPath}`);
-        return manifest;
-      }
-      core.debug(`Ignoring invalid manifest in ${manifestPath}`);
-    } catch (error) {
-      if ((error as NodeJS.ErrnoException).code !== 'ENOENT') {
-        core.debug(
-          `Unable to read manifest from ${manifestPath}: ${error instanceof Error ? error.message : String(error)}`
         );
       }
     }
 
-    return undefined;
-  }
-
-  private cacheManifest(
-    manifestPath: string | undefined,
-    manifest: tc.IToolRelease[]
-  ): void {
-    if (!manifestPath) {
-      return;
-    }
-
+    core.debug(`GitHub API manifest fetch failed: ${lastError?.message}`);
+    core.debug(`Getting manifest from ${nodeVersionsManifestUrl}`);
     try {
-      fs.writeFileSync(manifestPath, JSON.stringify(manifest));
+      const {result} = await this.httpClient.getJson<tc.IToolRelease[]>(
+        nodeVersionsManifestUrl
+      );
+      if (!isValidManifest(result)) {
+        throw new Error(invalidManifestMessage);
+      }
+      return result;
     } catch (error) {
-      core.debug(
-        `Unable to cache manifest in ${manifestPath}: ${error instanceof Error ? error.message : String(error)}`
+      const message = (error as Error).message;
+      throw new Error(
+        `Failed to fetch a valid manifest from the GitHub API and raw URL. API: ${lastError?.message}. Raw: ${message}`,
+        {cause: error}
       );
     }
   }
