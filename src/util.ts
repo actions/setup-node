@@ -6,7 +6,36 @@ import {parse} from 'smol-toml';
 import fs from 'fs';
 import path from 'path';
 
+const VOLTA_EXTENDS_CYCLE_ERROR_NAME = 'VoltaExtendsCycleError';
+
 export function getNodeVersionFromFile(versionFilePath: string): string | null {
+  return getNodeVersionFromFileWithStack(versionFilePath, []);
+}
+
+function getNodeVersionFromFileWithStack(
+  versionFilePath: string,
+  resolutionStack: string[]
+): string | null {
+  const resolvedFilePath = path.resolve(versionFilePath);
+  const normalizedFilePath =
+    process.platform === 'win32'
+      ? resolvedFilePath.toLowerCase()
+      : resolvedFilePath;
+  const cycleStart = resolutionStack.findIndex(filePath =>
+    process.platform === 'win32'
+      ? filePath.toLowerCase() === normalizedFilePath
+      : filePath === normalizedFilePath
+  );
+
+  if (cycleStart !== -1) {
+    const cycle = [...resolutionStack.slice(cycleStart), resolvedFilePath];
+    const error = new Error(
+      `Circular Volta extends reference detected: ${cycle.join(' -> ')}`
+    );
+    error.name = VOLTA_EXTENDS_CYCLE_ERROR_NAME;
+    throw error;
+  }
+
   if (!fs.existsSync(versionFilePath)) {
     throw new Error(
       `The specified node version file at: ${versionFilePath} does not exist`
@@ -14,6 +43,7 @@ export function getNodeVersionFromFile(versionFilePath: string): string | null {
   }
 
   const contents = fs.readFileSync(versionFilePath, 'utf8');
+  const currentResolutionStack = [...resolutionStack, resolvedFilePath];
 
   // Try parsing the file as an NPM `package.json` file.
   try {
@@ -51,7 +81,10 @@ export function getNodeVersionFromFile(versionFilePath: string): string | null {
           manifest.volta.extends
         );
         core.info('Resolving node version from ' + extendedFilePath);
-        return getNodeVersionFromFile(extendedFilePath);
+        return getNodeVersionFromFileWithStack(
+          extendedFilePath,
+          currentResolutionStack
+        );
       }
 
       // If contents are an object, we parsed JSON
@@ -65,7 +98,13 @@ export function getNodeVersionFromFile(versionFilePath: string): string | null {
       // *are* JSON, so no further string parsing makes sense.
       return null;
     }
-  } catch {
+  } catch (error) {
+    if (
+      error instanceof Error &&
+      error.name === VOLTA_EXTENDS_CYCLE_ERROR_NAME
+    ) {
+      throw error;
+    }
     core.info('Node version file is not JSON file');
   }
 
