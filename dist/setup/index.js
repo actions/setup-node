@@ -99293,6 +99293,10 @@ async function run() {
         if (!arch) {
             arch = external_os_default().arch();
         }
+        const major = /^[v=\s]*(\d+)/.exec(version)?.[1];
+        if (major !== undefined && Number(major) <= 20) {
+            throw new Error(`node-version '${version}' is not supported. Use Node.js 21 or later.`);
+        }
         if (version) {
             const token = getInput('token');
             const auth = !token ? undefined : `token ${token}`;
