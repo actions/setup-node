@@ -38,6 +38,13 @@ export async function run() {
       arch = os.arch();
     }
 
+    const major = /^[v=\s]*(\d+)/.exec(version)?.[1];
+    if (major !== undefined && Number(major) <= 20) {
+      throw new Error(
+        `node-version '${version}' is not supported. Use Node.js 21 or later.`
+      );
+    }
+
     if (version) {
       const token = core.getInput('token');
       const auth = !token ? undefined : `token ${token}`;
