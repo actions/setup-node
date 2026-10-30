@@ -1111,6 +1111,48 @@ describe('setup-node', () => {
         `Node v12.16.1 installation failed, likely due to an incomplete or corrupted download.`
       );
     });
+    it('reports a missing Linux shared library', async () => {
+      os.platform = 'linux';
+      os.arch = 'x64';
+      inputs['node-version'] = '26';
+
+      const toolPath = path.normalize('/cache/node/26.12.1/x64');
+      findSpy.mockReturnValue(toolPath);
+
+      getExecOutputSpy.mockImplementation(async () => ({
+        stdout: '',
+        stderr:
+          'node: error while loading shared libraries: libatomic.so.1: cannot open shared object file: No such file or directory',
+        exitCode: 127
+      }));
+
+      await main.run();
+
+      expect(setFailedSpy).toHaveBeenCalledWith(
+        expect.stringContaining('libatomic.so.1')
+      );
+    });
+
+    it('reports a nonzero node exit code with stderr', async () => {
+      os.platform = 'linux';
+      os.arch = 'x64';
+      inputs['node-version'] = '26';
+
+      const toolPath = path.normalize('/cache/node/26.12.1/x64');
+      findSpy.mockReturnValue(toolPath);
+
+      getExecOutputSpy.mockImplementation(async () => ({
+        stdout: '',
+        stderr: 'node: unexpected runtime error',
+        exitCode: 1
+      }));
+
+      await main.run();
+
+      expect(setFailedSpy).toHaveBeenCalledWith(
+        "Node installation failed: 'node --version' exited with code 1: node: unexpected runtime error"
+      );
+    });
 
     it('fails when the node executable cannot be invoked', async () => {
       const toolPath = path.normalize('/cache/node/12.16.1/x64');

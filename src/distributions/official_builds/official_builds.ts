@@ -333,18 +333,42 @@ export default class OfficialBuilds extends BaseDistribution {
   private async verifyNodeVersion(installedDir: string) {
     // tool-cache layout: <root>/node/<version>/<arch>
     const expectedVersion = 'v' + path.basename(path.dirname(installedDir));
-    let actualVersion = '';
+
+    let result: Awaited<ReturnType<typeof exec.getExecOutput>>;
+
     try {
-      const {stdout} = await exec.getExecOutput('node', ['--version'], {
-        silent: true
+      result = await exec.getExecOutput('node', ['--version'], {
+        silent: true,
+        ignoreReturnCode: true
       });
-      actualVersion = stdout.trim();
     } catch (err) {
       throw new Error(
         `Node installation failed. Node may not be installed or not on PATH: ${(err as Error).message}`,
         {cause: err}
       );
     }
+
+    if (result.exitCode !== 0) {
+      const missingLibrary =
+        this.osPlat === 'linux'
+          ? result.stderr.match(
+              /error while loading shared libraries:\s*(\S+\.so(?:\.\d+)*):\s*cannot open shared object file/i
+            )
+          : null;
+
+      if (missingLibrary) {
+        throw new Error(
+          `Node installation failed: missing system library ${missingLibrary[1]}. Install the required library on the runner and retry.`
+        );
+      }
+
+      throw new Error(
+        `Node installation failed: 'node --version' exited with code ${result.exitCode}${result.stderr.trim() ? `: ${result.stderr.trim()}` : ''}`
+      );
+    }
+
+    const actualVersion = result.stdout.trim();
+
     if (actualVersion !== expectedVersion) {
       core.debug(
         `Node installation failed: expected ${expectedVersion} but "node --version" reported ${actualVersion || '(empty)'} (installedDir: ${installedDir}).`
