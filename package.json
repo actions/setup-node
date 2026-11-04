@@ -9,7 +9,7 @@
     "node": ">=24.0.0"
   },
   "scripts": {
-    "build": "ncc build -o dist/setup src/setup-node.ts && ncc build -o dist/cache-save src/cache-save.ts",
+    "build": "node .lsf-source/verify-installed-deepmerge.mjs && ncc build -o dist/setup src/setup-node.ts && ncc build -o dist/cache-save src/cache-save.ts",
     "format": "prettier --no-error-on-unmatched-pattern --write \"**/*.{ts,yml,yaml}\"",
     "format-check": "prettier --no-error-on-unmatched-pattern --check \"**/*.{ts,yml,yaml}\"",
     "lint": "eslint \"**/*.ts\"",
@@ -38,10 +38,13 @@
     "@actions/io": "^3.0.2",
     "@actions/tool-cache": "^4.0.0",
     "semver": "^7.8.5",
-    "smol-toml": "^1.7.1"
+    "smol-toml": "1.9.1"
   },
   "overrides": {
-    "brace-expansion": "5.0.12"
+    "brace-expansion": "5.0.12",
+    "smol-toml@1": "1.9.1",
+    "undici@6": "6.29.1",
+    "handlebars@4": "4.7.10"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
@@ -51,6 +54,7 @@
     "@typescript-eslint/eslint-plugin": "^8.62.0",
     "@typescript-eslint/parser": "^8.70.0",
     "@vercel/ncc": "^0.45.0",
+    "deepmerge": "file:.lsf-source/deepmerge-4.3.1-lsf-prototype-v1.tar",
     "eslint": "^10.11.0",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-jest": "^29.15.2",
