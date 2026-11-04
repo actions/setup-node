@@ -1,13 +1,23 @@
+import path from 'node:path';
+
 import * as core from '@actions/core';
-import * as tc from '@actions/tool-cache';
-import path from 'path';
 import * as exec from '@actions/exec';
+import * as tc from '@actions/tool-cache';
 
 import BaseDistribution from '../base-distribution.js';
 import {NodeInputs, INodeVersion, INodeVersionInfo} from '../base-models.js';
 
 interface INodeRelease extends tc.IToolRelease {
   lts?: string;
+}
+
+const nodeVersionsManifestUrl =
+  'https://raw.githubusercontent.com/actions/node-versions/main/versions-manifest.json';
+const invalidManifestMessage =
+  'The manifest fetched is empty, truncated, or does not contain any valid tool release entries.';
+
+function isValidManifest(manifest: unknown): manifest is tc.IToolRelease[] {
+  return Array.isArray(manifest) && manifest.length > 0;
 }
 
 export default class OfficialBuilds extends BaseDistribution {
@@ -43,12 +53,20 @@ export default class OfficialBuilds extends BaseDistribution {
 
     if (this.nodeInfo.checkLatest) {
       core.info('Attempt to resolve the latest version from manifest...');
-      const resolvedVersion = await this.resolveVersionFromManifest(
-        this.nodeInfo.versionSpec,
-        this.nodeInfo.stable,
-        osArch,
-        manifest
-      );
+      let resolvedVersion: string | undefined;
+      try {
+        manifest ??= await this.getManifest();
+        const info = await this.getInfoFromManifest(
+          this.nodeInfo.versionSpec,
+          this.nodeInfo.stable,
+          osArch,
+          manifest
+        );
+        resolvedVersion = info?.resolvedVersion;
+      } catch (error) {
+        core.info('Unable to resolve version from manifest...');
+        core.debug((error as Error).message);
+      }
       if (resolvedVersion) {
         this.nodeInfo.versionSpec = resolvedVersion;
         core.info(`Resolved as '${resolvedVersion}'`);
@@ -193,7 +211,7 @@ export default class OfficialBuilds extends BaseDistribution {
   private async getManifest(): Promise<tc.IToolRelease[]> {
     let lastError: Error | undefined;
     const maxAttempts = 3;
-    core.debug(`Getting manifest from actions/node-versions@main`);
+    core.debug('Getting manifest from actions/node-versions@main');
     for (let attempt = 1; attempt <= maxAttempts; attempt++) {
       try {
         const manifest = await tc.getManifestFromRepo(
@@ -204,28 +222,48 @@ export default class OfficialBuilds extends BaseDistribution {
             : this.nodeInfo.auth,
           'main'
         );
-        if (Array.isArray(manifest) && manifest.length > 0) {
+        if (isValidManifest(manifest)) {
           return manifest;
         }
-        lastError = new Error(
-          `The manifest fetched is empty, truncated, or does not contain any valid tool release entries.`
-        );
-      } catch (err) {
-        lastError = err instanceof Error ? err : new Error(String(err));
+        lastError = new Error(invalidManifestMessage);
+      } catch (error) {
+        lastError = error instanceof Error ? error : new Error(String(error));
+        const status = (error as {statusCode?: number})?.statusCode;
+        if (status === 403 || status === 429) {
+          core.debug(
+            `GitHub API returned HTTP ${status}; trying raw manifest.`
+          );
+          break;
+        }
       }
       core.debug(
         `Attempt ${attempt}/${maxAttempts} to fetch the manifest failed: ${lastError.message}`
       );
       if (attempt < maxAttempts) {
-        core.info(`Retrying to fetch the manifest...`);
+        core.info('Retrying to fetch the manifest...');
         await new Promise(resolve =>
           setTimeout(resolve, 1000 * 2 ** (attempt - 1))
-        ); // Retry after a delay
+        );
       }
     }
-    throw new Error(
-      `Failed to fetch a valid manifest after ${maxAttempts} attempts. Last error: ${lastError?.message}`
-    );
+
+    core.debug(`GitHub API manifest fetch failed: ${lastError?.message}`);
+    core.debug(`Getting manifest from ${nodeVersionsManifestUrl}`);
+    try {
+      const {result} = await this.httpClient.getJson<tc.IToolRelease[]>(
+        nodeVersionsManifestUrl
+      );
+      if (!isValidManifest(result)) {
+        throw new Error(invalidManifestMessage);
+      }
+      return result;
+    } catch (error) {
+      const message = (error as Error).message;
+      throw new Error(
+        `Failed to fetch a valid manifest from the GitHub API and raw URL. API: ${lastError?.message}. Raw: ${message}`,
+        {cause: error}
+      );
+    }
   }
 
   private resolveLtsAliasFromManifest(
@@ -270,26 +308,6 @@ export default class OfficialBuilds extends BaseDistribution {
     );
 
     return release.version.split('.')[0];
-  }
-
-  private async resolveVersionFromManifest(
-    versionSpec: string,
-    stable: boolean,
-    osArch: string,
-    manifest: tc.IToolRelease[] | undefined
-  ): Promise<string | undefined> {
-    try {
-      const info = await this.getInfoFromManifest(
-        versionSpec,
-        stable,
-        osArch,
-        manifest
-      );
-      return info?.resolvedVersion;
-    } catch (err) {
-      core.info('Unable to resolve version from manifest...');
-      core.debug((err as Error).message);
-    }
   }
 
   private async getInfoFromManifest(
