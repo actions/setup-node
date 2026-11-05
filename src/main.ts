@@ -43,6 +43,13 @@ export async function run() {
       const auth = !token ? undefined : `token ${token}`;
       const mirror = core.getInput('mirror');
       const mirrorToken = core.getInput('mirror-token');
+      const forceMirror =
+        (core.getInput('force-mirror') || 'false').toUpperCase() === 'TRUE';
+      if (forceMirror && !mirror) {
+        core.info(
+          '`force-mirror` is enabled but `mirror` is not set. Node.js will be downloaded directly from https://nodejs.org.'
+        );
+      }
       const stable =
         (core.getInput('stable') || 'true').toUpperCase() === 'TRUE';
       const checkLatest =
@@ -54,7 +61,8 @@ export async function run() {
         stable,
         arch,
         mirror,
-        mirrorToken
+        mirrorToken,
+        forceMirror
       };
       const nodeDistribution = getNodejsDistribution(nodejsInfo);
       await nodeDistribution.setupNodeJs();

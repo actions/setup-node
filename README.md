@@ -116,6 +116,12 @@ See [action.yml](action.yml)
     # The token will be used as a bearer token in the Authorization header
     # Default: ''
     mirror-token: ''
+
+    # Set to true to download Node.js only from the mirror (or https://nodejs.org
+    # if no mirror is set), skipping the GitHub-hosted actions/node-versions
+    # manifest and binaries.
+    # Default: false
+    force-mirror: false
 ```
 <!-- end usage -->
 

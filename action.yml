@@ -29,8 +29,9 @@ inputs:
     description: 'Used to specify an alternative mirror to download Node.js binaries from'
   mirror-token:
     description: 'The token used as Authorization header when fetching from the mirror'
-# TODO: add input to control forcing to pull from cloud or dist.
-#       escape valve for someone having issues or needing the absolute latest which isn't cached yet
+  force-mirror:
+    description: 'Set to true to download Node.js only from the mirror (or https://nodejs.org if no mirror is set), skipping the GitHub-hosted actions/node-versions manifest and binaries. Only applies to official (non-nightly, non-rc, non-canary) builds.'
+    default: false
 outputs:
   cache-hit:
     description: 'A boolean value to indicate if a cache was hit.'

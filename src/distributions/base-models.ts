@@ -6,6 +6,7 @@ export interface NodeInputs {
   stable: boolean;
   mirror: string;
   mirrorToken: string;
+  forceMirror?: boolean;
 }
 
 export interface INodeVersionInfo {
@@ -18,4 +19,5 @@ export interface INodeVersionInfo {
 export interface INodeVersion {
   version: string;
   files: string[];
+  lts?: string | false;
 }
