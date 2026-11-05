@@ -568,7 +568,7 @@ The token will be passed in the `Authorization` header.
 
 By default, the `mirror` is only used as a fallback. The action first looks for the requested version in the GitHub-hosted [actions/node-versions](https://github.com/actions/node-versions) manifest and downloads it from GitHub. The mirror is used only when the version is not found there.
 
-To always download from the mirror and never contact GitHub for Node.js binaries, set `force-mirror` to `true`. In this mode, LTS aliases (such as `lts/*`), `latest`/`current`/`node`, and `check-latest` are resolved from the mirror's `index.json` instead of the GitHub manifest.
+To always download from the mirror and never download Node.js binaries from GitHub, set `force-mirror` to `true`. In this mode, LTS aliases (such as `lts/*`), `latest`/`current`/`node`, and `check-latest` are resolved from the mirror's `index.json` instead of the GitHub manifest.
 
 ```yaml
 - uses: actions/setup-node@v7
@@ -580,3 +580,5 @@ To always download from the mirror and never contact GitHub for Node.js binaries
 ```
 
 > **Note**: If `force-mirror` is `true` but `mirror` is not set, Node.js is downloaded directly from `https://nodejs.org`.
+
+> **Note**: `force-mirror` only controls where Node.js is downloaded from. If a matching version is already in the runner's tool cache, the action still uses it. On GitHub-hosted runners, the preinstalled Node.js versions in the tool cache come from [actions/node-versions](https://github.com/actions/node-versions). If you need every binary to come from your mirror, use a runner whose tool cache has no preinstalled Node.js, or request a version that isn't preinstalled.
