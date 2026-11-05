@@ -589,6 +589,36 @@ describe('setup-node', () => {
     }
   }, 100000);
 
+  it('ignores force-mirror and downloads nightly builds from the mirror', async () => {
+    os.platform = 'linux';
+    os.arch = 'x64';
+    const version = '17.5.0-nightly20220209e43808936a';
+    inputs['node-version'] = version;
+    inputs['mirror'] = 'https://my-mirror.org';
+    inputs['mirror-token'] = 'my-mirror-token';
+    inputs['force-mirror'] = 'true';
+
+    findSpy.mockImplementation(() => '');
+    findAllVersionsSpy.mockImplementation(() => []);
+    dlSpy.mockImplementation(async () => '/some/temp/path');
+    exSpy.mockImplementation(async () => '/some/other/temp/path');
+    cacheSpy.mockImplementation(async () =>
+      path.normalize(`/cache/node/${version}/x64`)
+    );
+
+    await main.run();
+
+    expect(dlSpy).toHaveBeenCalledWith(
+      `https://my-mirror.org/download/nightly/v${version}/node-v${version}-linux-x64.tar.gz`,
+      undefined,
+      'my-mirror-token'
+    );
+    expect(logSpy).not.toHaveBeenCalledWith(
+      expect.stringContaining("'force-mirror' is enabled")
+    );
+    expect(setFailedSpy).not.toHaveBeenCalled();
+  });
+
   describe('nightly versions', () => {
     it.each([
       [

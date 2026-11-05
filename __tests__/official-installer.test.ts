@@ -1367,4 +1367,277 @@ describe('setup-node', () => {
       );
     });
   });
+
+  describe('force-mirror', () => {
+    const mirror = 'https://my_mirror_url';
+
+    beforeEach(() => {
+      os.platform = 'linux';
+      os.arch = 'x64';
+      inputs['token'] = 'faketoken';
+      inputs['mirror'] = mirror;
+      inputs['mirror-token'] = 'fake-mirror-token';
+      inputs['force-mirror'] = 'true';
+    });
+
+    function mockNodeVersion(version: string) {
+      getExecOutputSpy.mockImplementation(async () => ({
+        stdout: `v${version}\n`,
+        stderr: '',
+        exitCode: 0
+      }));
+    }
+
+    it('downloads from the mirror without using the manifest, even if the version is in the manifest', async () => {
+      // 12.16.2 is present in the test manifest
+      const version = '12.16.2';
+      inputs['node-version'] = version;
+      findSpy.mockImplementation(() => '');
+      dlSpy.mockImplementation(async () => '/some/temp/path');
+      exSpy.mockImplementation(async () => '/some/other/temp/path');
+      const toolPath = path.normalize(`/cache/node/${version}/x64`);
+      cacheSpy.mockImplementation(async () => toolPath);
+      mockNodeVersion(version);
+
+      await main.run();
+
+      expect(getManifestSpy).not.toHaveBeenCalled();
+      expect(getJsonSpy).not.toHaveBeenCalledWith(
+        nodeVersionsManifestUrl,
+        expect.anything()
+      );
+      expect(dlSpy).toHaveBeenCalledTimes(1);
+      expect(dlSpy).toHaveBeenCalledWith(
+        `${mirror}/dist/v${version}/node-v${version}-linux-x64.tar.gz`,
+        undefined,
+        'fake-mirror-token'
+      );
+      expect(getJsonSpy).toHaveBeenCalledWith(`${mirror}/dist/index.json`, {
+        Authorization: 'fake-mirror-token'
+      });
+      expect(addPathSpy).toHaveBeenCalledWith(path.join(toolPath, 'bin'));
+      expect(setFailedSpy).not.toHaveBeenCalled();
+    });
+
+    it('uses the local tool cache without contacting the mirror', async () => {
+      inputs['node-version'] = '12';
+      const toolPath = path.normalize('/cache/node/12.16.2/x64');
+      findSpy.mockReturnValue(toolPath);
+      mockNodeVersion('12.16.2');
+
+      await main.run();
+
+      expect(getManifestSpy).not.toHaveBeenCalled();
+      expect(getJsonSpy).not.toHaveBeenCalled();
+      expect(dlSpy).not.toHaveBeenCalled();
+      expect(logSpy).toHaveBeenCalledWith(`Found in cache @ ${toolPath}`);
+      expect(addPathSpy).toHaveBeenCalledWith(path.join(toolPath, 'bin'));
+    });
+
+    it.each([
+      ['erbium', '12'],
+      ['*', '12'],
+      ['-1', '10'],
+      ['dubnium', '10']
+    ])(
+      'resolves LTS alias lts/%s from the mirror index',
+      async (lts, expectedMajor) => {
+        inputs['node-version'] = `lts/${lts}`;
+        const toolPath = path.normalize(`/cache/node/${expectedMajor}.0.0/x64`);
+        findSpy.mockReturnValue(toolPath);
+        mockNodeVersion(`${expectedMajor}.0.0`);
+
+        await main.run();
+
+        expect(getManifestSpy).not.toHaveBeenCalled();
+        expect(logSpy).toHaveBeenCalledWith(
+          'Attempt to resolve LTS alias from mirror...'
+        );
+        expect(findSpy).toHaveBeenCalledWith('node', expectedMajor, 'x64');
+        expect(setFailedSpy).not.toHaveBeenCalled();
+      }
+    );
+
+    it('fails to resolve an unknown LTS alias', async () => {
+      inputs['node-version'] = 'lts/unknown';
+
+      await main.run();
+
+      expect(getManifestSpy).not.toHaveBeenCalled();
+      expect(setFailedSpy).toHaveBeenCalledWith(
+        `Unable to find LTS release 'unknown' for Node version 'lts/unknown'.`
+      );
+    });
+
+    it.each([
+      ['10', '10.20.1'],
+      ['latest', '14.1.0']
+    ])(
+      'resolves %s to the latest version from the mirror index',
+      async (versionSpec, expectedVersion) => {
+        inputs['node-version'] = versionSpec;
+        inputs['check-latest'] = 'true';
+        const toolPath = path.normalize(`/cache/node/${expectedVersion}/x64`);
+        findSpy.mockReturnValue(toolPath);
+        mockNodeVersion(expectedVersion);
+
+        await main.run();
+
+        expect(getManifestSpy).not.toHaveBeenCalled();
+        expect(logSpy).toHaveBeenCalledWith(`Resolved as '${expectedVersion}'`);
+        expect(findSpy).toHaveBeenCalledWith('node', expectedVersion, 'x64');
+        expect(setFailedSpy).not.toHaveBeenCalled();
+      }
+    );
+
+    function mockDownload(version: string) {
+      findSpy.mockImplementation(() => '');
+      dlSpy.mockImplementation(async () => '/some/temp/path');
+      exSpy.mockImplementation(async () => '/some/other/temp/path');
+      const toolPath = path.normalize(`/cache/node/${version}/x64`);
+      cacheSpy.mockImplementation(async () => toolPath);
+      mockNodeVersion(version);
+      return toolPath;
+    }
+
+    it.each([500, 404, 403])(
+      'fails without falling back to GitHub when the mirror download returns HTTP %s',
+      async status => {
+        inputs['node-version'] = '12.16.2';
+        mockDownload('12.16.2');
+        dlSpy.mockImplementation(async () => {
+          throw new tc.HTTPError(status);
+        });
+
+        await main.run();
+
+        expect(dlSpy).toHaveBeenCalledTimes(1);
+        expect(dlSpy).toHaveBeenCalledWith(
+          `${mirror}/dist/v12.16.2/node-v12.16.2-linux-x64.tar.gz`,
+          undefined,
+          'fake-mirror-token'
+        );
+        expect(getManifestSpy).not.toHaveBeenCalled();
+        expect(setFailedSpy).toHaveBeenCalledWith(
+          `Unexpected HTTP response: ${status}`
+        );
+      }
+    );
+
+    it('fails without falling back to GitHub when the mirror index cannot be fetched', async () => {
+      inputs['node-version'] = '12.16.2';
+      mockDownload('12.16.2');
+      getJsonSpy.mockImplementation(async () => {
+        throw new Error('mirror unavailable');
+      });
+
+      await main.run();
+
+      expect(getManifestSpy).not.toHaveBeenCalled();
+      expect(getJsonSpy).toHaveBeenCalledTimes(1);
+      expect(getJsonSpy).toHaveBeenCalledWith(
+        `${mirror}/dist/index.json`,
+        expect.anything()
+      );
+      expect(dlSpy).not.toHaveBeenCalled();
+      expect(setFailedSpy).toHaveBeenCalledWith('mirror unavailable');
+    });
+
+    it('fails when the version is not available on the mirror', async () => {
+      inputs['node-version'] = '99.0.0';
+      mockDownload('99.0.0');
+
+      await main.run();
+
+      expect(getManifestSpy).not.toHaveBeenCalled();
+      expect(dlSpy).not.toHaveBeenCalled();
+      expect(setFailedSpy).toHaveBeenCalledWith(
+        `Unable to find Node version '99.0.0' for platform linux and architecture x64.`
+      );
+    });
+
+    it('resolves an LTS alias with check-latest using a single mirror index request', async () => {
+      inputs['node-version'] = 'lts/dubnium';
+      inputs['check-latest'] = 'true';
+      const toolPath = mockDownload('10.20.1');
+
+      await main.run();
+
+      expect(getManifestSpy).not.toHaveBeenCalled();
+      expect(getJsonSpy).toHaveBeenCalledTimes(1);
+      expect(logSpy).toHaveBeenCalledWith(`Resolved as '10.20.1'`);
+      expect(dlSpy).toHaveBeenCalledWith(
+        `${mirror}/dist/v10.20.1/node-v10.20.1-linux-x64.tar.gz`,
+        undefined,
+        'fake-mirror-token'
+      );
+      expect(addPathSpy).toHaveBeenCalledWith(path.join(toolPath, 'bin'));
+      expect(setFailedSpy).not.toHaveBeenCalled();
+    });
+
+    it.each(['true', 'TRUE', 'True'])(
+      'treats force-mirror=%s as enabled',
+      async value => {
+        inputs['force-mirror'] = value;
+        inputs['node-version'] = '12.16.2';
+        mockDownload('12.16.2');
+
+        await main.run();
+
+        expect(getManifestSpy).not.toHaveBeenCalled();
+        expect(logSpy).toHaveBeenCalledWith(
+          `'force-mirror' is enabled. Skipping the actions/node-versions manifest and downloading from ${mirror}/dist`
+        );
+      }
+    );
+
+    it.each(['false', '', undefined])(
+      'uses the manifest first when force-mirror is %p, even with a mirror set',
+      async value => {
+        inputs['force-mirror'] = value;
+        inputs['node-version'] = '12.16.2';
+        mockDownload('12.16.2');
+
+        await main.run();
+
+        expect(getManifestSpy).toHaveBeenCalled();
+        expect(dlSpy).toHaveBeenCalledWith(
+          'https://github.com/actions/node-versions/releases/download/12.16.2-20200507.95/node-12.16.2-linux-x64.tar.gz',
+          undefined,
+          'fake-mirror-token'
+        );
+        expect(warningSpy).not.toHaveBeenCalledWith(
+          expect.stringContaining('force-mirror')
+        );
+      }
+    );
+
+    it('logs and uses nodejs.org when no mirror is set', async () => {
+      const version = '12.16.2';
+      inputs['node-version'] = version;
+      inputs['mirror'] = '';
+      inputs['mirror-token'] = '';
+      findSpy.mockImplementation(() => '');
+      dlSpy.mockImplementation(async () => '/some/temp/path');
+      exSpy.mockImplementation(async () => '/some/other/temp/path');
+      const toolPath = path.normalize(`/cache/node/${version}/x64`);
+      cacheSpy.mockImplementation(async () => toolPath);
+      mockNodeVersion(version);
+
+      await main.run();
+
+      expect(logSpy).toHaveBeenCalledWith(
+        '`force-mirror` is enabled but `mirror` is not set. Node.js will be downloaded directly from https://nodejs.org.'
+      );
+      expect(warningSpy).not.toHaveBeenCalledWith(
+        expect.stringContaining('force-mirror')
+      );
+      expect(getManifestSpy).not.toHaveBeenCalled();
+      expect(dlSpy).toHaveBeenCalledWith(
+        `https://nodejs.org/dist/v${version}/node-v${version}-linux-x64.tar.gz`,
+        undefined,
+        ''
+      );
+    });
+  });
 });

@@ -26,6 +26,11 @@ export default class OfficialBuilds extends BaseDistribution {
   }
 
   public async setupNodeJs() {
+    if (this.nodeInfo.forceMirror) {
+      await this.setupNodeJsFromMirror();
+      return;
+    }
+
     let manifest: tc.IToolRelease[] | undefined;
     let nodeJsVersions: INodeVersion[] | undefined;
     const osArch = this.translateArchToDistUrl(this.nodeInfo.arch);
@@ -153,6 +158,53 @@ export default class OfficialBuilds extends BaseDistribution {
     await this.verifyNodeVersion(installedDir);
   }
 
+  // Resolves and downloads Node.js using only the mirror (or nodejs.org),
+  // never the GitHub-hosted actions/node-versions manifest or releases.
+  private async setupNodeJsFromMirror() {
+    const distUrl = this.getDistributionUrl(this.nodeInfo.mirror);
+    core.info(
+      `'force-mirror' is enabled. Skipping the actions/node-versions manifest and downloading from ${distUrl}`
+    );
+
+    let nodeJsVersions: INodeVersion[] | undefined;
+
+    if (this.isLtsAlias(this.nodeInfo.versionSpec)) {
+      core.info('Attempt to resolve LTS alias from mirror...');
+      nodeJsVersions = await this.getNodeJsVersions();
+      this.nodeInfo.versionSpec = this.resolveLtsAlias(
+        this.nodeInfo.versionSpec,
+        nodeJsVersions
+      );
+    }
+
+    if (
+      this.isLatestSyntax(this.nodeInfo.versionSpec) ||
+      this.nodeInfo.checkLatest
+    ) {
+      core.info('Attempt to resolve the latest version from mirror...');
+      nodeJsVersions ??= await this.getNodeJsVersions();
+      this.nodeInfo.versionSpec = (
+        await this.findVersionInDist(nodeJsVersions)
+      ).replace(/^v/, '');
+      core.info(`Resolved as '${this.nodeInfo.versionSpec}'`);
+    }
+
+    const cachedPath = this.findVersionInHostedToolCacheDirectory();
+    if (cachedPath) {
+      core.info(`Found in cache @ ${cachedPath}`);
+      this.addToolPath(cachedPath);
+      await this.verifyNodeVersion(cachedPath);
+      return;
+    }
+
+    core.info(
+      `Attempting to download ${this.nodeInfo.versionSpec} from ${distUrl}...`
+    );
+    const installedDir = await this.downloadDirectlyFromNode(nodeJsVersions);
+    this.addToolPath(installedDir);
+    await this.verifyNodeVersion(installedDir);
+  }
+
   protected addToolPath(toolPath: string) {
     if (this.osPlat != 'win32') {
       toolPath = path.join(toolPath, 'bin');
@@ -161,8 +213,8 @@ export default class OfficialBuilds extends BaseDistribution {
     core.addPath(toolPath);
   }
 
-  protected async downloadDirectlyFromNode() {
-    const nodeJsVersions = await this.getNodeJsVersions();
+  protected async downloadDirectlyFromNode(nodeJsVersions?: INodeVersion[]) {
+    nodeJsVersions ??= await this.getNodeJsVersions();
     const versions = this.filterVersions(nodeJsVersions);
     const evaluatedVersion = this.evaluateVersions(versions);
 
@@ -271,6 +323,18 @@ export default class OfficialBuilds extends BaseDistribution {
     stable: boolean,
     manifest: INodeRelease[]
   ): string {
+    return this.resolveLtsAlias(
+      versionSpec,
+      manifest.filter(x => x.stable === stable)
+    );
+  }
+
+  // `releases` must be sorted from newest to oldest, as in both the
+  // actions/node-versions manifest and the Node.js dist index.json.
+  private resolveLtsAlias(
+    versionSpec: string,
+    releases: {version: string; lts?: string | false}[]
+  ): string {
     const alias = versionSpec.split('lts/')[1]?.toLowerCase();
 
     if (!alias) {
@@ -284,9 +348,9 @@ export default class OfficialBuilds extends BaseDistribution {
     // Supported formats are `lts/<alias>`, `lts/*`, and `lts/-n`. Where asterisk means highest possible LTS and -n means the nth-highest.
     const n = Number(alias);
     const aliases = Object.fromEntries(
-      manifest
-        .filter(x => x.lts && x.stable === stable)
-        .map(x => [x.lts!.toLowerCase(), x])
+      releases
+        .filter((x): x is typeof x & {lts: string} => !!x.lts)
+        .map(x => [x.lts.toLowerCase(), x])
         .reverse()
     );
     const numbered = Object.values(aliases);
@@ -303,11 +367,12 @@ export default class OfficialBuilds extends BaseDistribution {
       );
     }
 
+    const releaseVersion = release.version.replace(/^v/, '');
     core.debug(
-      `Found LTS release '${release.version}' for Node version '${versionSpec}'`
+      `Found LTS release '${releaseVersion}' for Node version '${versionSpec}'`
     );
 
-    return release.version.split('.')[0];
+    return releaseVersion.split('.')[0];
   }
 
   private async getInfoFromManifest(

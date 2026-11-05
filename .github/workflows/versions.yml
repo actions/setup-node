@@ -230,6 +230,44 @@ jobs:
         run: __tests__/verify-node.sh "${{ matrix.node-version }}"
         shell: bash
 
+  force-mirror:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest, macos-15-intel]
+        # Versions are not preinstalled on hosted runners, so they must be downloaded
+        node-version: [22.0.0, 24.9.0]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Setup Node from mirror only
+        uses: ./
+        with:
+          node-version: ${{ matrix.node-version }}
+          mirror: https://nodejs.org
+          force-mirror: true
+      - name: Verify node and npm
+        run: __tests__/verify-node.sh "${{ matrix.node-version }}"
+        shell: bash
+
+  force-mirror-lts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Setup Node LTS from mirror only
+        uses: ./
+        with:
+          node-version: lts/-1
+          check-latest: true
+          mirror: https://nodejs.org
+          force-mirror: true
+      - name: Verify node and npm
+        run: |
+          . "$NVM_DIR/nvm.sh"
+          [[ $(nvm version-remote "lts/-1") =~ ^v([^.]+) ]]
+          __tests__/verify-node.sh "${BASH_REMATCH[1]}"
+        shell: bash
+
   old-versions:
     runs-on: ${{ matrix.os }}
     strategy:
