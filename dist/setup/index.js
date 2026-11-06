@@ -97622,7 +97622,7 @@ const supportedPackageManagers = {
     npm: {
         name: 'npm',
         lockFilePatterns: ['package-lock.json', 'npm-shrinkwrap.json', 'yarn.lock'],
-        getCacheFolderPath: () => getCommandOutputNotEmpty('npm config get cache', 'Could not get npm cache folder path')
+        getCacheFolderPath: () => getNpmCacheFolderPath()
     },
     pnpm: {
         name: 'pnpm',
@@ -97661,6 +97661,23 @@ const getCommandOutputNotEmpty = async (toolCommand, error, cwd) => {
         throw new Error(error);
     }
     return stdOut;
+};
+const getNpmCacheFolderPath = async () => {
+    const error = 'Could not get npm cache folder path';
+    try {
+        return await getCommandOutputNotEmpty('npm config get cache', error);
+    }
+    catch (err) {
+        // npm checks devEngines.packageManager from the package.json in the
+        // workspace even for `npm config get`, so the cache lookup fails before
+        // the workflow had a chance to install the required package manager.
+        // `--force` turns that check into a warning and still honours .npmrc.
+        if (!err.message.includes('EBADDEVENGINES')) {
+            throw err;
+        }
+        core_info("The installed npm doesn't satisfy devEngines.packageManager in package.json, retrying the npm cache path lookup with --force");
+        return getCommandOutputNotEmpty('npm config get cache --force', error);
+    }
 };
 const getPackageManagerInfo = async (packageManager) => {
     if (packageManager === 'npm') {
