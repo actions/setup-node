@@ -158,6 +158,79 @@ describe('cache-utils', () => {
     });
   });
 
+  describe('npm getCacheFolderPath', () => {
+    const devEnginesError = [
+      'npm error code EBADDEVENGINES',
+      'npm error EBADDEVENGINES Invalid name "pnpm" does not match "npm" for "packageManager"'
+    ].join('\n');
+
+    function mockExecResultOnce(result: {
+      stdout?: string;
+      stderr?: string;
+      exitCode: number;
+    }) {
+      getExecOutputSpy.mockImplementationOnce(async () => ({
+        stdout: result.stdout ?? '',
+        stderr: result.stderr ?? '',
+        exitCode: result.exitCode
+      }));
+    }
+
+    it('returns the cache path without --force when npm config succeeds', async () => {
+      mockExecResultOnce({stdout: '/home/runner/.npm', exitCode: 0});
+
+      await expect(
+        supportedPackageManagers.npm.getCacheFolderPath()
+      ).resolves.toBe('/home/runner/.npm');
+      expect(getExecOutputSpy).toHaveBeenCalledTimes(1);
+      expect(getExecOutputSpy).toHaveBeenCalledWith(
+        'npm config get cache',
+        undefined,
+        expect.anything()
+      );
+    });
+
+    it('retries with --force when npm rejects devEngines', async () => {
+      mockExecResultOnce({stderr: devEnginesError, exitCode: 1});
+      mockExecResultOnce({stdout: '/home/runner/.npm', exitCode: 0});
+
+      await expect(
+        supportedPackageManagers.npm.getCacheFolderPath()
+      ).resolves.toBe('/home/runner/.npm');
+      expect(getExecOutputSpy).toHaveBeenCalledTimes(2);
+      expect(getExecOutputSpy).toHaveBeenNthCalledWith(
+        2,
+        'npm config get cache --force',
+        undefined,
+        expect.anything()
+      );
+      expect(info).toHaveBeenCalledWith(
+        expect.stringContaining(
+          'retrying the npm cache path lookup with --force'
+        )
+      );
+    });
+
+    it('does not retry on other npm errors', async () => {
+      mockExecResultOnce({stderr: 'npm error code ENOENT', exitCode: 1});
+
+      await expect(
+        supportedPackageManagers.npm.getCacheFolderPath()
+      ).rejects.toThrow('npm error code ENOENT');
+      expect(getExecOutputSpy).toHaveBeenCalledTimes(1);
+    });
+
+    it('surfaces the error when the --force retry also fails', async () => {
+      mockExecResultOnce({stderr: devEnginesError, exitCode: 1});
+      mockExecResultOnce({stderr: 'npm error code EFORCEFAILED', exitCode: 1});
+
+      await expect(
+        supportedPackageManagers.npm.getCacheFolderPath()
+      ).rejects.toThrow('npm error code EFORCEFAILED');
+      expect(getExecOutputSpy).toHaveBeenCalledTimes(2);
+    });
+  });
+
   it('isCacheFeatureAvailable for GHES is false', () => {
     isFeatureAvailable.mockImplementation(() => false);
     process.env['GITHUB_SERVER_URL'] = 'https://www.test.com';
