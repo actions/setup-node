@@ -99,6 +99,12 @@ When using the `package.json` input, the action will look in the following field
 4. Otherwise it tries to resolve the file defined by [`volta.extends`](https://docs.volta.sh/advanced/workspaces)
    and look for `volta.node`, `devEngines.runtime`, or `engines.node` recursively.
 
+> [NOTE]
+> `volta.extends` resolution is constrained to protect against leaking repository secrets:
+> - A chain that starts inside `GITHUB_WORKSPACE` may not leave it, including through symlinks. A `node-version-file` that is already outside the workspace comes from the workflow author and is resolved without this restriction.
+> - Cyclic chains, and chains longer than 100 hops, fail with an explicit error.
+> - A target that is neither a manifest nor a plain version file (such as `.nvmrc`) fails instead of having its contents used as the version.
+
 
 ```json
 {
