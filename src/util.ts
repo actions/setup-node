@@ -30,6 +30,10 @@ const NODE_PRERELEASE_SELECTOR =
   /^v?\d+(?:\.\d+){0,2}-(?:nightly|v8-canary|rc)[\w.-]*$/i;
 
 function isNodeVersionSpec(value: string): boolean {
+  if (value.trim() === '') {
+    return false;
+  }
+
   return (
     NODE_VERSION_ALIASES.test(value) ||
     NODE_PRERELEASE_SELECTOR.test(value) ||
@@ -84,7 +88,7 @@ function markVisitedOrThrowOnCycle(
     );
   }
 
-  if (visited.size >= MAX_VOLTA_EXTENDS_HOPS) {
+  if (visited.size > MAX_VOLTA_EXTENDS_HOPS) {
     throw new VoltaExtendsError(
       `Exceeded the maximum of ${MAX_VOLTA_EXTENDS_HOPS} volta.extends hops while resolving the node version file starting at ${[...visited][0]}`
     );

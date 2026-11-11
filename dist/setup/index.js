@@ -97514,6 +97514,9 @@ const MAX_VOLTA_EXTENDS_HOPS = 100;
 const NODE_VERSION_ALIASES = /^(?:lts\/\*|lts\/[\w.-]+|node|latest|current|stable|\*)$/i;
 const NODE_PRERELEASE_SELECTOR = /^v?\d+(?:\.\d+){0,2}-(?:nightly|v8-canary|rc)[\w.-]*$/i;
 function isNodeVersionSpec(value) {
+    if (value.trim() === '') {
+        return false;
+    }
     return (NODE_VERSION_ALIASES.test(value) ||
         NODE_PRERELEASE_SELECTOR.test(value) ||
         semver_default().validRange(value) !== null);
@@ -97542,7 +97545,7 @@ function markVisitedOrThrowOnCycle(versionFilePath, visited) {
         const chain = [...visited, resolvedPath].join(' -> ');
         throw new VoltaExtendsError(`Detected cyclic volta.extends chain in node-version-file resolution: ${chain}`);
     }
-    if (visited.size >= MAX_VOLTA_EXTENDS_HOPS) {
+    if (visited.size > MAX_VOLTA_EXTENDS_HOPS) {
         throw new VoltaExtendsError(`Exceeded the maximum of ${MAX_VOLTA_EXTENDS_HOPS} volta.extends hops while resolving the node version file starting at ${[...visited][0]}`);
     }
     visited.add(resolvedPath);
