@@ -151,9 +151,10 @@ Examples:
 
 **Note:** Like the other values, `*` will get the latest [locally-cached Node.js version](https://github.com/actions/runner-images/blob/main/images/ubuntu/Ubuntu2204-Readme.md#nodejs), or the latest version from [actions/node-versions](https://github.com/actions/node-versions/blob/main/versions-manifest.json), depending on the [`check-latest`](docs/advanced-usage.md#check-latest-version) input.
 
-`current`/`latest`/`node` always resolve to the latest [dist version](https://nodejs.org/dist/index.json).
+`current`/`latest`/`node` always resolve to the latest stable version from [dist index](https://nodejs.org/dist/index.json) (prerelease entries are skipped).
 That version is then downloaded from actions/node-versions if possible, or directly from Node.js if not.
-Since it will not be cached always, there is possibility of hitting rate limit when downloading from dist
+If no stable version is available in the dist index, setup fails with an explicit error.
+Since it will not always be cached, there is a possibility of hitting rate limits when downloading from dist.
 
 ### Checking in lockfiles
 

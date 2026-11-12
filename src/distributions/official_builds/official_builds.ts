@@ -3,6 +3,7 @@ import path from 'node:path';
 import * as core from '@actions/core';
 import * as exec from '@actions/exec';
 import * as tc from '@actions/tool-cache';
+import semver from 'semver';
 
 import BaseDistribution from '../base-distribution.js';
 import {NodeInputs, INodeVersion, INodeVersionInfo} from '../base-models.js';
@@ -195,7 +196,18 @@ export default class OfficialBuilds extends BaseDistribution {
 
     if (this.isLatestSyntax(this.nodeInfo.versionSpec)) {
       core.info(`getting latest node version...`);
-      return versions[0];
+
+      const stableVersion = versions.find(
+        potential => semver.prerelease(potential) === null
+      );
+
+      if (!stableVersion) {
+        throw new Error(
+          `Unable to find a stable Node version for '${this.nodeInfo.versionSpec}' on platform ${this.osPlat} and architecture ${this.nodeInfo.arch}.`
+        );
+      }
+
+      return stableVersion;
     }
 
     version = super.evaluateVersions(versions);

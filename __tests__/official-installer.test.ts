@@ -993,6 +993,91 @@ describe('setup-node', () => {
         expect(logSpy).toHaveBeenCalledWith('getting latest node version...');
       }
     );
+
+    it.each(['latest', 'current', 'node'])(
+      'skips a newer prerelease and selects the latest stable version for %s',
+      async inputVersion => {
+        // Arrange
+        inputs['node-version'] = inputVersion;
+        const stableVersion = nodeTestDist[0];
+        const prereleaseVersion = {
+          ...nodeTestDist[0],
+          version: 'v99.0.0-alpha.1'
+        };
+
+        os.platform = 'darwin';
+        os.arch = 'x64';
+
+        findSpy.mockImplementation(() => '');
+        getManifestSpy.mockImplementation(() => {
+          throw new Error('Unable to download manifest');
+        });
+        getJsonSpy.mockImplementation((url: any) => {
+          if (url === nodeVersionsManifestUrl) {
+            throw new Error('Unable to download raw manifest');
+          }
+
+          return {result: [prereleaseVersion, ...nodeTestDist]};
+        });
+
+        // Act
+        await runWithRetries();
+
+        // assert
+        expect(findSpy).toHaveBeenCalledWith(
+          'node',
+          stableVersion.version,
+          'x64'
+        );
+        expect(findSpy).not.toHaveBeenCalledWith(
+          'node',
+          prereleaseVersion.version,
+          'x64'
+        );
+      }
+    );
+
+    const prereleaseOnlyIndex = [
+      {...nodeTestDist[0], version: 'v99.0.0-alpha.1'}
+    ];
+
+    it.each([
+      ['latest', 'an empty index', []],
+      ['current', 'an empty index', []],
+      ['node', 'an empty index', []],
+      ['latest', 'a prerelease-only index', prereleaseOnlyIndex],
+      ['current', 'a prerelease-only index', prereleaseOnlyIndex],
+      ['node', 'a prerelease-only index', prereleaseOnlyIndex]
+    ])(
+      'fails with the stable-version error for %s with %s',
+      async (inputVersion, _description, index) => {
+        // Arrange
+        inputs['node-version'] = inputVersion;
+
+        os.platform = 'darwin';
+        os.arch = 'x64';
+
+        findSpy.mockImplementation(() => '');
+        getManifestSpy.mockImplementation(() => {
+          throw new Error('Unable to download manifest');
+        });
+        getJsonSpy.mockImplementation((url: any) => {
+          if (url === nodeVersionsManifestUrl) {
+            throw new Error('Unable to download raw manifest');
+          }
+
+          return {result: index};
+        });
+
+        // Act
+        await runWithRetries();
+
+        // assert
+        expect(setFailedSpy).toHaveBeenCalledWith(
+          `Unable to find a stable Node version for '${inputVersion}' on platform ${os.platform} and architecture ${os.arch}.`
+        );
+      }
+    );
   });
 
   describe('latest alias syntax from cache', () => {
@@ -1017,6 +1102,11 @@ describe('setup-node', () => {
         // assert
 
         expect(logSpy).toHaveBeenCalledWith('getting latest node version...');
+        expect(findSpy).toHaveBeenCalledWith(
+          'node',
+          expectedVersion.version,
+          'x64'
+        );
         expect(logSpy).toHaveBeenCalledWith(`Found in cache @ ${toolPath}`);
       }
     );

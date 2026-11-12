@@ -270,7 +270,10 @@ jobs:
     steps:
       - name: Get node version
         run: |
-          latestNodeVersion=$(curl https://nodejs.org/dist/index.json | jq -r '. [0].version')
+          latestNodeVersion=$(
+            curl -fsSL https://nodejs.org/dist/index.json |
+              jq -r 'first(.[] | select(.version | test("-") | not) | .version)'
+          )
           echo "LATEST_NODE_VERSION=$latestNodeVersion" >> $GITHUB_OUTPUT
         id: version
         shell: bash
