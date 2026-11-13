@@ -1008,6 +1008,11 @@ describe('setup-node', () => {
         os.platform = 'darwin';
         os.arch = 'x64';
 
+        const cleanStableVersion = stableVersion.version.replace(/^v/, '');
+        const toolPath = path.normalize(
+          `/cache/node/${cleanStableVersion}/x64`
+        );
+
         findSpy.mockImplementation(() => '');
         getManifestSpy.mockImplementation(() => {
           throw new Error('Unable to download manifest');
@@ -1019,6 +1024,14 @@ describe('setup-node', () => {
 
           return {result: [prereleaseVersion, ...nodeTestDist]};
         });
+        dlSpy.mockImplementation(async () => '/some/temp/path');
+        exSpy.mockImplementation(async () => '/some/other/temp/path');
+        cacheSpy.mockImplementation(async () => toolPath);
+        getExecOutputSpy.mockImplementation(async () => ({
+          stdout: `v${cleanStableVersion}\n`,
+          stderr: '',
+          exitCode: 0
+        }));
 
         // Act
         await runWithRetries();
@@ -1034,6 +1047,13 @@ describe('setup-node', () => {
           prereleaseVersion.version,
           'x64'
         );
+        expect(dlSpy).toHaveBeenCalledWith(
+          `https://nodejs.org/dist/v${cleanStableVersion}/node-v${cleanStableVersion}-darwin-x64.tar.gz`,
+          undefined,
+          undefined
+        );
+        expect(setFailedSpy).not.toHaveBeenCalled();
+        expect(addPathSpy).toHaveBeenCalledWith(path.join(toolPath, 'bin'));
       }
     );
 
