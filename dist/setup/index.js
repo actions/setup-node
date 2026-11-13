@@ -97662,21 +97662,44 @@ const getCommandOutputNotEmpty = async (toolCommand, error, cwd) => {
     }
     return stdOut;
 };
+// One line per unsatisfied engine, e.g. `npm warn EBADDEVENGINES Invalid devEngines.runtime`
+const devEnginesFailurePattern = /EBADDEVENGINES Invalid devEngines\.(\w+)/g;
 const getNpmCacheFolderPath = async () => {
     const error = 'Could not get npm cache folder path';
     try {
         return await getCommandOutputNotEmpty('npm config get cache', error);
     }
     catch (err) {
-        // npm checks devEngines.packageManager from the package.json in the
-        // workspace even for `npm config get`, so the cache lookup fails before
-        // the workflow had a chance to install the required package manager.
-        // `--force` turns that check into a warning and still honours .npmrc.
         if (!err.message.includes('EBADDEVENGINES')) {
             throw err;
         }
-        core_info("The installed npm doesn't satisfy devEngines.packageManager in package.json, retrying the npm cache path lookup with --force");
-        return getCommandOutputNotEmpty('npm config get cache --force', error);
+        // npm checks devEngines from the package.json in the workspace even for
+        // the read-only `npm config get`, so the cache lookup fails before the
+        // workflow had a chance to install the package manager it declares.
+        // Only a devEngines.packageManager mismatch is tolerated here, because it
+        // is the one requirement a later workflow step can satisfy. `--force`
+        // downgrades every devEngines failure to a warning, so the warnings of the
+        // retried command are inspected and any other engine (runtime, os, cpu,
+        // libc) keeps failing exactly as it does without the retry.
+        core_info('npm rejected the devEngines in package.json, retrying the npm cache path lookup with --force to check whether only devEngines.packageManager is unsatisfied');
+        const forcedCommand = 'npm config get cache --force';
+        const { stdout, stderr, exitCode } = await getExecOutput(forcedCommand, undefined, { ignoreReturnCode: true });
+        const otherEngines = [
+            ...new Set(Array.from(stderr.matchAll(devEnginesFailurePattern), m => m[1]))
+        ].filter(engine => engine !== 'packageManager');
+        if (otherEngines.length) {
+            core_info(`devEngines.${otherEngines.join(' and devEngines.')} ${otherEngines.length === 1 ? 'is' : 'are'} not satisfied either, keeping the npm error`);
+            throw err;
+        }
+        if (exitCode) {
+            throw new Error(stderr.trim() ||
+                `The '${forcedCommand}' command failed with exit code: ${exitCode}`, { cause: err });
+        }
+        if (!stdout.trim()) {
+            throw new Error(error, { cause: err });
+        }
+        core_info('Only devEngines.packageManager is unsatisfied, continuing with the npm cache path; later npm commands still enforce devEngines');
+        return stdout.trim();
     }
 };
 const getPackageManagerInfo = async (packageManager) => {
