@@ -158,6 +158,169 @@ describe('cache-utils', () => {
     });
   });
 
+  describe('npm getCacheFolderPath', () => {
+    const packageManagerError = [
+      'npm error code EBADDEVENGINES',
+      'npm error EBADDEVENGINES The developer of this package has specified the following through devEngines',
+      'npm error EBADDEVENGINES Invalid devEngines.packageManager',
+      'npm error EBADDEVENGINES Invalid semver version ">=12.2.2" does not match "11.19.1" for "packageManager"'
+    ].join('\n');
+    const runtimeError = [
+      'npm error code EBADDEVENGINES',
+      'npm error EBADDEVENGINES The developer of this package has specified the following through devEngines',
+      'npm error EBADDEVENGINES Invalid devEngines.runtime',
+      'npm error EBADDEVENGINES Invalid semver version ">=30" does not match "24.13.0" for "runtime"'
+    ].join('\n');
+    const forceWarning =
+      'npm warn using --force Recommended protections disabled.';
+    const packageManagerWarning = [
+      'npm warn EBADDEVENGINES The developer of this package has specified the following through devEngines',
+      'npm warn EBADDEVENGINES Invalid devEngines.packageManager',
+      'npm warn EBADDEVENGINES Invalid semver version ">=12.2.2" does not match "11.19.1" for "packageManager"'
+    ].join('\n');
+    const runtimeWarning = [
+      'npm warn EBADDEVENGINES Invalid devEngines.runtime',
+      'npm warn EBADDEVENGINES Invalid semver version ">=30" does not match "24.13.0" for "runtime"'
+    ].join('\n');
+
+    function mockExecResultOnce(result: {
+      stdout?: string;
+      stderr?: string;
+      exitCode: number;
+    }) {
+      getExecOutputSpy.mockImplementationOnce(async () => ({
+        stdout: result.stdout ?? '',
+        stderr: result.stderr ?? '',
+        exitCode: result.exitCode
+      }));
+    }
+
+    it('returns the cache path without --force when npm config succeeds', async () => {
+      mockExecResultOnce({stdout: '/home/runner/.npm', exitCode: 0});
+
+      await expect(
+        supportedPackageManagers.npm.getCacheFolderPath()
+      ).resolves.toBe('/home/runner/.npm');
+      expect(getExecOutputSpy).toHaveBeenCalledTimes(1);
+      expect(getExecOutputSpy).toHaveBeenCalledWith(
+        'npm config get cache',
+        undefined,
+        expect.anything()
+      );
+    });
+
+    it('retries with --force when only devEngines.packageManager is unsatisfied', async () => {
+      mockExecResultOnce({stderr: packageManagerError, exitCode: 1});
+      mockExecResultOnce({
+        stdout: '/home/runner/.npm\n',
+        stderr: [forceWarning, packageManagerWarning].join('\n'),
+        exitCode: 0
+      });
+
+      await expect(
+        supportedPackageManagers.npm.getCacheFolderPath()
+      ).resolves.toBe('/home/runner/.npm');
+      expect(getExecOutputSpy).toHaveBeenCalledTimes(2);
+      expect(getExecOutputSpy).toHaveBeenNthCalledWith(
+        2,
+        'npm config get cache --force',
+        undefined,
+        expect.objectContaining({ignoreReturnCode: true})
+      );
+      expect(info).toHaveBeenCalledWith(
+        expect.stringContaining(
+          'retrying the npm cache path lookup with --force'
+        )
+      );
+      expect(info).toHaveBeenCalledWith(
+        expect.stringContaining('Only devEngines.packageManager is unsatisfied')
+      );
+    });
+
+    it('keeps the npm error when devEngines.runtime is unsatisfied as well', async () => {
+      mockExecResultOnce({stderr: packageManagerError, exitCode: 1});
+      mockExecResultOnce({
+        stdout: '/home/runner/.npm\n',
+        stderr: [forceWarning, packageManagerWarning, runtimeWarning].join(
+          '\n'
+        ),
+        exitCode: 0
+      });
+
+      await expect(
+        supportedPackageManagers.npm.getCacheFolderPath()
+      ).rejects.toThrow(packageManagerError);
+      expect(getExecOutputSpy).toHaveBeenCalledTimes(2);
+      expect(info).toHaveBeenCalledWith(
+        'devEngines.runtime is not satisfied either, keeping the npm error'
+      );
+    });
+
+    it('keeps the npm error when devEngines.runtime is the only unsatisfied engine', async () => {
+      mockExecResultOnce({stderr: runtimeError, exitCode: 1});
+      mockExecResultOnce({
+        stdout: '/home/runner/.npm\n',
+        stderr: [forceWarning, runtimeWarning].join('\n'),
+        exitCode: 0
+      });
+
+      await expect(
+        supportedPackageManagers.npm.getCacheFolderPath()
+      ).rejects.toThrow(runtimeError);
+      expect(getExecOutputSpy).toHaveBeenCalledTimes(2);
+    });
+
+    it('keeps the npm error when os, cpu or libc are unsatisfied as well', async () => {
+      mockExecResultOnce({stderr: packageManagerError, exitCode: 1});
+      mockExecResultOnce({
+        stdout: '/home/runner/.npm\n',
+        stderr: [
+          forceWarning,
+          packageManagerWarning,
+          'npm warn EBADDEVENGINES Invalid devEngines.os',
+          'npm warn EBADDEVENGINES Invalid devEngines.cpu',
+          'npm warn EBADDEVENGINES Invalid devEngines.libc'
+        ].join('\n'),
+        exitCode: 0
+      });
+
+      await expect(
+        supportedPackageManagers.npm.getCacheFolderPath()
+      ).rejects.toThrow(packageManagerError);
+      expect(info).toHaveBeenCalledWith(
+        'devEngines.os and devEngines.cpu and devEngines.libc are not satisfied either, keeping the npm error'
+      );
+    });
+
+    it('does not retry on other npm errors', async () => {
+      mockExecResultOnce({stderr: 'npm error code ENOENT', exitCode: 1});
+
+      await expect(
+        supportedPackageManagers.npm.getCacheFolderPath()
+      ).rejects.toThrow('npm error code ENOENT');
+      expect(getExecOutputSpy).toHaveBeenCalledTimes(1);
+    });
+
+    it('surfaces the error when the --force retry also fails', async () => {
+      mockExecResultOnce({stderr: packageManagerError, exitCode: 1});
+      mockExecResultOnce({stderr: 'npm error code EFORCEFAILED', exitCode: 1});
+
+      await expect(
+        supportedPackageManagers.npm.getCacheFolderPath()
+      ).rejects.toThrow('npm error code EFORCEFAILED');
+      expect(getExecOutputSpy).toHaveBeenCalledTimes(2);
+    });
+
+    it('fails when the --force retry prints no cache path', async () => {
+      mockExecResultOnce({stderr: packageManagerError, exitCode: 1});
+      mockExecResultOnce({stdout: '\n', stderr: forceWarning, exitCode: 0});
+
+      await expect(
+        supportedPackageManagers.npm.getCacheFolderPath()
+      ).rejects.toThrow('Could not get npm cache folder path');
+    });
+  });
+
   it('isCacheFeatureAvailable for GHES is false', () => {
     isFeatureAvailable.mockImplementation(() => false);
     process.env['GITHUB_SERVER_URL'] = 'https://www.test.com';
