@@ -1,0 +1,75 @@
+{
+  "schema": 1,
+  "profile": "deepmerge-4.3.1-lsf-prototype-v1",
+  "name": "deepmerge",
+  "version": "4.3.1",
+  "upstreamIntegrity": "sha512-3sUqbMEc77XqpdNO7FRyRog+eW3ph+GYCbj+rK+uYyRMuwsVy0rMiVtPn+QJlKFvWP/1PYpapqYn0Me2knFn+A==",
+  "files": [
+    {
+      "path": "index.js",
+      "beforeSha256": "12440c84957c1990ea2d5e33dc0091722dc1dc1585c6d20e0c780e568ffa9d30",
+      "afterSha256": "ba2a6c79e67e10f45a32cfe8f5ea5c5607dc4718be2b37956e9202ea4cdbe1bc",
+      "edits": [
+        {
+          "before": "function propertyIsOnObject(object, property) {",
+          "after": "function propertyIsForbidden(key) {\n\treturn key === '__proto__'\n}\n\nfunction propertyIsOnObject(object, property) {",
+          "count": 1
+        },
+        {
+          "before": "\t\tgetKeys(target).forEach(function(key) {\n",
+          "after": "\t\tgetKeys(target).forEach(function(key) {\n\t\t\tif (propertyIsForbidden(key)) {\n\t\t\t\treturn\n\t\t\t}\n",
+          "count": 1
+        },
+        {
+          "before": "if (propertyIsUnsafe(target, key)) {",
+          "after": "if (propertyIsForbidden(key) || propertyIsUnsafe(target, key)) {",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "path": "dist/cjs.js",
+      "beforeSha256": "2e5160f84a1141bd927264afe4d15766f1e6cf07daef182b37ff53fea121de7d",
+      "afterSha256": "c5e9c1f08e7a3b589010133108a3c625806358fa9e1bdaa11f07e9e756f19da0",
+      "edits": [
+        {
+          "before": "function propertyIsOnObject(object, property) {",
+          "after": "function propertyIsForbidden(key) {\n\treturn key === '__proto__'\n}\n\nfunction propertyIsOnObject(object, property) {",
+          "count": 1
+        },
+        {
+          "before": "\t\tgetKeys(target).forEach(function(key) {\n",
+          "after": "\t\tgetKeys(target).forEach(function(key) {\n\t\t\tif (propertyIsForbidden(key)) {\n\t\t\t\treturn\n\t\t\t}\n",
+          "count": 1
+        },
+        {
+          "before": "if (propertyIsUnsafe(target, key)) {",
+          "after": "if (propertyIsForbidden(key) || propertyIsUnsafe(target, key)) {",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "path": "dist/umd.js",
+      "beforeSha256": "f33e6596482d1fb5c7c427f8ef92f2aa849eea9223acd974176b2fb27ddbf73a",
+      "afterSha256": "b12652d3654f47b08ae43e8b390b66c55987ace6d9a6167c3240744ffa0f28f9",
+      "edits": [
+        {
+          "before": "\tfunction propertyIsOnObject(object, property) {",
+          "after": "\tfunction propertyIsForbidden(key) {\n\t\treturn key === '__proto__'\n\t}\n\n\tfunction propertyIsOnObject(object, property) {",
+          "count": 1
+        },
+        {
+          "before": "\t\t\tgetKeys(target).forEach(function(key) {\n",
+          "after": "\t\t\tgetKeys(target).forEach(function(key) {\n\t\t\t\tif (propertyIsForbidden(key)) {\n\t\t\t\t\treturn\n\t\t\t\t}\n",
+          "count": 1
+        },
+        {
+          "before": "if (propertyIsUnsafe(target, key)) {",
+          "after": "if (propertyIsForbidden(key) || propertyIsUnsafe(target, key)) {",
+          "count": 1
+        }
+      ]
+    }
+  ]
+}
