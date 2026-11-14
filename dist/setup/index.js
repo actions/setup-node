@@ -99050,9 +99050,7 @@ class OfficialBuilds extends BaseDistribution {
             const versionInfo = await this.getInfoFromManifest(this.nodeInfo.versionSpec, this.nodeInfo.stable, osArch, manifest);
             if (versionInfo) {
                 core_info(`Acquiring ${versionInfo.resolvedVersion} - ${versionInfo.arch} from ${versionInfo.downloadUrl}`);
-                downloadPath = await downloadTool(versionInfo.downloadUrl, undefined, this.nodeInfo.mirror && this.nodeInfo.mirrorToken
-                    ? this.nodeInfo.mirrorToken
-                    : this.nodeInfo.auth);
+                downloadPath = await downloadTool(versionInfo.downloadUrl, undefined, this.nodeInfo.auth);
                 if (downloadPath) {
                     toolPath = await this.extractArchive(downloadPath, versionInfo, false);
                 }
@@ -99129,9 +99127,7 @@ class OfficialBuilds extends BaseDistribution {
         core_debug('Getting manifest from actions/node-versions@main');
         for (let attempt = 1; attempt <= maxAttempts; attempt++) {
             try {
-                const manifest = await getManifestFromRepo('actions', 'node-versions', this.nodeInfo.mirror && this.nodeInfo.mirrorToken
-                    ? this.nodeInfo.mirrorToken
-                    : this.nodeInfo.auth, 'main');
+                const manifest = await getManifestFromRepo('actions', 'node-versions', this.nodeInfo.auth, 'main');
                 if (isValidManifest(manifest)) {
                     return manifest;
                 }

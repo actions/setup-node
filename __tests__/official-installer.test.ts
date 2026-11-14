@@ -479,6 +479,69 @@ describe('setup-node', () => {
     expect(addPathSpy).toHaveBeenCalledWith(expPath);
   });
 
+  it('sends GitHub token to GitHub manifest and release downloads when mirror and mirror-token are set', async () => {
+    os.platform = 'linux';
+    os.arch = 'x64';
+
+    const versionSpec = '12.16.2';
+    inputs['node-version'] = versionSpec;
+    inputs['token'] = 'github-secret-token';
+    inputs['mirror'] = 'https://my_mirror_url';
+    inputs['mirror-token'] = 'mirror-secret-token';
+
+    findSpy.mockImplementation(() => '');
+    dlSpy.mockImplementation(async () => '/some/temp/path');
+    const toolPath = path.normalize('/cache/node/12.16.2/x64');
+    exSpy.mockImplementation(async () => '/some/other/temp/path');
+    cacheSpy.mockImplementation(async () => toolPath);
+
+    await main.run();
+
+    expect(getManifestSpy).toHaveBeenCalledWith(
+      'actions',
+      'node-versions',
+      'token github-secret-token',
+      'main'
+    );
+    expect(dlSpy).toHaveBeenCalledWith(
+      'https://github.com/actions/node-versions/releases/download/12.16.2-20200507.95/node-12.16.2-linux-x64.tar.gz',
+      undefined,
+      'token github-secret-token'
+    );
+  });
+
+  it('sends GitHub token to manifest and mirror-token to mirror when falling back to mirror', async () => {
+    os.platform = 'linux';
+    os.arch = 'x64';
+
+    const versionSpec = '11.15.0';
+    const mirror = 'https://my_mirror_url';
+    inputs['node-version'] = versionSpec;
+    inputs['token'] = 'github-secret-token';
+    inputs['mirror'] = mirror;
+    inputs['mirror-token'] = 'mirror-secret-token';
+
+    findSpy.mockImplementation(() => '');
+    dlSpy.mockImplementation(async () => '/some/temp/path');
+    const toolPath = path.normalize('/cache/node/11.15.0/x64');
+    exSpy.mockImplementation(async () => '/some/other/temp/path');
+    cacheSpy.mockImplementation(async () => toolPath);
+
+    await main.run();
+
+    expect(getManifestSpy).toHaveBeenCalledWith(
+      'actions',
+      'node-versions',
+      'token github-secret-token',
+      'main'
+    );
+    expect(dlSpy).toHaveBeenCalledWith(
+      `${mirror}/dist/v11.15.0/node-v11.15.0-linux-x64.tar.gz`,
+      undefined,
+      'mirror-secret-token'
+    );
+  });
+
   it('falls back to a version from node dist', async () => {
     os.platform = 'linux';
     os.arch = 'x64';
