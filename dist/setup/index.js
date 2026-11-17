@@ -5741,6 +5741,262 @@ exports.ReflectionTypeCheck = ReflectionTypeCheck;
 
 /***/ }),
 
+/***/ 5183:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.req = exports.json = exports.toBuffer = void 0;
+const http = __importStar(__nccwpck_require__(8611));
+const https = __importStar(__nccwpck_require__(5692));
+async function toBuffer(stream) {
+    let length = 0;
+    const chunks = [];
+    for await (const chunk of stream) {
+        length += chunk.length;
+        chunks.push(chunk);
+    }
+    return Buffer.concat(chunks, length);
+}
+exports.toBuffer = toBuffer;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function json(stream) {
+    const buf = await toBuffer(stream);
+    const str = buf.toString('utf8');
+    try {
+        return JSON.parse(str);
+    }
+    catch (_err) {
+        const err = _err;
+        err.message += ` (input: ${str})`;
+        throw err;
+    }
+}
+exports.json = json;
+function req(url, opts = {}) {
+    const href = typeof url === 'string' ? url : url.href;
+    const req = (href.startsWith('https:') ? https : http).request(url, opts);
+    const promise = new Promise((resolve, reject) => {
+        req
+            .once('response', resolve)
+            .once('error', reject)
+            .end();
+    });
+    req.then = promise.then.bind(promise);
+    return req;
+}
+exports.req = req;
+//# sourceMappingURL=helpers.js.map
+
+/***/ }),
+
+/***/ 8894:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+var __exportStar = (this && this.__exportStar) || function(m, exports) {
+    for (var p in m) if (p !== "default" && !Object.prototype.hasOwnProperty.call(exports, p)) __createBinding(exports, m, p);
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.Agent = void 0;
+const net = __importStar(__nccwpck_require__(9278));
+const http = __importStar(__nccwpck_require__(8611));
+const https_1 = __nccwpck_require__(5692);
+__exportStar(__nccwpck_require__(5183), exports);
+const INTERNAL = Symbol('AgentBaseInternalState');
+class Agent extends http.Agent {
+    constructor(opts) {
+        super(opts);
+        this[INTERNAL] = {};
+    }
+    /**
+     * Determine whether this is an `http` or `https` request.
+     */
+    isSecureEndpoint(options) {
+        if (options) {
+            // First check the `secureEndpoint` property explicitly, since this
+            // means that a parent `Agent` is "passing through" to this instance.
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            if (typeof options.secureEndpoint === 'boolean') {
+                return options.secureEndpoint;
+            }
+            // If no explicit `secure` endpoint, check if `protocol` property is
+            // set. This will usually be the case since using a full string URL
+            // or `URL` instance should be the most common usage.
+            if (typeof options.protocol === 'string') {
+                return options.protocol === 'https:';
+            }
+        }
+        // Finally, if no `protocol` property was set, then fall back to
+        // checking the stack trace of the current call stack, and try to
+        // detect the "https" module.
+        const { stack } = new Error();
+        if (typeof stack !== 'string')
+            return false;
+        return stack
+            .split('\n')
+            .some((l) => l.indexOf('(https.js:') !== -1 ||
+            l.indexOf('node:https:') !== -1);
+    }
+    // In order to support async signatures in `connect()` and Node's native
+    // connection pooling in `http.Agent`, the array of sockets for each origin
+    // has to be updated synchronously. This is so the length of the array is
+    // accurate when `addRequest()` is next called. We achieve this by creating a
+    // fake socket and adding it to `sockets[origin]` and incrementing
+    // `totalSocketCount`.
+    incrementSockets(name) {
+        // If `maxSockets` and `maxTotalSockets` are both Infinity then there is no
+        // need to create a fake socket because Node.js native connection pooling
+        // will never be invoked.
+        if (this.maxSockets === Infinity && this.maxTotalSockets === Infinity) {
+            return null;
+        }
+        // All instances of `sockets` are expected TypeScript errors. The
+        // alternative is to add it as a private property of this class but that
+        // will break TypeScript subclassing.
+        if (!this.sockets[name]) {
+            // @ts-expect-error `sockets` is readonly in `@types/node`
+            this.sockets[name] = [];
+        }
+        const fakeSocket = new net.Socket({ writable: false });
+        this.sockets[name].push(fakeSocket);
+        // @ts-expect-error `totalSocketCount` isn't defined in `@types/node`
+        this.totalSocketCount++;
+        return fakeSocket;
+    }
+    decrementSockets(name, socket) {
+        if (!this.sockets[name] || socket === null) {
+            return;
+        }
+        const sockets = this.sockets[name];
+        const index = sockets.indexOf(socket);
+        if (index !== -1) {
+            sockets.splice(index, 1);
+            // @ts-expect-error  `totalSocketCount` isn't defined in `@types/node`
+            this.totalSocketCount--;
+            if (sockets.length === 0) {
+                // @ts-expect-error `sockets` is readonly in `@types/node`
+                delete this.sockets[name];
+            }
+        }
+    }
+    // In order to properly update the socket pool, we need to call `getName()` on
+    // the core `https.Agent` if it is a secureEndpoint.
+    getName(options) {
+        const secureEndpoint = this.isSecureEndpoint(options);
+        if (secureEndpoint) {
+            // @ts-expect-error `getName()` isn't defined in `@types/node`
+            return https_1.Agent.prototype.getName.call(this, options);
+        }
+        // @ts-expect-error `getName()` isn't defined in `@types/node`
+        return super.getName(options);
+    }
+    createSocket(req, options, cb) {
+        const connectOpts = {
+            ...options,
+            secureEndpoint: this.isSecureEndpoint(options),
+        };
+        const name = this.getName(connectOpts);
+        const fakeSocket = this.incrementSockets(name);
+        Promise.resolve()
+            .then(() => this.connect(req, connectOpts))
+            .then((socket) => {
+            this.decrementSockets(name, fakeSocket);
+            if (socket instanceof http.Agent) {
+                try {
+                    // @ts-expect-error `addRequest()` isn't defined in `@types/node`
+                    return socket.addRequest(req, connectOpts);
+                }
+                catch (err) {
+                    return cb(err);
+                }
+            }
+            this[INTERNAL].currentSocket = socket;
+            // @ts-expect-error `createSocket()` isn't defined in `@types/node`
+            super.createSocket(req, options, cb);
+        }, (err) => {
+            this.decrementSockets(name, fakeSocket);
+            cb(err);
+        });
+    }
+    createConnection() {
+        const socket = this[INTERNAL].currentSocket;
+        this[INTERNAL].currentSocket = undefined;
+        if (!socket) {
+            throw new Error('No socket was returned in the `connect()` function');
+        }
+        return socket;
+    }
+    get defaultPort() {
+        return (this[INTERNAL].defaultPort ??
+            (this.protocol === 'https:' ? 443 : 80));
+    }
+    set defaultPort(v) {
+        if (this[INTERNAL]) {
+            this[INTERNAL].defaultPort = v;
+        }
+    }
+    get protocol() {
+        return (this[INTERNAL].protocol ??
+            (this.isSecureEndpoint() ? 'https:' : 'http:'));
+    }
+    set protocol(v) {
+        if (this[INTERNAL]) {
+            this[INTERNAL].protocol = v;
+        }
+    }
+}
+exports.Agent = Agent;
+//# sourceMappingURL=index.js.map
+
+/***/ }),
+
 /***/ 6110:
 /***/ ((module, exports, __nccwpck_require__) => {
 
@@ -6621,6 +6877,453 @@ module.exports = (flag, argv = process.argv) => {
 
 /***/ }),
 
+/***/ 1970:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.HttpProxyAgent = void 0;
+const net = __importStar(__nccwpck_require__(9278));
+const tls = __importStar(__nccwpck_require__(4756));
+const debug_1 = __importDefault(__nccwpck_require__(2830));
+const events_1 = __nccwpck_require__(4434);
+const agent_base_1 = __nccwpck_require__(8894);
+const url_1 = __nccwpck_require__(7016);
+const debug = (0, debug_1.default)('http-proxy-agent');
+/**
+ * The `HttpProxyAgent` implements an HTTP Agent subclass that connects
+ * to the specified "HTTP proxy server" in order to proxy HTTP requests.
+ */
+class HttpProxyAgent extends agent_base_1.Agent {
+    constructor(proxy, opts) {
+        super(opts);
+        this.proxy = typeof proxy === 'string' ? new url_1.URL(proxy) : proxy;
+        this.proxyHeaders = opts?.headers ?? {};
+        debug('Creating new HttpProxyAgent instance: %o', this.proxy.href);
+        // Trim off the brackets from IPv6 addresses
+        const host = (this.proxy.hostname || this.proxy.host).replace(/^\[|\]$/g, '');
+        const port = this.proxy.port
+            ? parseInt(this.proxy.port, 10)
+            : this.proxy.protocol === 'https:'
+                ? 443
+                : 80;
+        this.connectOpts = {
+            ...(opts ? omit(opts, 'headers') : null),
+            host,
+            port,
+        };
+    }
+    addRequest(req, opts) {
+        req._header = null;
+        this.setRequestProps(req, opts);
+        // @ts-expect-error `addRequest()` isn't defined in `@types/node`
+        super.addRequest(req, opts);
+    }
+    setRequestProps(req, opts) {
+        const { proxy } = this;
+        const protocol = opts.secureEndpoint ? 'https:' : 'http:';
+        const hostname = req.getHeader('host') || 'localhost';
+        const base = `${protocol}//${hostname}`;
+        const url = new url_1.URL(req.path, base);
+        if (opts.port !== 80) {
+            url.port = String(opts.port);
+        }
+        // Change the `http.ClientRequest` instance's "path" field
+        // to the absolute path of the URL that will be requested.
+        req.path = String(url);
+        // Inject the `Proxy-Authorization` header if necessary.
+        const headers = typeof this.proxyHeaders === 'function'
+            ? this.proxyHeaders()
+            : { ...this.proxyHeaders };
+        if (proxy.username || proxy.password) {
+            const auth = `${decodeURIComponent(proxy.username)}:${decodeURIComponent(proxy.password)}`;
+            headers['Proxy-Authorization'] = `Basic ${Buffer.from(auth).toString('base64')}`;
+        }
+        if (!headers['Proxy-Connection']) {
+            headers['Proxy-Connection'] = this.keepAlive
+                ? 'Keep-Alive'
+                : 'close';
+        }
+        for (const name of Object.keys(headers)) {
+            const value = headers[name];
+            if (value) {
+                req.setHeader(name, value);
+            }
+        }
+    }
+    async connect(req, opts) {
+        req._header = null;
+        if (!req.path.includes('://')) {
+            this.setRequestProps(req, opts);
+        }
+        // At this point, the http ClientRequest's internal `_header` field
+        // might have already been set. If this is the case then we'll need
+        // to re-generate the string since we just changed the `req.path`.
+        let first;
+        let endOfHeaders;
+        debug('Regenerating stored HTTP header string for request');
+        req._implicitHeader();
+        if (req.outputData && req.outputData.length > 0) {
+            debug('Patching connection write() output buffer with updated header');
+            first = req.outputData[0].data;
+            endOfHeaders = first.indexOf('\r\n\r\n') + 4;
+            req.outputData[0].data =
+                req._header + first.substring(endOfHeaders);
+            debug('Output buffer: %o', req.outputData[0].data);
+        }
+        // Create a socket connection to the proxy server.
+        let socket;
+        if (this.proxy.protocol === 'https:') {
+            debug('Creating `tls.Socket`: %o', this.connectOpts);
+            socket = tls.connect(this.connectOpts);
+        }
+        else {
+            debug('Creating `net.Socket`: %o', this.connectOpts);
+            socket = net.connect(this.connectOpts);
+        }
+        // Wait for the socket's `connect` event, so that this `callback()`
+        // function throws instead of the `http` request machinery. This is
+        // important for i.e. `PacProxyAgent` which determines a failed proxy
+        // connection via the `callback()` function throwing.
+        await (0, events_1.once)(socket, 'connect');
+        return socket;
+    }
+}
+HttpProxyAgent.protocols = ['http', 'https'];
+exports.HttpProxyAgent = HttpProxyAgent;
+function omit(obj, ...keys) {
+    const ret = {};
+    let key;
+    for (key in obj) {
+        if (!keys.includes(key)) {
+            ret[key] = obj[key];
+        }
+    }
+    return ret;
+}
+//# sourceMappingURL=index.js.map
+
+/***/ }),
+
+/***/ 3669:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.HttpsProxyAgent = void 0;
+const net = __importStar(__nccwpck_require__(9278));
+const tls = __importStar(__nccwpck_require__(4756));
+const assert_1 = __importDefault(__nccwpck_require__(2613));
+const debug_1 = __importDefault(__nccwpck_require__(2830));
+const agent_base_1 = __nccwpck_require__(8894);
+const url_1 = __nccwpck_require__(7016);
+const parse_proxy_response_1 = __nccwpck_require__(7943);
+const debug = (0, debug_1.default)('https-proxy-agent');
+const setServernameFromNonIpHost = (options) => {
+    if (options.servername === undefined &&
+        options.host &&
+        !net.isIP(options.host)) {
+        return {
+            ...options,
+            servername: options.host,
+        };
+    }
+    return options;
+};
+/**
+ * The `HttpsProxyAgent` implements an HTTP Agent subclass that connects to
+ * the specified "HTTP(s) proxy server" in order to proxy HTTPS requests.
+ *
+ * Outgoing HTTP requests are first tunneled through the proxy server using the
+ * `CONNECT` HTTP request method to establish a connection to the proxy server,
+ * and then the proxy server connects to the destination target and issues the
+ * HTTP request from the proxy server.
+ *
+ * `https:` requests have their socket connection upgraded to TLS once
+ * the connection to the proxy server has been established.
+ */
+class HttpsProxyAgent extends agent_base_1.Agent {
+    constructor(proxy, opts) {
+        super(opts);
+        this.options = { path: undefined };
+        this.proxy = typeof proxy === 'string' ? new url_1.URL(proxy) : proxy;
+        this.proxyHeaders = opts?.headers ?? {};
+        debug('Creating new HttpsProxyAgent instance: %o', this.proxy.href);
+        // Trim off the brackets from IPv6 addresses
+        const host = (this.proxy.hostname || this.proxy.host).replace(/^\[|\]$/g, '');
+        const port = this.proxy.port
+            ? parseInt(this.proxy.port, 10)
+            : this.proxy.protocol === 'https:'
+                ? 443
+                : 80;
+        this.connectOpts = {
+            // Attempt to negotiate http/1.1 for proxy servers that support http/2
+            ALPNProtocols: ['http/1.1'],
+            ...(opts ? omit(opts, 'headers') : null),
+            host,
+            port,
+        };
+    }
+    /**
+     * Called when the node-core HTTP client library is creating a
+     * new HTTP request.
+     */
+    async connect(req, opts) {
+        const { proxy } = this;
+        if (!opts.host) {
+            throw new TypeError('No "host" provided');
+        }
+        // Create a socket connection to the proxy server.
+        let socket;
+        if (proxy.protocol === 'https:') {
+            debug('Creating `tls.Socket`: %o', this.connectOpts);
+            socket = tls.connect(setServernameFromNonIpHost(this.connectOpts));
+        }
+        else {
+            debug('Creating `net.Socket`: %o', this.connectOpts);
+            socket = net.connect(this.connectOpts);
+        }
+        const headers = typeof this.proxyHeaders === 'function'
+            ? this.proxyHeaders()
+            : { ...this.proxyHeaders };
+        const host = net.isIPv6(opts.host) ? `[${opts.host}]` : opts.host;
+        let payload = `CONNECT ${host}:${opts.port} HTTP/1.1\r\n`;
+        // Inject the `Proxy-Authorization` header if necessary.
+        if (proxy.username || proxy.password) {
+            const auth = `${decodeURIComponent(proxy.username)}:${decodeURIComponent(proxy.password)}`;
+            headers['Proxy-Authorization'] = `Basic ${Buffer.from(auth).toString('base64')}`;
+        }
+        headers.Host = `${host}:${opts.port}`;
+        if (!headers['Proxy-Connection']) {
+            headers['Proxy-Connection'] = this.keepAlive
+                ? 'Keep-Alive'
+                : 'close';
+        }
+        for (const name of Object.keys(headers)) {
+            payload += `${name}: ${headers[name]}\r\n`;
+        }
+        const proxyResponsePromise = (0, parse_proxy_response_1.parseProxyResponse)(socket);
+        socket.write(`${payload}\r\n`);
+        const { connect, buffered } = await proxyResponsePromise;
+        req.emit('proxyConnect', connect);
+        this.emit('proxyConnect', connect, req);
+        if (connect.statusCode === 200) {
+            req.once('socket', resume);
+            if (opts.secureEndpoint) {
+                // The proxy is connecting to a TLS server, so upgrade
+                // this socket connection to a TLS connection.
+                debug('Upgrading socket connection to TLS');
+                return tls.connect({
+                    ...omit(setServernameFromNonIpHost(opts), 'host', 'path', 'port'),
+                    socket,
+                });
+            }
+            return socket;
+        }
+        // Some other status code that's not 200... need to re-play the HTTP
+        // header "data" events onto the socket once the HTTP machinery is
+        // attached so that the node core `http` can parse and handle the
+        // error status code.
+        // Close the original socket, and a new "fake" socket is returned
+        // instead, so that the proxy doesn't get the HTTP request
+        // written to it (which may contain `Authorization` headers or other
+        // sensitive data).
+        //
+        // See: https://hackerone.com/reports/541502
+        socket.destroy();
+        const fakeSocket = new net.Socket({ writable: false });
+        fakeSocket.readable = true;
+        // Need to wait for the "socket" event to re-play the "data" events.
+        req.once('socket', (s) => {
+            debug('Replaying proxy buffer for failed request');
+            (0, assert_1.default)(s.listenerCount('data') > 0);
+            // Replay the "buffered" Buffer onto the fake `socket`, since at
+            // this point the HTTP module machinery has been hooked up for
+            // the user.
+            s.push(buffered);
+            s.push(null);
+        });
+        return fakeSocket;
+    }
+}
+HttpsProxyAgent.protocols = ['http', 'https'];
+exports.HttpsProxyAgent = HttpsProxyAgent;
+function resume(socket) {
+    socket.resume();
+}
+function omit(obj, ...keys) {
+    const ret = {};
+    let key;
+    for (key in obj) {
+        if (!keys.includes(key)) {
+            ret[key] = obj[key];
+        }
+    }
+    return ret;
+}
+//# sourceMappingURL=index.js.map
+
+/***/ }),
+
+/***/ 7943:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.parseProxyResponse = void 0;
+const debug_1 = __importDefault(__nccwpck_require__(2830));
+const debug = (0, debug_1.default)('https-proxy-agent:parse-proxy-response');
+function parseProxyResponse(socket) {
+    return new Promise((resolve, reject) => {
+        // we need to buffer any HTTP traffic that happens with the proxy before we get
+        // the CONNECT response, so that if the response is anything other than an "200"
+        // response code, then we can re-play the "data" events on the socket once the
+        // HTTP parser is hooked up...
+        let buffersLength = 0;
+        const buffers = [];
+        function read() {
+            const b = socket.read();
+            if (b)
+                ondata(b);
+            else
+                socket.once('readable', read);
+        }
+        function cleanup() {
+            socket.removeListener('end', onend);
+            socket.removeListener('error', onerror);
+            socket.removeListener('readable', read);
+        }
+        function onend() {
+            cleanup();
+            debug('onend');
+            reject(new Error('Proxy connection ended before receiving CONNECT response'));
+        }
+        function onerror(err) {
+            cleanup();
+            debug('onerror %o', err);
+            reject(err);
+        }
+        function ondata(b) {
+            buffers.push(b);
+            buffersLength += b.length;
+            const buffered = Buffer.concat(buffers, buffersLength);
+            const endOfHeaders = buffered.indexOf('\r\n\r\n');
+            if (endOfHeaders === -1) {
+                // keep buffering
+                debug('have not received end of HTTP headers yet...');
+                read();
+                return;
+            }
+            const headerParts = buffered
+                .slice(0, endOfHeaders)
+                .toString('ascii')
+                .split('\r\n');
+            const firstLine = headerParts.shift();
+            if (!firstLine) {
+                socket.destroy();
+                return reject(new Error('No header received from proxy CONNECT response'));
+            }
+            const firstLineParts = firstLine.split(' ');
+            const statusCode = +firstLineParts[1];
+            const statusText = firstLineParts.slice(2).join(' ');
+            const headers = {};
+            for (const header of headerParts) {
+                if (!header)
+                    continue;
+                const firstColon = header.indexOf(':');
+                if (firstColon === -1) {
+                    socket.destroy();
+                    return reject(new Error(`Invalid header from proxy CONNECT response: "${header}"`));
+                }
+                const key = header.slice(0, firstColon).toLowerCase();
+                const value = header.slice(firstColon + 1).trimStart();
+                const current = headers[key];
+                if (typeof current === 'string') {
+                    headers[key] = [current, value];
+                }
+                else if (Array.isArray(current)) {
+                    current.push(value);
+                }
+                else {
+                    headers[key] = value;
+                }
+            }
+            debug('got proxy server response: %o %o', firstLine, headers);
+            cleanup();
+            resolve({
+                connect: {
+                    statusCode,
+                    statusText,
+                    headers,
+                },
+                buffered,
+            });
+        }
+        socket.on('error', onerror);
+        socket.on('end', onend);
+        read();
+    });
+}
+exports.parseProxyResponse = parseProxyResponse;
+//# sourceMappingURL=parse-proxy-response.js.map
+
+/***/ }),
+
 /***/ 744:
 /***/ ((module) => {
 
@@ -7064,7 +7767,7 @@ class Range {
     debug('hyphen replace', range)
 
     // `> 1.2.3 < 1.2.5` => `>1.2.3 <1.2.5`
-    range = trimComparatorWhitespace(range)
+    range = range.replace(re[t.COMPARATORTRIM], comparatorTrimReplace)
     debug('comparator trim', range)
 
     // `~ 1.2.3` => `~1.2.3`
@@ -7169,11 +7872,11 @@ const parseOptions = __nccwpck_require__(356)
 const Comparator = __nccwpck_require__(9379)
 const debug = __nccwpck_require__(1159)
 const SemVer = __nccwpck_require__(7163)
-const trimComparatorWhitespace = __nccwpck_require__(9737)
 const {
   safeRe: re,
   src,
   t,
+  comparatorTrimReplace,
   tildeTrimReplace,
   caretTrimReplace,
 } = __nccwpck_require__(5471)
@@ -8556,35 +9259,6 @@ const MAX_SAFE_COMPONENT_LENGTH = 16
 // the shortest version with a build 0.0.0+BUILD.
 const MAX_SAFE_BUILD_LENGTH = MAX_LENGTH - 6
 
-// ECMAScript whitespace and line terminators matched by \s.
-const WHITESPACE_CHARACTERS = [
-  '\t',
-  '\n',
-  '\v',
-  '\f',
-  '\r',
-  ' ',
-  '\u00a0',
-  '\u1680',
-  '\u2000',
-  '\u2001',
-  '\u2002',
-  '\u2003',
-  '\u2004',
-  '\u2005',
-  '\u2006',
-  '\u2007',
-  '\u2008',
-  '\u2009',
-  '\u200a',
-  '\u2028',
-  '\u2029',
-  '\u202f',
-  '\u205f',
-  '\u3000',
-  '\ufeff',
-]
-
 const RELEASE_TYPES = [
   'major',
   'premajor',
@@ -8600,7 +9274,6 @@ module.exports = {
   MAX_SAFE_COMPONENT_LENGTH,
   MAX_SAFE_BUILD_LENGTH,
   MAX_SAFE_INTEGER,
-  WHITESPACE_CHARACTERS,
   RELEASE_TYPES,
   SEMVER_SPEC_VERSION,
   FLAG_INCLUDE_PRERELEASE: 0b001,
@@ -8963,451 +9636,6 @@ createToken('STAR', '(<|>)?=?\\s*\\*')
 // >=0.0.0 is like a star
 createToken('GTE0', '^\\s*>=\\s*0\\.0\\.0\\s*$')
 createToken('GTE0PRE', '^\\s*>=\\s*0\\.0\\.0-0\\s*$')
-
-
-/***/ }),
-
-/***/ 9737:
-/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
-
-// @ts-check
-
-
-// Reproduce safeRe[COMPARATORTRIM] replacement boundaries, not version
-// validation. Each end-index finder returns an exclusive end, or its start
-// on no match.
-// Positions count from zero. An end of 3 means characters 0, 1, and 2 were read;
-// range.slice(start, end) gives the matched text, not a converted number.
-const {
-  MAX_LENGTH,
-  MAX_SAFE_BUILD_LENGTH,
-  WHITESPACE_CHARACTERS,
-} = __nccwpck_require__(5101)
-
-/**
- * Remembers the last two rows of digits so their characters need not be reread.
- * Positions start at -1 until a row has been found.
- *
- * @typedef {object} DigitRunCache
- * @property {number} start The first character of the most recently found row.
- * @property {number} end The position after that row's last character.
- * @property {number} previousStart The first character of the previous row.
- * @property {number} previousEnd The position after the previous row.
- */
-
-// One entry per UTF-16 code unit keeps membership checks constant-time.
-const whitespace = new Uint8Array(0x10000)
-for (const char of WHITESPACE_CHARACTERS) {
-  whitespace[char.charCodeAt(0)] = 1
-}
-
-/**
- * Checks whether a character is whitespace, like a space, tab, or newline.
- * Looking past the end of the string returns false.
- *
- * @param {string|undefined} char One character, or undefined past the string's end.
- * @returns {boolean} Whether the character is whitespace.
- * @example isWhitespace(' ') // true
- * @example isWhitespace('1') // false
- */
-const isWhitespace = char =>
-  char !== undefined && whitespace[char.charCodeAt(0)] === 1
-
-/**
- * Checks for v, =, or whitespace before the version number.
- * These are historical version prefixes, not range operators:
- * < and > are handled separately, as are tilde and caret ranges.
- *
- * @param {string|undefined} char One character to check.
- * @returns {boolean} Whether the character can belong to a version prefix.
- * @example isVersionPrefix('=') // true
- * @example isVersionPrefix('>') // false
- */
-const isVersionPrefix = char =>
-  char === 'v' ||
-  char === '=' ||
-  isWhitespace(char)
-
-/**
- * Checks whether a character is one of the digits 0 through 9.
- *
- * @param {string|undefined} char One character to check.
- * @returns {boolean} Whether the character is an ASCII digit.
- * @example isDigit('7') // true
- * @example isDigit('.') // false
- */
-const isDigit = char => char !== undefined && char >= '0' && char <= '9'
-
-/**
- * Checks whether a character is an English letter, uppercase or lowercase.
- *
- * @param {string|undefined} char One character to check.
- * @returns {boolean} Whether the character is an ASCII letter.
- * @example isLetter('b') // true
- * @example isLetter('7') // false
- */
-const isLetter = char =>
-  char !== undefined && (
-    (char >= 'a' && char <= 'z') ||
-    (char >= 'A' && char <= 'Z')
-  )
-
-/**
- * Checks for a letter, digit, or hyphen: the characters allowed inside
- * prerelease and build names such as beta-1.
- *
- * @param {string|undefined} char One character to check.
- * @returns {boolean} Whether the character can be part of an identifier.
- * @example isIdentifierCharacter('-') // true
- * @example isIdentifierCharacter('.') // false; dots separate identifiers
- */
-const isIdentifierCharacter = char => isDigit(char) || isLetter(char) || char === '-'
-
-/**
- * Checks whether a version component can begin here: with a digit or
- * a wildcard such as x, X, or *.
- *
- * @param {string|undefined} char One character to check.
- * @returns {boolean} Whether a number or wildcard can start with this character.
- * @example isVersionStart('x') // true
- * @example isVersionStart('v') // false; v belongs to the prefix
- */
-const isVersionStart = char =>
-  isDigit(char) ||
-  char === 'x' ||
-  char === 'X' ||
-  char === '*'
-
-/**
- * Finds the end of a row of digits, but returns no more than limit digits.
- * Remembers the last two rows so looking at them again does not reread them.
- *
- * @param {string} range The text to read; it is not changed.
- * @param {number} start The position of the first character to check.
- * @param {number} limit The most digit characters the returned match can include.
- * @param {DigitRunCache} digitRuns Shared cache of digit-run positions, updated in place.
- * @returns {number} The position after the matched digits, or start if none match.
- * @example findDigitsEndIndex('123abc', 0, 10, digitRuns) // 3, pointing at a
- * @example findDigitsEndIndex('123abc', 0, 2, digitRuns) // 2, pointing at the unread 3
- */
-const findDigitsEndIndex = (range, start, limit, digitRuns) => {
-  if (!isDigit(range[start])) {
-    return start
-  }
-  if (start >= digitRuns.start && start < digitRuns.end) {
-    return Math.min(start + limit, digitRuns.end)
-  }
-  if (start >= digitRuns.previousStart && start < digitRuns.previousEnd) {
-    return Math.min(start + limit, digitRuns.previousEnd)
-  }
-  let end = start + 1
-  while (isDigit(range[end])) {
-    end++
-  }
-  // A failed full version can rewind from its second run to its first.
-  digitRuns.previousStart = digitRuns.start
-  digitRuns.previousEnd = digitRuns.end
-  digitRuns.start = start
-  digitRuns.end = end
-  return Math.min(start + limit, end)
-}
-
-/**
- * Reads a number using the old regex's length and leading-zero rules.
- * Strict mode reads just the first zero in 012; loose mode can read all three.
- *
- * @param {string} range The text to read; it is not changed.
- * @param {number} start The position where the number should begin.
- * @param {boolean} loose Whether to allow leading zeros.
- * @param {DigitRunCache} digitRuns Shared digit-run cache, updated as needed.
- * @returns {number} The position after the matched digits, not their numeric value.
- * @example findVersionNumberEndIndex('012', 0, false, digitRuns) // 1
- * @example findVersionNumberEndIndex('012', 0, true, digitRuns) // 3
- */
-const findVersionNumberEndIndex = (range, start, loose, digitRuns) => {
-  if (!loose && range[start] === '0') {
-    return start + 1
-  }
-  // Strict syntax allows an initial nonzero digit plus MAX_LENGTH digits.
-  return findDigitsEndIndex(range, start, loose ? MAX_LENGTH : MAX_LENGTH + 1, digitRuns)
-}
-
-/**
- * Reads one piece of a prerelease name, such as beta or 1 in beta.1.
- * Tries the letter-or-hyphen form first, then the number-only form.
- *
- * @param {string} range The text to read; it is not changed.
- * @param {number} start The position where the identifier should begin.
- * @param {boolean} loose Whether numeric identifiers may have leading zeros.
- * @param {DigitRunCache} digitRuns Shared digit-run cache, updated as needed.
- * @returns {number} The position after the identifier, or start if none matches.
- * @example findPrereleaseIdentifierEndIndex('beta.1', 0, false, digitRuns) // 4, at the dot
- * @example findPrereleaseIdentifierEndIndex('001beta', 0, false, digitRuns) // 7
- */
-const findPrereleaseIdentifierEndIndex = (range, start, loose, digitRuns) => {
-  const digitsEnd = findDigitsEndIndex(range, start, MAX_LENGTH, digitRuns)
-  // The legacy regex tries a nonnumeric identifier before a numeric one.
-  if (isLetter(range[digitsEnd]) || range[digitsEnd] === '-') {
-    let end = digitsEnd + 1
-    const limit = end + MAX_SAFE_BUILD_LENGTH
-    while (end < limit && isIdentifierCharacter(range[end])) {
-      end++
-    }
-    return end
-  }
-  return findVersionNumberEndIndex(range, start, loose, digitRuns)
-}
-
-/**
- * Reads a prerelease suffix such as -beta.1, one dot-separated piece at a time.
- * Loose mode also allows the name without its opening hyphen.
- *
- * @param {string} range The text to read; it is not changed.
- * @param {number} start The position where the suffix should begin, including -.
- * @param {boolean} loose Whether the opening hyphen is optional and zeros allowed.
- * @param {DigitRunCache} digitRuns Shared digit-run cache, updated as needed.
- * @returns {number} The position after the matched suffix, or start if absent.
- * @example findPrereleaseEndIndex('-beta.1+sha', 0, false, digitRuns) // 7, at the plus
- * @example findPrereleaseEndIndex('beta', 0, false, digitRuns) // 0; no opening hyphen
- */
-const findPrereleaseEndIndex = (range, start, loose, digitRuns) => {
-  const hyphen = range[start] === '-'
-  if (!loose && !hyphen) {
-    return start
-  }
-  const identifierStart = start + (hyphen ? 1 : 0)
-  let end = findPrereleaseIdentifierEndIndex(range, identifierStart, loose, digitRuns)
-  if (end === identifierStart) {
-    if (!loose || !hyphen) {
-      return start
-    }
-    // In loose syntax, a lone hyphen can itself be the identifier.
-    end = findPrereleaseIdentifierEndIndex(range, start, loose, digitRuns)
-  }
-  while (range[end] === '.') {
-    const next = findPrereleaseIdentifierEndIndex(range, end + 1, loose, digitRuns)
-    if (next === end + 1) {
-      break
-    }
-    end = next
-  }
-  return end
-}
-
-/**
- * Reads one build-name piece, such as sha or 123 in +sha.123.
- * Stops at a disallowed character or the old regex's length limit.
- *
- * @param {string} range The text to read; it is not changed.
- * @param {number} start The position where the identifier should begin.
- * @returns {number} The position after the identifier, or start if none matches.
- * @example findBuildIdentifierEndIndex('sha.123', 0) // 3, at the dot
- * @example findBuildIdentifierEndIndex('001', 0) // 3; leading zeros are allowed
- */
-const findBuildIdentifierEndIndex = (range, start) => {
-  let end = start
-  while (end - start < MAX_SAFE_BUILD_LENGTH && isIdentifierCharacter(range[end])) {
-    end++
-  }
-  return end
-}
-
-/**
- * Reads optional build metadata such as +sha.123.
- * Leaves the position unchanged if there is no plus sign followed by a name.
- *
- * @param {string} range The text to read; it is not changed.
- * @param {number} start The position where the opening + should be.
- * @returns {number} The position after the matched metadata, or start if absent.
- * @example findBuildEndIndex('+sha.123 <2', 0) // 8, at the space
- * @example findBuildEndIndex('+', 0) // 0; a plus sign alone is not a match
- */
-const findBuildEndIndex = (range, start) => {
-  if (range[start] !== '+') {
-    return start
-  }
-  let end = findBuildIdentifierEndIndex(range, start + 1)
-  if (end === start + 1) {
-    return start
-  }
-  while (range[end] === '.') {
-    const next = findBuildIdentifierEndIndex(range, end + 1)
-    if (next === end + 1) {
-      break
-    }
-    end = next
-  }
-  return end
-}
-
-/**
- * Reads three numbers separated by dots, then any prerelease and build suffixes.
- * Uses loose rules, so forms such as 01.02.03beta can match here.
- *
- * @param {string} range The text to read; it is not changed.
- * @param {number} start The position of the first number, after any prefix.
- * @param {DigitRunCache} digitRuns Shared digit-run cache, updated as needed.
- * @returns {number} The position after the version match, or start if none matches.
- * @example findLooseFullVersionEndIndex('1.2.3-beta+sha <2', 0, digitRuns) // 14
- * @example findLooseFullVersionEndIndex('1.2', 0, digitRuns) // 0; needs three numbers
- */
-const findLooseFullVersionEndIndex = (range, start, digitRuns) => {
-  let end = start
-  for (let component = 0; component < 3; component++) {
-    const next = findVersionNumberEndIndex(range, end, true, digitRuns)
-    if (next === end) {
-      return start
-    }
-    end = next
-    if (component < 2) {
-      if (range[end] !== '.') {
-        return start
-      }
-      end++
-    }
-  }
-  const prereleaseEnd = findPrereleaseEndIndex(range, end, true, digitRuns)
-  return findBuildEndIndex(range, prereleaseEnd)
-}
-
-/**
- * Reads one component of a partial or wildcard version, such as 2 or x in 2.x.
- * Numbers use strict leading-zero rules; wildcards take up one character.
- *
- * @param {string} range The text to read; it is not changed.
- * @param {number} start The position where the component should begin.
- * @param {DigitRunCache} digitRuns Shared digit-run cache, updated as needed.
- * @returns {number} The position after the component, or start if none matches.
- * @example findPartialVersionComponentEndIndex('2.x', 0, digitRuns) // 1, at the dot
- * @example findPartialVersionComponentEndIndex('2.x', 2, digitRuns) // 3, after x
- */
-const findPartialVersionComponentEndIndex = (range, start, digitRuns) => {
-  if (isDigit(range[start])) {
-    return findVersionNumberEndIndex(range, start, false, digitRuns)
-  }
-  return isVersionStart(range[start]) ? start + 1 : start
-}
-
-/**
- * Reads up to three components, allowing forms such as 1, 1.2, or 1.x.
- * After the third component, also reads any strict prerelease and build suffixes.
- *
- * @param {string} range The text to read; it is not changed.
- * @param {number} start The position of a number or wildcard, after any prefix.
- * @param {DigitRunCache} digitRuns Shared digit-run cache, updated as needed.
- * @returns {number} The position after the matched version text.
- * @example findPartialVersionEndIndex('1.x <2', 0, digitRuns) // 3, at the space
- * @example findPartialVersionEndIndex('1.', 0, digitRuns) // 1; the trailing dot is unread
- */
-const findPartialVersionEndIndex = (range, start, digitRuns) => {
-  let end = findPartialVersionComponentEndIndex(range, start, digitRuns)
-  for (let component = 0; component < 2; component++) {
-    if (range[end] !== '.') {
-      return end
-    }
-    const next = findPartialVersionComponentEndIndex(range, end + 1, digitRuns)
-    if (next === end + 1) {
-      return end
-    }
-    end = next
-  }
-  const prereleaseEnd = findPrereleaseEndIndex(range, end, false, digitRuns)
-  return findBuildEndIndex(range, prereleaseEnd)
-}
-
-/**
- * Finds where a version match ends, without deciding whether the range is valid.
- * Tries a loose full version first, then a partial or wildcard version, just
- * like the old regex's LOOSEPLAIN and XRANGEPLAIN alternatives.
- *
- * @param {string} range The text to read; it is not changed.
- * @param {number} start The position of a number or wildcard, after any prefix.
- * @param {DigitRunCache} digitRuns Shared digit-run cache, updated as needed.
- * @returns {number} The position where scanning the next candidate can resume.
- * @example findVersionEndIndex('1.2.3 <2', 0, digitRuns) // 5, at the space
- * @example findVersionEndIndex('1.x <2', 0, digitRuns) // 3, at the space
- */
-const findVersionEndIndex = (range, start, digitRuns) => {
-  const fullVersionEnd = findLooseFullVersionEndIndex(range, start, digitRuns)
-  return fullVersionEnd !== start
-    ? fullVersionEnd
-    : findPartialVersionEndIndex(range, start, digitRuns)
-}
-
-/**
- * Finds the one whitespace character the old replacement would remove.
- * Keeps leading whitespace, skips an optional operator, and checks immediately
- * after it. Returns -1 if there is nothing to remove.
- *
- * @param {string} range The text containing a candidate already found by the caller.
- * @param {number} matchStart The candidate's position, including leading whitespace.
- * @returns {number} The position of the removable whitespace, or -1 if absent.
- * @example findRemovableWhitespaceIndex(' > 1', 0) // 2; keep the space at position 0
- * @example findRemovableWhitespaceIndex('>1', 0) // -1
- */
-const findRemovableWhitespaceIndex = (range, matchStart) => {
-  let position = matchStart
-  if (isWhitespace(range[position])) {
-    position++
-  }
-  if (range[position] === '<' || range[position] === '>') {
-    position++
-  }
-  if (range[position] === '=') {
-    position++
-  }
-  return isWhitespace(range[position]) ? position : -1
-}
-
-/**
- * Joins an operator to its version, turning > 1.2.3 into >1.2.3.
- * Copies everything else according to the old regex's matching rules.
- * Moves forward through prefixes and whole versions to avoid repeatedly
- * searching the same characters on long inputs.
- *
- * @param {string} range The range text to process; the original string is unchanged.
- * @returns {string} The range with matched operator whitespace removed.
- * @example trimComparatorWhitespace('> 1.2.3 < 2') // '>1.2.3 <2'
- * @example trimComparatorWhitespace('> invalid') // '> invalid'
- */
-const trimComparatorWhitespace = range => {
-  let result = ''
-  let copyFrom = 0
-  let cursor = 0
-  const digitRuns = { start: -1, end: -1, previousStart: -1, previousEnd: -1 }
-
-  while (cursor < range.length) {
-    const matchStart = cursor
-    if (range[cursor] === '<' || range[cursor] === '>') {
-      cursor++
-    } else if (!isVersionPrefix(range[cursor]) && !isVersionStart(range[cursor])) {
-      cursor++
-      continue
-    }
-
-    // Consume a v/=/whitespace run once, even when no version follows it.
-    while (cursor < range.length && isVersionPrefix(range[cursor])) {
-      cursor++
-    }
-    if (!isVersionStart(range[cursor])) {
-      continue
-    }
-
-    const whitespacePosition = findRemovableWhitespaceIndex(range, matchStart)
-    if (whitespacePosition !== -1) {
-      result += range.slice(copyFrom, whitespacePosition)
-      copyFrom = whitespacePosition + 1
-    }
-
-    // Skip the entire match, so a prerelease's trailing v cannot be
-    // reconsidered as the prefix of another version.
-    cursor = findVersionEndIndex(range, cursor, digitRuns)
-  }
-
-  return result + range.slice(copyFrom)
-}
-
-module.exports = trimComparatorWhitespace
 
 
 /***/ }),
@@ -14621,7 +14849,7 @@ function defaultFactory (origin, opts) {
 }
 
 class Agent extends DispatcherBase {
-  constructor ({ factory = defaultFactory, maxRedirections = 0, connect, tls, ...options } = {}) {
+  constructor ({ factory = defaultFactory, maxRedirections = 0, connect, ...options } = {}) {
     if (typeof factory !== 'function') {
       throw new InvalidArgumentError('factory must be a function.')
     }
@@ -14640,15 +14868,11 @@ class Agent extends DispatcherBase {
       connect = { ...connect }
     }
 
-    if (tls && typeof tls !== 'function') {
-      tls = { ...tls }
-    }
-
     this[kInterceptors] = options.interceptors?.Agent && Array.isArray(options.interceptors.Agent)
       ? options.interceptors.Agent
       : [createRedirectInterceptor({ maxRedirections })]
 
-    this[kOptions] = { ...util.deepClone(options), connect, tls }
+    this[kOptions] = { ...util.deepClone(options), connect }
     this[kOptions].interceptors = options.interceptors
       ? { ...options.interceptors }
       : undefined
@@ -15681,6 +15905,8 @@ async function connectH1 (client, socket) {
   socket[kParser] = new Parser(client, socket, llhttpInstance)
 
   addListener(socket, 'error', function (err) {
+    assert(err.code !== 'ERR_TLS_CERT_ALTNAME_INVALID')
+
     const parser = this[kParser]
 
     // On Mac OS, we get an ECONNRESET even if there is a full body to be forwarded
@@ -16610,6 +16836,8 @@ async function connectH2 (client, socket) {
   socket[kHTTP2Session] = session
 
   util.addListener(socket, 'error', function (err) {
+    assert(err.code !== 'ERR_TLS_CERT_ALTNAME_INVALID')
+
     this[kError] = err
 
     this[kClient][kOnError](err)
@@ -16683,6 +16911,8 @@ function resumeH2 (client) {
 }
 
 function onHttp2SessionError (err) {
+  assert(err.code !== 'ERR_TLS_CERT_ALTNAME_INVALID')
+
   this[kSocket][kError] = err
   this[kClient][kOnError](err)
 }
@@ -17380,10 +17610,9 @@ class Client extends DispatcherBase {
     // h2
     maxConcurrentStreams,
     allowH2,
-    webSocket,
-    eventSource
+    webSocket
   } = {}) {
-    super({ webSocket, eventSource })
+    super({ webSocket })
 
     if (keepAlive !== undefined) {
       throw new InvalidArgumentError('unsupported keepAlive, use pipelining=0 instead')
@@ -17904,7 +18133,6 @@ module.exports = Client
 
 
 
-const buffer = __nccwpck_require__(4573)
 const Dispatcher = __nccwpck_require__(883)
 const {
   ClientDestroyedError,
@@ -17917,7 +18145,6 @@ const kOnDestroyed = Symbol('onDestroyed')
 const kOnClosed = Symbol('onClosed')
 const kInterceptedDispatch = Symbol('Intercepted Dispatch')
 const kWebSocketOptions = Symbol('webSocketOptions')
-const kEventSourceOptions = Symbol('eventSourceOptions')
 
 class DispatcherBase extends Dispatcher {
   constructor (opts) {
@@ -17928,19 +18155,12 @@ class DispatcherBase extends Dispatcher {
     this[kClosed] = false
     this[kOnClosed] = []
     this[kWebSocketOptions] = opts?.webSocket ?? {}
-    this[kEventSourceOptions] = opts?.eventSource ?? {}
   }
 
   get webSocketOptions () {
     return {
       maxFragments: this[kWebSocketOptions].maxFragments ?? 131072,
       maxPayloadSize: this[kWebSocketOptions].maxPayloadSize ?? 128 * 1024 * 1024
-    }
-  }
-
-  get eventSourceOptions () {
-    return {
-      maxEventSize: this[kEventSourceOptions].maxEventSize ?? buffer.kStringMaxLength
     }
   }
 
@@ -24302,7 +24522,6 @@ module.exports = {
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
 
-const buffer = __nccwpck_require__(4573)
 const { Transform } = __nccwpck_require__(7075)
 const { isASCIINumber, isValidLastEventId } = __nccwpck_require__(4811)
 
@@ -24327,18 +24546,10 @@ const COLON = 0x3A
  */
 const SPACE = 0x20
 
-const defaultMaxEventSize = buffer.kStringMaxLength
-
 const DATA = Buffer.from('data')
 const EVENT = Buffer.from('event')
 const ID = Buffer.from('id')
 const RETRY = Buffer.from('retry')
-
-// Each data field creates a string node, and each unconsumed input chunk keeps
-// a Buffer wrapper. The absolute ceiling protects the large default byte limit.
-const minParserItems = 1024
-const maxParserItems = 131072
-const bytesPerParserItem = 128
 
 function isASCIINumberBytes (buffer, start) {
   if (start >= buffer.length) {
@@ -24376,12 +24587,6 @@ function isFieldName (line, length, field) {
   }
 
   return true
-}
-
-function createMaxEventSizeExceededError () {
-  const error = new Error('EventSource message size exceeded')
-  error.aborted = false
-  return error
 }
 
 /**
@@ -24432,13 +24637,6 @@ class EventSourceStream extends Transform {
   pos = 0
   lineChunkIndex = 0
   linePos = 0
-  lineLength = 0
-  eventSize = 0
-  eventFieldSizes = { data: 0, event: 0, id: 0, retry: 0 }
-  dataLineCount = 0
-  maxEventSize
-  maxDataLines
-  maxBufferedChunks
 
   event = {
     data: undefined,
@@ -24449,7 +24647,6 @@ class EventSourceStream extends Transform {
 
   /**
    * @param {object} options
-   * @param {number} [options.maxEventSize]
    * @param {eventSourceSettings} options.eventSourceSettings
    * @param {Function} [options.push]
    */
@@ -24461,12 +24658,6 @@ class EventSourceStream extends Transform {
     super(options)
 
     this.state = options.eventSourceSettings || {}
-    this.maxEventSize = options.maxEventSize ?? defaultMaxEventSize
-    const parserItemLimit = this.maxEventSize > 0
-      ? Math.min(maxParserItems, Math.max(minParserItems, Math.floor(this.maxEventSize / bytesPerParserItem)))
-      : 0
-    this.maxDataLines = parserItemLimit
-    this.maxBufferedChunks = parserItemLimit
     if (options.push) {
       this.push = options.push
     }
@@ -24484,14 +24675,6 @@ class EventSourceStream extends Transform {
       return
     }
 
-    // A leading line ending can immediately release the currently buffered
-    // line, even when it uses the final allowed chunk slot.
-    if (this.maxEventSize > 0 &&
-        this.chunks.length >= this.maxBufferedChunks &&
-        chunk[0] !== LF && chunk[0] !== CR) {
-      callback(createMaxEventSizeExceededError())
-      return
-    }
     this.chunks.push(chunk)
 
     // Strip leading byte-order-mark if we opened the stream and started
@@ -24570,12 +24753,7 @@ class EventSourceStream extends Transform {
 
         // In any case, we can process the line as we reached an
         // end-of-line character
-        try {
-          this.parseLine(this.readLine(), this.event)
-        } catch (error) {
-          callback(error)
-          return
-        }
+        this.parseLine(this.readLine(), this.event)
         this.consumeCurrentByte()
         // A line was processed and this could be the end of the event. We need
         // to check if the next line is empty to determine if the event is
@@ -24584,28 +24762,15 @@ class EventSourceStream extends Transform {
         continue
       }
 
-      // readLine() is only called after CR or LF. Reject an unfinished line
-      // before it can retain an unbounded number of decoded chunks. The seven
-      // extra bytes allow the longest field prefix ("event: " or "retry: ").
-      if (this.maxEventSize > 0 && ++this.lineLength > this.maxEventSize + 7) {
-        callback(createMaxEventSizeExceededError())
-        return
-      }
       this.advanceCursor()
     }
 
     callback()
   }
 
-  _destroy (error, callback) {
-    this.chunks.length = 0
-    this.clearEvent()
-    super._destroy(error, callback)
-  }
-
   /**
    * @param {Buffer} line
-   * @param {EventSourceStreamEvent} event
+   * @param {EventStreamEvent} event
    */
   parseLine (line, event) {
     // If the line is empty (a blank line)
@@ -24639,13 +24804,6 @@ class EventSourceStream extends Transform {
     }
 
     if (isFieldName(line, fieldLength, DATA)) {
-      if (this.maxEventSize > 0 && this.dataLineCount >= this.maxDataLines) {
-        throw createMaxEventSizeExceededError()
-      }
-      const valueBytes = line.length - valueStart
-      const dataSize = this.eventFieldSizes.data + (event.data === undefined ? 0 : 1) + valueBytes
-      this.setEventFieldSize('data', dataSize)
-
       const value = line.toString('utf8', valueStart)
 
       if (event.data === undefined) {
@@ -24653,13 +24811,11 @@ class EventSourceStream extends Transform {
       } else {
         event.data += `\n${value}`
       }
-      this.dataLineCount++
       return
     }
 
     if (isFieldName(line, fieldLength, RETRY)) {
       if (isASCIINumberBytes(line, valueStart)) {
-        this.setEventFieldSize('retry', line.length - valueStart)
         event.retry = line.toString('utf8', valueStart)
       }
       return
@@ -24667,27 +24823,18 @@ class EventSourceStream extends Transform {
 
     if (isFieldName(line, fieldLength, ID)) {
       if (isValidLastEventIdBytes(line, valueStart)) {
-        this.setEventFieldSize('id', line.length - valueStart)
         event.id = line.toString('utf8', valueStart)
       }
       return
     }
 
     if (isFieldName(line, fieldLength, EVENT)) {
-      if (valueStart < line.length) {
-        this.setEventFieldSize('event', line.length - valueStart)
-        event.event = line.toString('utf8', valueStart)
+      const value = line.toString('utf8', valueStart)
+
+      if (value.length > 0) {
+        event.event = value
       }
     }
-  }
-
-  setEventFieldSize (field, size) {
-    const eventSize = this.eventSize - this.eventFieldSizes[field] + size
-    if (this.maxEventSize > 0 && eventSize > this.maxEventSize) {
-      throw createMaxEventSizeExceededError()
-    }
-    this.eventSize = eventSize
-    this.eventFieldSizes[field] = size
   }
 
   /**
@@ -24720,12 +24867,6 @@ class EventSourceStream extends Transform {
     this.event.event = undefined
     this.event.id = undefined
     this.event.retry = undefined
-    this.eventSize = 0
-    this.dataLineCount = 0
-    this.eventFieldSizes.data = 0
-    this.eventFieldSizes.event = 0
-    this.eventFieldSizes.id = 0
-    this.eventFieldSizes.retry = 0
   }
 
   hasPendingEvent () {
@@ -24761,16 +24902,14 @@ class EventSourceStream extends Transform {
   syncLineStartToCursor () {
     this.lineChunkIndex = this.chunkIndex
     this.linePos = this.pos
-    this.lineLength = 0
     this.dropConsumedChunks()
   }
 
   dropConsumedChunks () {
-    if (this.lineChunkIndex > 0) {
-      const consumed = this.lineChunkIndex
-      this.chunks.splice(0, consumed)
-      this.lineChunkIndex = 0
-      this.chunkIndex -= consumed
+    while (this.lineChunkIndex > 0) {
+      this.chunks.shift()
+      this.lineChunkIndex--
+      this.chunkIndex--
     }
 
     if (this.chunkIndex === this.chunks.length) {
@@ -24895,7 +25034,6 @@ const { isNetworkError } = __nccwpck_require__(9051)
 const { delay } = __nccwpck_require__(4811)
 const { kEnumerableProperty } = __nccwpck_require__(3440)
 const { environmentSettingsObject } = __nccwpck_require__(3168)
-const { getGlobalDispatcher } = __nccwpck_require__(2581)
 
 let experimentalWarned = false
 
@@ -25177,7 +25315,6 @@ class EventSource extends EventTarget {
 
       const eventSourceStream = new EventSourceStream({
         eventSourceSettings: this.#state,
-        maxEventSize: this.#dispatcher.eventSourceOptions?.maxEventSize,
         push: (event) => {
           this.dispatchEvent(createFastMessageEvent(
             event.type,
@@ -25356,8 +25493,7 @@ webidl.converters.EventSourceInitDict = webidl.dictionaryConverter([
   },
   {
     key: 'dispatcher', // undici only
-    converter: webidl.converters.any,
-    defaultValue: () => getGlobalDispatcher()
+    converter: webidl.converters.any
   }
 ])
 
@@ -30453,10 +30589,8 @@ async function httpNetworkFetch (
   // 19. Run these steps in parallel:
 
   //    1. Run these steps, but abort when fetchParams is canceled:
-  if (!fetchParams.controller.resume) {
-    fetchParams.controller.on('terminated', onAborted)
-  }
-
+  fetchParams.controller.onAborted = onAborted
+  fetchParams.controller.on('terminated', onAborted)
   fetchParams.controller.resume = async () => {
     // 1. While true
     while (true) {
@@ -30625,6 +30759,8 @@ async function httpNetworkFetch (
           }
           location = headersList.get('location', true)
 
+          this.body = new Readable({ read: resume })
+
           const decoders = []
 
           const willFollow = location && request.redirect === 'follow' &&
@@ -30642,7 +30778,7 @@ async function httpNetworkFetch (
             // CVE fix similar to urllib3 (GHSA-gm62-xv2j-4w53) and curl (CVE-2022-32206).
             const maxContentEncodings = 5
             if (codings.length > maxContentEncodings) {
-              this.abort(new Error(`too many content-encodings in response: ${codings.length}, maximum allowed is ${maxContentEncodings}`))
+              reject(new Error(`too many content-encodings in response: ${codings.length}, maximum allowed is ${maxContentEncodings}`))
               return true
             }
 
@@ -30674,8 +30810,6 @@ async function httpNetworkFetch (
               }
             }
           }
-
-          this.body = new Readable({ read: resume })
 
           const onError = this.onError.bind(this)
 
@@ -30721,6 +30855,10 @@ async function httpNetworkFetch (
         onComplete () {
           if (this.abort) {
             fetchParams.controller.off('terminated', this.abort)
+          }
+
+          if (fetchParams.controller.onAborted) {
+            fetchParams.controller.off('terminated', fetchParams.controller.onAborted)
           }
 
           fetchParams.controller.ended = true
@@ -37197,20 +37335,6 @@ class ByteParser extends Writable {
         if (isControlFrame(this.#info.opcode)) {
           this.#loop = this.parseControlFrame(body)
           this.#state = parserStates.INFO
-
-          // If the automatic PONG/CLOSE reply filled the socket's write buffer,
-          // stop parsing and resume on drain so a PING flood cannot grow the
-          // outbound queue without bound.
-          const socket = this.ws[kResponse].socket
-          if (this.#loop && socket.writableNeedDrain) {
-            this.#loop = false
-            socket.once('drain', () => {
-              if (this.destroyed) return
-              this.#loop = true
-              this.run(callback)
-            })
-            return
-          }
         } else {
           if (!this.#info.compressed) {
             if (!this.writeFragments(body)) {
@@ -38741,6 +38865,13 @@ module.exports = __WEBPACK_EXTERNAL_createRequire(import.meta.url)("tty");
 
 /***/ }),
 
+/***/ 7016:
+/***/ ((module) => {
+
+module.exports = __WEBPACK_EXTERNAL_createRequire(import.meta.url)("url");
+
+/***/ }),
+
 /***/ 9023:
 /***/ ((module) => {
 
@@ -38748,7 +38879,7 @@ module.exports = __WEBPACK_EXTERNAL_createRequire(import.meta.url)("util");
 
 /***/ }),
 
-/***/ 30:
+/***/ 3345:
 /***/ ((__unused_webpack_module, exports) => {
 
 var __webpack_unused_export__;
@@ -38763,11 +38894,11 @@ exports.w = void 0;
 exports.w = {
     operationRequestMap: new WeakMap(),
 };
-//# sourceMappingURL=state-cjs.js.map
+//# sourceMappingURL=state-cjs.cjs.map
 
 /***/ }),
 
-/***/ 9437:
+/***/ 8914:
 /***/ ((__unused_webpack_module, exports) => {
 
 var __webpack_unused_export__;
@@ -38784,7 +38915,184 @@ exports.w = void 0;
 exports.w = {
     instrumenterImplementation: undefined,
 };
-//# sourceMappingURL=state-cjs.js.map
+//# sourceMappingURL=state-cjs.cjs.map
+
+/***/ }),
+
+/***/ 1120:
+/***/ ((module) => {
+
+var __webpack_unused_export__;
+
+
+const NullObject = function NullObject () { }
+NullObject.prototype = Object.create(null)
+
+/**
+ * RegExp to match *( ";" parameter ) in RFC 7231 sec 3.1.1.1
+ *
+ * parameter     = token "=" ( token / quoted-string )
+ * token         = 1*tchar
+ * tchar         = "!" / "#" / "$" / "%" / "&" / "'" / "*"
+ *               / "+" / "-" / "." / "^" / "_" / "`" / "|" / "~"
+ *               / DIGIT / ALPHA
+ *               ; any VCHAR, except delimiters
+ * quoted-string = DQUOTE *( qdtext / quoted-pair ) DQUOTE
+ * qdtext        = HTAB / SP / %x21 / %x23-5B / %x5D-7E / obs-text
+ * obs-text      = %x80-FF
+ * quoted-pair   = "\" ( HTAB / SP / VCHAR / obs-text )
+ */
+const paramRE = /; *([!#$%&'*+.^\w`|~-]+)=("(?:[\v\u0020\u0021\u0023-\u005b\u005d-\u007e\u0080-\u00ff]|\\[\v\u0020-\u00ff])*"|[!#$%&'*+.^\w`|~-]+) */gu
+
+/**
+ * RegExp to match quoted-pair in RFC 7230 sec 3.2.6
+ *
+ * quoted-pair = "\" ( HTAB / SP / VCHAR / obs-text )
+ * obs-text    = %x80-FF
+ */
+const quotedPairRE = /\\([\v\u0020-\u00ff])/gu
+
+/**
+ * RegExp to match type in RFC 7231 sec 3.1.1.1
+ *
+ * media-type = type "/" subtype
+ * type       = token
+ * subtype    = token
+ */
+const mediaTypeRE = /^[!#$%&'*+.^\w|~-]+\/[!#$%&'*+.^\w|~-]+$/u
+
+// default ContentType to prevent repeated object creation
+const defaultContentType = { type: '', parameters: new NullObject() }
+Object.freeze(defaultContentType.parameters)
+Object.freeze(defaultContentType)
+
+/**
+ * Parse media type to object.
+ *
+ * @param {string|object} header
+ * @return {Object}
+ * @public
+ */
+
+function parse (header) {
+  if (typeof header !== 'string') {
+    throw new TypeError('argument header is required and must be a string')
+  }
+
+  let index = header.indexOf(';')
+  const type = index !== -1
+    ? header.slice(0, index).trim()
+    : header.trim()
+
+  if (mediaTypeRE.test(type) === false) {
+    throw new TypeError('invalid media type')
+  }
+
+  const result = {
+    type: type.toLowerCase(),
+    parameters: new NullObject()
+  }
+
+  // parse parameters
+  if (index === -1) {
+    return result
+  }
+
+  let key
+  let match
+  let value
+
+  paramRE.lastIndex = index
+
+  while ((match = paramRE.exec(header))) {
+    if (match.index !== index) {
+      throw new TypeError('invalid parameter format')
+    }
+
+    index += match[0].length
+    key = match[1].toLowerCase()
+    value = match[2]
+
+    if (value[0] === '"') {
+      // remove quotes and escapes
+      value = value
+        .slice(1, value.length - 1)
+
+      quotedPairRE.test(value) && (value = value.replace(quotedPairRE, '$1'))
+    }
+
+    result.parameters[key] = value
+  }
+
+  if (index !== header.length) {
+    throw new TypeError('invalid parameter format')
+  }
+
+  return result
+}
+
+function safeParse (header) {
+  if (typeof header !== 'string') {
+    return defaultContentType
+  }
+
+  let index = header.indexOf(';')
+  const type = index !== -1
+    ? header.slice(0, index).trim()
+    : header.trim()
+
+  if (mediaTypeRE.test(type) === false) {
+    return defaultContentType
+  }
+
+  const result = {
+    type: type.toLowerCase(),
+    parameters: new NullObject()
+  }
+
+  // parse parameters
+  if (index === -1) {
+    return result
+  }
+
+  let key
+  let match
+  let value
+
+  paramRE.lastIndex = index
+
+  while ((match = paramRE.exec(header))) {
+    if (match.index !== index) {
+      return defaultContentType
+    }
+
+    index += match[0].length
+    key = match[1].toLowerCase()
+    value = match[2]
+
+    if (value[0] === '"') {
+      // remove quotes and escapes
+      value = value
+        .slice(1, value.length - 1)
+
+      quotedPairRE.test(value) && (value = value.replace(quotedPairRE, '$1'))
+    }
+
+    result.parameters[key] = value
+  }
+
+  if (index !== header.length) {
+    return defaultContentType
+  }
+
+  return result
+}
+
+__webpack_unused_export__ = { parse, safeParse }
+__webpack_unused_export__ = parse
+module.exports.xL = safeParse
+__webpack_unused_export__ = defaultContentType
+
 
 /***/ }),
 
@@ -38840,9 +39148,6 @@ module.exports = /*#__PURE__*/JSON.parse('{"name":"@actions/cache","version":"6.
 /******/ 	// Return the exports of the module
 /******/ 	return module.exports;
 /******/ }
-/******/ 
-/******/ // expose the modules object (__webpack_modules__)
-/******/ __nccwpck_require__.m = __webpack_modules__;
 /******/ 
 /************************************************************************/
 /******/ /* webpack/runtime/asset-relocator-loader */
@@ -38902,28 +39207,6 @@ module.exports = /*#__PURE__*/JSON.parse('{"name":"@actions/cache","version":"6.
 /******/ 	};
 /******/ })();
 /******/ 
-/******/ /* webpack/runtime/ensure chunk */
-/******/ (() => {
-/******/ 	__nccwpck_require__.f = {};
-/******/ 	// This file contains only the entry chunk.
-/******/ 	// The chunk loading function for additional chunks
-/******/ 	__nccwpck_require__.e = (chunkId) => {
-/******/ 		return Promise.all(Object.keys(__nccwpck_require__.f).reduce((promises, key) => {
-/******/ 			__nccwpck_require__.f[key](chunkId, promises);
-/******/ 			return promises;
-/******/ 		}, []));
-/******/ 	};
-/******/ })();
-/******/ 
-/******/ /* webpack/runtime/get javascript chunk filename */
-/******/ (() => {
-/******/ 	// This function allow to reference async chunks
-/******/ 	__nccwpck_require__.u = (chunkId) => {
-/******/ 		// return url for filenames based on template
-/******/ 		return "" + chunkId + ".index.js";
-/******/ 	};
-/******/ })();
-/******/ 
 /******/ /* webpack/runtime/hasOwnProperty shorthand */
 /******/ (() => {
 /******/ 	__nccwpck_require__.o = (obj, prop) => (Object.prototype.hasOwnProperty.call(obj, prop))
@@ -38938,69 +39221,6 @@ module.exports = /*#__PURE__*/JSON.parse('{"name":"@actions/cache","version":"6.
 /******/ 		}
 /******/ 		Object.defineProperty(exports, '__esModule', { value: true });
 /******/ 	};
-/******/ })();
-/******/ 
-/******/ /* webpack/runtime/import chunk loading */
-/******/ (() => {
-/******/ 	// no baseURI
-/******/ 	
-/******/ 	// object to store loaded and loading chunks
-/******/ 	// undefined = chunk not loaded, null = chunk preloaded/prefetched
-/******/ 	// [resolve, Promise] = chunk loading, 0 = chunk loaded
-/******/ 	var installedChunks = {
-/******/ 		792: 0
-/******/ 	};
-/******/ 	
-/******/ 	var installChunk = (data) => {
-/******/ 		var {ids, modules, runtime} = data;
-/******/ 		// add "modules" to the modules object,
-/******/ 		// then flag all "ids" as loaded and fire callback
-/******/ 		var moduleId, chunkId, i = 0;
-/******/ 		for(moduleId in modules) {
-/******/ 			if(__nccwpck_require__.o(modules, moduleId)) {
-/******/ 				__nccwpck_require__.m[moduleId] = modules[moduleId];
-/******/ 			}
-/******/ 		}
-/******/ 		if(runtime) runtime(__nccwpck_require__);
-/******/ 		for(;i < ids.length; i++) {
-/******/ 			chunkId = ids[i];
-/******/ 			if(__nccwpck_require__.o(installedChunks, chunkId) && installedChunks[chunkId]) {
-/******/ 				installedChunks[chunkId][0]();
-/******/ 			}
-/******/ 			installedChunks[ids[i]] = 0;
-/******/ 		}
-/******/ 	
-/******/ 	}
-/******/ 	
-/******/ 	__nccwpck_require__.f.j = (chunkId, promises) => {
-/******/ 			// import() chunk loading for javascript
-/******/ 			var installedChunkData = __nccwpck_require__.o(installedChunks, chunkId) ? installedChunks[chunkId] : undefined;
-/******/ 			if(installedChunkData !== 0) { // 0 means "already installed".
-/******/ 	
-/******/ 				// a Promise means "currently loading".
-/******/ 				if(installedChunkData) {
-/******/ 					promises.push(installedChunkData[1]);
-/******/ 				} else {
-/******/ 					if(true) { // all chunks have JS
-/******/ 						// setup Promise in chunk cache
-/******/ 						var promise = import("./" + __nccwpck_require__.u(chunkId)).then(installChunk, (e) => {
-/******/ 							if(installedChunks[chunkId] !== 0) installedChunks[chunkId] = undefined;
-/******/ 							throw e;
-/******/ 						});
-/******/ 						var promise = Promise.race([promise, new Promise((resolve) => (installedChunkData = installedChunks[chunkId] = [resolve]))])
-/******/ 						promises.push(installedChunkData[1] = promise);
-/******/ 					}
-/******/ 				}
-/******/ 			}
-/******/ 	};
-/******/ 	
-/******/ 	// no prefetching
-/******/ 	
-/******/ 	// no preloaded
-/******/ 	
-/******/ 	// no external install chunk
-/******/ 	
-/******/ 	// no on chunks loaded
 /******/ })();
 /******/ 
 /************************************************************************/
@@ -42141,8 +42361,8 @@ function getIDToken(aud) {
  */
 
 //# sourceMappingURL=core.js.map
-;// CONCATENATED MODULE: external "url"
-const external_url_namespaceObject = __WEBPACK_EXTERNAL_createRequire(import.meta.url)("url");
+// EXTERNAL MODULE: external "url"
+var external_url_ = __nccwpck_require__(7016);
 ;// CONCATENATED MODULE: ./node_modules/@actions/github/lib/context.js
 
 
@@ -42757,298 +42977,8 @@ function withDefaults(oldDefaults, newDefaults) {
 var endpoint = withDefaults(null, DEFAULTS);
 
 
-;// CONCATENATED MODULE: ./node_modules/content-type/dist/index.js
-/*!
- * content-type
- * Copyright(c) 2015 Douglas Christopher Wilson
- * MIT Licensed
- */
-const SP = 32; // " "
-const HTAB = 9; // "\t"
-const SEMI = 59; // ";"
-const EQ = 61; // "="
-const DQUOTE = 34; // '"'
-const BSLASH = 92; // "\\"
-const COMMA = 44; // ","
-const LOWER_CASE = 1;
-const OWS = 2;
-const SEMI_FLAG = 4;
-const COMMA_FLAG = 8;
-const TOKEN_FLAG = 16;
-const NON_ASCII = 0xff00;
-const CASE_FLAGS = LOWER_CASE | NON_ASCII;
-/**
- * Character flags used to normalize HTTP field values while scanning.
- * Out-of-range reads intentionally coerce to zero in bitwise expressions.
- */
-const CHAR_MAP = new Uint8Array(0x100);
-CHAR_MAP[HTAB] |= OWS;
-CHAR_MAP[SP] |= OWS;
-CHAR_MAP[SEMI] |= SEMI_FLAG;
-CHAR_MAP[COMMA] |= COMMA_FLAG;
-for (let code = 0x80 /* non-ASCII */; code <= 0xff; code++) {
-    CHAR_MAP[code] |= LOWER_CASE;
-}
-for (const char of "!#$%&'*+-.^_`|~") {
-    CHAR_MAP[char.charCodeAt(0)] |= TOKEN_FLAG;
-}
-for (let code = 0x30 /* 0 */; code <= 0x39 /* 9 */; code++) {
-    CHAR_MAP[code] |= TOKEN_FLAG;
-}
-for (let code = 0x41 /* A */; code <= 0x5a /* Z */; code++) {
-    CHAR_MAP[code] |= LOWER_CASE | TOKEN_FLAG;
-}
-for (let code = 0x61 /* a */; code <= 0x7a /* z */; code++) {
-    CHAR_MAP[code] |= TOKEN_FLAG;
-}
-/**
- * Null object perf optimization. Faster than `Object.create(null)` and `{ __proto__: null }`.
- */
-const NullObject = /* @__PURE__ */ (() => {
-    const C = function () { };
-    C.prototype = Object.create(null);
-    return C;
-})();
-/**
- * Validate a type string against RFC 9110.
- */
-function isTypeValid(type, start = 0, end = type.length) {
-    let hasSlash = false;
-    for (let index = start; index < end; index++) {
-        const code = type.charCodeAt(index);
-        if (code === 47 /* / */) {
-            if (hasSlash || index === start || index >= end - 1)
-                return false;
-            hasSlash = true;
-        }
-        else if (!isTokenCode(code)) {
-            return false;
-        }
-    }
-    return hasSlash;
-}
-/**
- * Validate a token against RFC 9110.
- */
-function isTokenValid(token, start = 0, end = token.length) {
-    if (start >= end)
-        return false;
-    for (let index = start; index < end; index++) {
-        if (!isTokenCode(token.charCodeAt(index)))
-            return false;
-    }
-    return true;
-}
-/**
- * Check whether a character code belongs to the token production in RFC 9110.
- */
-function isTokenCode(code) {
-    return (CHAR_MAP[code] & TOKEN_FLAG) !== 0;
-}
-/**
- * Serialize a parameter value.
- */
-function parameterValue(str) {
-    const len = str.length;
-    if (len === 0)
-        return '""';
-    let index = 0;
-    while (index < len && isTokenCode(str.charCodeAt(index)))
-        index++;
-    if (index === len)
-        return str;
-    let result = '"';
-    let start = 0;
-    while (index < len) {
-        const code = str.charCodeAt(index);
-        if (code !== HTAB && (code < SP || code === 127 || code > 255)) {
-            throw new TypeError(`Invalid parameter value: ${str}`);
-        }
-        if (code === 34 /* " */ || code === 92 /* \\ */) {
-            result += `${str.slice(start, index)}\\`;
-            start = index;
-        }
-        index++;
-    }
-    return `${result}${str.slice(start)}"`;
-}
-/**
- * Format an object into a `Content-Type` header.
- */
-function format(obj) {
-    const { type, parameters } = obj;
-    if (!type || !isTypeValid(type)) {
-        throw new TypeError(`Invalid type: ${type}`);
-    }
-    let result = type;
-    if (parameters) {
-        for (const param of Object.keys(parameters)) {
-            if (!isTokenValid(param)) {
-                throw new TypeError(`Invalid parameter name: ${param}`);
-            }
-            result += `; ${param}=${parameterValue(parameters[param])}`;
-        }
-    }
-    return result;
-}
-/**
- * Parse a `Content-Type` header.
- */
-function dist_parse(header, options) {
-    const stopFlags = SEMI_FLAG | (options?.comma === true ? COMMA_FLAG : 0);
-    const len = header.length;
-    let valueStart = options?.start ?? 0;
-    while ((CHAR_MAP[header.charCodeAt(valueStart)] & OWS) !== 0) {
-        valueStart++;
-    }
-    let index = valueStart;
-    let typeFlags = 0;
-    let whitespace = -1;
-    let stop = options?.parameters === false ? COMMA_FLAG : 0;
-    while (index < len) {
-        const code = header.charCodeAt(index);
-        const flags = CHAR_MAP[code];
-        if ((flags & stopFlags) !== 0) {
-            stop |= flags & COMMA_FLAG;
-            break;
-        }
-        if ((flags & OWS) !== 0) {
-            if (whitespace === -1)
-                whitespace = index;
-        }
-        else {
-            whitespace = -1;
-        }
-        typeFlags |= (code & NON_ASCII) | flags;
-        index++;
-    }
-    const valueEnd = whitespace === -1 ? index : whitespace;
-    const value = header.slice(valueStart, valueEnd);
-    const type = (typeFlags & CASE_FLAGS) === 0 ? value : value.toLowerCase();
-    if (index === len || stop !== 0) {
-        return { type, index, parameters: new NullObject() };
-    }
-    return parseParameters(header, type, index, len, stopFlags);
-}
-/**
- * Parses the parameters of a `Content-Type` header starting at the given index.
- */
-function parseParameters(header, type, index, len, stopFlags) {
-    const parameters = new NullObject();
-    parameter: while (index < len) {
-        index++; // Skip over ;
-        while ((CHAR_MAP[header.charCodeAt(index)] & OWS) !== 0) {
-            index++;
-        }
-        const keyStart = index;
-        let keyFlags = 0;
-        let keyWhitespace = -1;
-        while (index < len) {
-            const code = header.charCodeAt(index);
-            const flags = CHAR_MAP[code];
-            if ((flags & stopFlags) !== 0) {
-                if ((flags & COMMA_FLAG) !== 0)
-                    break parameter;
-                continue parameter;
-            }
-            if (code === EQ) {
-                const keyEnd = keyWhitespace === -1 ? index : keyWhitespace;
-                const value = header.slice(keyStart, keyEnd);
-                const key = (keyFlags & CASE_FLAGS) === 0 ? value : value.toLowerCase();
-                index++;
-                while ((CHAR_MAP[header.charCodeAt(index)] & OWS) !== 0) {
-                    index++;
-                }
-                if (index < len && header.charCodeAt(index) === DQUOTE) {
-                    const quotedStart = ++index;
-                    let escaped = false;
-                    while (index < len) {
-                        const code = header.charCodeAt(index);
-                        if (code === DQUOTE) {
-                            if (parameters[key] === undefined) {
-                                parameters[key] = escaped
-                                    ? unescapeQuotedPairs(header, quotedStart, index)
-                                    : header.slice(quotedStart, index);
-                            }
-                            index++;
-                            let stop = 0;
-                            // Discard characters between quote and delimiter.
-                            while (index < len) {
-                                const code = header.charCodeAt(index);
-                                const flags = CHAR_MAP[code];
-                                if ((flags & stopFlags) !== 0) {
-                                    stop = flags & COMMA_FLAG;
-                                    break;
-                                }
-                                index++;
-                            }
-                            if (stop !== 0)
-                                break parameter;
-                            continue parameter;
-                        }
-                        if (code === BSLASH && index + 1 < len) {
-                            escaped = true;
-                            index += 2;
-                            continue;
-                        }
-                        index++;
-                    }
-                    continue parameter;
-                }
-                const valueStart = index;
-                let stop = 0;
-                let valueWhitespace = -1;
-                while (index < len) {
-                    const code = header.charCodeAt(index);
-                    const flags = CHAR_MAP[code];
-                    if ((flags & stopFlags) !== 0) {
-                        stop = flags & COMMA_FLAG;
-                        break;
-                    }
-                    if ((flags & OWS) !== 0) {
-                        if (valueWhitespace === -1)
-                            valueWhitespace = index;
-                    }
-                    else {
-                        valueWhitespace = -1;
-                    }
-                    index++;
-                }
-                if (parameters[key] === undefined) {
-                    const valueEnd = valueWhitespace === -1 ? index : valueWhitespace;
-                    parameters[key] = header.slice(valueStart, valueEnd);
-                }
-                if (stop !== 0)
-                    break parameter;
-                continue parameter;
-            }
-            if ((flags & OWS) !== 0) {
-                if (keyWhitespace === -1)
-                    keyWhitespace = index;
-            }
-            else {
-                keyWhitespace = -1;
-            }
-            keyFlags |= (code & NON_ASCII) | flags;
-            index++;
-        }
-    }
-    return { type, index, parameters };
-}
-/**
- * Remove backslashes from quoted pairs in a known-terminated quoted string body.
- */
-function unescapeQuotedPairs(str, start, end) {
-    let result = "";
-    for (let index = start; index < end; index++) {
-        if (str.charCodeAt(index) === BSLASH) {
-            result += str.slice(start, index);
-            start = ++index;
-        }
-    }
-    return result + str.slice(start, end);
-}
-//# sourceMappingURL=index.js.map
+// EXTERNAL MODULE: ./node_modules/fast-content-type-parse/index.js
+var fast_content_type_parse = __nccwpck_require__(1120);
 ;// CONCATENATED MODULE: ./node_modules/json-with-bigint/json-with-bigint.js
 const intRegex = /^-?\d+$/;
 const noiseValue = /^-?\d+n+$/; // Noise - strings that match the custom format before being converted to it
@@ -43056,269 +42986,14 @@ const originalStringify = JSON.stringify;
 const originalParse = JSON.parse;
 const customFormat = /^-?\d+n$/;
 
-const bigIntsStringify = /([\[:])?"(-?\d+)n"($|\s*[,\}\]])/g;
-const noiseStringify = /([\[:])?("-?\d+n+)n("$|"\s*[,\}\]])/g;
+const bigIntsStringify = /([\[:])?"(-?\d+)n"($|([\\n]|\s)*(\s|[\\n])*[,\}\]])/g;
+const noiseStringify =
+  /([\[:])?("-?\d+n+)n("$|"([\\n]|\s)*(\s|[\\n])*[,\}\]])/g;
 
 /**
  * @typedef {(this: any, key: string | number | undefined, value: any) => any} Replacer
  * @typedef {(key: string | number | undefined, value: any, context?: { source: string }) => any} Reviver
  */
-
-/**
- * Checks if a value is unstringifiable according to native JSON.stringify rules.
- *
- * @param {any} val The value to check.
- * @returns {boolean} True if the value is undefined, a function, or a symbol.
- */
-const isUnstringifiable = (val) =>
-  val === undefined || typeof val === "function" || typeof val === "symbol";
-
-/**
- * Checks if a value is a native JSON.rawJSON object (Node.js 22+).
- *
- * @param {any} val The value to check.
- * @returns {boolean} True if the value is a RawJSON instance.
- */
-const isRawJSON = (val) =>
-  val !== null &&
-  typeof val === "object" &&
-  val.constructor &&
-  val.constructor.name === "RawJSON";
-
-/**
- * Iteratively converts a JS value to a JSON string.
- * Used as a fallback when the native JSON.stringify hits the Maximum Call Stack size.
- * Fully compliant with JSON formatting (space), replacers, and toJSON behaviors.
- *
- * @param {any} rootValue The value to stringify.
- * @param {Replacer | Array<string | number> | null} [replacer] User's custom replacer function.
- * @param {string | number} [spaceParam] Indentation for pretty-printing.
- * @returns {string | undefined} The generated JSON string.
- */
-const stringifyIteratively = (rootValue, replacer, spaceParam) => {
-  let space = "";
-
-  if (typeof spaceParam === "number") {
-    space = " ".repeat(Math.min(10, Math.max(0, Math.floor(spaceParam))));
-  } else if (typeof spaceParam === "string") {
-    space = spaceParam.slice(0, 10);
-  }
-
-  const isFunctionReplacer = typeof replacer === "function";
-  const propertyList = Array.isArray(replacer)
-    ? new Set(replacer.map(String))
-    : null;
-
-  /**
-   * Prepares a value for stringification by resolving toJSON, handling BigInts,
-   * applying custom replacers, and unwrapping primitive objects.
-   *
-   * @param {object|Array} parent The parent object or array holding the value.
-   * @param {string} key The key associated with the value.
-   * @param {any} val The raw value to process.
-   * @returns {any} The processed value ready for stringification.
-   */
-  const prepareVal = (parent, key, val) => {
-    const isObject = val !== null && typeof val === "object";
-    const hasToJSON = isObject && typeof val.toJSON === "function";
-
-    if (hasToJSON) {
-      val = val.toJSON(key);
-    }
-
-    const isNoise = typeof val === "string" && noiseValue.test(val);
-
-    if (isNoise) return val + "n";
-
-    const isBigInt = typeof val === "bigint";
-
-    if (isBigInt) {
-      const supportsRawJSON = "rawJSON" in JSON;
-
-      if (supportsRawJSON) return JSON.rawJSON(val.toString());
-
-      return val.toString() + "n";
-    }
-
-    if (isFunctionReplacer) {
-      val = replacer.call(parent, key, val);
-    }
-
-    const isPostReplacerObject = val !== null && typeof val === "object";
-
-    if (isPostReplacerObject) {
-      const isPrimitiveWrapper =
-        val instanceof Number ||
-        val instanceof String ||
-        val instanceof Boolean;
-
-      if (isPrimitiveWrapper) {
-        val = val.valueOf();
-      }
-    }
-
-    return val;
-  };
-
-  const rootProcessed = prepareVal({ "": rootValue }, "", rootValue);
-
-  if (isUnstringifiable(rootProcessed)) {
-    return undefined;
-  }
-
-  const isRootPrimitive =
-    rootProcessed === null || typeof rootProcessed !== "object";
-  const isRootNativeRawJSON = isRawJSON(rootProcessed);
-
-  if (isRootPrimitive || isRootNativeRawJSON) {
-    return originalStringify(rootProcessed);
-  }
-
-  const chunks = [];
-  let level = 0;
-
-  const stack = [
-    {
-      parent: { "": rootProcessed },
-      key: "",
-      val: rootProcessed,
-      isArray: Array.isArray(rootProcessed),
-      keys: Array.isArray(rootProcessed) ? null : Object.keys(rootProcessed),
-      index: 0,
-      first: true,
-    },
-  ];
-
-  const visited = new WeakSet([rootProcessed]);
-
-  while (stack.length > 0) {
-    const node = stack[stack.length - 1];
-
-    if (node.index === 0) {
-      chunks.push(node.isArray ? "[" : "{");
-      level++;
-    }
-
-    let isDone = false;
-
-    if (node.isArray) {
-      if (node.index < node.val.length) {
-        if (!node.first) chunks.push(",");
-
-        if (space) chunks.push("\n" + space.repeat(level));
-
-        const childRaw = node.val[node.index];
-        const childVal = prepareVal(node.val, String(node.index), childRaw);
-
-        if (isUnstringifiable(childVal)) {
-          chunks.push("null");
-          node.first = false;
-          node.index++;
-        } else {
-          const isComplexObject =
-            childVal !== null && typeof childVal === "object";
-          const isNativeRaw = isRawJSON(childVal);
-
-          if (isComplexObject && !isNativeRaw) {
-            if (visited.has(childVal)) {
-              throw new TypeError("Converting circular structure to JSON");
-            }
-
-            visited.add(childVal);
-
-            stack.push({
-              parent: node.val,
-              key: String(node.index),
-              val: childVal,
-              isArray: Array.isArray(childVal),
-              keys: Array.isArray(childVal) ? null : Object.keys(childVal),
-              index: 0,
-              first: true,
-            });
-
-            node.first = false;
-            node.index++;
-          } else {
-            chunks.push(originalStringify(childVal));
-            node.first = false;
-            node.index++;
-          }
-        }
-      } else {
-        isDone = true;
-      }
-    } else {
-      while (node.index < node.keys.length) {
-        const k = node.keys[node.index++];
-
-        const isFilteredOutByArray = propertyList && !propertyList.has(k);
-
-        if (isFilteredOutByArray) continue;
-
-        const childRaw = node.val[k];
-        const childVal = prepareVal(node.val, k, childRaw);
-
-        if (isUnstringifiable(childVal)) continue;
-
-        if (!node.first) chunks.push(",");
-
-        if (space) {
-          chunks.push("\n" + space.repeat(level) + originalStringify(k) + ": ");
-        } else {
-          chunks.push(originalStringify(k) + ":");
-        }
-
-        const isComplexObject =
-          childVal !== null && typeof childVal === "object";
-        const isNativeRaw = isRawJSON(childVal);
-
-        if (isComplexObject && !isNativeRaw) {
-          if (visited.has(childVal)) {
-            throw new TypeError("Converting circular structure to JSON");
-          }
-
-          visited.add(childVal);
-
-          stack.push({
-            parent: node.val,
-            key: k,
-            val: childVal,
-            isArray: Array.isArray(childVal),
-            keys: Array.isArray(childVal) ? null : Object.keys(childVal),
-            index: 0,
-            first: true,
-          });
-
-          node.first = false;
-
-          break; // Stop current loop level to process the newly pushed stack node
-        } else {
-          chunks.push(originalStringify(childVal));
-          node.first = false;
-        }
-      }
-
-      const isNodeFullyProcessed =
-        node.index >= node.keys.length && stack[stack.length - 1] === node;
-
-      if (isNodeFullyProcessed) {
-        isDone = true;
-      }
-    }
-
-    if (isDone) {
-      level--;
-
-      if (!node.first && space) chunks.push("\n" + space.repeat(level));
-
-      chunks.push(node.isArray ? "]" : "}");
-      visited.delete(node.val);
-      stack.pop();
-    }
-  }
-
-  return chunks.join("");
-};
 
 /**
  * Converts a JavaScript value to a JSON string.
@@ -43331,87 +43006,55 @@ const stringifyIteratively = (rootValue, replacer, spaceParam) => {
  *
  * @param {*} value The value to convert to a JSON string.
  * @param {Replacer | Array<string | number> | null} [replacer]
- * A function that alters the behavior of the stringification process,
- * or an array of strings/numbers to indicate properties to exclude.
+ *   A function that alters the behavior of the stringification process,
+ *   or an array of strings/numbers to indicate properties to exclude.
  * @param {string | number} [space]
- * A string or number to specify indentation or pretty-printing.
+ *   A string or number to specify indentation or pretty-printing.
  * @returns {string} The JSON string representation.
  */
 const JSONStringify = (value, replacer, space) => {
-  try {
-    const supportsRawJSON = "rawJSON" in JSON;
-
-    if (supportsRawJSON) {
-      return originalStringify(
-        value,
-        (key, val) => {
-          if (typeof val === "bigint") return JSON.rawJSON(val.toString());
-
-          const hasFunctionReplacer = typeof replacer === "function";
-
-          if (hasFunctionReplacer) return replacer(key, val);
-
-          const isKeyInArrayReplacer =
-            Array.isArray(replacer) && replacer.includes(key);
-
-          if (isKeyInArrayReplacer) return val;
-
-          return val;
-        },
-        space,
-      );
-    }
-
-    if (!value) return originalStringify(value, replacer, space);
-
-    const convertedToCustomJSON = originalStringify(
+  if ("rawJSON" in JSON) {
+    return originalStringify(
       value,
-      (key, val) => {
-        const isNoise = typeof val === "string" && noiseValue.test(val);
+      (key, value) => {
+        if (typeof value === "bigint") return JSON.rawJSON(value.toString());
 
-        if (isNoise) return val.toString() + "n"; // Mark noise values with additional "n" to offset the deletion of one "n" during the processing
+        if (typeof replacer === "function") return replacer(key, value);
 
-        if (typeof val === "bigint") return val.toString() + "n";
+        if (Array.isArray(replacer) && replacer.includes(key)) return value;
 
-        const hasFunctionReplacer = typeof replacer === "function";
-
-        if (hasFunctionReplacer) return replacer(key, val);
-
-        const isKeyInArrayReplacer =
-          Array.isArray(replacer) && replacer.includes(key);
-
-        if (isKeyInArrayReplacer) return val;
-
-        return val;
+        return value;
       },
       space,
     );
-
-    const processedJSON = convertedToCustomJSON.replace(
-      bigIntsStringify,
-      "$1$2$3",
-    ); // Delete one "n" off the end of every BigInt value
-
-    const denoisedJSON = processedJSON.replace(noiseStringify, "$1$2$3"); // Remove one "n" off the end of every noisy string
-
-    return denoisedJSON;
-  } catch (error) {
-    if (error instanceof RangeError) {
-      const convertedJSON = stringifyIteratively(value, replacer, space);
-
-      if (convertedJSON === undefined) return undefined;
-
-      const supportsRawJSON = "rawJSON" in JSON;
-
-      if (supportsRawJSON) return convertedJSON;
-
-      const processedJSON = convertedJSON.replace(bigIntsStringify, "$1$2$3");
-
-      return processedJSON.replace(noiseStringify, "$1$2$3");
-    }
-
-    throw error;
   }
+
+  if (!value) return originalStringify(value, replacer, space);
+
+  const convertedToCustomJSON = originalStringify(
+    value,
+    (key, value) => {
+      const isNoise = typeof value === "string" && noiseValue.test(value);
+
+      if (isNoise) return value.toString() + "n"; // Mark noise values with additional "n" to offset the deletion of one "n" during the processing
+
+      if (typeof value === "bigint") return value.toString() + "n";
+
+      if (typeof replacer === "function") return replacer(key, value);
+
+      if (Array.isArray(replacer) && replacer.includes(key)) return value;
+
+      return value;
+    },
+    space,
+  );
+  const processedJSON = convertedToCustomJSON.replace(
+    bigIntsStringify,
+    "$1$2$3",
+  ); // Delete one "n" off the end of every BigInt value
+  const denoisedJSON = processedJSON.replace(noiseStringify, "$1$2$3"); // Remove one "n" off the end of every noisy string
+
+  return denoisedJSON;
 };
 
 const featureCache = new Map();
@@ -43459,15 +43102,12 @@ const isContextSourceSupported = () => {
 const convertMarkedBigIntsReviver = (key, value, context, userReviver) => {
   const isCustomFormatBigInt =
     typeof value === "string" && customFormat.test(value);
-
   if (isCustomFormatBigInt) return BigInt(value.slice(0, -1));
 
   const isNoiseValue = typeof value === "string" && noiseValue.test(value);
   if (isNoiseValue) return value.slice(0, -1);
 
-  const hasUserReviver = typeof userReviver === "function";
-
-  if (!hasUserReviver) return value;
+  if (typeof userReviver !== "function") return value;
 
   return userReviver(key, value, context);
 };
@@ -43485,18 +43125,15 @@ const convertMarkedBigIntsReviver = (key, value, context, userReviver) => {
  */
 const JSONParseV2 = (text, reviver) => {
   return JSON.parse(text, (key, value, context) => {
-    const isNumber = typeof value === "number";
-    const isOutOfBounds =
-      value > Number.MAX_SAFE_INTEGER || value < Number.MIN_SAFE_INTEGER;
-    const isBigNumber = isNumber && isOutOfBounds;
+    const isBigNumber =
+      typeof value === "number" &&
+      (value > Number.MAX_SAFE_INTEGER || value < Number.MIN_SAFE_INTEGER);
     const isInt = context && intRegex.test(context.source);
     const isBigInt = isBigNumber && isInt;
 
     if (isBigInt) return BigInt(context.source);
 
-    const hasCustomReviver = typeof reviver === "function";
-
-    if (!hasCustomReviver) return value;
+    if (typeof reviver !== "function") return value;
 
     return reviver(key, value, context);
   });
@@ -43505,107 +43142,8 @@ const JSONParseV2 = (text, reviver) => {
 const MAX_INT = Number.MAX_SAFE_INTEGER.toString();
 const MAX_DIGITS = MAX_INT.length;
 const stringsOrLargeNumbers =
-  /"(?:[^"\\]|\\.)*"|-?(0|[1-9][0-9]*)(\.[0-9]+)?([eE][+-]?[0-9]+)?/g;
+  /"(?:\\.|[^"])*"|-?(0|[1-9][0-9]*)(\.[0-9]+)?([eE][+-]?[0-9]+)?/g;
 const noiseValueWithQuotes = /^"-?\d+n+"$/; // Noise - strings that match the custom format before being converted to it
-
-/**
- * Iteratively traverses the parsed object bottom-up (post-order),
- * emulating the native JSON.parse reviver behavior.
- * This avoids Call Stack overflows (RangeError) on deeply nested structures.
- *
- * @param {any} parsed The natively parsed JSON object.
- * @param {Reviver} [userReviver] User's custom reviver function.
- * @returns {any} The fully processed object.
- */
-const applyReviverIteratively = (parsed, userReviver) => {
-  const rootHolder = { "": parsed };
-  const stack = [{ parent: rootHolder, key: "", visited: false }];
-
-  while (stack.length > 0) {
-    const node = stack[stack.length - 1];
-
-    if (!node.visited) {
-      node.visited = true;
-
-      const value = node.parent[node.key];
-      const isComplexObject = value !== null && typeof value === "object";
-
-      if (isComplexObject) {
-        const keys = Object.keys(value);
-
-        for (let i = keys.length - 1; i >= 0; i--) {
-          stack.push({ parent: value, key: keys[i], visited: false });
-        }
-      }
-    } else {
-      const { parent, key } = node;
-      let value = parent[key];
-
-      if (typeof value === "string") {
-        const isCustomFormatBigInt = customFormat.test(value);
-
-        if (isCustomFormatBigInt) {
-          value = BigInt(value.slice(0, -1));
-        } else {
-          const isNoise = noiseValue.test(value);
-
-          if (isNoise) value = value.slice(0, -1);
-        }
-      }
-
-      const hasUserReviver = typeof userReviver === "function";
-
-      if (hasUserReviver) {
-        value = userReviver.call(parent, key, value);
-      }
-
-      const isDeleted = value === undefined;
-
-      if (isDeleted) {
-        delete parent[key];
-      } else {
-        parent[key] = value;
-      }
-
-      stack.pop();
-    }
-  }
-
-  return rootHolder[""];
-};
-
-/**
- * Pre-processes the JSON string to mark large numbers with an 'n' suffix.
- *
- * @param {string} text The raw JSON string.
- * @returns {string} The serialized string with marked BigInts.
- */
-const serializeBigInts = (text) => {
-  return text.replace(
-    stringsOrLargeNumbers,
-    (match, digits, fractional, exponential) => {
-      const isString = match[0] === '"';
-      const isNoise = isString && noiseValueWithQuotes.test(match);
-
-      if (isNoise) return match.substring(0, match.length - 1) + 'n"'; // Mark noise values with additional "n" to offset the deletion of one "n" during the processing
-
-      const hasFractionalOrExponential = fractional || exponential;
-
-      // With a fixed number of digits, we can correctly use lexicographical comparison to do a numeric comparison
-      const isLessThanMaxSafeInt =
-        digits &&
-        (digits.length < MAX_DIGITS ||
-          (digits.length === MAX_DIGITS && digits <= MAX_INT));
-
-      const isStandardValue =
-        isString || hasFractionalOrExponential || isLessThanMaxSafeInt;
-
-      if (isStandardValue) return match;
-
-      return '"' + match + 'n"';
-    },
-  );
-};
 
 /**
  * Converts a JSON string into a JavaScript value.
@@ -43618,34 +43156,42 @@ const serializeBigInts = (text) => {
  *
  * @param {string} text A valid JSON string.
  * @param {Reviver} [reviver]
- * A function that transforms the results. This function is called for each member
- * of the object. If a member contains nested objects, the nested objects are
- * transformed before the parent object is.
+ *   A function that transforms the results. This function is called for each member
+ *   of the object. If a member contains nested objects, the nested objects are
+ *   transformed before the parent object is.
  * @returns {any} The parsed JavaScript value.
  * @throws {SyntaxError} If text is not valid JSON.
  */
 const JSONParse = (text, reviver) => {
   if (!text) return originalParse(text, reviver);
 
-  try {
-    if (isContextSourceSupported()) return JSONParseV2(text, reviver); // Shortcut to a faster (2x) and simpler version
+  if (isContextSourceSupported()) return JSONParseV2(text, reviver); // Shortcut to a faster (2x) and simpler version
 
-    // Find and mark big numbers with "n"
-    const serializedData = serializeBigInts(text);
+  // Find and mark big numbers with "n"
+  const serializedData = text.replace(
+    stringsOrLargeNumbers,
+    (text, digits, fractional, exponential) => {
+      const isString = text[0] === '"';
+      const isNoise = isString && noiseValueWithQuotes.test(text);
 
-    return originalParse(serializedData, (key, value, context) =>
-      convertMarkedBigIntsReviver(key, value, context, reviver),
-    );
-  } catch (error) {
-    if (error instanceof RangeError) {
-      const serializedData = serializeBigInts(text);
-      const parsed = originalParse(serializedData);
+      if (isNoise) return text.substring(0, text.length - 1) + 'n"'; // Mark noise values with additional "n" to offset the deletion of one "n" during the processing
 
-      return applyReviverIteratively(parsed, reviver);
-    }
+      const isFractionalOrExponential = fractional || exponential;
+      const isLessThanMaxSafeInt =
+        digits &&
+        (digits.length < MAX_DIGITS ||
+          (digits.length === MAX_DIGITS && digits <= MAX_INT)); // With a fixed number of digits, we can correctly use lexicographical comparison to do a numeric comparison
 
-    throw error;
-  }
+      if (isString || isFractionalOrExponential || isLessThanMaxSafeInt)
+        return text;
+
+      return '"' + text + 'n"';
+    },
+  );
+
+  return originalParse(serializedData, (key, value, context) =>
+    convertMarkedBigIntsReviver(key, value, context, reviver),
+  );
 };
 
 
@@ -43699,7 +43245,7 @@ class RequestError extends Error {
 
 
 // pkg/dist-src/version.js
-var dist_bundle_VERSION = "10.0.16";
+var dist_bundle_VERSION = "10.0.8";
 
 // pkg/dist-src/defaults.js
 var defaults_default = {
@@ -43828,7 +43374,7 @@ async function getResponseData(response) {
   if (!contentType) {
     return response.text().catch(noop);
   }
-  const mimetype = dist_parse(contentType);
+  const mimetype = (0,fast_content_type_parse/* safeParse */.xL)(contentType);
   if (isJSONResponse(mimetype)) {
     let text = "";
     try {
@@ -43837,10 +43383,7 @@ async function getResponseData(response) {
     } catch (err) {
       return text;
     }
-  } else if (mimetype.type.startsWith("text/") || // `application/octet-stream` is the canonical "arbitrary binary" type
-  // (RFC 2046) and must never be decoded as text, even when the response
-  // carries a (misleading) `charset=utf-8` parameter — see #751.
-  mimetype.parameters.charset?.toLowerCase() === "utf-8" && mimetype.type !== "application/octet-stream") {
+  } else if (mimetype.type.startsWith("text/") || mimetype.parameters.charset?.toLowerCase() === "utf-8") {
     return response.text().catch(noop);
   } else {
     return response.arrayBuffer().catch(
@@ -43859,10 +43402,9 @@ function toErrorMessage(data) {
   if (data instanceof ArrayBuffer) {
     return "Unknown error";
   }
-  if (typeof data === "object" && data !== null && "message" in data) {
-    const objectData = data;
-    const suffix = "documentation_url" in objectData ? ` - ${objectData.documentation_url}` : "";
-    return Array.isArray(objectData.errors) ? `${objectData.message}: ${objectData.errors.map((v) => JSON.stringify(v)).join(", ")}${suffix}` : `${objectData.message}${suffix}`;
+  if ("message" in data) {
+    const suffix = "documentation_url" in data ? ` - ${data.documentation_url}` : "";
+    return Array.isArray(data.errors) ? `${data.message}: ${data.errors.map((v) => JSON.stringify(v)).join(", ")}${suffix}` : `${data.message}${suffix}`;
   }
   return `Unknown error: ${JSON.stringify(data)}`;
 }
@@ -43929,9 +43471,6 @@ var GraphqlResponseError = class extends Error {
       Error.captureStackTrace(this, this.constructor);
     }
   }
-  request;
-  headers;
-  response;
   name = "GraphqlResponseError";
   errors;
   data;
@@ -44027,7 +43566,6 @@ function withCustomRequest(customRequest) {
   });
 }
 
-/* v8 ignore if -- @preserve */
 
 ;// CONCATENATED MODULE: ./node_modules/@octokit/auth-token/dist-bundle/index.js
 // pkg/dist-src/is-jwt.js
@@ -44085,7 +43623,7 @@ var createTokenAuth = function createTokenAuth2(token) {
 
 
 ;// CONCATENATED MODULE: ./node_modules/@octokit/core/dist-src/version.js
-const version_VERSION = "7.0.8";
+const version_VERSION = "7.0.6";
 
 
 ;// CONCATENATED MODULE: ./node_modules/@octokit/core/dist-src/index.js
@@ -50988,61 +50526,11 @@ function log(message, ...args) {
     external_node_process_namespaceObject.stderr.write(`${external_node_util_.format(message, ...args)}${external_node_os_namespaceObject.EOL}`);
 }
 //# sourceMappingURL=log.js.map
-;// CONCATENATED MODULE: ./node_modules/@typespec/ts-http-runtime/dist/esm/env.js
-// Copyright (c) Microsoft Corporation.
-// Licensed under the MIT License.
-
-/**
- * Returns the value of the specified environment variable.
- *
- * @internal
- */
-function getEnvironmentVariable(name) {
-    return external_node_process_namespaceObject.env[name];
-}
-/**
- * Emits a Node.js process warning.
- *
- * @internal
- */
-function env_emitNodeWarning(warning) {
-    process.emitWarning(warning);
-}
-/**
- * A constant that indicates whether the environment the code is running is a Web Browser.
- */
-const isBrowser = false;
-/**
- * A constant that indicates whether the environment the code is running is a Web Worker.
- */
-const isWebWorker = false;
-/**
- * A constant that indicates whether the environment the code is running is Deno.
- */
-const isDeno = typeof external_node_process_namespaceObject.versions.deno === "string" && external_node_process_namespaceObject.versions.deno.length > 0;
-/**
- * A constant that indicates whether the environment the code is running is Bun.sh.
- */
-const isBun = typeof external_node_process_namespaceObject.versions.bun === "string" && external_node_process_namespaceObject.versions.bun.length > 0;
-/**
- * A constant that indicates whether the environment the code is running is a Node.js compatible environment.
- */
-const env_isNodeLike = true;
-/**
- * A constant that indicates whether the environment the code is running is Node.JS.
- */
-const isNodeRuntime = !isBun && !isDeno;
-/**
- * A constant that indicates whether the environment the code is running is in React-Native.
- */
-const isReactNative = false;
-//# sourceMappingURL=env.js.map
 ;// CONCATENATED MODULE: ./node_modules/@typespec/ts-http-runtime/dist/esm/logger/debug.js
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-
-const debugEnvVariable = getEnvironmentVariable("DEBUG");
+const debugEnvVariable = (typeof process !== "undefined" && process.env && process.env.DEBUG) || undefined;
 let enabledString;
 let enabledNamespaces = [];
 let skippedNamespaces = [];
@@ -51228,7 +50716,6 @@ function extend(namespace) {
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-
 const TYPESPEC_RUNTIME_LOG_LEVELS = ["verbose", "info", "warning", "error"];
 const levelMap = {
     verbose: 400,
@@ -51251,7 +50738,8 @@ function isTypeSpecRuntimeLogLevel(level) {
  */
 function createLoggerContext(options) {
     const registeredLoggers = new Set();
-    const logLevelFromEnv = getEnvironmentVariable(options.logLevelEnvVarName);
+    const logLevelFromEnv = (typeof process !== "undefined" && process.env && process.env[options.logLevelEnvVarName]) ||
+        undefined;
     let logLevel;
     const clientLogger = logger_debug(options.namespace);
     clientLogger.log = (...args) => {
@@ -51356,16 +50844,6 @@ function createClientLogger(namespace) {
 function normalizeName(name) {
     return name.toLowerCase();
 }
-/**
- * Removes CR and LF characters from a header value to prevent obs-fold
- * (line folding) sequences, as forbidden by RFC 7230 §3.2.4.
- * @param value - The header value to sanitize.
- */
-function normalizeValue(value) {
-    return String(value)
-        .trim()
-        .replace(/[\r\n]/g, "");
-}
 function* headerIterator(map) {
     for (const entry of map.values()) {
         yield [entry.name, entry.value];
@@ -51388,7 +50866,7 @@ class HttpHeadersImpl {
      * @param value - The value of the header to set.
      */
     set(name, value) {
-        this._headersMap.set(normalizeName(name), { name, value: normalizeValue(value) });
+        this._headersMap.set(normalizeName(name), { name, value: String(value).trim() });
     }
     /**
      * Get the header value for the provided header name, or undefined if no header exists in this
@@ -51459,7 +50937,7 @@ function httpHeaders_createHttpHeaders(rawHeaders) {
  * @returns RFC4122 v4 UUID.
  */
 function randomUUID() {
-    return globalThis.crypto.randomUUID();
+    return crypto.randomUUID();
 }
 //# sourceMappingURL=uuidUtils.js.map
 ;// CONCATENATED MODULE: ./node_modules/@typespec/ts-http-runtime/dist/esm/pipelineRequest.js
@@ -51804,7 +51282,7 @@ function isObject(input) {
  * Typeguard for an error object shape (has name and message)
  * @param e - Something caught by a catch clause.
  */
-function error_isError(e) {
+function isError(e) {
     if (isObject(e)) {
         const hasName = typeof e.name === "string";
         const hasMessage = typeof e.message === "string";
@@ -51835,7 +51313,6 @@ const defaultAllowedHeaderNames = [
     "ms-cv",
     "return-client-request-id",
     "traceparent",
-    "azure-deprecating",
     "Access-Control-Allow-Credentials",
     "Access-Control-Allow-Headers",
     "Access-Control-Allow-Methods",
@@ -51871,7 +51348,7 @@ const defaultAllowedQueryParameters = ["api-version"];
 /**
  * A utility class to sanitize objects for logging.
  */
-class sanitizer_Sanitizer {
+class Sanitizer {
     allowedHeaderNames;
     allowedQueryParameters;
     constructor({ additionalAllowedHeaderNames: allowedHeaderNames = [], additionalAllowedQueryParameters: allowedQueryParameters = [], } = {}) {
@@ -51982,7 +51459,7 @@ class sanitizer_Sanitizer {
 
 
 
-const errorSanitizer = new sanitizer_Sanitizer();
+const errorSanitizer = new Sanitizer();
 /**
  * A custom error type for failed pipeline requests.
  */
@@ -52060,14 +51537,10 @@ class restError_RestError extends Error {
  * @param e - Something caught by a catch clause.
  */
 function restError_isRestError(e) {
-    // This package declares RestError, so there is exactly one constructor that can produce it
-    // here and the cross-package `instanceof` restriction does not apply. The `name` check below
-    // is the fallback for a RestError built by a second copy of this package.
-    // eslint-disable-next-line no-restricted-syntax
     if (e instanceof restError_RestError) {
         return true;
     }
-    return error_isError(e) && e.name === "RestError";
+    return isError(e) && e.name === "RestError";
 }
 //# sourceMappingURL=restError.js.map
 // EXTERNAL MODULE: external "node:http"
@@ -52084,484 +51557,6 @@ var external_node_stream_ = __nccwpck_require__(7075);
 
 const log_logger = createClientLogger("ts-http-runtime");
 //# sourceMappingURL=log.js.map
-;// CONCATENATED MODULE: ./node_modules/@typespec/ts-http-runtime/dist/esm/util/requestBodyHeaders.js
-// Copyright (c) Microsoft Corporation.
-// Licensed under the MIT License.
-/**
- * Converts a flat `[name, value, ...]` raw header array to `[name, value]` pairs,
- * or returns an existing pair array unchanged, preserving order and duplicates.
- *
- * @param headers - Header names and values in either array format.
- * @returns The header pairs in their original order.
- * @see https://nodejs.org/api/http.html#messagerawheaders
- */
-function getHeaderPairs(headers) {
-    return Array.isArray(headers[0])
-        ? headers
-        : Array.from({ length: Math.ceil(headers.length / 2) }, (_, index) => [
-            headers[index * 2],
-            headers[index * 2 + 1],
-        ]);
-}
-function isIterable(value) {
-    return Symbol.iterator in value && typeof value[Symbol.iterator] === "function";
-}
-function removeContinueToken(value) {
-    if (typeof value === "string") {
-        const tokens = value.split(",");
-        const remaining = tokens.filter((token) => token.trim().toLowerCase() !== "100-continue");
-        if (remaining.length === tokens.length) {
-            return value;
-        }
-        return (remaining
-            .map((token) => token.trim())
-            .filter(Boolean)
-            .join(", ") || undefined);
-    }
-    if (Array.isArray(value)) {
-        const remaining = value.map(removeContinueToken).filter((entry) => entry !== undefined);
-        return remaining.length > 0 ? remaining : undefined;
-    }
-    return value;
-}
-function stripRequestBodyHeaders(request, removeFraming) {
-    const stripHeaderValue = (name, value) => {
-        const lowerName = name.toLowerCase();
-        if (removeFraming &&
-            (lowerName === "content-length" ||
-                lowerName === "transfer-encoding" ||
-                lowerName === "trailer")) {
-            return undefined;
-        }
-        return lowerName === "expect" ? removeContinueToken(value) : value;
-    };
-    const stripHeaderPairs = (pairs) => pairs.flatMap(([name, value]) => {
-        const updated = typeof name === "string" ? stripHeaderValue(name, value) : value;
-        return updated === undefined ? [] : [[name, updated]];
-    });
-    for (const [name, value] of request.headers) {
-        const updated = stripHeaderValue(name, value);
-        if (updated === undefined) {
-            request.headers.delete(name);
-        }
-        else if (typeof updated === "string" && updated !== value) {
-            request.headers.set(name, updated);
-        }
-    }
-    const overrides = request.requestOverrides;
-    if (!overrides || !("headers" in overrides)) {
-        return;
-    }
-    const headers = overrides.headers;
-    if (Array.isArray(headers)) {
-        const updatedPairs = stripHeaderPairs(getHeaderPairs(headers));
-        request.requestOverrides = {
-            ...overrides,
-            headers: Array.isArray(headers[0]) ? updatedPairs : updatedPairs.flat(),
-        };
-    }
-    else if (headers && typeof headers === "object" && isIterable(headers)) {
-        const pairs = Array.from(headers, (entry) => {
-            if (!Array.isArray(entry) || entry.length !== 2) {
-                throw new TypeError("Header entry must be a name/value pair");
-            }
-            return entry;
-        });
-        request.requestOverrides = { ...overrides, headers: stripHeaderPairs(pairs) };
-    }
-    else if (headers && typeof headers === "object") {
-        const updatedHeaders = {};
-        for (const [name, value] of Object.entries(headers)) {
-            const updated = stripHeaderValue(name, value);
-            if (updated !== undefined) {
-                updatedHeaders[name] = updated;
-            }
-        }
-        request.requestOverrides = { ...overrides, headers: updatedHeaders };
-    }
-}
-/**
- * Removes only the 100-continue expectation from pipeline and replacement headers.
- * Raw header arrays retain their shape, and caller-supplied override headers are not mutated.
- * Iterable override collections are materialized as reusable name/value pairs.
- *
- * @param request - The request whose body is known to be empty.
- */
-function removeExpectContinueHeader(request) {
-    stripRequestBodyHeaders(request, false);
-}
-/**
- * Removes obsolete body framing, trailer declarations, and the 100-continue expectation
- * after discarding a body.
- *
- * @param request - The request whose body has been discarded.
- */
-function removeRequestBodyHeaders(request) {
-    stripRequestBodyHeaders(request, true);
-}
-//# sourceMappingURL=requestBodyHeaders.js.map
-;// CONCATENATED MODULE: ./node_modules/@typespec/ts-http-runtime/dist/esm/util/nodeExpectContinue.js
-// Copyright (c) Microsoft Corporation.
-// Licensed under the MIT License.
-
-const EXPECT_CONTINUE_TIMEOUT_IN_MS = 1000;
-function getHeaderValues(headers, name) {
-    if (Array.isArray(headers)) {
-        return getHeaderPairs(headers)
-            .filter(([key]) => typeof key === "string" && key.toLowerCase() === name)
-            .flatMap(([, value]) => (Array.isArray(value) ? value : [value]));
-    }
-    if (headers && typeof headers === "object") {
-        if ("get" in headers && typeof headers.get === "function") {
-            const value = headers.get(name);
-            return value === undefined || value === null ? [] : [value];
-        }
-        let value;
-        for (const [key, entry] of Object.entries(headers)) {
-            if (key.toLowerCase() === name) {
-                value = entry;
-            }
-        }
-        return value === undefined ? [] : Array.isArray(value) ? value : [value];
-    }
-    return [];
-}
-function getEffectiveHeaderValues(request, name) {
-    const headers = request.requestOverrides && "headers" in request.requestOverrides
-        ? request.requestOverrides.headers
-        : request.headers;
-    return getHeaderValues(headers, name.toLowerCase());
-}
-function hasExpectContinue(request) {
-    return getEffectiveHeaderValues(request, "expect").some((value) => typeof value === "string" &&
-        value.split(",").some((token) => token.trim().toLowerCase() === "100-continue"));
-}
-function addHeader(headers, name, value) {
-    if (!Array.isArray(headers)) {
-        return { ...headers, [name]: value };
-    }
-    return Array.isArray(headers[0]) ? [...headers, [name, value]] : [...headers, name, value];
-}
-function hasHeader(headers, name) {
-    if (Array.isArray(headers)) {
-        return getHeaderPairs(headers).some(([key]) => typeof key === "string" && key.toLowerCase() === name);
-    }
-    return Object.keys(headers ?? {}).some((key) => key.toLowerCase() === name);
-}
-function addExpectContinueFraming(options, bodyLength) {
-    if (hasHeader(options.headers, "content-length") ||
-        hasHeader(options.headers, "transfer-encoding")) {
-        return;
-    }
-    options.headers = addHeader(options.headers, bodyLength === null ? "Transfer-Encoding" : "Content-Length", bodyLength === null ? "chunked" : String(bodyLength));
-}
-function createExpectContinueRequest(options) {
-    let fallback;
-    let waiting = true;
-    let bodyStarted = false;
-    let errorReported = false;
-    let request;
-    let bodyError;
-    const bodyStream = options.bodyStream;
-    // Error observation must not consume a caller-owned source before upload permission.
-    bodyStream?.once("error", onBodyError);
-    if (bodyStream && "errored" in bodyStream && bodyStream.errored instanceof Error) {
-        // destroy(error) may still have its error event queued on the next tick.
-        process.nextTick(onBodyError, bodyStream.errored);
-        return;
-    }
-    try {
-        request = options.createRequest(onResponse);
-    }
-    catch (error) {
-        onError(error);
-        return;
-    }
-    function stopWaiting(keepBodyObserved = false) {
-        waiting = false;
-        if (fallback !== undefined) {
-            clearTimeout(fallback);
-            fallback = undefined;
-        }
-        request?.removeListener("continue", sendBody);
-        request?.removeListener("socket", onSocket);
-        if (!keepBodyObserved) {
-            bodyStream?.removeListener("error", onBodyError);
-        }
-    }
-    function onError(error) {
-        const requestError = error instanceof Error ? error : new Error(String(error));
-        // destroy() may emit no error on a closed request, or emit this error again on a live one.
-        if (!errorReported) {
-            errorReported = true;
-            stopWaiting();
-            options.onError(requestError);
-        }
-        return requestError;
-    }
-    function onBodyError(error) {
-        if (errorReported || (!waiting && !bodyStarted)) {
-            return;
-        }
-        errorReported = true;
-        bodyError = error instanceof Error ? error : new Error(String(error));
-        stopWaiting();
-        options.onBodyError(error);
-        request?.destroy(bodyError);
-    }
-    function sendBody() {
-        if (!waiting) {
-            return;
-        }
-        bodyStarted = true;
-        stopWaiting(true);
-        try {
-            options.sendBody(request);
-        }
-        catch (error) {
-            onBodyError(error);
-        }
-        finally {
-            // The upload path now observes the source, including synchronous failures while piping.
-            bodyStream?.removeListener("error", onBodyError);
-        }
-    }
-    function onAbort() {
-        stopWaiting();
-        options.onAbort(request);
-    }
-    function onSocket() {
-        if (!waiting) {
-            return;
-        }
-        try {
-            request.flushHeaders();
-            if (!waiting) {
-                return;
-            }
-            // This ordered write excludes connection setup and preceding header writes from the timeout.
-            request.write("", (error) => {
-                if (error) {
-                    request.destroy(onError(error));
-                }
-                else if (waiting) {
-                    fallback = setTimeout(sendBody, EXPECT_CONTINUE_TIMEOUT_IN_MS);
-                }
-            });
-        }
-        catch (error) {
-            request.destroy(onError(error));
-        }
-    }
-    function onResponse(response) {
-        stopWaiting();
-        if (!bodyStarted) {
-            request.shouldKeepAlive = false;
-            const destroyRequest = () => {
-                response.removeListener("end", destroyRequest);
-                response.removeListener("close", destroyRequest);
-                request.destroy();
-            };
-            response.once("end", destroyRequest);
-            response.once("close", destroyRequest);
-            if (response.readableEnded || response.destroyed) {
-                destroyRequest();
-            }
-        }
-        options.onResponse(response);
-    }
-    request.once("error", onError);
-    if (bodyError) {
-        request.destroy(bodyError);
-        return;
-    }
-    if (options.abortSignal.aborted) {
-        onAbort();
-        return;
-    }
-    options.abortSignal.addEventListener("abort", onAbort, { once: true });
-    // Request close can precede consumption of buffered response data.
-    // Keep private abort forwarding until sendRequest's outer lifecycle disconnects the caller.
-    request.once("close", () => stopWaiting());
-    if (request.destroyed || request.closed) {
-        stopWaiting();
-    }
-    if (!waiting) {
-        return;
-    }
-    request.once("continue", sendBody);
-    if (request.socket) {
-        onSocket();
-    }
-    else {
-        request.once("socket", onSocket);
-    }
-}
-//# sourceMappingURL=nodeExpectContinue.js.map
-;// CONCATENATED MODULE: ./node_modules/@typespec/ts-http-runtime/dist/esm/util/responseBody.js
-// Copyright (c) Microsoft Corporation.
-// Licensed under the MIT License.
-
-const responseBodySources = new WeakMap();
-const responseBodyDisposers = new WeakMap();
-const requestCompletions = new WeakMap();
-const responseBodyCompletions = new WeakMap();
-function setRequestCompletion(response, completion) {
-    requestCompletions.set(response, completion);
-    completion
-        .then(() => requestCompletions.get(response) === completion && requestCompletions.delete(response))
-        .catch((error) => {
-        log_logger.warning("Error tracking request completion", error);
-    });
-}
-/**
- * Returns a promise that resolves when the response's outgoing request has completed.
- *
- * @param response - The response whose request completion should be observed.
- * @returns The request completion promise, if the transport provides one.
- */
-function getRequestCompletion(response) {
-    return requestCompletions.get(response);
-}
-function setResponseBodyCompletion(response, completion) {
-    responseBodyCompletions.set(response, completion);
-    completion
-        .then(() => responseBodyCompletions.get(response) === completion &&
-        responseBodyCompletions.delete(response))
-        .catch((error) => {
-        logger.warning("Error tracking response body completion", error);
-    });
-}
-/**
- * Returns a promise that resolves when the response body has completed, errored, or been canceled.
- *
- * @param response - The response whose body completion should be observed.
- * @returns The response body completion promise, if the transport provides one.
- */
-function getResponseBodyCompletion(response) {
-    return responseBodyCompletions.get(response);
-}
-function isNodeResponseBody(value) {
-    return (typeof value === "object" &&
-        value !== null &&
-        "resume" in value &&
-        typeof value.resume === "function");
-}
-function isNodeEventEmitterBody(value) {
-    return ("on" in value &&
-        typeof value.on === "function" &&
-        "once" in value &&
-        typeof value.once === "function" &&
-        "removeListener" in value &&
-        typeof value.removeListener === "function");
-}
-function isBrowserResponseBody(value) {
-    return (typeof value === "object" &&
-        value !== null &&
-        "cancel" in value &&
-        typeof value.cancel === "function");
-}
-function setResponseBodySource(body, source) {
-    if (isNodeResponseBody(body) && isNodeResponseBody(source)) {
-        responseBodySources.set(body, source);
-    }
-}
-function setResponseBodyDisposer(response, dispose) {
-    responseBodyDisposers.set(response, dispose);
-    return () => {
-        if (responseBodyDisposers.get(response) === dispose) {
-            responseBodyDisposers.delete(response);
-        }
-    };
-}
-/**
- * Destroys a Node stream, or drains it if destruction is unavailable,
- * and recursively disposes its tracked upstream sources.
- */
-function disposeNodeResponseBody(readableStream, disposed = new Set()) {
-    // Avoid disposing a stream twice if the source chain contains a cycle.
-    if (disposed.has(readableStream)) {
-        return;
-    }
-    disposed.add(readableStream);
-    const source = responseBodySources.get(readableStream);
-    responseBodySources.delete(readableStream);
-    if (readableStream.closed !== true) {
-        if (readableStream.destroy) {
-            if (isNodeEventEmitterBody(readableStream)) {
-                const onError = (error) => {
-                    log_logger.warning("Error disposing Node stream", error);
-                };
-                const onClose = () => {
-                    readableStream.removeListener("error", onError);
-                };
-                readableStream.on("error", onError);
-                readableStream.once("close", onClose);
-                try {
-                    readableStream.destroy();
-                }
-                catch (error) {
-                    readableStream.removeListener("error", onError);
-                    readableStream.removeListener("close", onClose);
-                    throw error;
-                }
-            }
-            else {
-                readableStream.destroy();
-            }
-        }
-        else {
-            readableStream.resume();
-        }
-    }
-    if (source) {
-        disposeNodeResponseBody(source, disposed);
-    }
-}
-/**
- * Disposes a raw Node stream and its tracked upstream sources without throwing.
- *
- * @param stream - The stream to destroy, or drain if destruction is unavailable.
- */
-function disposeNodeStream(stream) {
-    try {
-        disposeNodeResponseBody(stream);
-    }
-    catch (error) {
-        log_logger.warning("Error disposing Node stream", error);
-    }
-}
-/**
- * Releases the body of a response that will not be read, so the underlying connection can be
- * reused or closed. Handles Node readable streams and browser web streams, and never throws:
- * disposal failures are logged as warnings.
- *
- * @param response - The response whose `readableStreamBody` or `browserStreamBody` should be disposed.
- */
-async function responseBody_disposeResponseBody(response) {
-    try {
-        const dispose = responseBodyDisposers.get(response);
-        responseBodyDisposers.delete(response);
-        try {
-            const readableStream = response.readableStreamBody;
-            if (isNodeResponseBody(readableStream)) {
-                disposeNodeStream(readableStream);
-                return;
-            }
-            const browserStream = response.browserStreamBody;
-            if (isBrowserResponseBody(browserStream)) {
-                await browserStream.cancel();
-            }
-        }
-        finally {
-            dispose?.();
-        }
-    }
-    catch (error) {
-        log_logger.warning("Error disposing response body", error);
-    }
-}
-//# sourceMappingURL=responseBody.js.map
 ;// CONCATENATED MODULE: ./node_modules/@typespec/ts-http-runtime/dist/esm/nodeHttpClient.js
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
@@ -52574,13 +51569,9 @@ async function responseBody_disposeResponseBody(response) {
 
 
 
-
-
-
-
 const DEFAULT_TLS_SETTINGS = {};
 function nodeHttpClient_isReadableStream(body) {
-    return (typeof body === "object" && body !== null && "pipe" in body && typeof body.pipe === "function");
+    return body && typeof body.pipe === "function";
 }
 function isStreamComplete(stream) {
     if (stream.readable === false) {
@@ -52599,15 +51590,7 @@ function isStreamComplete(stream) {
     });
 }
 function isArrayBuffer(body) {
-    return external_node_util_.types.isArrayBuffer(body) || ArrayBuffer.isView(body);
-}
-function arrayBufferToBuffer(body) {
-    if (Buffer.isBuffer(body)) {
-        return body;
-    }
-    return ArrayBuffer.isView(body)
-        ? Buffer.from(body.buffer, body.byteOffset, body.byteLength)
-        : Buffer.from(body);
+    return body && typeof body.byteLength === "number";
 }
 class ReportTransform extends external_node_stream_.Transform {
     loadedBytes = 0;
@@ -52629,108 +51612,6 @@ class ReportTransform extends external_node_stream_.Transform {
         this.progressCallback = progressCallback;
     }
 }
-function createRequestLifecycle(request, options, isInsecure, resolve, reject) {
-    let clientRequest;
-    let response;
-    let requestDone = false;
-    let resolveRequestComplete;
-    const requestComplete = new Promise((_resolve) => {
-        resolveRequestComplete = _resolve;
-    });
-    const onComplete = () => {
-        requestDone = true;
-        clientRequest.removeListener("finish", onComplete);
-        clientRequest.removeListener("close", onComplete);
-        resolveRequestComplete();
-    };
-    const onResponse = (incomingResponse) => {
-        response = incomingResponse;
-        resolve({
-            response: incomingResponse,
-            requestComplete,
-            isRequestComplete: () => requestDone,
-            disposeRequest: () => {
-                if (!requestDone) {
-                    clientRequest.destroy();
-                }
-            },
-        });
-    };
-    return {
-        createRequest: (onResponseCallback = onResponse) => {
-            clientRequest = isInsecure
-                ? external_node_http_.request(options, onResponseCallback)
-                : external_node_https_namespaceObject.request(options, onResponseCallback);
-            clientRequest.once("finish", onComplete);
-            clientRequest.once("close", onComplete);
-            return clientRequest;
-        },
-        onResponse,
-        rejectRequest: (error) => {
-            reject(toRequestSendError(error, request));
-        },
-        abortRequest: (req) => {
-            const abortError = new AbortError("The operation was aborted. Rejecting from abort signal callback while making request.");
-            response?.destroy(abortError);
-            req.destroy(abortError);
-            reject(abortError);
-        },
-    };
-}
-function toRequestSendError(error, request) {
-    if (restError_isRestError(error)) {
-        return error;
-    }
-    const prematureClose = error.code === "ERR_STREAM_PREMATURE_CLOSE";
-    return new restError_RestError(prematureClose ? "Request body stream closed before ending" : error.message, {
-        code: prematureClose
-            ? restError_RestError.REQUEST_SEND_ERROR
-            : (error.code ?? restError_RestError.REQUEST_SEND_ERROR),
-        request,
-    });
-}
-function sendRequestBody(clientRequest, body, request, onError) {
-    if (body && nodeHttpClient_isReadableStream(body)) {
-        pipeUploadStream(body, clientRequest, request, onError);
-    }
-    else if (body) {
-        if (typeof body === "string" || Buffer.isBuffer(body)) {
-            clientRequest.end(body);
-        }
-        else {
-            log_logger.error("Unrecognized body type", body);
-            throw new restError_RestError("Unrecognized body type", { request });
-        }
-    }
-    else {
-        clientRequest.end();
-    }
-}
-function prepareRequestBody(request, useExpectContinue) {
-    const requestBody = request.body;
-    const resolvedBody = typeof requestBody === "function" ? requestBody() : requestBody;
-    const body = resolvedBody && isArrayBuffer(resolvedBody) ? arrayBufferToBuffer(resolvedBody) : resolvedBody;
-    if (!useExpectContinue && body && !request.headers.has("Content-Length")) {
-        const bodyLength = getBodyLength(body);
-        if (bodyLength !== null) {
-            request.headers.set("Content-Length", bodyLength);
-        }
-    }
-    if (!body || !request.onUploadProgress) {
-        return body;
-    }
-    const uploadReportStream = new ReportTransform(request.onUploadProgress);
-    uploadReportStream.on("error", (e) => {
-        log_logger.error("Error in upload progress", e);
-    });
-    if (nodeHttpClient_isReadableStream(body)) {
-        pipeUploadStream(body, uploadReportStream, request);
-    }
-    else {
-        uploadReportStream.end(body);
-    }
-    return uploadReportStream;
-}
 /**
  * A HttpClient implementation that uses Node's "https" module to send HTTPS requests.
  * @internal
@@ -52743,12 +51624,10 @@ class NodeHttpClient {
      * @param request - The request to be made.
      */
     async sendRequest(request) {
-        const requestBody = request.body;
         const abortController = new AbortController();
         let abortListener;
-        const requestAbortSignal = request.abortSignal;
-        if (requestAbortSignal) {
-            if (requestAbortSignal.aborted) {
+        if (request.abortSignal) {
+            if (request.abortSignal.aborted) {
                 throw new AbortError("The operation was aborted. Request has already been canceled.");
             }
             abortListener = (event) => {
@@ -52756,43 +51635,45 @@ class NodeHttpClient {
                     abortController.abort();
                 }
             };
-            requestAbortSignal.addEventListener("abort", abortListener);
+            request.abortSignal.addEventListener("abort", abortListener);
         }
         let timeoutId;
         if (request.timeout > 0) {
             timeoutId = setTimeout(() => {
-                const sanitizer = new sanitizer_Sanitizer();
+                const sanitizer = new Sanitizer();
                 log_logger.info(`request to '${sanitizer.sanitizeUrl(request.url)}' timed out. canceling...`);
                 abortController.abort();
             }, request.timeout);
         }
         const acceptEncoding = request.headers.get("Accept-Encoding");
         const shouldDecompress = acceptEncoding?.includes("gzip") || acceptEncoding?.includes("deflate");
-        // Keep input separate from the prepared upload. Even a direct stream must leave body
-        // undefined until preparation starts, so early rejection does not transfer its ownership.
-        let body;
+        let body = typeof request.body === "function" ? request.body() : request.body;
+        if (body && !request.headers.has("Content-Length")) {
+            const bodyLength = getBodyLength(body);
+            if (bodyLength !== null) {
+                request.headers.set("Content-Length", bodyLength);
+            }
+        }
         let responseStream;
-        let requestComplete = Promise.resolve();
         try {
-            let useExpectContinue = hasExpectContinue(request);
-            const knownBodyLength = useExpectContinue && typeof requestBody !== "function"
-                ? getBodyLength(requestBody ?? null)
-                : null;
-            if (knownBodyLength === 0) {
-                removeExpectContinueHeader(request);
-                useExpectContinue = false;
+            if (body && request.onUploadProgress) {
+                const onUploadProgress = request.onUploadProgress;
+                const uploadReportStream = new ReportTransform(onUploadProgress);
+                uploadReportStream.on("error", (e) => {
+                    log_logger.error("Error in upload progress", e);
+                });
+                if (nodeHttpClient_isReadableStream(body)) {
+                    body.pipe(uploadReportStream);
+                }
+                else {
+                    uploadReportStream.end(body);
+                }
+                body = uploadReportStream;
             }
-            if (!useExpectContinue) {
-                body = prepareRequestBody(request, false);
+            const res = await this.makeRequest(request, abortController, body);
+            if (timeoutId !== undefined) {
+                clearTimeout(timeoutId);
             }
-            const result = useExpectContinue
-                ? await this.makeRequestWithExpectContinue(request, abortController, () => {
-                    body = prepareRequestBody(request, true);
-                    return body;
-                }, knownBodyLength)
-                : await this.makeRequest(request, abortController, body);
-            requestComplete = result.requestComplete;
-            const res = result.response;
             const headers = getResponseHeaders(res);
             const status = res.statusCode ?? 0;
             const response = {
@@ -52800,34 +51681,23 @@ class NodeHttpClient {
                 headers,
                 request,
             };
-            if (!result.isRequestComplete()) {
-                setRequestCompletion(response, result.requestComplete);
-                const clearDisposer = setResponseBodyDisposer(response, result.disposeRequest);
-                result.requestComplete.then(clearDisposer).catch((error) => {
-                    log_logger.warning("Error disposing request", error);
-                });
-            }
             // Responses to HEAD must not have a body.
             // If they do return a body, that body must be ignored.
-            const method = typeof request.requestOverrides?.method === "string"
-                ? request.requestOverrides.method.toUpperCase()
-                : request.method;
-            if (method === "HEAD") {
+            if (request.method === "HEAD") {
                 // call resume() and not destroy() to avoid closing the socket
                 // and losing keep alive
                 res.resume();
                 return response;
             }
-            responseStream = shouldDecompress
-                ? getDecodedResponseStream(res, headers, abortController.signal)
-                : res;
+            responseStream = shouldDecompress ? getDecodedResponseStream(res, headers) : res;
             const onDownloadProgress = request.onDownloadProgress;
             if (onDownloadProgress) {
                 const downloadReportStream = new ReportTransform(onDownloadProgress);
                 downloadReportStream.on("error", (e) => {
                     log_logger.error("Error in download progress", e);
                 });
-                responseStream = pipeResponseStream(responseStream, downloadReportStream, abortController.signal);
+                responseStream.pipe(downloadReportStream);
+                responseStream = downloadReportStream;
             }
             if (
             // Value of POSITIVE_INFINITY in streamResponseStatusCodes is considered as any status code
@@ -52840,26 +51710,10 @@ class NodeHttpClient {
             }
             return response;
         }
-        catch (error) {
-            // Dispose only the prepared upload. If preparation never ran, body is undefined
-            // and the caller's untouched input stream is left alone.
-            if (nodeHttpClient_isReadableStream(body)) {
-                disposeNodeStream(body);
-            }
-            if (responseStream) {
-                disposeNodeStream(responseStream);
-            }
-            throw error;
-        }
         finally {
-            if (timeoutId !== undefined) {
-                clearTimeout(timeoutId);
-            }
-            // Keep abort forwarding until the outgoing request and response have both completed.
-            if (requestAbortSignal && abortListener) {
+            // clean up event listener
+            if (request.abortSignal && abortListener) {
                 let uploadStreamDone = Promise.resolve();
-                // Wait only for a prepared upload. If preparation never ran, body is undefined,
-                // so the caller's untouched input stream cannot block abort-listener cleanup.
                 if (nodeHttpClient_isReadableStream(body)) {
                     uploadStreamDone = isStreamComplete(body);
                 }
@@ -52867,11 +51721,11 @@ class NodeHttpClient {
                 if (nodeHttpClient_isReadableStream(responseStream)) {
                     downloadStreamDone = isStreamComplete(responseStream);
                 }
-                Promise.all([requestComplete, uploadStreamDone, downloadStreamDone])
+                Promise.all([uploadStreamDone, downloadStreamDone])
                     .then(() => {
                     // eslint-disable-next-line promise/always-return
                     if (abortListener) {
-                        requestAbortSignal.removeEventListener("abort", abortListener);
+                        request.abortSignal?.removeEventListener("abort", abortListener);
                     }
                 })
                     .catch((e) => {
@@ -52881,54 +51735,51 @@ class NodeHttpClient {
         }
     }
     makeRequest(request, abortController, body) {
-        const { options, isInsecure } = this.getRequestOptions(request);
-        return new Promise((resolve, reject) => {
-            const { createRequest, rejectRequest, abortRequest } = createRequestLifecycle(request, options, isInsecure, resolve, reject);
-            const req = createRequest();
-            req.once("error", rejectRequest);
-            abortController.signal.addEventListener("abort", () => abortRequest(req));
-            sendRequestBody(req, body, request, rejectRequest);
-        });
-    }
-    makeRequestWithExpectContinue(request, abortController, prepareBody, knownBodyLength) {
-        const { options, isInsecure } = this.getRequestOptions(request);
-        addExpectContinueFraming(options, knownBodyLength);
-        return new Promise((resolve, reject) => {
-            const { createRequest, onResponse, rejectRequest, abortRequest } = createRequestLifecycle(request, options, isInsecure, resolve, reject);
-            createExpectContinueRequest({
-                abortSignal: abortController.signal,
-                bodyStream: nodeHttpClient_isReadableStream(request.body) ? request.body : undefined,
-                createRequest,
-                onAbort: abortRequest,
-                onError: rejectRequest,
-                onBodyError: reject,
-                onResponse,
-                sendBody: (clientRequest) => {
-                    const body = prepareBody();
-                    sendRequestBody(clientRequest, body, request, rejectRequest);
-                },
-            });
-        });
-    }
-    getRequestOptions(request) {
         const url = new URL(request.url);
         const isInsecure = url.protocol !== "https:";
         if (isInsecure && !request.allowInsecureConnection) {
             throw new Error(`Cannot connect to ${request.url} while allowInsecureConnection is false.`);
         }
         const agent = request.agent ?? this.getOrCreateAgent(request, isInsecure);
-        return {
-            isInsecure,
-            options: {
-                agent,
-                hostname: url.hostname,
-                path: `${url.pathname}${url.search}`,
-                port: url.port,
-                method: request.method,
-                headers: request.headers.toJSON({ preserveCase: true }),
-                ...request.requestOverrides,
-            },
+        const options = {
+            agent,
+            hostname: url.hostname,
+            path: `${url.pathname}${url.search}`,
+            port: url.port,
+            method: request.method,
+            headers: request.headers.toJSON({ preserveCase: true }),
+            ...request.requestOverrides,
         };
+        return new Promise((resolve, reject) => {
+            const req = isInsecure ? external_node_http_.request(options, resolve) : external_node_https_namespaceObject.request(options, resolve);
+            req.once("error", (err) => {
+                reject(new restError_RestError(err.message, { code: err.code ?? restError_RestError.REQUEST_SEND_ERROR, request }));
+            });
+            abortController.signal.addEventListener("abort", () => {
+                const abortError = new AbortError("The operation was aborted. Rejecting from abort signal callback while making request.");
+                req.destroy(abortError);
+                reject(abortError);
+            });
+            if (body && nodeHttpClient_isReadableStream(body)) {
+                body.pipe(req);
+            }
+            else if (body) {
+                if (typeof body === "string" || Buffer.isBuffer(body)) {
+                    req.end(body);
+                }
+                else if (isArrayBuffer(body)) {
+                    req.end(ArrayBuffer.isView(body) ? Buffer.from(body.buffer) : Buffer.from(body));
+                }
+                else {
+                    log_logger.error("Unrecognized body type", body);
+                    reject(new restError_RestError("Unrecognized body type"));
+                }
+            }
+            else {
+                // streams don't like "undefined" being passed as data
+                req.end();
+            }
+        });
     }
     getOrCreateAgent(request, isInsecure) {
         const disableKeepAlive = request.disableKeepAlive;
@@ -52985,85 +51836,44 @@ function getResponseHeaders(res) {
     }
     return headers;
 }
-function getDecodedResponseStream(stream, headers, abortSignal) {
+function getDecodedResponseStream(stream, headers) {
     const contentEncoding = headers.get("Content-Encoding");
     if (contentEncoding === "gzip") {
-        return pipeResponseStream(stream, external_node_zlib_.createGunzip(), abortSignal);
+        const unzip = external_node_zlib_.createGunzip();
+        stream.pipe(unzip);
+        return unzip;
     }
     else if (contentEncoding === "deflate") {
-        return pipeResponseStream(stream, external_node_zlib_.createInflate(), abortSignal);
+        const inflate = external_node_zlib_.createInflate();
+        stream.pipe(inflate);
+        return inflate;
     }
     return stream;
-}
-function pipeUploadStream(source, destination, request, onError) {
-    let tearingDown = false;
-    const cleanupFinished = (0,external_node_stream_.finished)(source, { writable: false }, onSourceComplete);
-    function onSourceComplete(error) {
-        cleanupFinished();
-        destination.removeListener("close", onDestinationClose);
-        if (error && !tearingDown) {
-            const requestError = toRequestSendError(error, request);
-            destination.destroy(requestError);
-            onError?.(requestError);
-        }
-    }
-    function onDestinationClose() {
-        // Keep observing the source, but do not forward failures caused by intentional teardown.
-        tearingDown = true;
-        source.unpipe(destination);
-        disposeNodeStream(source);
-    }
-    destination.once("close", onDestinationClose);
-    source.pipe(destination);
-}
-function pipeResponseStream(source, destination, abortSignal) {
-    setResponseBodySource(destination, source);
-    let cleanupSource = () => { };
-    let cleanupDestination = () => { };
-    cleanupSource = (0,external_node_stream_.finished)(source, { writable: false }, (error) => {
-        cleanupSource();
-        if (error) {
-            destination.destroy(abortSignal.aborted ? new AbortError() : error);
-        }
-    });
-    cleanupDestination = (0,external_node_stream_.finished)(destination, { writable: false }, () => {
-        cleanupDestination();
-        // Keep the source observer until its own completion, including any queued error.
-        source.unpipe(destination);
-        if (source.readable) {
-            disposeNodeStream(source);
-        }
-    });
-    return source.pipe(destination);
 }
 function streamToText(stream) {
     return new Promise((resolve, reject) => {
         const buffer = [];
-        const cleanupFinished = (0,external_node_stream_.finished)(stream, { writable: false }, onComplete);
-        function onData(chunk) {
+        stream.on("data", (chunk) => {
             if (Buffer.isBuffer(chunk)) {
                 buffer.push(chunk);
             }
             else {
                 buffer.push(Buffer.from(chunk));
             }
-        }
-        function onComplete(error) {
-            cleanupFinished();
-            stream.removeListener("data", onData);
-            if (error?.name === "AbortError") {
-                reject(error);
+        });
+        stream.on("end", () => {
+            resolve(Buffer.concat(buffer).toString("utf8"));
+        });
+        stream.on("error", (e) => {
+            if (e && e?.name === "AbortError") {
+                reject(e);
             }
-            else if (error) {
-                reject(new restError_RestError(`Error reading response as text: ${error.message}`, {
+            else {
+                reject(new restError_RestError(`Error reading response as text: ${e.message}`, {
                     code: restError_RestError.PARSE_ERROR,
                 }));
             }
-            else {
-                resolve(Buffer.concat(buffer).toString("utf8"));
-            }
-        }
-        stream.on("data", onData);
+        });
     });
 }
 /** @internal */
@@ -53081,7 +51891,7 @@ function getBodyLength(body) {
         return body.byteLength;
     }
     else if (typeof body === "string") {
-        return Buffer.byteLength(body);
+        return Buffer.from(body).length;
     }
     else {
         return null;
@@ -53121,7 +51931,7 @@ const logPolicyName = "logPolicy";
  */
 function logPolicy_logPolicy(options = {}) {
     const logger = options.logger ?? log_logger.info;
-    const sanitizer = new sanitizer_Sanitizer({
+    const sanitizer = new Sanitizer({
         additionalAllowedHeaderNames: options.additionalAllowedHeaderNames,
         additionalAllowedQueryParameters: options.additionalAllowedQueryParameters,
     });
@@ -53134,12 +51944,74 @@ function logPolicy_logPolicy(options = {}) {
             logger(`Request: ${sanitizer.sanitize(request)}`);
             const response = await next(request);
             logger(`Response status code: ${response.status}`);
-            logger(`Headers: ${sanitizer.sanitize({ headers: response.headers })}`);
+            logger(`Headers: ${sanitizer.sanitize(response.headers)}`);
             return response;
         },
     };
 }
 //# sourceMappingURL=logPolicy.js.map
+;// CONCATENATED MODULE: ./node_modules/@typespec/ts-http-runtime/dist/esm/policies/redirectPolicy.js
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT License.
+
+/**
+ * The programmatic identifier of the redirectPolicy.
+ */
+const redirectPolicyName = "redirectPolicy";
+/**
+ * Methods that are allowed to follow redirects 301 and 302
+ */
+const allowedRedirect = ["GET", "HEAD"];
+/**
+ * A policy to follow Location headers from the server in order
+ * to support server-side redirection.
+ * In the browser, this policy is not used.
+ * @param options - Options to control policy behavior.
+ */
+function redirectPolicy_redirectPolicy(options = {}) {
+    const { maxRetries = 20, allowCrossOriginRedirects = false } = options;
+    return {
+        name: redirectPolicyName,
+        async sendRequest(request, next) {
+            const response = await next(request);
+            return handleRedirect(next, response, maxRetries, allowCrossOriginRedirects);
+        },
+    };
+}
+async function handleRedirect(next, response, maxRetries, allowCrossOriginRedirects, currentRetries = 0) {
+    const { request, status, headers } = response;
+    const locationHeader = headers.get("location");
+    if (locationHeader &&
+        (status === 300 ||
+            (status === 301 && allowedRedirect.includes(request.method)) ||
+            (status === 302 && allowedRedirect.includes(request.method)) ||
+            (status === 303 && request.method === "POST") ||
+            status === 307) &&
+        currentRetries < maxRetries) {
+        const url = new URL(locationHeader, request.url);
+        // Only follow redirects to the same origin by default.
+        if (!allowCrossOriginRedirects) {
+            const originalUrl = new URL(request.url);
+            if (url.origin !== originalUrl.origin) {
+                log_logger.verbose(`Skipping cross-origin redirect from ${originalUrl.origin} to ${url.origin}.`);
+                return response;
+            }
+        }
+        request.url = url.toString();
+        // POST request with Status code 303 should be converted into a
+        // redirected GET request if the redirect url is present in the location header
+        if (status === 303) {
+            request.method = "GET";
+            request.headers.delete("Content-Length");
+            delete request.body;
+        }
+        request.headers.delete("Authorization");
+        const res = await next(request);
+        return handleRedirect(next, res, maxRetries, allowCrossOriginRedirects, currentRetries + 1);
+    }
+    return response;
+}
+//# sourceMappingURL=redirectPolicy.js.map
 ;// CONCATENATED MODULE: ./node_modules/@typespec/ts-http-runtime/dist/esm/util/userAgentPlatform.js
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
@@ -53172,7 +52044,6 @@ async function userAgentPlatform_setPlatformSpecificData(map) {
 ;// CONCATENATED MODULE: ./node_modules/@typespec/ts-http-runtime/dist/esm/util/userAgent.js
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
-
 
 
 function getUserAgentString(telemetryInfo) {
@@ -53239,7 +52110,7 @@ function userAgentPolicy_userAgentPolicy(options = {}) {
  * @param min - The smallest integer value allowed.
  * @param max - The largest integer value allowed.
  */
-function getRandomIntegerInclusive(min, max) {
+function random_getRandomIntegerInclusive(min, max) {
     // Make sure inputs are integers.
     min = Math.ceil(min);
     max = Math.floor(max);
@@ -53267,7 +52138,7 @@ function calculateRetryDelay(retryAttempt, config) {
     const clampedDelay = Math.min(config.maxRetryDelayInMs, exponentialDelay);
     // Allow the final value to have some "jitter" (within 50% of the delay size) so
     // that retries across multiple clients don't occur simultaneously.
-    const retryAfterInMs = clampedDelay / 2 + getRandomIntegerInclusive(0, clampedDelay / 2);
+    const retryAfterInMs = clampedDelay / 2 + random_getRandomIntegerInclusive(0, clampedDelay / 2);
     return { retryAfterInMs };
 }
 //# sourceMappingURL=delay.js.map
@@ -53472,13 +52343,12 @@ function isSystemError(err) {
 ;// CONCATENATED MODULE: ./node_modules/@typespec/ts-http-runtime/dist/esm/constants.js
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
-const constants_SDK_VERSION = "0.3.10";
+const constants_SDK_VERSION = "0.3.5";
 const constants_DEFAULT_RETRY_POLICY_COUNT = 3;
 //# sourceMappingURL=constants.js.map
 ;// CONCATENATED MODULE: ./node_modules/@typespec/ts-http-runtime/dist/esm/policies/retryPolicy.js
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
-
 
 
 
@@ -53502,6 +52372,7 @@ function retryPolicy_retryPolicy(strategies, options = { maxRetries: constants_D
             let retryCount = -1;
             retryRequest: while (true) {
                 retryCount += 1;
+                response = undefined;
                 responseError = undefined;
                 try {
                     logger.info(`Retry ${retryCount}: Attempting to send request`, request.requestId);
@@ -53556,17 +52427,11 @@ function retryPolicy_retryPolicy(strategies, options = { maxRetries: constants_D
                     }
                     if (retryAfterInMs || retryAfterInMs === 0) {
                         strategyLogger.info(`Retry ${retryCount}: Retry strategy ${strategy.name} retries after ${retryAfterInMs}`);
-                        if (response) {
-                            await responseBody_disposeResponseBody(response);
-                        }
                         await helpers_delay(retryAfterInMs, undefined, { abortSignal: request.abortSignal });
                         continue retryRequest;
                     }
                     if (redirectTo) {
                         strategyLogger.info(`Retry ${retryCount}: Retry strategy ${strategy.name} redirects to ${redirectTo}`);
-                        if (response) {
-                            await responseBody_disposeResponseBody(response);
-                        }
                         request.url = redirectTo;
                         continue retryRequest;
                     }
@@ -53635,33 +52500,48 @@ function bytesEncoding_stringToUint8Array(value, format) {
     return Buffer.from(value, format);
 }
 //# sourceMappingURL=bytesEncoding.js.map
-;// CONCATENATED MODULE: ./node_modules/@typespec/ts-http-runtime/dist/esm/formData.js
+;// CONCATENATED MODULE: ./node_modules/@typespec/ts-http-runtime/dist/esm/util/checkEnvironment.js
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 /**
- * If the request body is a native FormData, convert it to our FormDataMap
- * representation and clear the body. Node.js's HTTP stack doesn't handle
- * FormData natively, so the pipeline must serialize it later.
- *
- * @internal
+ * A constant that indicates whether the environment the code is running is a Web Browser.
  */
-function convertBodyToFormDataMap(body) {
-    if (typeof FormData !== "undefined" && body instanceof FormData) {
-        const formDataMap = {};
-        for (const [key, value] of body.entries()) {
-            const existing = formDataMap[key];
-            if (Array.isArray(existing)) {
-                existing.push(value);
-            }
-            else {
-                formDataMap[key] = existing !== undefined ? [existing, value] : [value];
-            }
-        }
-        return formDataMap;
-    }
-    return undefined;
-}
-//# sourceMappingURL=formData.js.map
+// eslint-disable-next-line @azure/azure-sdk/ts-no-window
+const isBrowser = typeof window !== "undefined" && typeof window.document !== "undefined";
+/**
+ * A constant that indicates whether the environment the code is running is a Web Worker.
+ */
+const isWebWorker = typeof self === "object" &&
+    typeof self?.importScripts === "function" &&
+    (self.constructor?.name === "DedicatedWorkerGlobalScope" ||
+        self.constructor?.name === "ServiceWorkerGlobalScope" ||
+        self.constructor?.name === "SharedWorkerGlobalScope");
+/**
+ * A constant that indicates whether the environment the code is running is Deno.
+ */
+const isDeno = typeof Deno !== "undefined" &&
+    typeof Deno.version !== "undefined" &&
+    typeof Deno.version.deno !== "undefined";
+/**
+ * A constant that indicates whether the environment the code is running is Bun.sh.
+ */
+const isBun = typeof Bun !== "undefined" && typeof Bun.version !== "undefined";
+/**
+ * A constant that indicates whether the environment the code is running is a Node.js compatible environment.
+ */
+const checkEnvironment_isNodeLike = typeof globalThis.process !== "undefined" &&
+    Boolean(globalThis.process.version) &&
+    Boolean(globalThis.process.versions?.node);
+/**
+ * A constant that indicates whether the environment the code is running is Node.JS.
+ */
+const isNodeRuntime = checkEnvironment_isNodeLike && !isBun && !isDeno;
+/**
+ * A constant that indicates whether the environment the code is running is in React-Native.
+ */
+// https://github.com/facebook/react-native/blob/main/packages/react-native/Libraries/Core/setUpNavigator.js
+const isReactNative = typeof navigator !== "undefined" && navigator?.product === "ReactNative";
+//# sourceMappingURL=checkEnvironment.js.map
 ;// CONCATENATED MODULE: ./node_modules/@typespec/ts-http-runtime/dist/esm/policies/formDataPolicy.js
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
@@ -53672,6 +52552,14 @@ function convertBodyToFormDataMap(body) {
  * The programmatic identifier of the formDataPolicy.
  */
 const formDataPolicyName = "formDataPolicy";
+function formDataToFormDataMap(formData) {
+    const formDataMap = {};
+    for (const [key, value] of formData.entries()) {
+        formDataMap[key] ??= [];
+        formDataMap[key].push(value);
+    }
+    return formDataMap;
+}
 /**
  * A policy that encodes FormData on the request into the body.
  */
@@ -53679,9 +52567,8 @@ function formDataPolicy_formDataPolicy() {
     return {
         name: formDataPolicyName,
         async sendRequest(request, next) {
-            const converted = convertBodyToFormDataMap(request.body);
-            if (converted) {
-                request.formData = converted;
+            if (checkEnvironment_isNodeLike && typeof FormData !== "undefined" && request.body instanceof FormData) {
+                request.formData = formDataToFormDataMap(request.body);
                 request.body = undefined;
             }
             if (request.formData) {
@@ -53752,696 +52639,10 @@ async function prepareFormData(formData, request) {
     request.multipartBody = { parts };
 }
 //# sourceMappingURL=formDataPolicy.js.map
-// EXTERNAL MODULE: external "net"
-var external_net_ = __nccwpck_require__(9278);
-// EXTERNAL MODULE: external "tls"
-var external_tls_ = __nccwpck_require__(4756);
-// EXTERNAL MODULE: ./node_modules/debug/src/index.js
-var src = __nccwpck_require__(2830);
-;// CONCATENATED MODULE: ./node_modules/agent-base/dist/helpers.js
-
-
-async function toBuffer(stream) {
-    let length = 0;
-    const chunks = [];
-    for await (const chunk of stream) {
-        length += chunk.length;
-        chunks.push(chunk);
-    }
-    return Buffer.concat(chunks, length);
-}
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function json(stream) {
-    const buf = await toBuffer(stream);
-    const str = buf.toString('utf8');
-    try {
-        return JSON.parse(str);
-    }
-    catch (_err) {
-        const err = _err;
-        err.message += ` (input: ${str})`;
-        throw err;
-    }
-}
-function req(url, opts = {}) {
-    const href = typeof url === 'string' ? url : url.href;
-    const req = (href.startsWith('https:') ? https : http).request(url, opts);
-    const promise = new Promise((resolve, reject) => {
-        req
-            .once('response', resolve)
-            .once('error', reject)
-            .end();
-    });
-    req.then = promise.then.bind(promise);
-    return req;
-}
-//# sourceMappingURL=helpers.js.map
-;// CONCATENATED MODULE: ./node_modules/agent-base/dist/index.js
-
-
-
-
-const INTERNAL = Symbol('AgentBaseInternalState');
-class Agent extends external_http_.Agent {
-    constructor(opts) {
-        super(opts);
-        this[INTERNAL] = {};
-    }
-    /**
-     * Determine whether this is an `http` or `https` request.
-     */
-    isSecureEndpoint(options) {
-        if (options) {
-            // First check the `secureEndpoint` property explicitly, since this
-            // means that a parent `Agent` is "passing through" to this instance.
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            if (typeof options.secureEndpoint === 'boolean') {
-                return options.secureEndpoint;
-            }
-            // If no explicit `secure` endpoint, check if `protocol` property is
-            // set. This will usually be the case since using a full string URL
-            // or `URL` instance should be the most common usage.
-            if (typeof options.protocol === 'string') {
-                return options.protocol === 'https:';
-            }
-        }
-        // Finally, if no `protocol` property was set, then fall back to
-        // checking the stack trace of the current call stack, and try to
-        // detect the "https" module.
-        const { stack } = new Error();
-        if (typeof stack !== 'string')
-            return false;
-        return stack
-            .split('\n')
-            .some((l) => l.indexOf('(https.js:') !== -1 ||
-            l.indexOf('node:https:') !== -1);
-    }
-    // In order to support async signatures in `connect()` and Node's native
-    // connection pooling in `http.Agent`, the array of sockets for each origin
-    // has to be updated synchronously. This is so the length of the array is
-    // accurate when `addRequest()` is next called. We achieve this by creating a
-    // fake socket and adding it to `sockets[origin]` and incrementing
-    // `totalSocketCount`.
-    incrementSockets(name) {
-        // If `maxSockets` and `maxTotalSockets` are both Infinity then there is no
-        // need to create a fake socket because Node.js native connection pooling
-        // will never be invoked.
-        if (this.maxSockets === Infinity && this.maxTotalSockets === Infinity) {
-            return null;
-        }
-        // All instances of `sockets` are expected TypeScript errors. The
-        // alternative is to add it as a private property of this class but that
-        // will break TypeScript subclassing.
-        if (!this.sockets[name]) {
-            // @ts-expect-error `sockets` is readonly in `@types/node`
-            this.sockets[name] = [];
-        }
-        const fakeSocket = new external_net_.Socket({ writable: false });
-        this.sockets[name].push(fakeSocket);
-        // @ts-expect-error `totalSocketCount` isn't defined in `@types/node`
-        this.totalSocketCount++;
-        return fakeSocket;
-    }
-    decrementSockets(name, socket) {
-        if (!this.sockets[name] || socket === null) {
-            return;
-        }
-        const sockets = this.sockets[name];
-        const index = sockets.indexOf(socket);
-        if (index !== -1) {
-            sockets.splice(index, 1);
-            // @ts-expect-error  `totalSocketCount` isn't defined in `@types/node`
-            this.totalSocketCount--;
-            if (sockets.length === 0) {
-                // @ts-expect-error `sockets` is readonly in `@types/node`
-                delete this.sockets[name];
-            }
-        }
-    }
-    // In order to properly update the socket pool, we need to call `getName()` on
-    // the core `https.Agent` if it is a secureEndpoint.
-    getName(options) {
-        const secureEndpoint = this.isSecureEndpoint(options);
-        if (secureEndpoint) {
-            return external_https_.Agent.prototype.getName.call(this, options);
-        }
-        return super.getName(options);
-    }
-    createSocket(req, options, cb) {
-        const connectOpts = {
-            ...options,
-            secureEndpoint: this.isSecureEndpoint(options),
-        };
-        const name = this.getName(connectOpts);
-        const fakeSocket = this.incrementSockets(name);
-        Promise.resolve()
-            .then(() => this.connect(req, connectOpts))
-            .then((socket) => {
-            this.decrementSockets(name, fakeSocket);
-            if (typeof socket
-                .addRequest === 'function') {
-                try {
-                    return socket.addRequest(req, connectOpts);
-                }
-                catch (err) {
-                    return cb(err);
-                }
-            }
-            this[INTERNAL].currentSocket = socket;
-            // @ts-expect-error `createSocket()` isn't defined in `@types/node`
-            super.createSocket(req, options, cb);
-        }, (err) => {
-            this.decrementSockets(name, fakeSocket);
-            cb(err);
-        });
-    }
-    createConnection() {
-        const socket = this[INTERNAL].currentSocket;
-        this[INTERNAL].currentSocket = undefined;
-        if (!socket) {
-            throw new Error('No socket was returned in the `connect()` function');
-        }
-        return socket;
-    }
-    get defaultPort() {
-        return (this[INTERNAL].defaultPort ??
-            (this.protocol === 'https:' ? 443 : 80));
-    }
-    set defaultPort(v) {
-        if (this[INTERNAL]) {
-            this[INTERNAL].defaultPort = v;
-        }
-    }
-    get protocol() {
-        return (this[INTERNAL].protocol ??
-            (this.isSecureEndpoint() ? 'https:' : 'http:'));
-    }
-    set protocol(v) {
-        if (this[INTERNAL]) {
-            this[INTERNAL].protocol = v;
-        }
-    }
-}
-//# sourceMappingURL=index.js.map
-;// CONCATENATED MODULE: ./node_modules/https-proxy-agent/dist/parse-proxy-response.js
-
-const parse_proxy_response_debug = src('https-proxy-agent:parse-proxy-response');
-function parseProxyResponse(socket) {
-    return new Promise((resolve, reject) => {
-        // we need to buffer any HTTP traffic that happens with the proxy before we get
-        // the CONNECT response, so that if the response is anything other than an "200"
-        // response code, then we can re-play the "data" events on the socket once the
-        // HTTP parser is hooked up...
-        let buffersLength = 0;
-        const buffers = [];
-        function read() {
-            const b = socket.read();
-            if (b)
-                ondata(b);
-            else
-                socket.once('readable', read);
-        }
-        function cleanup() {
-            socket.removeListener('end', onend);
-            socket.removeListener('error', onerror);
-            socket.removeListener('readable', read);
-        }
-        function onend() {
-            cleanup();
-            parse_proxy_response_debug('onend');
-            reject(new Error('Proxy connection ended before receiving CONNECT response'));
-        }
-        function onerror(err) {
-            cleanup();
-            parse_proxy_response_debug('onerror %o', err);
-            reject(err);
-        }
-        function ondata(b) {
-            buffers.push(b);
-            buffersLength += b.length;
-            const buffered = Buffer.concat(buffers, buffersLength);
-            const endOfHeaders = buffered.indexOf('\r\n\r\n');
-            if (endOfHeaders === -1) {
-                // keep buffering
-                parse_proxy_response_debug('have not received end of HTTP headers yet...');
-                read();
-                return;
-            }
-            const headerParts = buffered
-                .slice(0, endOfHeaders)
-                .toString('ascii')
-                .split('\r\n');
-            const firstLine = headerParts.shift();
-            if (!firstLine) {
-                socket.destroy();
-                return reject(new Error('No header received from proxy CONNECT response'));
-            }
-            const firstLineParts = firstLine.split(' ');
-            const statusCode = +firstLineParts[1];
-            const statusText = firstLineParts.slice(2).join(' ');
-            const headers = {};
-            for (const header of headerParts) {
-                if (!header)
-                    continue;
-                const firstColon = header.indexOf(':');
-                if (firstColon === -1) {
-                    socket.destroy();
-                    return reject(new Error(`Invalid header from proxy CONNECT response: "${header}"`));
-                }
-                const key = header.slice(0, firstColon).toLowerCase();
-                const value = header.slice(firstColon + 1).trimStart();
-                const current = headers[key];
-                if (typeof current === 'string') {
-                    headers[key] = [current, value];
-                }
-                else if (Array.isArray(current)) {
-                    current.push(value);
-                }
-                else {
-                    headers[key] = value;
-                }
-            }
-            parse_proxy_response_debug('got proxy server response: %o %o', firstLine, headers);
-            cleanup();
-            resolve({
-                connect: {
-                    statusCode,
-                    statusText,
-                    headers,
-                },
-                buffered,
-            });
-        }
-        socket.on('error', onerror);
-        socket.on('end', onend);
-        read();
-    });
-}
-//# sourceMappingURL=parse-proxy-response.js.map
-;// CONCATENATED MODULE: ./node_modules/proxy-agent-negotiate/dist/index.js
-function createNegotiateAuth() {
-    return async ({ response, scheme }) => {
-        if (scheme.toLowerCase() !== 'negotiate') {
-            throw new Error(`Expected Negotiate scheme but got "${scheme}"`);
-        }
-        let kerberos;
-        try {
-            kerberos = await __nccwpck_require__.e(/* import() */ 50).then(__nccwpck_require__.t.bind(__nccwpck_require__, 8050, 19));
-        }
-        catch {
-            throw new Error('The "kerberos" package is required for Negotiate proxy authentication. ' +
-                'Install it with: npm install kerberos');
-        }
-        const proxyAuthenticate = response.headers['proxy-authenticate'] || '';
-        const challengeHeader = Array.isArray(proxyAuthenticate)
-            ? proxyAuthenticate[0]
-            : proxyAuthenticate;
-        const serverToken = typeof challengeHeader === 'string' && challengeHeader.includes(' ')
-            ? challengeHeader.split(' ').slice(1).join(' ')
-            : undefined;
-        const client = await kerberos.initializeClient('HTTP@proxy', {
-            mechOID: kerberos.GSS_MECH_OID_SPNEGO,
-        });
-        const token = await client.step(serverToken || '');
-        if (!token) {
-            throw new Error('Kerberos client.step() returned no token');
-        }
-        return {
-            headers: {
-                'Proxy-Authorization': `Negotiate ${token}`,
-            },
-        };
-    };
-}
-//# sourceMappingURL=index.js.map
-;// CONCATENATED MODULE: ./node_modules/https-proxy-agent/dist/index.js
-
-
-
-
-
-
-
-
-const dist_debug = src('https-proxy-agent');
-const setServernameFromNonIpHost = (options) => {
-    if (options.servername === undefined &&
-        options.host &&
-        !external_net_.isIP(options.host)) {
-        return {
-            ...options,
-            servername: options.host,
-        };
-    }
-    return options;
-};
-/**
- * The `HttpsProxyAgent` implements an HTTP Agent subclass that connects to
- * the specified "HTTP(s) proxy server" in order to proxy HTTPS requests.
- *
- * Outgoing HTTP requests are first tunneled through the proxy server using the
- * `CONNECT` HTTP request method to establish a connection to the proxy server,
- * and then the proxy server connects to the destination target and issues the
- * HTTP request from the proxy server.
- *
- * `https:` requests have their socket connection upgraded to TLS once
- * the connection to the proxy server has been established.
- */
-class HttpsProxyAgent extends Agent {
-    constructor(proxy, opts) {
-        super(opts);
-        this.options = { path: undefined };
-        this.proxy = typeof proxy === 'string' ? new external_url_namespaceObject.URL(proxy) : proxy;
-        this.proxyHeaders = opts?.headers ?? {};
-        dist_debug('Creating new HttpsProxyAgent instance: %o', this.proxy.href);
-        if (opts?.negotiate) {
-            this.onProxyAuth = createNegotiateAuth();
-        }
-        else if (opts?.onProxyAuth) {
-            this.onProxyAuth = opts.onProxyAuth;
-        }
-        // Trim off the brackets from IPv6 addresses
-        const host = (this.proxy.hostname || this.proxy.host).replace(/^\[|\]$/g, '');
-        const port = this.proxy.port
-            ? parseInt(this.proxy.port, 10)
-            : this.proxy.protocol === 'https:'
-                ? 443
-                : 80;
-        this.connectOpts = {
-            // Attempt to negotiate http/1.1 for proxy servers that support http/2
-            ALPNProtocols: ['http/1.1'],
-            ...(opts
-                ? dist_omit(opts, 'headers', 'onProxyAuth', 'negotiate')
-                : null),
-            host,
-            port,
-        };
-    }
-    /**
-     * Called when the node-core HTTP client library is creating a
-     * new HTTP request.
-     */
-    async connect(req, opts) {
-        const { proxy } = this;
-        if (!opts.host) {
-            throw new TypeError('No "host" provided');
-        }
-        // Create a socket connection to the proxy server.
-        let socket;
-        if (proxy.protocol === 'https:') {
-            dist_debug('Creating `tls.Socket`: %o', this.connectOpts);
-            socket = external_tls_.connect(setServernameFromNonIpHost(this.connectOpts));
-        }
-        else {
-            dist_debug('Creating `net.Socket`: %o', this.connectOpts);
-            socket = external_net_.connect(this.connectOpts);
-        }
-        const headers = typeof this.proxyHeaders === 'function'
-            ? this.proxyHeaders()
-            : { ...this.proxyHeaders };
-        const host = external_net_.isIPv6(opts.host) ? `[${opts.host}]` : opts.host;
-        let payload = `CONNECT ${host}:${opts.port} HTTP/1.1\r\n`;
-        // Inject the `Proxy-Authorization` header if necessary.
-        if (proxy.username || proxy.password) {
-            const auth = `${decodeURIComponent(proxy.username)}:${decodeURIComponent(proxy.password)}`;
-            headers['Proxy-Authorization'] = `Basic ${Buffer.from(auth).toString('base64')}`;
-        }
-        headers.Host = `${host}:${opts.port}`;
-        if (!headers['Proxy-Connection']) {
-            headers['Proxy-Connection'] = this.keepAlive
-                ? 'Keep-Alive'
-                : 'close';
-        }
-        for (const name of Object.keys(headers)) {
-            payload += `${name}: ${headers[name]}\r\n`;
-        }
-        const proxyResponsePromise = parseProxyResponse(socket);
-        socket.write(`${payload}\r\n`);
-        const { connect, buffered } = await proxyResponsePromise;
-        req.emit('proxyConnect', connect);
-        this.emit('proxyConnect', connect, req);
-        req.emit('proxy', { proxy: this.proxy.href, socket });
-        if (connect.statusCode === 200) {
-            req.once('socket', resume);
-            if (opts.secureEndpoint) {
-                // The proxy is connecting to a TLS server, so upgrade
-                // this socket connection to a TLS connection.
-                dist_debug('Upgrading socket connection to TLS');
-                return external_tls_.connect({
-                    ...dist_omit(setServernameFromNonIpHost(opts), 'host', 'path', 'port'),
-                    socket,
-                });
-            }
-            return socket;
-        }
-        // Handle 407 Proxy Authentication Required
-        if (connect.statusCode === 407 && this.onProxyAuth) {
-            dist_debug('Got 407 response, invoking onProxyAuth callback');
-            socket.destroy();
-            const proxyAuthenticate = connect.headers['proxy-authenticate'] || '';
-            const scheme = Array.isArray(proxyAuthenticate)
-                ? proxyAuthenticate[0].split(/\s/)[0]
-                : proxyAuthenticate.split(/\s/)[0];
-            const authResponse = await this.onProxyAuth({
-                response: connect,
-                scheme,
-            });
-            // Retry with the auth headers
-            return this._connectWithAuth(req, opts, authResponse.headers);
-        }
-        // Some other status code that's not 200... need to re-play the HTTP
-        // header "data" events onto the socket once the HTTP machinery is
-        // attached so that the node core `http` can parse and handle the
-        // error status code.
-        // Close the original socket, and a new "fake" socket is returned
-        // instead, so that the proxy doesn't get the HTTP request
-        // written to it (which may contain `Authorization` headers or other
-        // sensitive data).
-        //
-        // See: https://hackerone.com/reports/541502
-        socket.destroy();
-        const fakeSocket = new external_net_.Socket({ writable: false });
-        fakeSocket.readable = true;
-        // Need to wait for the "socket" event to re-play the "data" events.
-        req.once('socket', (s) => {
-            dist_debug('Replaying proxy buffer for failed request');
-            external_assert_(s.listenerCount('data') > 0);
-            // Replay the "buffered" Buffer onto the fake `socket`, since at
-            // this point the HTTP module machinery has been hooked up for
-            // the user.
-            s.push(buffered);
-            s.push(null);
-        });
-        return fakeSocket;
-    }
-    /**
-     * Retry a CONNECT request with additional auth headers.
-     */
-    async _connectWithAuth(req, opts, authHeaders) {
-        const { proxy } = this;
-        let socket;
-        if (proxy.protocol === 'https:') {
-            socket = external_tls_.connect(setServernameFromNonIpHost(this.connectOpts));
-        }
-        else {
-            socket = external_net_.connect(this.connectOpts);
-        }
-        const headers = typeof this.proxyHeaders === 'function'
-            ? this.proxyHeaders()
-            : { ...this.proxyHeaders };
-        const host = external_net_.isIPv6(opts.host) ? `[${opts.host}]` : opts.host;
-        let payload = `CONNECT ${host}:${opts.port} HTTP/1.1\r\n`;
-        if (proxy.username || proxy.password) {
-            const auth = `${decodeURIComponent(proxy.username)}:${decodeURIComponent(proxy.password)}`;
-            headers['Proxy-Authorization'] = `Basic ${Buffer.from(auth).toString('base64')}`;
-        }
-        // Merge auth headers (overrides existing)
-        Object.assign(headers, authHeaders);
-        headers.Host = `${host}:${opts.port}`;
-        if (!headers['Proxy-Connection']) {
-            headers['Proxy-Connection'] = this.keepAlive
-                ? 'Keep-Alive'
-                : 'close';
-        }
-        for (const name of Object.keys(headers)) {
-            payload += `${name}: ${headers[name]}\r\n`;
-        }
-        const proxyResponsePromise = parseProxyResponse(socket);
-        socket.write(`${payload}\r\n`);
-        const { connect } = await proxyResponsePromise;
-        req.emit('proxyConnect', connect);
-        this.emit('proxyConnect', connect, req);
-        if (connect.statusCode === 200) {
-            req.once('socket', resume);
-            if (opts.secureEndpoint) {
-                dist_debug('Upgrading socket connection to TLS');
-                return external_tls_.connect({
-                    ...dist_omit(setServernameFromNonIpHost(opts), 'host', 'path', 'port'),
-                    socket,
-                });
-            }
-            return socket;
-        }
-        // If still not 200, throw
-        socket.destroy();
-        throw new Error(`Proxy authentication failed with status ${connect.statusCode} after retry`);
-    }
-}
-HttpsProxyAgent.protocols = ['http', 'https'];
-function resume(socket) {
-    // Defer the resume so that all 'socket' event handlers have a chance
-    // to attach their listeners (e.g. the HTTP client's 'data' handler)
-    // before data starts flowing. Without this, buffered proxy-response
-    // data can be emitted synchronously before listeners are ready.
-    // See: https://github.com/nicolo-ribaudo/tc39-proposal-await-dictionary/issues/7
-    setImmediate(() => {
-        socket.resume();
-    });
-}
-function dist_omit(obj, ...keys) {
-    const ret = {};
-    let key;
-    for (key in obj) {
-        if (!keys.includes(key)) {
-            ret[key] = obj[key];
-        }
-    }
-    return ret;
-}
-//# sourceMappingURL=index.js.map
-;// CONCATENATED MODULE: ./node_modules/http-proxy-agent/dist/index.js
-
-
-
-
-
-
-
-const http_proxy_agent_dist_debug = src('http-proxy-agent');
-/**
- * The `HttpProxyAgent` implements an HTTP Agent subclass that connects
- * to the specified "HTTP proxy server" in order to proxy HTTP requests.
- */
-class HttpProxyAgent extends Agent {
-    constructor(proxy, opts) {
-        super(opts);
-        this.proxy = typeof proxy === 'string' ? new external_url_namespaceObject.URL(proxy) : proxy;
-        this.proxyHeaders = opts?.headers ?? {};
-        http_proxy_agent_dist_debug('Creating new HttpProxyAgent instance: %o', this.proxy.href);
-        if (opts?.negotiate) {
-            this.onProxyAuth = createNegotiateAuth();
-        }
-        else if (opts?.onProxyAuth) {
-            this.onProxyAuth = opts.onProxyAuth;
-        }
-        // Trim off the brackets from IPv6 addresses
-        const host = (this.proxy.hostname || this.proxy.host).replace(/^\[|\]$/g, '');
-        const port = this.proxy.port
-            ? parseInt(this.proxy.port, 10)
-            : this.proxy.protocol === 'https:'
-                ? 443
-                : 80;
-        this.connectOpts = {
-            ...(opts
-                ? http_proxy_agent_dist_omit(opts, 'headers', 'onProxyAuth', 'negotiate')
-                : null),
-            host,
-            port,
-        };
-    }
-    addRequest(req, opts) {
-        req._header = null;
-        this.setRequestProps(req, opts);
-        // @ts-expect-error `addRequest()` isn't defined in `@types/node`
-        super.addRequest(req, opts);
-    }
-    setRequestProps(req, opts) {
-        const { proxy } = this;
-        const protocol = opts.secureEndpoint ? 'https:' : 'http:';
-        const hostname = req.getHeader('host') || 'localhost';
-        const base = `${protocol}//${hostname}`;
-        const url = new external_url_namespaceObject.URL(req.path, base);
-        if (opts.port !== 80) {
-            url.port = String(opts.port);
-        }
-        // Change the `http.ClientRequest` instance's "path" field
-        // to the absolute path of the URL that will be requested.
-        req.path = String(url);
-        // Inject the `Proxy-Authorization` header if necessary.
-        const headers = typeof this.proxyHeaders === 'function'
-            ? this.proxyHeaders()
-            : { ...this.proxyHeaders };
-        if (proxy.username || proxy.password) {
-            const auth = `${decodeURIComponent(proxy.username)}:${decodeURIComponent(proxy.password)}`;
-            headers['Proxy-Authorization'] = `Basic ${Buffer.from(auth).toString('base64')}`;
-        }
-        if (!headers['Proxy-Connection']) {
-            headers['Proxy-Connection'] = this.keepAlive
-                ? 'Keep-Alive'
-                : 'close';
-        }
-        for (const name of Object.keys(headers)) {
-            const value = headers[name];
-            if (value) {
-                req.setHeader(name, value);
-            }
-        }
-    }
-    async connect(req, opts) {
-        req._header = null;
-        if (!req.path.includes('://')) {
-            this.setRequestProps(req, opts);
-        }
-        // At this point, the http ClientRequest's internal `_header` field
-        // might have already been set. If this is the case then we'll need
-        // to re-generate the string since we just changed the `req.path`.
-        let first;
-        let endOfHeaders;
-        http_proxy_agent_dist_debug('Regenerating stored HTTP header string for request');
-        req._implicitHeader();
-        if (req.outputData && req.outputData.length > 0) {
-            http_proxy_agent_dist_debug('Patching connection write() output buffer with updated header');
-            first = req.outputData[0].data;
-            endOfHeaders = first.indexOf('\r\n\r\n') + 4;
-            req.outputData[0].data =
-                req._header + first.substring(endOfHeaders);
-            http_proxy_agent_dist_debug('Output buffer: %o', req.outputData[0].data);
-        }
-        // Create a socket connection to the proxy server.
-        let socket;
-        if (this.proxy.protocol === 'https:') {
-            http_proxy_agent_dist_debug('Creating `tls.Socket`: %o', this.connectOpts);
-            socket = external_tls_.connect(this.connectOpts);
-        }
-        else {
-            http_proxy_agent_dist_debug('Creating `net.Socket`: %o', this.connectOpts);
-            socket = external_net_.connect(this.connectOpts);
-        }
-        // Wait for the socket's `connect` event, so that this `callback()`
-        // function throws instead of the `http` request machinery. This is
-        // important for i.e. `PacProxyAgent` which determines a failed proxy
-        // connection via the `callback()` function throwing.
-        await (0,external_events_.once)(socket, 'connect');
-        // Emit the 'proxyConnect' event for parity with https-proxy-agent
-        const connect = { socket };
-        req.emit('proxyConnect', connect);
-        this.emit('proxyConnect', connect, req);
-        req.emit('proxy', { proxy: this.proxy.href, socket });
-        return socket;
-    }
-}
-HttpProxyAgent.protocols = ['http', 'https'];
-function http_proxy_agent_dist_omit(obj, ...keys) {
-    const ret = {};
-    let key;
-    for (key in obj) {
-        if (!keys.includes(key)) {
-            ret[key] = obj[key];
-        }
-    }
-    return ret;
-}
-//# sourceMappingURL=index.js.map
+// EXTERNAL MODULE: ./node_modules/https-proxy-agent/dist/index.js
+var dist = __nccwpck_require__(3669);
+// EXTERNAL MODULE: ./node_modules/http-proxy-agent/dist/index.js
+var http_proxy_agent_dist = __nccwpck_require__(1970);
 ;// CONCATENATED MODULE: ./node_modules/@typespec/ts-http-runtime/dist/esm/policies/proxyPolicy.js
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
@@ -54590,13 +52791,13 @@ function setProxyAgentOnRequest(request, cachedAgents, proxyUrl) {
     }
     if (isInsecure) {
         if (!cachedAgents.httpProxyAgent) {
-            cachedAgents.httpProxyAgent = new HttpProxyAgent(proxyUrl);
+            cachedAgents.httpProxyAgent = new http_proxy_agent_dist.HttpProxyAgent(proxyUrl);
         }
         request.agent = cachedAgents.httpProxyAgent;
     }
     else {
         if (!cachedAgents.httpsProxyAgent) {
-            cachedAgents.httpsProxyAgent = new HttpsProxyAgent(proxyUrl);
+            cachedAgents.httpsProxyAgent = new dist.HttpsProxyAgent(proxyUrl);
         }
         request.agent = cachedAgents.httpsProxyAgent;
     }
@@ -54632,143 +52833,29 @@ function proxyPolicy_proxyPolicy(proxySettings, options) {
     };
 }
 //# sourceMappingURL=proxyPolicy.js.map
-;// CONCATENATED MODULE: ./node_modules/@typespec/ts-http-runtime/dist/esm/policies/redirectPolicy.js
-// Copyright (c) Microsoft Corporation.
-// Licensed under the MIT License.
-
-
-
-/**
- * The programmatic identifier of the redirectPolicy.
- */
-const redirectPolicyName = "redirectPolicy";
-/**
- * Methods that are allowed to follow redirects 301 and 302
- */
-const allowedRedirect = ["GET", "HEAD"];
-/**
- * A policy to follow Location headers from the server in order
- * to support server-side redirection.
- * In the browser, this policy is not used.
- * @param options - Options to control policy behavior.
- */
-function redirectPolicy_redirectPolicy(options = {}) {
-    const { maxRetries = 20, allowCrossOriginRedirects = false } = options;
-    return {
-        name: redirectPolicyName,
-        async sendRequest(request, next) {
-            const response = await next(request);
-            return handleRedirect(next, response, maxRetries, allowCrossOriginRedirects);
-        },
-    };
-}
-async function handleRedirect(next, response, maxRetries, allowCrossOriginRedirects, currentRetries = 0) {
-    const { request, status, headers } = response;
-    const locationHeader = headers.get("location");
-    if (locationHeader &&
-        (status === 300 ||
-            (status === 301 && allowedRedirect.includes(request.method)) ||
-            (status === 302 && allowedRedirect.includes(request.method)) ||
-            (status === 303 && request.method === "POST") ||
-            status === 307) &&
-        currentRetries < maxRetries) {
-        const url = new URL(locationHeader, request.url);
-        // Only follow redirects to the same origin by default.
-        if (!allowCrossOriginRedirects) {
-            const originalUrl = new URL(request.url);
-            if (url.origin !== originalUrl.origin) {
-                log_logger.verbose(`Skipping cross-origin redirect from ${originalUrl.origin} to ${url.origin}.`);
-                return response;
-            }
-        }
-        request.url = url.toString();
-        // POST request with Status code 303 should be converted into a
-        // redirected GET request if the redirect url is present in the location header
-        if (status === 303) {
-            request.method = "GET";
-            if (request.requestOverrides && "method" in request.requestOverrides) {
-                request.requestOverrides = { ...request.requestOverrides, method: "GET" };
-            }
-            removeRequestBodyHeaders(request);
-            delete request.body;
-        }
-        request.headers.delete("Authorization");
-        await responseBody_disposeResponseBody(response);
-        const res = await next(request);
-        return handleRedirect(next, res, maxRetries, allowCrossOriginRedirects, currentRetries + 1);
-    }
-    return response;
-}
-//# sourceMappingURL=redirectPolicy.js.map
-;// CONCATENATED MODULE: ./node_modules/@typespec/ts-http-runtime/dist/esm/policies/platformPolicies.js
-// Copyright (c) Microsoft Corporation.
-// Licensed under the MIT License.
-
-
-
-
-
-/**
- * Add platform-specific policies to the pipeline.
- *
- * On Node.js, this adds agent, TLS, proxy, decompression, and redirect
- * policies. On browser and React Native these concerns are handled
- * natively by the runtime, so this is a no-op.
- *
- * @internal
- */
-function platformPolicies_addPlatformPolicies(pipeline, options) {
-    if (options.agent) {
-        pipeline.addPolicy(agentPolicy(options.agent));
-    }
-    if (options.tlsOptions) {
-        pipeline.addPolicy(tlsPolicy(options.tlsOptions));
-    }
-    pipeline.addPolicy(proxyPolicy(options.proxyOptions));
-    pipeline.addPolicy(decompressResponsePolicy());
-    // Both XHR and Fetch expect to handle redirects automatically,
-    // so this only takes effect on Node.
-    pipeline.addPolicy(redirectPolicy(options.redirectOptions), { afterPhase: "Retry" });
-}
-//# sourceMappingURL=platformPolicies.js.map
-;// CONCATENATED MODULE: ./node_modules/@typespec/ts-http-runtime/dist/esm/util/typeGuards-node.js
-// Copyright (c) Microsoft Corporation.
-// Licensed under the MIT License.
-
-/**
- * Checks if the given value is a Node.js readable stream.
- *
- * @internal
- */
-function typeGuards_node_isNodeReadableStream(x) {
-    return x instanceof Readable;
-}
-/**
- * Checks if the given value is a web ReadableStream.
- *
- * @internal
- */
-function typeGuards_node_isWebReadableStream(x) {
-    return x instanceof ReadableStream;
-}
-//# sourceMappingURL=typeGuards-node.js.map
 ;// CONCATENATED MODULE: ./node_modules/@typespec/ts-http-runtime/dist/esm/util/typeGuards.js
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
-
-
+function isNodeReadableStream(x) {
+    return Boolean(x && typeof x["pipe"] === "function");
+}
+function isWebReadableStream(x) {
+    return Boolean(x &&
+        typeof x.getReader === "function" &&
+        typeof x.tee === "function");
+}
 function typeGuards_isBinaryBody(body) {
     return (body !== undefined &&
         (body instanceof Uint8Array ||
             typeGuards_isReadableStream(body) ||
             typeof body === "function" ||
-            body instanceof Blob));
+            (typeof Blob !== "undefined" && body instanceof Blob)));
 }
 function typeGuards_isReadableStream(x) {
     return isNodeReadableStream(x) || isWebReadableStream(x);
 }
 function typeGuards_isBlob(x) {
-    return x instanceof Blob;
+    return typeof Blob !== "undefined" && x instanceof Blob;
 }
 //# sourceMappingURL=typeGuards.js.map
 ;// CONCATENATED MODULE: ./node_modules/@typespec/ts-http-runtime/dist/esm/util/concat.js
@@ -54899,10 +52986,6 @@ async function buildRequestBody(request, parts, boundary) {
     if (contentLength) {
         request.headers.set("Content-Length", contentLength);
     }
-    // The public BodyPart.body type uses Uint8Array (= Uint8Array<ArrayBufferLike>) for
-    // backward compatibility. Internally, concat requires Uint8Array<ArrayBuffer> to ensure
-    // SharedArrayBuffer-backed arrays don't flow into Blob construction. In practice, HTTP
-    // request bodies are always ArrayBuffer-backed, so this narrowing is safe.
     request.body = await concat(sources);
 }
 /**
@@ -54967,13 +53050,27 @@ function multipartPolicy_multipartPolicy() {
 
 
 
+
+
+
+
+
 /**
  * Create a new pipeline with a default set of customizable policies.
  * @param options - Options to configure a custom pipeline.
  */
 function createPipelineFromOptions_createPipelineFromOptions(options) {
     const pipeline = createEmptyPipeline();
-    addPlatformPolicies(pipeline, options);
+    if (isNodeLike) {
+        if (options.agent) {
+            pipeline.addPolicy(agentPolicy(options.agent));
+        }
+        if (options.tlsOptions) {
+            pipeline.addPolicy(tlsPolicy(options.tlsOptions));
+        }
+        pipeline.addPolicy(proxyPolicy(options.proxyOptions));
+        pipeline.addPolicy(decompressResponsePolicy());
+    }
     pipeline.addPolicy(formDataPolicy(), { beforePolicies: [multipartPolicyName] });
     pipeline.addPolicy(userAgentPolicy(options.userAgentOptions));
     // The multipart policy is added after policies with no phase, so that
@@ -54981,6 +53078,11 @@ function createPipelineFromOptions_createPipelineFromOptions(options) {
     // properties (e.g., making the boundary constant in recorded tests).
     pipeline.addPolicy(multipartPolicy(), { afterPhase: "Deserialize" });
     pipeline.addPolicy(defaultRetryPolicy(options.retryOptions), { phase: "Retry" });
+    if (isNodeLike) {
+        // Both XHR and Fetch expect to handle redirects automatically,
+        // so only include this policy when we're in Node.
+        pipeline.addPolicy(redirectPolicy(options.redirectOptions), { afterPhase: "Retry" });
+    }
     pipeline.addPolicy(logPolicy(options.loggingOptions), { afterPhase: "Sign" });
     return pipeline;
 }
@@ -54988,7 +53090,6 @@ function createPipelineFromOptions_createPipelineFromOptions(options) {
 ;// CONCATENATED MODULE: ./node_modules/@typespec/ts-http-runtime/dist/esm/policies/auth/checkInsecureConnection.js
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
-
 
 // Ensure the warining is only emitted once
 let insecureConnectionWarningEmmitted = false;
@@ -55017,9 +53118,9 @@ function allowInsecureConnection(request, options) {
 function emitInsecureConnectionWarning() {
     const warning = "Sending token over insecure transport. Assume any token issued is compromised.";
     logger.warning(warning);
-    if (!insecureConnectionWarningEmmitted) {
+    if (typeof process?.emitWarning === "function" && !insecureConnectionWarningEmmitted) {
         insecureConnectionWarningEmmitted = true;
-        emitNodeWarning(warning);
+        process.emitWarning(warning);
     }
 }
 /**
@@ -55372,6 +53473,21 @@ async function sendRequest_sendRequest(method, url, pipeline, options = {}, cust
     }
 }
 /**
+ * Function to determine the request content type
+ * @param options - request options InternalRequestParameters
+ * @returns returns the content-type
+ */
+function getRequestContentType(options = {}) {
+    if (options.contentType) {
+        return options.contentType;
+    }
+    const headerContentType = options.headers?.["content-type"];
+    if (typeof headerContentType === "string") {
+        return headerContentType;
+    }
+    return getContentType(options.body);
+}
+/**
  * Function to determine the content-type of a body
  * this is used if an explicit content-type is not provided
  * @param body - body in the request
@@ -55381,7 +53497,7 @@ function getContentType(body) {
     if (body === undefined) {
         return undefined;
     }
-    if (body instanceof ArrayBuffer || ArrayBuffer.isView(body)) {
+    if (ArrayBuffer.isView(body)) {
         return "application/octet-stream";
     }
     if (isBlob(body) && body.type) {
@@ -55401,41 +53517,31 @@ function getContentType(body) {
     return "application/json";
 }
 function buildPipelineRequest(method, url, options = {}) {
-    const headers = createHttpHeaders(options.headers);
-    let requestContentType = options.contentType;
-    if (!requestContentType) {
-        requestContentType = headers.get("content-type");
-    }
-    if (requestContentType === undefined) {
-        requestContentType = getContentType(options.body);
-    }
+    const requestContentType = getRequestContentType(options);
     const { body, multipartBody } = getRequestBody(options.body, requestContentType);
-    const accept = options.accept ??
-        headers.get("accept") ??
-        (options.noDefaultAcceptHeader ? undefined : "application/json");
-    if (accept !== undefined) {
-        headers.set("accept", accept);
-    }
-    if (requestContentType) {
-        headers.set("content-type", requestContentType);
-    }
-    const { allowInsecureConnection, abortSignal, onUploadProgress, onDownloadProgress, timeout, responseAsStream, noDefaultAcceptHeader: _noDefaultAcceptHeader, url: _url, method: _method, body: _body, multipartBody: _multiBody, headers: _headers, ...rest } = options;
-    const request = createPipelineRequest({
+    const headers = createHttpHeaders({
+        ...(options.headers ? options.headers : {}),
+        accept: options.accept ?? options.headers?.accept ?? "application/json",
+        ...(requestContentType && {
+            "content-type": requestContentType,
+        }),
+    });
+    return createPipelineRequest({
         url,
         method,
         body,
         multipartBody,
         headers,
-        allowInsecureConnection,
-        abortSignal,
-        onUploadProgress,
-        onDownloadProgress,
-        timeout,
+        allowInsecureConnection: options.allowInsecureConnection,
+        abortSignal: options.abortSignal,
+        onUploadProgress: options.onUploadProgress,
+        onDownloadProgress: options.onDownloadProgress,
+        timeout: options.timeout,
         enableBrowserStreams: true,
-        streamResponseStatusCodes: responseAsStream ? new Set([Number.POSITIVE_INFINITY]) : undefined,
+        streamResponseStatusCodes: options.responseAsStream
+            ? new Set([Number.POSITIVE_INFINITY])
+            : undefined,
     });
-    Object.assign(request, rest);
-    return request;
 }
 /**
  * Prepares the body before sending the request
@@ -55456,8 +53562,8 @@ function getRequestBody(body, contentType = "") {
     if (typeof body === "function") {
         return { body: body };
     }
-    if (body instanceof ArrayBuffer || ArrayBuffer.isView(body)) {
-        return { body };
+    if (ArrayBuffer.isView(body)) {
+        return { body: body instanceof Uint8Array ? body : JSON.stringify(body) };
     }
     const firstType = contentType.split(";")[0];
     switch (firstType) {
@@ -55524,7 +53630,8 @@ function createParseError(response, err) {
 /**
  * Creates a client with a default pipeline
  * @param endpoint - Base endpoint for the client
- * @param clientOptions - Client options
+ * @param credentials - Credentials to authenticate the requests
+ * @param options - Client options
  */
 function getClient(endpoint, clientOptions = {}) {
     const pipeline = clientOptions.pipeline ?? createDefaultPipeline(clientOptions);
@@ -55538,35 +53645,34 @@ function getClient(endpoint, clientOptions = {}) {
             });
         }
     }
-    const noDefaultAcceptHeader = clientOptions.internal?.noDefaultAcceptHeader ?? false;
     const { allowInsecureConnection, httpClient } = clientOptions;
     const endpointUrl = clientOptions.endpoint ?? endpoint;
     const client = (path, ...args) => {
         const getUrl = (requestOptions) => buildRequestUrl(endpointUrl, path, args, { allowInsecureConnection, ...requestOptions });
         return {
             get: (requestOptions = {}) => {
-                return buildOperation("GET", getUrl(requestOptions), pipeline, requestOptions, allowInsecureConnection, httpClient, noDefaultAcceptHeader);
+                return buildOperation("GET", getUrl(requestOptions), pipeline, requestOptions, allowInsecureConnection, httpClient);
             },
             post: (requestOptions = {}) => {
-                return buildOperation("POST", getUrl(requestOptions), pipeline, requestOptions, allowInsecureConnection, httpClient, noDefaultAcceptHeader);
+                return buildOperation("POST", getUrl(requestOptions), pipeline, requestOptions, allowInsecureConnection, httpClient);
             },
             put: (requestOptions = {}) => {
-                return buildOperation("PUT", getUrl(requestOptions), pipeline, requestOptions, allowInsecureConnection, httpClient, noDefaultAcceptHeader);
+                return buildOperation("PUT", getUrl(requestOptions), pipeline, requestOptions, allowInsecureConnection, httpClient);
             },
             patch: (requestOptions = {}) => {
-                return buildOperation("PATCH", getUrl(requestOptions), pipeline, requestOptions, allowInsecureConnection, httpClient, noDefaultAcceptHeader);
+                return buildOperation("PATCH", getUrl(requestOptions), pipeline, requestOptions, allowInsecureConnection, httpClient);
             },
             delete: (requestOptions = {}) => {
-                return buildOperation("DELETE", getUrl(requestOptions), pipeline, requestOptions, allowInsecureConnection, httpClient, noDefaultAcceptHeader);
+                return buildOperation("DELETE", getUrl(requestOptions), pipeline, requestOptions, allowInsecureConnection, httpClient);
             },
             head: (requestOptions = {}) => {
-                return buildOperation("HEAD", getUrl(requestOptions), pipeline, requestOptions, allowInsecureConnection, httpClient, noDefaultAcceptHeader);
+                return buildOperation("HEAD", getUrl(requestOptions), pipeline, requestOptions, allowInsecureConnection, httpClient);
             },
             options: (requestOptions = {}) => {
-                return buildOperation("OPTIONS", getUrl(requestOptions), pipeline, requestOptions, allowInsecureConnection, httpClient, noDefaultAcceptHeader);
+                return buildOperation("OPTIONS", getUrl(requestOptions), pipeline, requestOptions, allowInsecureConnection, httpClient);
             },
             trace: (requestOptions = {}) => {
-                return buildOperation("TRACE", getUrl(requestOptions), pipeline, requestOptions, allowInsecureConnection, httpClient, noDefaultAcceptHeader);
+                return buildOperation("TRACE", getUrl(requestOptions), pipeline, requestOptions, allowInsecureConnection, httpClient);
             },
         };
     };
@@ -55576,23 +53682,23 @@ function getClient(endpoint, clientOptions = {}) {
         pipeline,
     };
 }
-function buildOperation(method, url, pipeline, options, allowInsecureConnection, httpClient, noDefaultAcceptHeader = false) {
+function buildOperation(method, url, pipeline, options, allowInsecureConnection, httpClient) {
     allowInsecureConnection = options.allowInsecureConnection ?? allowInsecureConnection;
     return {
         then: function (onFulfilled, onrejected) {
-            return sendRequest(method, url, pipeline, { ...options, allowInsecureConnection, noDefaultAcceptHeader }, httpClient).then(onFulfilled, onrejected);
+            return sendRequest(method, url, pipeline, { ...options, allowInsecureConnection }, httpClient).then(onFulfilled, onrejected);
         },
         async asBrowserStream() {
             if (isNodeLike) {
                 throw new Error("`asBrowserStream` is supported only in the browser environment. Use `asNodeStream` instead to obtain the response body stream. If you require a Web stream of the response in Node, consider using `Readable.toWeb` on the result of `asNodeStream`.");
             }
             else {
-                return sendRequest(method, url, pipeline, { ...options, allowInsecureConnection, noDefaultAcceptHeader, responseAsStream: true }, httpClient);
+                return sendRequest(method, url, pipeline, { ...options, allowInsecureConnection, responseAsStream: true }, httpClient);
             }
         },
         async asNodeStream() {
             if (isNodeLike) {
-                return sendRequest(method, url, pipeline, { ...options, allowInsecureConnection, noDefaultAcceptHeader, responseAsStream: true }, httpClient);
+                return sendRequest(method, url, pipeline, { ...options, allowInsecureConnection, responseAsStream: true }, httpClient);
             }
             else {
                 throw new Error("`isNodeStream` is not supported in the browser environment. Use `asBrowserStream` to obtain the response body stream.");
@@ -55619,12 +53725,11 @@ function createRestError(messageOrResponse, response) {
         response: toPipelineResponse(resp),
     });
 }
-function toPipelineResponse(errorResponse) {
+function toPipelineResponse(response) {
     return {
-        headers: createHttpHeaders(errorResponse.headers),
-        request: errorResponse.request,
-        status: statusCodeToNumber(errorResponse.status) ?? -1,
-        ...(typeof errorResponse.body === "string" ? { bodyAsText: errorResponse.body } : {}),
+        headers: createHttpHeaders(response.headers),
+        request: response.request,
+        status: statusCodeToNumber(response.status) ?? -1,
     };
 }
 function statusCodeToNumber(statusCode) {
@@ -56052,34 +54157,23 @@ async function computeSha256Hash(content, encoding) {
 
 
 
-
 //# sourceMappingURL=internal.js.map
 ;// CONCATENATED MODULE: ./node_modules/@azure/abort-controller/dist/esm/AbortError.js
 // Copyright (c) Microsoft Corporation.
-// Licensed under the MIT License.
+// Licensed under the MIT license.
 /**
  * This error is thrown when an asynchronous operation has been aborted.
  * Check for this error by testing the `name` that the name property of the
  * error matches `"AbortError"`.
  *
  * @example
- * ```ts snippet:AbortErrorSample
- * import { AbortError } from "@azure/abort-controller";
- *
- * async function doAsyncWork(options: { abortSignal: AbortSignal }): Promise<void> {
- *   if (options.abortSignal.aborted) {
- *     throw new AbortError();
- *   }
- *
- *   // do async work
- * }
- *
+ * ```ts
  * const controller = new AbortController();
  * controller.abort();
  * try {
- *   doAsyncWork({ abortSignal: controller.signal });
+ *   doAsyncWork(controller.signal)
  * } catch (e) {
- *   if (e instanceof Error && e.name === "AbortError") {
+ *   if (e.name === 'AbortError') {
  *     // handle abort error here.
  *   }
  * }
@@ -56094,7 +54188,7 @@ class AbortError_AbortError extends Error {
 //# sourceMappingURL=AbortError.js.map
 ;// CONCATENATED MODULE: ./node_modules/@azure/abort-controller/dist/esm/index.js
 // Copyright (c) Microsoft Corporation.
-// Licensed under the MIT License.
+// Licensed under the MIT license.
 
 //# sourceMappingURL=index.js.map
 ;// CONCATENATED MODULE: ./node_modules/@azure/core-util/dist/esm/createAbortablePromise.js
@@ -56144,6 +54238,7 @@ function createAbortablePromise(buildPromise, options) {
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
+
 const delay_StandardAbortMessage = "The delay was aborted.";
 /**
  * A wrapper for setTimeout that resolves a promise after timeInMs milliseconds.
@@ -56162,6 +54257,22 @@ function delay_delay(timeInMs, options) {
         abortErrorMsg: abortErrorMsg ?? delay_StandardAbortMessage,
     });
 }
+/**
+ * Calculates the delay interval for retry attempts using exponential delay with jitter.
+ * @param retryAttempt - The current retry attempt number.
+ * @param config - The exponential retry configuration.
+ * @returns An object containing the calculated retry delay.
+ */
+function delay_calculateRetryDelay(retryAttempt, config) {
+    // Exponentially increase the delay each time
+    const exponentialDelay = config.retryDelayInMs * Math.pow(2, retryAttempt);
+    // Don't let the delay exceed the maximum
+    const clampedDelay = Math.min(config.maxRetryDelayInMs, exponentialDelay);
+    // Allow the final value to have some "jitter" (within 50% of the delay size) so
+    // that retries across multiple clients don't occur simultaneously.
+    const retryAfterInMs = clampedDelay / 2 + getRandomIntegerInclusive(0, clampedDelay / 2);
+    return { retryAfterInMs };
+}
 //# sourceMappingURL=delay.js.map
 ;// CONCATENATED MODULE: ./node_modules/@azure/core-util/dist/esm/error.js
 // Copyright (c) Microsoft Corporation.
@@ -56173,8 +54284,8 @@ function delay_delay(timeInMs, options) {
  * @param e - Something thrown from a try block
  * @returns The error message or a string of the input
  */
-function error_getErrorMessage(e) {
-    if (error_isError(e)) {
+function getErrorMessage(e) {
+    if (isError(e)) {
         return e.message;
     }
     else {
@@ -56253,7 +54364,7 @@ function esm_getRandomIntegerInclusive(min, max) {
  * @param e - Something caught by a catch clause.
  */
 function esm_isError(e) {
-    return error_isError(e);
+    return isError(e);
 }
 /**
  * Helper to determine when an input is a generic JS object.
@@ -56290,11 +54401,11 @@ const esm_isDeno = isDeno;
  *
  * Use `isNodeLike` instead.
  */
-const isNode = env_isNodeLike;
+const isNode = checkEnvironment_isNodeLike;
 /**
  * A constant that indicates whether the environment the code is running is a Node.js compatible environment.
  */
-const esm_isNodeLike = env_isNodeLike;
+const esm_isNodeLike = checkEnvironment_isNodeLike;
 /**
  * A constant that indicates whether the environment the code is running is Node.JS.
  */
@@ -56314,7 +54425,7 @@ const esm_isWebWorker = isWebWorker;
  * @returns a string of the encoded string
  */
 function esm_uint8ArrayToString(bytes, format) {
-    return bytesEncoding_uint8ArrayToString(bytes, format);
+    return tspRuntime.uint8ArrayToString(bytes, format);
 }
 /**
  * The helper that transforms string to specific character encoded bytes array.
@@ -56323,7 +54434,7 @@ function esm_uint8ArrayToString(bytes, format) {
  * @returns a uint8array
  */
 function esm_stringToUint8Array(value, format) {
-    return bytesEncoding_stringToUint8Array(value, format);
+    return tspRuntime.stringToUint8Array(value, format);
 }
 //# sourceMappingURL=index.js.map
 ;// CONCATENATED MODULE: ./node_modules/@azure/core-rest-pipeline/dist/esm/util/file.js
@@ -56365,7 +54476,7 @@ const rawContent = Symbol("rawContent");
 /**
  * Type guard to check if a given object is a blob-like object with a raw content property.
  */
-function file_hasRawContent(x) {
+function hasRawContent(x) {
     return typeof x[rawContent] === "function";
 }
 /**
@@ -56375,8 +54486,8 @@ function file_hasRawContent(x) {
  *
  * @internal
  */
-function file_getRawContent(blob) {
-    if (file_hasRawContent(blob)) {
+function getRawContent(blob) {
+    if (hasRawContent(blob)) {
         return blob[rawContent]();
     }
     else {
@@ -56475,8 +54586,8 @@ function policies_multipartPolicy_multipartPolicy() {
         sendRequest: async (request, next) => {
             if (request.multipartBody) {
                 for (const part of request.multipartBody.parts) {
-                    if (file_hasRawContent(part.body)) {
-                        part.body = file_getRawContent(part.body);
+                    if (hasRawContent(part.body)) {
+                        part.body = getRawContent(part.body);
                     }
                 }
             }
@@ -56576,7 +54687,7 @@ const setClientRequestIdPolicyName = "setClientRequestIdPolicy";
  * telemetry and tracing.
  * @param requestIdHeaderName - The name of the header to pass the request ID to.
  */
-function setClientRequestIdPolicy_setClientRequestIdPolicy(requestIdHeaderName = "x-ms-client-request-id") {
+function setClientRequestIdPolicy(requestIdHeaderName = "x-ms-client-request-id") {
     return {
         name: setClientRequestIdPolicyName,
         async sendRequest(request, next) {
@@ -56667,8 +54778,8 @@ class TracingContextImpl {
     }
 }
 //# sourceMappingURL=tracingContext.js.map
-// EXTERNAL MODULE: ./node_modules/@azure/core-tracing/dist/commonjs/state-cjs.js
-var state_cjs = __nccwpck_require__(9437);
+// EXTERNAL MODULE: ./node_modules/@azure/core-tracing/dist/commonjs/state.js
+var commonjs_state = __nccwpck_require__(8914);
 ;// CONCATENATED MODULE: ./node_modules/@azure/core-tracing/dist/esm/state.js
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
@@ -56678,7 +54789,7 @@ var state_cjs = __nccwpck_require__(9437);
 /**
  * Defines the shared state between CJS and ESM by re-exporting the CJS state.
  */
-const state_state = state_cjs/* state */.w;
+const state_state = commonjs_state/* state */.w;
 //# sourceMappingURL=state.js.map
 ;// CONCATENATED MODULE: ./node_modules/@azure/core-tracing/dist/esm/instrumenter.js
 // Copyright (c) Microsoft Corporation.
@@ -56755,13 +54866,13 @@ function getInstrumenter() {
  * @param options - Options used to configure the tracing client.
  * @returns - An instance of {@link TracingClient}.
  */
-function tracingClient_createTracingClient(options) {
+function createTracingClient(options) {
     const { namespace, packageName, packageVersion } = options;
     function startSpan(name, operationOptions, spanOptions) {
         const startSpanResult = getInstrumenter().startSpan(name, {
             ...spanOptions,
-            packageName,
-            packageVersion,
+            packageName: packageName,
+            packageVersion: packageVersion,
             tracingContext: operationOptions?.tracingOptions?.tracingContext,
         });
         let tracingContext = startSpanResult.tracingContext;
@@ -56781,7 +54892,7 @@ function tracingClient_createTracingClient(options) {
     async function withSpan(name, operationOptions, callback, spanOptions) {
         const { span, updatedOptions } = startSpan(name, operationOptions, spanOptions);
         try {
-            const result = await withContext(updatedOptions.tracingOptions.tracingContext, () => callback(updatedOptions, span));
+            const result = await withContext(updatedOptions.tracingOptions.tracingContext, () => Promise.resolve(callback(updatedOptions, span)));
             span.setStatus({ status: "success" });
             return result;
         }
@@ -56866,9 +54977,9 @@ const tracingPolicyName = "tracingPolicy";
  * Requests made without a parent Span will not be recorded.
  * @param options - Options to configure the telemetry logged by the tracing policy.
  */
-function tracingPolicy_tracingPolicy(options = {}) {
+function tracingPolicy(options = {}) {
     const userAgentPromise = util_userAgent_getUserAgentValue(options.userAgentPrefix);
-    const sanitizer = new sanitizer_Sanitizer({
+    const sanitizer = new Sanitizer({
         additionalAllowedQueryParameters: options.additionalAllowedQueryParameters,
     });
     const tracingClient = tryCreateTracingClient();
@@ -56906,14 +55017,14 @@ function tracingPolicy_tracingPolicy(options = {}) {
 }
 function tryCreateTracingClient() {
     try {
-        return tracingClient_createTracingClient({
+        return createTracingClient({
             namespace: "",
             packageName: "@azure/core-rest-pipeline",
             packageVersion: esm_constants_SDK_VERSION,
         });
     }
     catch (e) {
-        esm_log_logger.warning(`Error when creating the TracingClient: ${error_getErrorMessage(e)}`);
+        esm_log_logger.warning(`Error when creating the TracingClient: ${getErrorMessage(e)}`);
         return undefined;
     }
 }
@@ -56937,7 +55048,7 @@ function tryCreateSpan(tracingClient, request, spanAttributes) {
         return { span, tracingContext: updatedOptions.tracingOptions.tracingContext };
     }
     catch (e) {
-        esm_log_logger.warning(`Skipping creating a tracing span due to an error: ${error_getErrorMessage(e)}`);
+        esm_log_logger.warning(`Skipping creating a tracing span due to an error: ${getErrorMessage(e)}`);
         return undefined;
     }
 }
@@ -56953,7 +55064,7 @@ function tryProcessError(span, error) {
         span.end();
     }
     catch (e) {
-        esm_log_logger.warning(`Skipping tracing span processing due to an error: ${error_getErrorMessage(e)}`);
+        esm_log_logger.warning(`Skipping tracing span processing due to an error: ${getErrorMessage(e)}`);
     }
 }
 function tryProcessResponse(span, response) {
@@ -56974,7 +55085,7 @@ function tryProcessResponse(span, response) {
         span.end();
     }
     catch (e) {
-        esm_log_logger.warning(`Skipping tracing span processing due to an error: ${error_getErrorMessage(e)}`);
+        esm_log_logger.warning(`Skipping tracing span processing due to an error: ${getErrorMessage(e)}`);
     }
 }
 //# sourceMappingURL=tracingPolicy.js.map
@@ -56987,7 +55098,7 @@ function tryProcessResponse(span, response) {
  * @param abortSignalLike - The AbortSignalLike to wrap.
  * @returns - An object containing the native AbortSignal and an optional cleanup function. The cleanup function should be called when the AbortSignal is no longer needed.
  */
-function wrapAbortSignal_wrapAbortSignalLike(abortSignalLike) {
+function wrapAbortSignalLike(abortSignalLike) {
     if (abortSignalLike instanceof AbortSignal) {
         return { abortSignal: abortSignalLike };
     }
@@ -57021,14 +55132,14 @@ const wrapAbortSignalLikePolicyName = "wrapAbortSignalLikePolicy";
  *
  * @returns - created policy
  */
-function wrapAbortSignalLikePolicy_wrapAbortSignalLikePolicy() {
+function wrapAbortSignalLikePolicy() {
     return {
         name: wrapAbortSignalLikePolicyName,
         sendRequest: async (request, next) => {
             if (!request.abortSignal) {
                 return next(request);
             }
-            const { abortSignal, cleanup } = wrapAbortSignal_wrapAbortSignalLike(request.abortSignal);
+            const { abortSignal, cleanup } = wrapAbortSignalLike(request.abortSignal);
             request.abortSignal = abortSignal;
             try {
                 return await next(request);
@@ -57074,16 +55185,16 @@ function esm_createPipelineFromOptions_createPipelineFromOptions(options) {
         pipeline.addPolicy(policies_proxyPolicy_proxyPolicy(options.proxyOptions));
         pipeline.addPolicy(policies_decompressResponsePolicy_decompressResponsePolicy());
     }
-    pipeline.addPolicy(wrapAbortSignalLikePolicy_wrapAbortSignalLikePolicy());
+    pipeline.addPolicy(wrapAbortSignalLikePolicy());
     pipeline.addPolicy(policies_formDataPolicy_formDataPolicy(), { beforePolicies: [policies_multipartPolicy_multipartPolicyName] });
     pipeline.addPolicy(policies_userAgentPolicy_userAgentPolicy(options.userAgentOptions));
-    pipeline.addPolicy(setClientRequestIdPolicy_setClientRequestIdPolicy(options.telemetryOptions?.clientRequestIdHeaderName));
+    pipeline.addPolicy(setClientRequestIdPolicy(options.telemetryOptions?.clientRequestIdHeaderName));
     // The multipart policy is added after policies with no phase, so that
     // policies can be added between it and formDataPolicy to modify
     // properties (e.g., making the boundary constant in recorded tests).
     pipeline.addPolicy(policies_multipartPolicy_multipartPolicy(), { afterPhase: "Deserialize" });
     pipeline.addPolicy(policies_defaultRetryPolicy_defaultRetryPolicy(options.retryOptions), { phase: "Retry" });
-    pipeline.addPolicy(tracingPolicy_tracingPolicy({ ...options.userAgentOptions, ...options.loggingOptions }), {
+    pipeline.addPolicy(tracingPolicy({ ...options.userAgentOptions, ...options.loggingOptions }), {
         afterPhase: "Retry",
     });
     if (esm_isNodeLike) {
@@ -57110,7 +55221,7 @@ function esm_defaultHttpClient_createDefaultHttpClient() {
             // we wrap any AbortSignalLike here since the TypeSpec runtime expects a native AbortSignal.
             // 99% of the time, this should be a no-op since a native AbortSignal is passed in.
             const { abortSignal, cleanup } = request.abortSignal
-                ? wrapAbortSignal_wrapAbortSignalLike(request.abortSignal)
+                ? wrapAbortSignalLike(request.abortSignal)
                 : {};
             try {
                 request.abortSignal = abortSignal;
@@ -57854,6 +55965,22 @@ function isSASCredential(credential) {
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 /**
+ * @internal
+ * @param accessToken - Access token
+ * @returns Whether a token is bearer type or not
+ */
+function isBearerToken(accessToken) {
+    return !accessToken.tokenType || accessToken.tokenType === "Bearer";
+}
+/**
+ * @internal
+ * @param accessToken - Access token
+ * @returns Whether a token is Pop token or not
+ */
+function isPopToken(accessToken) {
+    return accessToken.tokenType === "pop";
+}
+/**
  * Tests an object to determine whether it implements TokenCredential.
  *
  * @param credential - The assumed TokenCredential to be tested.
@@ -57884,7 +56011,7 @@ const disableKeepAlivePolicyName = "DisableKeepAlivePolicy";
 function createDisableKeepAlivePolicy() {
     return {
         name: disableKeepAlivePolicyName,
-        sendRequest(request, next) {
+        async sendRequest(request, next) {
             request.disableKeepAlive = true;
             return next(request);
         },
@@ -57900,22 +56027,22 @@ function pipelineContainsDisableKeepAlivePolicy(pipeline) {
 ;// CONCATENATED MODULE: ./node_modules/@azure/core-client/dist/esm/base64.js
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
-
 /**
  * Encodes a string in base64 format.
  * @param value - the string to encode
  * @internal
  */
 function encodeString(value) {
-    return uint8ArrayToString(stringToUint8Array(value, "utf-8"), "base64");
+    return Buffer.from(value).toString("base64");
 }
 /**
  * Encodes a byte array in base64 format.
- * @param value - the Uint8Array to encode
+ * @param value - the Uint8Aray to encode
  * @internal
  */
 function encodeByteArray(value) {
-    return esm_uint8ArrayToString(value, "base64");
+    const bufferValue = value instanceof Buffer ? value : Buffer.from(value.buffer);
+    return bufferValue.toString("base64");
 }
 /**
  * Decodes a base64 string into a byte array.
@@ -57923,7 +56050,7 @@ function encodeByteArray(value) {
  * @internal
  */
 function decodeString(value) {
-    return esm_stringToUint8Array(value, "base64");
+    return Buffer.from(value, "base64");
 }
 /**
  * Decodes a base64 string into a string.
@@ -57931,7 +56058,7 @@ function decodeString(value) {
  * @internal
  */
 function base64_decodeStringToString(value) {
-    return uint8ArrayToString(stringToUint8Array(value, "base64"), "utf-8");
+    return Buffer.from(value, "base64").toString();
 }
 //# sourceMappingURL=base64.js.map
 ;// CONCATENATED MODULE: ./node_modules/@azure/core-client/dist/esm/interfaces.js
@@ -58513,8 +56640,8 @@ function serializeSequenceType(serializer, mapper, object, objectName, isXml, op
     }
     let elementType = mapper.type.element;
     if (!elementType || typeof elementType !== "object") {
-        throw new Error(`"element" metadata for an Array must be defined in the ` +
-            `mapper and it must be of type "object" in ${objectName}.`);
+        throw new Error(`element" metadata for an Array must be defined in the ` +
+            `mapper and it must of type "object" in ${objectName}.`);
     }
     // Quirk: Composite mappers referenced by `element` might
     // not have *all* properties declared (like uberParent),
@@ -58558,12 +56685,7 @@ function serializeDictionaryType(serializer, mapper, object, objectName, isXml, 
     for (const key of Object.keys(object)) {
         const serializedValue = serializer.serialize(valueType, object[key], objectName, options);
         // If the element needs an XML namespace we need to add it within the $ property
-        Object.defineProperty(tempDictionary, key, {
-            value: getXmlObjectValue(valueType, serializedValue, isXml, options),
-            enumerable: true,
-            configurable: true,
-            writable: true,
-        });
+        tempDictionary[key] = getXmlObjectValue(valueType, serializedValue, isXml, options);
     }
     // Add the namespace to the root element if needed
     if (isXml && mapper.xmlNamespace) {
@@ -58698,15 +56820,10 @@ function serializeCompositeType(serializer, mapper, object, objectName, isXml, o
         const additionalPropertiesMapper = resolveAdditionalProperties(serializer, mapper, objectName);
         if (additionalPropertiesMapper) {
             const propNames = Object.keys(modelProps);
-            for (const clientPropName of Object.keys(object)) {
+            for (const clientPropName in object) {
                 const isAdditionalProperty = propNames.every((pn) => pn !== clientPropName);
                 if (isAdditionalProperty) {
-                    Object.defineProperty(payload, clientPropName, {
-                        value: serializer.serialize(additionalPropertiesMapper, object[clientPropName], objectName + '["' + clientPropName + '"]', options),
-                        enumerable: true,
-                        configurable: true,
-                        writable: true,
-                    });
+                    payload[clientPropName] = serializer.serialize(additionalPropertiesMapper, object[clientPropName], objectName + '["' + clientPropName + '"]', options);
                 }
             }
         }
@@ -58762,12 +56879,7 @@ function deserializeCompositeType(serializer, mapper, responseBody, objectName, 
             const dictionary = {};
             for (const headerKey of Object.keys(responseBody)) {
                 if (headerKey.startsWith(headerCollectionPrefix)) {
-                    Object.defineProperty(dictionary, headerKey.substring(headerCollectionPrefix.length), {
-                        value: serializer.deserialize(propertyMapper.type.value, responseBody[headerKey], propertyObjectName, options),
-                        enumerable: true,
-                        configurable: true,
-                        writable: true,
-                    });
+                    dictionary[headerKey.substring(headerCollectionPrefix.length)] = serializer.deserialize(propertyMapper.type.value, responseBody[headerKey], propertyObjectName, options);
                 }
                 handledPropertyNames.push(headerKey);
             }
@@ -58806,12 +56918,7 @@ function deserializeCompositeType(serializer, mapper, responseBody, objectName, 
                     */
                     const wrapped = responseBody[xmlName];
                     const elementList = wrapped?.[xmlElementName] ?? [];
-                    Object.defineProperty(instance, key, {
-                        value: serializer.deserialize(propertyMapper, elementList, propertyObjectName, options),
-                        enumerable: true,
-                        configurable: true,
-                        writable: true,
-                    });
+                    instance[key] = serializer.deserialize(propertyMapper, elementList, propertyObjectName, options);
                     handledPropertyNames.push(xmlName);
                 }
                 else {
@@ -58876,7 +56983,7 @@ function deserializeCompositeType(serializer, mapper, responseBody, objectName, 
     const additionalPropertiesMapper = mapper.type.additionalProperties;
     if (additionalPropertiesMapper) {
         const isAdditionalProperty = (responsePropName) => {
-            for (const clientPropName of Object.keys(modelProps)) {
+            for (const clientPropName in modelProps) {
                 const paths = splitSerializeName(modelProps[clientPropName].serializedName);
                 if (paths[0] === responsePropName) {
                     return false;
@@ -58884,15 +56991,9 @@ function deserializeCompositeType(serializer, mapper, responseBody, objectName, 
             }
             return true;
         };
-        for (const responsePropName of Object.keys(responseBody)) {
+        for (const responsePropName in responseBody) {
             if (isAdditionalProperty(responsePropName)) {
-                const deserializedValue = serializer.deserialize(additionalPropertiesMapper, responseBody[responsePropName], objectName + '["' + responsePropName + '"]', options);
-                Object.defineProperty(instance, responsePropName, {
-                    value: deserializedValue,
-                    enumerable: true,
-                    configurable: true,
-                    writable: true,
-                });
+                instance[responsePropName] = serializer.deserialize(additionalPropertiesMapper, responseBody[responsePropName], objectName + '["' + responsePropName + '"]', options);
             }
         }
     }
@@ -58901,12 +57002,7 @@ function deserializeCompositeType(serializer, mapper, responseBody, objectName, 
             if (instance[key] === undefined &&
                 !handledPropertyNames.includes(key) &&
                 !isSpecialXmlProperty(key, options)) {
-                Object.defineProperty(instance, key, {
-                    value: responseBody[key],
-                    enumerable: true,
-                    configurable: true,
-                    writable: true,
-                });
+                instance[key] = responseBody[key];
             }
         }
     }
@@ -58922,12 +57018,7 @@ function deserializeDictionaryType(serializer, mapper, responseBody, objectName,
     if (responseBody) {
         const tempDictionary = {};
         for (const key of Object.keys(responseBody)) {
-            Object.defineProperty(tempDictionary, key, {
-                value: serializer.deserialize(value, responseBody[key], objectName, options),
-                enumerable: true,
-                configurable: true,
-                writable: true,
-            });
+            tempDictionary[key] = serializer.deserialize(value, responseBody[key], objectName, options);
         }
         return tempDictionary;
     }
@@ -58936,8 +57027,8 @@ function deserializeDictionaryType(serializer, mapper, responseBody, objectName,
 function deserializeSequenceType(serializer, mapper, responseBody, objectName, options) {
     let element = mapper.type.element;
     if (!element || typeof element !== "object") {
-        throw new Error(`"element" metadata for an Array must be defined in the ` +
-            `mapper and it must be of type "object" in ${objectName}`);
+        throw new Error(`element" metadata for an Array must be defined in the ` +
+            `mapper and it must of type "object" in ${objectName}`);
     }
     if (responseBody) {
         if (!Array.isArray(responseBody)) {
@@ -59033,8 +57124,8 @@ const MapperTypeNames = {
     UnixTime: "UnixTime",
 };
 //# sourceMappingURL=serializer.js.map
-// EXTERNAL MODULE: ./node_modules/@azure/core-client/dist/commonjs/state-cjs.js
-var commonjs_state_cjs = __nccwpck_require__(30);
+// EXTERNAL MODULE: ./node_modules/@azure/core-client/dist/commonjs/state.js
+var dist_commonjs_state = __nccwpck_require__(3345);
 ;// CONCATENATED MODULE: ./node_modules/@azure/core-client/dist/esm/state.js
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
@@ -59044,7 +57135,7 @@ var commonjs_state_cjs = __nccwpck_require__(30);
 /**
  * Defines the shared state between CJS and ESM by re-exporting the CJS state.
  */
-const esm_state_state = commonjs_state_cjs/* state */.w;
+const esm_state_state = dist_commonjs_state/* state */.w;
 //# sourceMappingURL=state.js.map
 ;// CONCATENATED MODULE: ./node_modules/@azure/core-client/dist/esm/operationHelpers.js
 // Copyright (c) Microsoft Corporation.
@@ -59089,8 +57180,9 @@ function getOperationArgumentValueFromParameter(operationArguments, parameter, f
         if (parameterMapper.required) {
             value = {};
         }
-        for (const [propertyName, propertyPath] of Object.entries(parameterPath)) {
+        for (const propertyName in parameterPath) {
             const propertyMapper = parameterMapper.type.modelProperties[propertyName];
+            const propertyPath = parameterPath[propertyName];
             const propertyValue = getOperationArgumentValueFromParameter(operationArguments, {
                 parameterPath: propertyPath,
                 mapper: propertyMapper,
@@ -59099,12 +57191,7 @@ function getOperationArgumentValueFromParameter(operationArguments, parameter, f
                 if (!value) {
                     value = {};
                 }
-                Object.defineProperty(value, propertyName, {
-                    value: propertyValue,
-                    enumerable: true,
-                    configurable: true,
-                    writable: true,
-                });
+                value[propertyName] = propertyValue;
             }
         }
     }
@@ -59386,7 +57473,8 @@ async function deserializationPolicy_parse(jsonContentTypes, xmlContentTypes, op
  */
 function getStreamingResponseStatusCodes(operationSpec) {
     const result = new Set();
-    for (const [statusCode, operationResponse] of Object.entries(operationSpec.responses)) {
+    for (const statusCode in operationSpec.responses) {
+        const operationResponse = operationSpec.responses[statusCode];
         if (operationResponse.bodyMapper &&
             operationResponse.bodyMapper.type.name === MapperTypeNames.Stream) {
             result.add(Number(statusCode));
@@ -59434,7 +57522,7 @@ function serializationPolicy(options = {}) {
     const stringifyXML = options.stringifyXML;
     return {
         name: serializationPolicyName,
-        sendRequest(request, next) {
+        async sendRequest(request, next) {
             const operationInfo = getOperationRequestInfo(request);
             const operationSpec = operationInfo?.operationSpec;
             const operationArguments = operationInfo?.operationArguments;
@@ -59527,7 +57615,7 @@ function serializeRequestBody(request, operationArguments, operationSpec, string
             }
         }
         catch (error) {
-            throw new Error(`Error "${error.message}" occurred in serializing the payload - ${JSON.stringify(serializedName, undefined, "  ")}.`, { cause: error });
+            throw new Error(`Error "${error.message}" occurred in serializing the payload - ${JSON.stringify(serializedName, undefined, "  ")}.`);
         }
     }
     else if (operationSpec.formDataParameters && operationSpec.formDataParameters.length > 0) {
@@ -59700,8 +57788,7 @@ function appendPath(url, pathToAppend) {
     else {
         newPath = newPath + pathToAppend;
     }
-    // Use Object.assign to bypass react-native's incorrect readonly URL.pathname declaration
-    Object.assign(parsedUrl, { pathname: newPath });
+    parsedUrl.pathname = newPath;
     return parsedUrl.toString();
 }
 function calculateQueryParameters(operationSpec, operationArguments, fallbackObject) {
@@ -59911,7 +57998,7 @@ class ServiceClient {
     /**
      * Send the provided httpRequest.
      */
-    sendRequest(request) {
+    async sendRequest(request) {
         return this.pipeline.sendRequest(this._httpClient, request);
     }
     /**
@@ -60014,7 +58101,7 @@ function getCredentialScopes(options) {
     if (options.baseUri) {
         return `${options.baseUri}/.default`;
     }
-    if (options.credential) {
+    if (options.credential && !options.credentialScopes) {
         throw new Error(`When using credentials, the ServiceClientOptions must contain either a endpoint or a credentialScopes. Unable to create a bearerTokenAuthenticationPolicy`);
     }
     return undefined;
@@ -60165,7 +58252,8 @@ function buildScopes(challengeOptions, challengeInfo) {
         return challengeOptions.scopes;
     }
     const challengeScopes = new URL(challengeInfo.resource_id);
-    let scope = new URL(Constants.DefaultScope, challengeScopes.origin).toString();
+    challengeScopes.pathname = Constants.DefaultScope;
+    let scope = challengeScopes.toString();
     if (scope === "https://disk.azure.com/.default") {
         // the extra slash is required by the service
         scope = "https://disk.azure.com//.default";
@@ -60233,22 +58321,6 @@ const util_originalRequestSymbol = Symbol("Original PipelineRequest");
 // cloned but we need to retrieve the OperationSpec and OperationArguments from the
 // original request.
 const originalClientRequestSymbol = Symbol.for("@azure/core-client original request");
-const passThroughProps = new Set([
-    "url",
-    "method",
-    "withCredentials",
-    "timeout",
-    "requestId",
-    "abortSignal",
-    "body",
-    "formData",
-    "onDownloadProgress",
-    "onUploadProgress",
-    "proxySettings",
-    "streamResponseStatusCodes",
-    "agent",
-    "requestOverrides",
-]);
 function toPipelineRequest(webResource, options = {}) {
     const compatWebResource = webResource;
     const request = compatWebResource[util_originalRequestSymbol];
@@ -60332,7 +58404,23 @@ function toWebResourceLike(request, options) {
                 if (prop === "keepAlive") {
                     request.disableKeepAlive = !value;
                 }
-                if (typeof prop === "string" && passThroughProps.has(prop)) {
+                const passThroughProps = [
+                    "url",
+                    "method",
+                    "withCredentials",
+                    "timeout",
+                    "requestId",
+                    "abortSignal",
+                    "body",
+                    "formData",
+                    "onDownloadProgress",
+                    "onUploadProgress",
+                    "proxySettings",
+                    "streamResponseStatusCodes",
+                    "agent",
+                    "requestOverrides",
+                ];
+                if (typeof prop === "string" && passThroughProps.includes(prop)) {
                     request[prop] = value;
                 }
                 return Reflect.set(target, prop, value, receiver);
@@ -61004,26 +59092,6 @@ class MatcherView {
   }
 
   /**
-   * Get the value of a "kept" attribute from the nearest ancestor (or
-   * current node) that declared it via `push(tag, attrs, ns, { keep: [...] })`.
-   * @param {string} attrName
-   * @returns {*}
-   */
-  getAnyParentAttr(attrName) {
-    return this._matcher.getAnyParentAttr(attrName);
-  }
-
-  /**
-   * Check whether any ancestor (or the current node) kept the given
-   * attribute via `push(tag, attrs, ns, { keep: [...] })`.
-   * @param {string} attrName
-   * @returns {boolean}
-   */
-  hasAnyParentAttr(attrName) {
-    return this._matcher.hasAnyParentAttr(attrName);
-  }
-
-  /**
    * Get current node's sibling position (child index in parent).
    * @returns {number}
    */
@@ -61131,9 +59199,6 @@ class Matcher {
     // Each siblingStacks entry: Map<tagName, count> tracking occurrences at each level
     this._pathStringCache = null;
     this._view = new MatcherView(this);
-
-    // Kept-attribute stack: only populated when push() is called with options.keep.
-    this._keptAttrs = [];
   }
 
   /**
@@ -61141,10 +59206,8 @@ class Matcher {
    * @param {string} tagName
    * @param {Object|null} [attrValues=null]
    * @param {string|null} [namespace=null]
-   * @param {Object|null} [options=null]
-   * @param {string[]} [options.keep] - Names of attributes (from attrValues)
    */
-  push(tagName, attrValues = null, namespace = null, options = null) {
+  push(tagName, attrValues = null, namespace = null) {
     this._pathStringCache = null;
 
     // Remove values from previous current node (now becoming ancestor)
@@ -61154,29 +59217,26 @@ class Matcher {
 
     // Get or create sibling tracking for current level
     const currentLevel = this.path.length;
-    let level = this.siblingStacks[currentLevel];
-    if (!level) {
-      // `counts` tells same-name siblings apart (the "counter" — nth <item>
-      // among other <item>s). `total` is every child seen at this level so
-      // far, kept as a running number instead of re-added from `counts` on
-      // every push — a parent with many differently-named children would
-      // otherwise cost more per child the more distinct names it has.
-      level = { counts: new Map(), total: 0 };
-      this.siblingStacks[currentLevel] = level;
+    if (!this.siblingStacks[currentLevel]) {
+      this.siblingStacks[currentLevel] = new Map();
     }
+
+    const siblings = this.siblingStacks[currentLevel];
 
     // Create a unique key for sibling tracking that includes namespace
     const siblingKey = namespace ? `${namespace}:${tagName}` : tagName;
 
     // Calculate counter (how many times this tag appeared at this level)
-    const counter = level.counts.get(siblingKey) || 0;
+    const counter = siblings.get(siblingKey) || 0;
 
-    // Position = total children at this level seen before this one.
-    const position = level.total;
+    // Calculate position (total children at this level so far)
+    let position = 0;
+    for (const count of siblings.values()) {
+      position += count;
+    }
 
-    // Update sibling count for this tag, and the level's running total.
-    level.counts.set(siblingKey, counter + 1);
-    level.total++;
+    // Update sibling count for this tag
+    siblings.set(siblingKey, counter + 1);
 
     // Create new node
     const node = {
@@ -61194,24 +59254,6 @@ class Matcher {
     }
 
     this.path.push(node);
-
-    // Depth of the node we just pushed (1-based, matches this.path.length)
-    const depth = this.path.length;
-
-    // Copy only the requested attributes into the kept-attrs stack. This is
-    // the one part of push() whose cost scales with input (O(keep.length))
-    // rather than being O(1) — by design, since the caller is explicitly
-    // opting in for specific attribute names. No options/keep => zero added
-    // cost beyond the two property reads below.
-    const keep = options !== null ? options.keep : null;
-    if (keep !== null && keep !== undefined && keep.length > 0 && attrValues) {
-      for (let i = 0; i < keep.length; i++) {
-        const name = keep[i];
-        if (attrValues[name] !== undefined) {
-          this._keptAttrs.push({ depth, name, value: attrValues[name] });
-        }
-      }
-    }
   }
 
   /**
@@ -61226,18 +59268,6 @@ class Matcher {
 
     if (this.siblingStacks.length > this.path.length + 1) {
       this.siblingStacks.length = this.path.length + 1;
-    }
-
-    // Drop any kept attributes that belonged to the popped node (or deeper).
-    // _keptAttrs is depth-ordered (push only ever appends increasing depths),
-    // so this is a backward scan that stops at the first surviving entry —
-    // typically O(1) since kept attrs are rare by design.
-    const poppedDepth = this.path.length + 1;
-    while (
-      this._keptAttrs.length > 0 &&
-      this._keptAttrs[this._keptAttrs.length - 1].depth >= poppedDepth
-    ) {
-      this._keptAttrs.pop();
     }
 
     return node;
@@ -61292,38 +59322,6 @@ class Matcher {
     if (this.path.length === 0) return false;
     const current = this.path[this.path.length - 1];
     return current.values !== undefined && attrName in current.values;
-  }
-
-  /**
-   * Get the value of a "kept" attribute from the nearest ancestor (or
-   * current node) that declared it via `push(tag, attrs, ns, { keep: [...] })`.
-   * Unlike getAttrValue(), this works regardless of how deep the path has
-   * gone since the attribute was pushed — but only for attribute names that
-   * were explicitly marked with `keep` at push time. Cost is proportional to
-   * the number of currently-kept attributes (typically 0-3), not path depth.
-   * @param {string} attrName
-   * @returns {*} the value, or undefined if no ancestor kept this attribute
-   */
-  getAnyParentAttr(attrName) {
-    const kept = this._keptAttrs;
-    for (let i = kept.length - 1; i >= 0; i--) {
-      if (kept[i].name === attrName) return kept[i].value;
-    }
-    return undefined;
-  }
-
-  /**
-   * Check whether any ancestor (or the current node) kept the given
-   * attribute via `push(tag, attrs, ns, { keep: [...] })`.
-   * @param {string} attrName
-   * @returns {boolean}
-   */
-  hasAnyParentAttr(attrName) {
-    const kept = this._keptAttrs;
-    for (let i = kept.length - 1; i >= 0; i--) {
-      if (kept[i].name === attrName) return true;
-    }
-    return false;
   }
 
   /**
@@ -61402,7 +59400,6 @@ class Matcher {
     this._pathStringCache = null;
     this.path = [];
     this.siblingStacks = [];
-    this._keptAttrs = [];
   }
 
   /**
@@ -61552,8 +59549,7 @@ class Matcher {
   snapshot() {
     return {
       path: this.path.map(node => ({ ...node })),
-      siblingStacks: this.siblingStacks.map(level => level ? { counts: new Map(level.counts), total: level.total } : level),
-      keptAttrs: this._keptAttrs.map(entry => ({ ...entry }))
+      siblingStacks: this.siblingStacks.map(map => new Map(map))
     };
   }
 
@@ -61564,8 +59560,7 @@ class Matcher {
   restore(snapshot) {
     this._pathStringCache = null;
     this.path = snapshot.path.map(node => ({ ...node }));
-    this.siblingStacks = snapshot.siblingStacks.map(level => level ? { counts: new Map(level.counts), total: level.total } : level);
-    this._keptAttrs = (snapshot.keptAttrs || []).map(entry => ({ ...entry }));
+    this.siblingStacks = snapshot.siblingStacks.map(map => new Map(map));
   }
 
   /**
@@ -61588,61 +59583,22 @@ class Matcher {
     return this._view;
   }
 }
-
 ;// CONCATENATED MODULE: ./node_modules/fast-xml-builder/src/util.js
 
 
-// String(val)/val.toString() drop the sign of -0 (e.g. String(-0) === '0'), silently
-// corrupting a round-tripped negative-zero value. XML has no separate int/float syntax,
-// so this is the single place every raw value gets turned into text.
-function valToStr(val) {
-  return typeof val === 'number' && Object.is(val, -0) ? '-0' : String(val)
-}
-
 function safeComment(val) {
-  return valToStr(val)
+  return String(val)
     .replace(/--/g, '- -')   // -- is illegal anywhere in comment content
     .replace(/--/g, '- -')   // handle the scenario when 2 consiucative dashes appears 
     .replace(/-$/, '- ');    // trailing - would form -- with the closing -->
 }
 
 function safeCdata(val) {
-  return valToStr(val).replace(/\]\]>/g, ']]]]><![CDATA[>')
+  return String(val).replace(/\]\]>/g, ']]]]><![CDATA[>')
 }
 
 function escapeAttribute(val) {
-  return valToStr(val).replace(/"/g, '&quot;').replace(/'/g, '&apos;')
-}
-
-/**
- * Resolve a tag or attribute name through sanitizeName if configured.
- * Validation via xml-naming's qName is performed first; the sanitizeName
- * callback is invoked only when the name is invalid. If sanitizeName is
- * false (default), no validation occurs and the name is used as-is.
- *
- * @param {string}  name        - raw name from the JS object
- * @param {boolean} isAttribute - true when resolving an attribute name
- * @param {object}  options
- * @param {Matcher} matcher     - current matcher state (readonly from callback perspective)
- * @param {function} qNameValidator - function to validate tag names
- */
-
-function resolveName(name, isAttribute, options, matcher, validator) {
-  if (!options.sanitizeName) return name;
-
-  // Processing-instruction names: validate the part after the leading "?"
-  const isPI = !isAttribute && name[0] === '?';
-  const bare = isPI ? name.slice(1) : name;
-
-  if (validator(bare)) return name;
-
-  const result = options.sanitizeName(bare, { isAttribute, matcher: matcher.readOnly() });
-
-  // Never trust the callback's output
-  if (typeof result !== 'string' || !validator(result)) {
-    throw new Error(`sanitizeName returned an invalid XML name for "${bare}"`);
-  }
-  return isPI ? '?' + result : result;
+  return String(val).replace(/"/g, '&quot;').replace(/'/g, '&apos;')
 }
 ;// CONCATENATED MODULE: ./node_modules/xml-naming/src/index.js
 /**
@@ -61757,36 +59713,8 @@ const buildRegexes = (startChar, char, flags = '') => {
 const regexes10 = buildRegexes(nameStartChar10, nameChar10);       // no /u — BMP only
 const regexes11 = buildRegexes(nameStartChar11, nameChar11, 'u');  // /u — enables \u{10000}-\u{EFFFF}
 
-// ---------------------------------------------------------------------------
-// ASCII-only fast path (opt-in, off by default)
-//
-// The XML 1.0 vs 1.1 NameStartChar/NameChar productions differ *only* in
-// their non-ASCII ranges (merged vs split Latin-1 ranges, \u0487, and
-// supplementary planes). Restricted to ASCII, both versions collapse to the
-// same character classes, so a single regex pair covers both xmlVersion
-// values — no /u flag needed.
-//
-// Rationale: unicode-aware regexes (the /u flag, required for XML 1.1's
-// supplementary-plane range) are measurably slower in V8 than plain
-// non-unicode regexes on the same input, even when the input is pure ASCII.
-// For the common case — HTML/SVG ids, XML tags — names are ASCII, so callers
-// who know this can opt in to skip the unicode-aware matching path entirely.
-// This is a real but *conditional* win: mainly for XML 1.1 input (avoids /u),
-// or at scale where the larger unicode character classes add engine
-// overhead. It also changes behaviour (rejects legitimate non-ASCII XML
-// 1.0/1.1 names), so it must never be silently enabled — hence off by
-// default.
-// ---------------------------------------------------------------------------
-
-const nameStartCharAscii = ':A-Za-z_';
-const nameCharAscii = nameStartCharAscii + '\\-\\.\\d';
-
-const regexesAscii = buildRegexes(nameStartCharAscii, nameCharAscii); // no /u — ASCII only
-
-const getRegexes = (xmlVersion = '1.0', asciiOnly = false) => {
-  if (asciiOnly) return regexesAscii;
-  return xmlVersion === '1.1' ? regexes11 : regexes10;
-};
+const getRegexes = (xmlVersion = '1.0') =>
+  xmlVersion === '1.1' ? regexes11 : regexes10;
 
 // ---------------------------------------------------------------------------
 // Boolean validators
@@ -61796,131 +59724,57 @@ const getRegexes = (xmlVersion = '1.0', asciiOnly = false) => {
  * Returns true if the string is a valid XML Name.
  * Colons are allowed anywhere (Name production).
  * Used for: DOCTYPE entity names, notation names, DTD element declarations.
- *
- * @param {{ xmlVersion?: '1.0'|'1.1', asciiOnly?: boolean }} [opts]
- *   asciiOnly: skip unicode-aware matching, ASCII names only (default false).
  */
-const src_name = (str, { xmlVersion = '1.0', asciiOnly = false } = {}) =>
-  getRegexes(xmlVersion, asciiOnly).name.test(str);
+const src_name = (str, { xmlVersion = '1.0' } = {}) =>
+  getRegexes(xmlVersion).name.test(str);
 
 /**
  * Returns true if the string is a valid NCName (Non-Colonized Name).
  * Colons are not permitted.
  * Used for: namespace prefixes, local names, SVG id attributes.
- *
- * @param {{ xmlVersion?: '1.0'|'1.1', asciiOnly?: boolean }} [opts]
- *   asciiOnly: skip unicode-aware matching, ASCII names only (default false).
  */
-const ncName = (str, { xmlVersion = '1.0', asciiOnly = false } = {}) =>
-  getRegexes(xmlVersion, asciiOnly).ncName.test(str);
+const ncName = (str, { xmlVersion = '1.0' } = {}) =>
+  getRegexes(xmlVersion).ncName.test(str);
 
 /**
  * Returns true if the string is a valid QName (Qualified Name).
  * Allows exactly one colon as a prefix separator: prefix:localName.
  * Used for: element and attribute names in namespace-aware XML/SVG.
- *
- * @param {{ xmlVersion?: '1.0'|'1.1', asciiOnly?: boolean }} [opts]
- *   asciiOnly: skip unicode-aware matching, ASCII names only (default false).
  */
-const qName = (str, { xmlVersion = '1.0', asciiOnly = false } = {}) =>
-  getRegexes(xmlVersion, asciiOnly).qName.test(str);
+const qName = (str, { xmlVersion = '1.0' } = {}) =>
+  getRegexes(xmlVersion).qName.test(str);
 
 /**
  * Returns true if the string is a valid NMToken.
  * Like Name but no restriction on the first character.
  * Used for: DTD NMTOKEN attribute values.
- *
- * @param {{ xmlVersion?: '1.0'|'1.1', asciiOnly?: boolean }} [opts]
- *   asciiOnly: skip unicode-aware matching, ASCII names only (default false).
  */
-const nmToken = (str, { xmlVersion = '1.0', asciiOnly = false } = {}) =>
-  getRegexes(xmlVersion, asciiOnly).nmToken.test(str);
+const nmToken = (str, { xmlVersion = '1.0' } = {}) =>
+  getRegexes(xmlVersion).nmToken.test(str);
 
 /**
  * Returns true if the string is a valid NMTokens value.
  * A whitespace-separated list of NMToken values.
  * Used for: DTD NMTOKENS attribute values.
- *
- * @param {{ xmlVersion?: '1.0'|'1.1', asciiOnly?: boolean }} [opts]
- *   asciiOnly: skip unicode-aware matching, ASCII names only (default false).
  */
-const nmTokens = (str, { xmlVersion = '1.0', asciiOnly = false } = {}) =>
-  getRegexes(xmlVersion, asciiOnly).nmTokens.test(str);
-
-// ---------------------------------------------------------------------------
-// Memoized validator factory
-//
-// Real documents reuse a small vocabulary of tag/attribute names across many
-// siblings (e.g. `id`, `class`, `href` repeated across hundreds of elements).
-// The plain boolean validators above re-run the regex on every call
-// regardless of repeats. `createValidator` returns a closure with a private
-// string -> boolean cache, so repeated names after the first become O(1)
-// lookups instead of regex tests.
-//
-// - opts (xmlVersion, asciiOnly) are fixed at creation time, so the regex is
-//   resolved once, not on every call.
-// - The cache is private to the returned closure — no shared/global state,
-//   no cross-caller pollution.
-// - `maxCacheSize` bounds memory: once the cache reaches this many entries,
-//   it stops accepting new ones (existing entries keep serving hits; new
-//   misses just fall through to the regex, uncached). This avoids unbounded
-//   growth against adversarial/high-cardinality input (e.g. validating
-//   attacker-supplied names with no repeats) without the cost/complexity of
-//   a full LRU, and without the perf cliff of reset-and-refill thrashing.
-// - Call `.reset()` on the returned function to clear the cache manually
-//   (e.g. between unrelated parse calls).
-// ---------------------------------------------------------------------------
-
-const PRODUCTIONS = ['name', 'ncName', 'qName', 'nmToken', 'nmTokens'];
-
-/**
- * Returns a memoized boolean validator function for a single production,
- * with opts fixed at creation time.
- *
- * @param {'name'|'ncName'|'qName'|'nmToken'|'nmTokens'} production
- * @param {{ xmlVersion?: '1.0'|'1.1', asciiOnly?: boolean, maxCacheSize?: number }} [opts]
- *   maxCacheSize: max number of distinct strings to cache (default 2048).
- *   Once reached, new strings are validated but not cached; existing cached
- *   entries keep being served.
- * @returns {((str: string) => boolean) & { reset: () => void }}
- */
-const createValidator = (production, { xmlVersion = '1.0', asciiOnly = false, maxCacheSize = 2048 } = {}) => {
-  if (!PRODUCTIONS.includes(production)) {
-    throw new TypeError(
-      `Unknown production "${production}". Must be one of: ${PRODUCTIONS.join(', ')}`
-    );
-  }
-
-  const regex = getRegexes(xmlVersion, asciiOnly)[production];
-  let cache = new Map();
-
-  const validator = (str) => {
-    const cached = cache.get(str);
-    if (cached !== undefined) return cached;
-
-    const result = regex.test(str);
-    if (cache.size < maxCacheSize) cache.set(str, result);
-    return result;
-  };
-
-  validator.reset = () => { cache = new Map(); };
-
-  return validator;
-};
+const nmTokens = (str, { xmlVersion = '1.0' } = {}) =>
+  getRegexes(xmlVersion).nmTokens.test(str);
 
 // ---------------------------------------------------------------------------
 // Diagnostic validator
 // ---------------------------------------------------------------------------
+
+const PRODUCTIONS = (/* unused pure expression or super */ null && (['name', 'ncName', 'qName', 'nmToken', 'nmTokens']));
 
 /**
  * Validates a string against a named production and returns a detailed result.
  *
  * @param {string} str
  * @param {'name'|'ncName'|'qName'|'nmToken'|'nmTokens'} production
- * @param {{ xmlVersion?: '1.0'|'1.1', asciiOnly?: boolean }} [opts]
+ * @param {{ xmlVersion?: '1.0'|'1.1' }} [opts]
  * @returns {{ valid: boolean, production: string, input: string, reason?: string, position?: number }}
  */
-const validate = (str, production, { xmlVersion = '1.0', asciiOnly = false } = {}) => {
+const validate = (str, production, { xmlVersion = '1.0' } = {}) => {
   if (!PRODUCTIONS.includes(production)) {
     throw new TypeError(
       `Unknown production "${production}". Must be one of: ${PRODUCTIONS.join(', ')}`
@@ -61928,19 +59782,12 @@ const validate = (str, production, { xmlVersion = '1.0', asciiOnly = false } = {
   }
 
   const validators = { name: src_name, ncName, qName, nmToken, nmTokens };
-  const isValid = validators[production](str, { xmlVersion, asciiOnly });
+  const isValid = validators[production](str, { xmlVersion });
 
   if (isValid) return { valid: true, production, input: str };
 
   let reason = 'Does not match the production rules';
   let position;
-
-  // Diagnostic fallback char checks must mirror the same character set the
-  // boolean validator above used, or the reported reason/position could
-  // contradict the `valid: false` result (e.g. flagging a char as illegal
-  // that the unicode-aware check would have accepted).
-  const startCharPattern = asciiOnly ? /^[:A-Za-z_]/ : /^[:A-Za-z_\u00C0-\uFFFD]/;
-  const namePattern = asciiOnly ? /[\w\-\\.:]/ : /[\w\-\\.:\u00B7\u00C0-\uFFFD]/;
 
   if (str.length === 0) {
     reason = 'Input is empty';
@@ -61958,13 +59805,13 @@ const validate = (str, production, { xmlVersion = '1.0', asciiOnly = false } = {
     position = str.lastIndexOf(':');
   } else if (
     ['name', 'ncName', 'qName'].includes(production) &&
-    !startCharPattern.test(str[0])
+    !/^[:A-Za-z_\u00C0-\uFFFD]/.test(str[0])
   ) {
     reason = `First character "${str[0]}" is not a valid NameStartChar`;
     position = 0;
   } else {
     for (let i = 0; i < str.length; i++) {
-      if (!namePattern.test(str[i])) {
+      if (!/[\w\-\\.:\u00B7\u00C0-\uFFFD]/.test(str[i])) {
         reason = `Character "${str[i]}" at position ${i} is not a valid NameChar`;
         position = i;
         break;
@@ -61984,7 +59831,7 @@ const validate = (str, production, { xmlVersion = '1.0', asciiOnly = false } = {
  *
  * @param {string[]} strings
  * @param {'name'|'ncName'|'qName'|'nmToken'|'nmTokens'} production
- * @param {{ xmlVersion?: '1.0'|'1.1', asciiOnly?: boolean }} [opts]
+ * @param {{ xmlVersion?: '1.0'|'1.1' }} [opts]
  * @returns {Array<{ valid: boolean, production: string, input: string, reason?: string, position?: number }>}
  */
 const validateAll = (strings, production, opts = {}) =>
@@ -61999,12 +59846,10 @@ const validateAll = (strings, production, opts = {}) =>
  *
  * @param {string} str
  * @param {'name'|'ncName'|'qName'|'nmToken'|'nmTokens'} production
- * @param {{ replacement?: string, asciiOnly?: boolean }} [opts]
- *   asciiOnly: also replace any non-ASCII character, not just XML-illegal
- *   ones (default false).
+ * @param {{ replacement?: string }} [opts]
  * @returns {string}
  */
-const sanitize = (str, production = 'name', { replacement = '_', asciiOnly = false } = {}) => {
+const sanitize = (str, production = 'name', { replacement = '_' } = {}) => {
   if (!str) return replacement;
 
   let result = str;
@@ -62015,8 +59860,7 @@ const sanitize = (str, production = 'name', { replacement = '_', asciiOnly = fal
   }
 
   // Replace illegal characters
-  const allowedCharPattern = asciiOnly ? /[^\w\-\.:]/g : /[^\w\-\.:\u00B7\u00C0-\uFFFD]/g;
-  result = result.replace(allowedCharPattern, replacement);
+  result = result.replace(/[^\w\-\.:\u00B7\u00C0-\uFFFD]/g, replacement);
 
   // Fix invalid start character for Name / NCName / QName
   if (production !== 'nmToken' && production !== 'nmTokens') {
@@ -62057,6 +59901,24 @@ function detectXmlVersionFromArray(jArray, options) {
 }
 
 /**
+ * Resolve a tag or attribute name through sanitizeName if configured.
+ * Validation via xml-naming's qName is performed first; the sanitizeName
+ * callback is invoked only when the name is invalid. If sanitizeName is
+ * false (default), no validation occurs and the name is used as-is.
+ *
+ * @param {string}  name        - raw name from the JS object
+ * @param {boolean} isAttribute - true when resolving an attribute name
+ * @param {object}  options
+ * @param {Matcher} matcher     - current matcher state (readonly from callback perspective)
+ * @param {string}  xmlVersion  - '1.0' or '1.1', forwarded to xml-naming
+ */
+function resolveTagName(name, isAttribute, options, matcher, xmlVersion) {
+    if (!options.sanitizeName) return name;
+    if (qName(name, { xmlVersion })) return name;
+    return options.sanitizeName(name, { isAttribute, matcher: matcher.readOnly() });
+}
+
+/**
  * @param {array} jArray
  * @param {any} options
  * @returns
@@ -62082,14 +59944,14 @@ function toXml(jArray, options) {
 
     // Detect XML version for use in name validation
     const xmlVersion = detectXmlVersionFromArray(jArray, options);
-    const qNameValidator = createValidator('qName', { xmlVersion });
+
     // Initialize matcher for path tracking
     const matcher = new Matcher();
 
-    return arrToStr(jArray, options, indentation, matcher, stopNodeExpressions, qNameValidator);
+    return arrToStr(jArray, options, indentation, matcher, stopNodeExpressions, xmlVersion);
 }
 
-function arrToStr(arr, options, indentation, matcher, stopNodeExpressions, qNameValidator) {
+function arrToStr(arr, options, indentation, matcher, stopNodeExpressions, xmlVersion) {
     let xmlStr = "";
     let isPreviousElementTag = false;
 
@@ -62100,7 +59962,7 @@ function arrToStr(arr, options, indentation, matcher, stopNodeExpressions, qName
     if (!Array.isArray(arr)) {
         // Non-array values (e.g. string tag values) should be treated as text content
         if (arr !== undefined && arr !== null) {
-            let text = valToStr(arr);
+            let text = arr.toString();
             text = replaceEntitiesValue(text, options);
             return text;
         }
@@ -62116,13 +59978,13 @@ function arrToStr(arr, options, indentation, matcher, stopNodeExpressions, qName
         // are not user-supplied XML element names.
         const isSpecialName = rawTagName === options.textNodeName
             || rawTagName === options.cdataPropName
-            || rawTagName === options.commentPropName;
-        //|| rawTagName[0] === '?';
+            || rawTagName === options.commentPropName
+            || rawTagName[0] === '?';
 
         // Resolve tag name (may transform it; may throw for invalid names)
         const tagName = isSpecialName
             ? rawTagName
-            : resolveName(rawTagName, false, options, matcher, qNameValidator);
+            : resolveTagName(rawTagName, false, options, matcher, xmlVersion);
 
         // Extract attributes from ":@" property
         const attrValues = extractAttributeValues(tagObj[":@"], options);
@@ -62139,7 +60001,6 @@ function arrToStr(arr, options, indentation, matcher, stopNodeExpressions, qName
                 tagText = options.tagValueProcessor(tagName, tagText);
                 tagText = replaceEntitiesValue(tagText, options);
             }
-            tagText = valToStr(tagText);
             if (isPreviousElementTag) {
                 xmlStr += indentation;
             }
@@ -62165,7 +60026,7 @@ function arrToStr(arr, options, indentation, matcher, stopNodeExpressions, qName
             matcher.pop();
             continue;
         } else if (tagName[0] === "?") {
-            const attStr = attr_to_str(tagObj[":@"], options, isStopNode, matcher, qNameValidator);
+            const attStr = attr_to_str(tagObj[":@"], options, isStopNode, matcher, xmlVersion);
             const tempInd = tagName === "?xml" ? "" : indentation;
             // Text node content on PI/XML declaration tags is intentionally ignored.
             // Only attributes are valid on these tags per the XML spec.
@@ -62181,15 +60042,15 @@ function arrToStr(arr, options, indentation, matcher, stopNodeExpressions, qName
         }
 
         // Pass isStopNode to attr_to_str so attributes are also not processed for stopNodes
-        const attStr = attr_to_str(tagObj[":@"], options, isStopNode, matcher, qNameValidator);
+        const attStr = attr_to_str(tagObj[":@"], options, isStopNode, matcher, xmlVersion);
         const tagStart = indentation + `<${tagName}${attStr}`;
 
         // If this is a stopNode, get raw content without processing
         let tagValue;
         if (isStopNode) {
-            tagValue = orderedJs2Xml_getRawContent(tagObj[rawTagName], options, matcher.getDepth());
+            tagValue = orderedJs2Xml_getRawContent(tagObj[rawTagName], options);
         } else {
-            tagValue = arrToStr(tagObj[rawTagName], options, newIdentation, matcher, stopNodeExpressions, qNameValidator);
+            tagValue = arrToStr(tagObj[rawTagName], options, newIdentation, matcher, stopNodeExpressions, xmlVersion);
         }
 
         if (options.unpairedTags.indexOf(tagName) !== -1) {
@@ -62244,14 +60105,11 @@ function extractAttributeValues(attrMap, options) {
  * Extract raw content from a stopNode without any processing
  * This preserves the content exactly as-is, including special characters
  */
-function orderedJs2Xml_getRawContent(arr, options, depth = 0) {
-    if (options.maxNestedTags && depth > options.maxNestedTags) {
-        throw new Error("Maximum nested tags exceeded");
-    }
+function orderedJs2Xml_getRawContent(arr, options) {
     if (!Array.isArray(arr)) {
         // Non-array values return as-is
         if (arr !== undefined && arr !== null) {
-            return valToStr(arr);
+            return arr.toString();
         }
         return "";
     }
@@ -62263,7 +60121,7 @@ function orderedJs2Xml_getRawContent(arr, options, depth = 0) {
 
         if (tagName === options.textNodeName) {
             // Raw text content - NO processing, NO entity replacement
-            content += valToStr(item[tagName]);
+            content += item[tagName];
         } else if (tagName === options.cdataPropName) {
             // CDATA content
             content += item[tagName][0][options.textNodeName];
@@ -62276,7 +60134,7 @@ function orderedJs2Xml_getRawContent(arr, options, depth = 0) {
         } else if (tagName) {
             // Nested tags within stopNode — no sanitizeName, content is raw
             const attStr = attr_to_str_raw(item[":@"], options);
-            const nestedContent = orderedJs2Xml_getRawContent(item[tagName], options, depth + 1);
+            const nestedContent = orderedJs2Xml_getRawContent(item[tagName], options);
 
             if (!nestedContent || nestedContent.length === 0) {
                 content += `<${tagName}${attStr}/>`;
@@ -62321,7 +60179,7 @@ function propName(obj) {
  * Build attribute string, resolving attribute names through sanitizeName when configured.
  * Accepts matcher so the callback has path context.
  */
-function attr_to_str(attrMap, options, isStopNode, matcher, qNameValidator) {
+function attr_to_str(attrMap, options, isStopNode, matcher, xmlVersion) {
     let attrStr = "";
     if (attrMap && !options.ignoreAttributes) {
         for (let attr in attrMap) {
@@ -62331,7 +60189,7 @@ function attr_to_str(attrMap, options, isStopNode, matcher, qNameValidator) {
             const cleanAttrName = attr.substr(options.attributeNamePrefix.length);
             const resolvedAttrName = isStopNode
                 ? cleanAttrName  // stopNodes are raw — skip sanitizeName for attr names too
-                : resolveName(cleanAttrName, true, options, matcher, qNameValidator);
+                : resolveTagName(cleanAttrName, true, options, matcher, xmlVersion);
 
             let attrVal;
             if (isStopNode) {
@@ -62515,6 +60373,24 @@ function detectXmlVersionFromObj(jObj, options) {
   return '1.0';
 }
 
+/**
+ * Resolve a tag or attribute name through sanitizeName if configured.
+ * Validation via xml-naming's qName is performed first; the sanitizeName
+ * callback is invoked only when the name is invalid. If sanitizeName is
+ * false (default), no validation occurs and the name is used as-is.
+ *
+ * @param {string}  name        - raw name from the JS object
+ * @param {boolean} isAttribute - true when resolving an attribute name
+ * @param {object}  options
+ * @param {Matcher} matcher     - current matcher state (readonly from callback perspective)
+ * @param {string}  xmlVersion  - '1.0' or '1.1', forwarded to xml-naming
+ */
+function fxb_resolveTagName(name, isAttribute, options, matcher, xmlVersion) {
+  if (!options.sanitizeName) return name;
+  if (qName(name, { xmlVersion })) return name;
+  return options.sanitizeName(name, { isAttribute, matcher: matcher.readOnly() });
+}
+
 Builder.prototype.build = function (jObj) {
   if (this.options.preserveOrder) {
     return toXml(jObj, this.options);
@@ -62527,12 +60403,11 @@ Builder.prototype.build = function (jObj) {
     // Initialize matcher for path tracking
     const matcher = new Matcher();
     const xmlVersion = detectXmlVersionFromObj(jObj, this.options);
-    const qNameValidator = createValidator('qName', { xmlVersion });
-    return this.j2x(jObj, 0, matcher, qNameValidator).val;
+    return this.j2x(jObj, 0, matcher, xmlVersion).val;
   }
 };
 
-Builder.prototype.j2x = function (jObj, level, matcher, qNameValidator) {
+Builder.prototype.j2x = function (jObj, level, matcher, xmlVersion) {
   let attrStr = '';
   let val = '';
   if (this.options.maxNestedTags && matcher.getDepth() >= this.options.maxNestedTags) {
@@ -62555,12 +60430,12 @@ Builder.prototype.j2x = function (jObj, level, matcher, qNameValidator) {
       || key === this.options.cdataPropName
       || key === this.options.commentPropName
       || (this.options.attributesGroupName && key === this.options.attributesGroupName)
-      || this.isAttribute(key);
-    //|| key[0] === '?';
+      || this.isAttribute(key)
+      || key[0] === '?';
 
     const resolvedKey = isSpecialKey
       ? key
-      : resolveName(key, false, this.options, matcher, qNameValidator);
+      : fxb_resolveTagName(key, false, this.options, matcher, xmlVersion);
 
     if (typeof jObj[key] === 'undefined') {
       // supress undefined node only if it is not an attribute
@@ -62585,12 +60460,12 @@ Builder.prototype.j2x = function (jObj, level, matcher, qNameValidator) {
       const attr = this.isAttribute(key);
       if (attr && !this.ignoreAttributesFn(attr, jPath)) {
         // Resolve the attribute name through sanitizeName
-        const resolvedAttr = resolveName(attr, true, this.options, matcher, qNameValidator);
-        attrStr += this.buildAttrPairStr(resolvedAttr, valToStr(jObj[key]), isCurrentStopNode);
+        const resolvedAttr = fxb_resolveTagName(attr, true, this.options, matcher, xmlVersion);
+        attrStr += this.buildAttrPairStr(resolvedAttr, '' + jObj[key], isCurrentStopNode);
       } else if (!attr) {
         //tag value
         if (key === this.options.textNodeName) {
-          let newval = this.options.tagValueProcessor(key, valToStr(jObj[key]));
+          let newval = this.options.tagValueProcessor(key, '' + jObj[key]);
           val += this.replaceEntitiesValue(newval);
         } else {
           // Check if this is a stopNode before building
@@ -62600,7 +60475,7 @@ Builder.prototype.j2x = function (jObj, level, matcher, qNameValidator) {
 
           if (isStopNode) {
             // Build as raw content without encoding
-            const textValue = valToStr(jObj[key]);
+            const textValue = '' + jObj[key];
             if (textValue === '') {
               val += this.indentate(level) + '<' + resolvedKey + this.closeTag(resolvedKey) + this.tagEndChar;
             } else {
@@ -62627,7 +60502,7 @@ Builder.prototype.j2x = function (jObj, level, matcher, qNameValidator) {
           if (this.options.oneListGroup) {
             // Push tag to matcher before recursive call
             matcher.push(resolvedKey);
-            const result = this.j2x(item, level + 1, matcher, qNameValidator);
+            const result = this.j2x(item, level + 1, matcher, xmlVersion);
             // Pop tag from matcher after recursive call
             matcher.pop();
 
@@ -62636,13 +60511,12 @@ Builder.prototype.j2x = function (jObj, level, matcher, qNameValidator) {
               listTagAttr += result.attrStr
             }
           } else {
-            listTagVal += this.processTextOrObjNode(item, resolvedKey, level, matcher, qNameValidator)
+            listTagVal += this.processTextOrObjNode(item, resolvedKey, level, matcher, xmlVersion)
           }
         } else {
           if (this.options.oneListGroup) {
             let textValue = this.options.tagValueProcessor(resolvedKey, item);
             textValue = this.replaceEntitiesValue(textValue);
-            textValue = valToStr(textValue);
             listTagVal += textValue;
           } else {
             // Check if this is a stopNode before building
@@ -62652,7 +60526,7 @@ Builder.prototype.j2x = function (jObj, level, matcher, qNameValidator) {
 
             if (isStopNode) {
               // Build as raw content without encoding
-              const textValue = valToStr(item);
+              const textValue = '' + item;
               if (textValue === '') {
                 listTagVal += this.indentate(level) + '<' + resolvedKey + this.closeTag(resolvedKey) + this.tagEndChar;
               } else {
@@ -62675,11 +60549,11 @@ Builder.prototype.j2x = function (jObj, level, matcher, qNameValidator) {
         const L = Ks.length;
         for (let j = 0; j < L; j++) {
           // Resolve attribute names inside attributesGroupName
-          const resolvedAttr = resolveName(Ks[j], true, this.options, matcher, qNameValidator);
-          attrStr += this.buildAttrPairStr(resolvedAttr, valToStr(jObj[key][Ks[j]]), isCurrentStopNode);
+          const resolvedAttr = fxb_resolveTagName(Ks[j], true, this.options, matcher, xmlVersion);
+          attrStr += this.buildAttrPairStr(resolvedAttr, '' + jObj[key][Ks[j]], isCurrentStopNode);
         }
       } else {
-        val += this.processTextOrObjNode(jObj[key], resolvedKey, level, matcher, qNameValidator)
+        val += this.processTextOrObjNode(jObj[key], resolvedKey, level, matcher, xmlVersion)
       }
     }
   }
@@ -62688,7 +60562,7 @@ Builder.prototype.j2x = function (jObj, level, matcher, qNameValidator) {
 
 Builder.prototype.buildAttrPairStr = function (attrName, val, isStopNode) {
   if (!isStopNode) {
-    val = this.options.attributeValueProcessor(attrName, valToStr(val));
+    val = this.options.attributeValueProcessor(attrName, '' + val);
     val = this.replaceEntitiesValue(val);
   }
   if (this.options.suppressBooleanAttributes && val === "true") {
@@ -62696,7 +60570,7 @@ Builder.prototype.buildAttrPairStr = function (attrName, val, isStopNode) {
   } else return ' ' + attrName + '="' + escapeAttribute(val) + '"';
 }
 
-function processTextOrObjNode(object, key, level, matcher, qNameValidator) {
+function processTextOrObjNode(object, key, level, matcher, xmlVersion) {
   // Extract attributes to pass to matcher
   const attrValues = this.extractAttributes(object);
 
@@ -62708,13 +60582,13 @@ function processTextOrObjNode(object, key, level, matcher, qNameValidator) {
 
   if (isStopNode) {
     // For stopNodes, build raw content without entity encoding
-    const rawContent = this.buildRawContent(object, matcher.getDepth());
+    const rawContent = this.buildRawContent(object);
     const attrStr = this.buildAttributesForStopNode(object);
     matcher.pop();
     return this.buildObjectNode(rawContent, key, attrStr, level);
   }
 
-  const result = this.j2x(object, level + 1, matcher, qNameValidator);
+  const result = this.j2x(object, level + 1, matcher, xmlVersion);
   // Pop tag from matcher after recursion
   matcher.pop();
 
@@ -62764,10 +60638,7 @@ Builder.prototype.extractAttributes = function (obj) {
 };
 
 // Build raw content for stopNode without entity encoding
-Builder.prototype.buildRawContent = function (obj, depth = 0) {
-  if (this.options.maxNestedTags && depth >= this.options.maxNestedTags) {
-    throw new Error("Maximum nested tags exceeded");
-  }
+Builder.prototype.buildRawContent = function (obj) {
   if (typeof obj === 'string') {
     return obj; // Already a string, return as-is
   }
@@ -62801,7 +60672,7 @@ Builder.prototype.buildRawContent = function (obj, depth = 0) {
         if (typeof item === 'string' || typeof item === 'number') {
           content += `<${key}>${item}</${key}>`;
         } else if (typeof item === 'object' && item !== null) {
-          const nestedContent = this.buildRawContent(item, depth + 1);
+          const nestedContent = this.buildRawContent(item);
           const nestedAttrs = this.buildAttributesForStopNode(item);
           if (nestedContent === '') {
             content += `<${key}${nestedAttrs}/>`;
@@ -62812,7 +60683,7 @@ Builder.prototype.buildRawContent = function (obj, depth = 0) {
       }
     } else if (typeof value === 'object' && value !== null) {
       // Nested object
-      const nestedContent = this.buildRawContent(value, depth + 1);
+      const nestedContent = this.buildRawContent(value);
       const nestedAttrs = this.buildAttributesForStopNode(value);
       if (nestedContent === '') {
         content += `<${key}${nestedAttrs}/>`;
@@ -62846,9 +60717,7 @@ Builder.prototype.buildAttributesForStopNode = function (obj) {
       if (val === true && this.options.suppressBooleanAttributes) {
         attrStr += ' ' + cleanKey;
       } else {
-        // stopNode content is raw, but the quote delimiter is always escaped
-        // so a quote in the value cannot break out of the attribute (see orderedJs2Xml attr_to_str)
-        attrStr += ' ' + cleanKey + '="' + escapeAttribute(val) + '"';
+        attrStr += ' ' + cleanKey + '="' + val + '"'; // No encoding for stopNode
       }
     }
   } else {
@@ -62861,9 +60730,7 @@ Builder.prototype.buildAttributesForStopNode = function (obj) {
         if (val === true && this.options.suppressBooleanAttributes) {
           attrStr += ' ' + attr;
         } else {
-          // stopNode content is raw, but the quote delimiter is always escaped
-          // so a quote in the value cannot break out of the attribute (see orderedJs2Xml attr_to_str)
-          attrStr += ' ' + attr + '="' + escapeAttribute(val) + '"';
+          attrStr += ' ' + attr + '="' + val + '"'; // No encoding for stopNode
         }
       }
     }
@@ -62894,7 +60761,7 @@ Builder.prototype.buildObjectNode = function (val, key, attrStr, level) {
     if ((attrStr || attrStr === '') && val.indexOf('<') === -1) {
       return (this.indentate(level) + '<' + key + attrStr + piClosingChar + '>' + val + tagEndExp);
     } else if (this.options.commentPropName !== false && key === this.options.commentPropName && piClosingChar.length === 0) {
-      return this.indentate(level) + `<!--${safeComment(val)}-->` + this.newLine;
+      return this.indentate(level) + `<!--${val}-->` + this.newLine;
     } else {
       return (
         this.indentate(level) + '<' + key + attrStr + piClosingChar + this.tagEndChar +
@@ -62951,10 +60818,6 @@ Builder.prototype.buildTextValNode = function (val, key, attrStr, level, matcher
     // Normal processing: apply tagValueProcessor and entity replacement
     let textValue = this.options.tagValueProcessor(key, val);
     textValue = this.replaceEntitiesValue(textValue);
-    // tagValueProcessor may return the raw value unchanged (default is identity), and
-    // replaceEntitiesValue no-ops on non-strings, so a plain number can still reach here;
-    // stringify it now, sign-preserving, before it's implicitly ToString'd below.
-    textValue = valToStr(textValue);
 
     if (textValue === '') {
       return this.indentate(level) + '<' + key + attrStr + this.closeTag(key) + this.tagEndChar;
@@ -63369,101 +61232,9 @@ function readAttributeStr(xmlData, i) {
 }
 
 /**
- * Walk `attrStr` once, left to right, splitting it into attribute tokens.
- *
- * This replaces a regex that used to do the same job
- * (`(\s*)([^\s=]+)(\s*=)?(\s*(['"])(([\s\S])*?)\5)?`). That regex led with an
- * optional whitespace group followed by a required "non-whitespace" group.
- * On a long run of whitespace that never resolves into an attribute name
- * (e.g. a tag with thousands of trailing spaces before `>`), the engine
- * backtracks the whitespace group one character at a time before giving up
- * and moving to the next starting position — one full backtrack per
- * position, which is quadratic in the length of the run.
- *
- * The scan is forward-only: the cursor never moves backwards, so each
- * character is visited a constant number of times and the cost is linear
- * in the length of the string.
- *
- * Each returned token mirrors the shape the old regex match array had, so
- * the validation logic below (which reads token[1]..token[6]) didn't need
- * to change:
- *   token.startIndex - where this token begins in attrStr
- *   token[1]          - leading whitespace before the name
- *   token[2]          - the attribute name
- *   token[3]          - whitespace + '=' if present, else undefined
- *   token[4]          - marker (any defined value) if a quoted value was found
- *   token[5]          - the quote character used ('"' or "'")
- *   token[6]          - the value's text, without the surrounding quotes
- *
- * A malformed leading character (e.g. a stray '=' with no name before it)
- * is simply skipped over, one character at a time — the same outcome the
- * old regex produced by failing to match at that position and retrying at
- * the next one.
+ * Select all the attributes whether valid or invalid.
  */
-function scanAttributeTokens(attrStr) {
-  const tokens = [];
-  const len = attrStr.length;
-  let i = 0;
-
-  while (i < len) {
-    const tokenStart = i;
-
-    // Leading whitespace before the name.
-    while (i < len && isWhiteSpace(attrStr[i])) i++;
-    if (i >= len) break; // trailing whitespace only — nothing left to read
-
-    if (attrStr[i] === '=') {
-      // No name before this '=' — not a valid attribute start. Move past
-      i++;
-      continue;
-    }
-
-    const leadingWs = attrStr.slice(tokenStart, i);
-
-    // Attribute name — everything up to the next whitespace or '='.
-    const nameStart = i;
-    while (i < len && !isWhiteSpace(attrStr[i]) && attrStr[i] !== '=') i++;
-    const name = attrStr.slice(nameStart, i);
-
-    // Optional whitespace + '='.
-    let equalsGroup; // whitespace + '=' text, or undefined if absent
-    let j = i;
-    while (j < len && isWhiteSpace(attrStr[j])) j++;
-    if (j < len && attrStr[j] === '=') {
-      equalsGroup = attrStr.slice(i, j + 1);
-      i = j + 1;
-    }
-
-    // Optional whitespace + quoted value.
-    let quoteChar;
-    let value;
-    let k = i;
-    while (k < len && isWhiteSpace(attrStr[k])) k++;
-    if (k < len && (attrStr[k] === '"' || attrStr[k] === "'")) {
-      const valueStart = k + 1;
-      const closeIdx = attrStr.indexOf(attrStr[k], valueStart);
-      if (closeIdx !== -1) {
-        quoteChar = attrStr[k];
-        value = attrStr.slice(valueStart, closeIdx);
-        i = closeIdx + 1;
-      }
-      // No closing quote found anywhere in the rest of the string — leave
-      // quoteChar/value undefined, same as the old regex's group failing
-      // to match a backreference-less run.
-    }
-
-    const token = { startIndex: tokenStart };
-    token[1] = leadingWs;
-    token[2] = name;
-    token[3] = equalsGroup;
-    token[4] = quoteChar !== undefined ? true : undefined;
-    token[5] = quoteChar;
-    token[6] = value;
-    tokens.push(token);
-  }
-
-  return tokens;
-}
+const validAttrStrRegxp = new RegExp('(\\s*)([^\\s=]+)(\\s*=)?(\\s*([\'"])(([\\s\\S])*?)\\5)?', 'g');
 
 //attr, ="sd", a="amit's", a="sd"b="saf", ab  cd=""
 
@@ -63472,7 +61243,7 @@ function validateAttributeString(attrStr, options) {
 
   //if(attrStr.trim().length === 0) return true; //empty string
 
-  const matches = scanAttributeTokens(attrStr);
+  const matches = getAllMatches(attrStr, validAttrStrRegxp);
   const attrNames = {};
 
   for (let i = 0; i < matches.length; i++) {
@@ -63574,6 +61345,7 @@ function getLineNumberForPosition(xmlData, index) {
 function getPositionFromMatch(match) {
   return match.startIndex + match[1].length;
 }
+
 ;// CONCATENATED MODULE: ./node_modules/fast-xml-parser/src/fxp.js
 
 
@@ -63613,8 +61385,7 @@ const OptionsBuilder_defaultOptions = {
   numberParseOptions: {
     hex: true,
     leadingZeros: true,
-    eNotation: true,
-    unicode: false
+    eNotation: true
   },
   tagValueProcessor: function (tagName, val) {
     return val;
@@ -63780,24 +61551,10 @@ class XmlNode {
       this.child.push({ [node.tagname]: node.child });
     }
     // if requested, add the startIndex
-    this.addStartIndex(startIndex);
-  }
-
-  addStartIndex(startIndex) {
     if (startIndex !== undefined) {
       // Note: for now we just overwrite the metadata. If we had more complex metadata,
       // we might need to do an object append here:  metadata = { ...metadata, startIndex }
       this.child[this.child.length - 1][METADATA_SYMBOL] = { startIndex };
-    }
-  }
-
-  addEndIndex(endIndex) {
-    const lastChild = this.child[this.child.length - 1];
-    // endIndex is write-once: when updateTag drops a node, the last child is a
-    // previously completed sibling whose endIndex must not be overwritten
-    if (lastChild !== undefined && lastChild[METADATA_SYMBOL] !== undefined
-      && lastChild[METADATA_SYMBOL].endIndex === undefined) {
-      lastChild[METADATA_SYMBOL].endIndex = endIndex;
     }
   }
   /** symbol used for metadata */
@@ -63810,15 +61567,11 @@ class XmlNode {
 
 
 class DocTypeReader {
-    constructor(options, xmlVersion) {
+    constructor(options) {
         this.suppressValidationErr = !options;
         this.options = options;
-        this.xmlVersion = xmlVersion || 1.0;
     }
 
-    setXmlVersion(xmlVersion = 1.0) {
-        this.xmlVersion = xmlVersion;
-    }
     readDocType(xmlData, i) {
         const entities = Object.create(null);
         let entityCount = 0;
@@ -63832,23 +61585,8 @@ class DocTypeReader {
             i = i + 9;
             let angleBracketsCount = 1;
             let hasBody = false, comment = false;
-            let quoteChar = null; // tracks an open SYSTEM/PUBLIC literal before the '[' body
             let exp = "";
             for (; i < xmlData.length; i++) {
-                // Inside a quoted external-identifier literal — XML allows '<'
-                // and '>' as plain data here, so they must not be interpreted
-                // as DOCTYPE structure until the matching quote closes.
-                if (quoteChar !== null) {
-                    if (xmlData[i] === quoteChar) quoteChar = null;
-                    exp += xmlData[i];
-                    continue;
-                }
-                if (!hasBody && !comment && (xmlData[i] === '"' || xmlData[i] === "'")) {
-                    quoteChar = xmlData[i];
-                    exp += xmlData[i];
-                    continue;
-                }
-
                 if (xmlData[i] === '<' && !comment) { //Determine the tag type
                     if (hasBody && hasSeq(xmlData, "!ENTITY", i)) {
                         i += 7;
@@ -63903,7 +61641,7 @@ class DocTypeReader {
                     exp += xmlData[i];
                 }
             }
-            if (quoteChar !== null || angleBracketsCount !== 0) {
+            if (angleBracketsCount !== 0) {
                 throw new Error(`Unclosed DOCTYPE`);
             }
         } else {
@@ -63931,7 +61669,7 @@ class DocTypeReader {
         }
         let entityName = xmlData.substring(startIndex, i);
 
-        validateEntityName(entityName, { xmlVersion: this.xmlVersion });
+        validateEntityName(entityName);
 
         // Skip whitespace after entity name
         i = skipWhitespace(xmlData, i);
@@ -63974,7 +61712,7 @@ class DocTypeReader {
         }
         let notationName = xmlData.substring(startIndex, i);
 
-        !this.suppressValidationErr && validateEntityName(notationName, { xmlVersion: this.xmlVersion });
+        !this.suppressValidationErr && validateEntityName(notationName);
 
         // Skip whitespace after notation name
         i = skipWhitespace(xmlData, i);
@@ -64054,7 +61792,7 @@ class DocTypeReader {
         let elementName = xmlData.substring(startIndex, i);
 
         // Validate element name
-        if (!this.suppressValidationErr && !qName(elementName, { xmlVersion: this.xmlVersion })) {
+        if (!this.suppressValidationErr && !isName(elementName)) {
             throw new Error(`Invalid element name: "${elementName}"`);
         }
 
@@ -64101,7 +61839,7 @@ class DocTypeReader {
         let elementName = xmlData.substring(startIndex, i);
 
         // Validate element name
-        validateEntityName(elementName, { xmlVersion: this.xmlVersion })
+        validateEntityName(elementName)
 
         // Skip whitespace after element name
         i = skipWhitespace(xmlData, i);
@@ -64114,7 +61852,7 @@ class DocTypeReader {
         let attributeName = xmlData.substring(startIndex, i);
 
         // Validate attribute name
-        if (!validateEntityName(attributeName, { xmlVersion: this.xmlVersion })) {
+        if (!validateEntityName(attributeName)) {
             throw new Error(`Invalid attribute name: "${attributeName}"`);
         }
 
@@ -64149,7 +61887,7 @@ class DocTypeReader {
 
                 // Validate notation name
                 notation = notation.trim();
-                if (!validateEntityName(notation, { xmlVersion: this.xmlVersion })) {
+                if (!validateEntityName(notation)) {
                     throw new Error(`Invalid notation name: "${notation}"`);
                 }
 
@@ -64227,284 +61965,27 @@ function hasSeq(data, seq, i) {
     return true;
 }
 
-function validateEntityName(name, xmlVersion) {
-    if (qName(name, { xmlVersion: xmlVersion }))
+function validateEntityName(name) {
+    if (isName(name))
         return name;
     else
         throw new Error(`Invalid entity name ${name}`);
 }
-;// CONCATENATED MODULE: ./node_modules/anynum/digitTable.js
-/**
- * Flat lookup table: maps Unicode code point → ASCII digit (0-9).
- * Only decimal digit characters (Unicode category Nd) are included.
- *
- * Strategy: Int32Array of size (maxCodePoint - minCodePoint + 1).
- * Value 0xFF means "not a digit". Value 0-9 is the ASCII digit value.
- * This gives O(1) lookup with no branching, no bisect, no loop.
- *
- * Memory: range is 0x0660 to 0x1FBF0 → ~129,936 entries × 1 byte = ~127 KB.
- * Acceptable for a one-time init; lookup is a single array index.
- */
-
-// All known Unicode Nd (decimal digit) script zero code points.
-// Each script has exactly 10 consecutive digits: zero+0 .. zero+9.
-const SCRIPT_ZEROS = [
-  // Basic Latin (ASCII) — included for completeness / pass-through
-  0x0030, // 0-9
-
-  // Arabic scripts
-  0x0660, // Arabic-Indic ٠١٢٣٤٥٦٧٨٩
-  0x06F0, // Extended Arabic-Indic (Urdu/Persian/Sindhi) ۰۱۲۳
-
-  // Indic scripts
-  0x0966, // Devanagari ०१२३४५६७८९
-  0x09E6, // Bengali ০১২৩৪৫৬৭৮৯
-  0x0A66, // Gurmukhi ੦੧੨੩੪੫੬੭੮੯
-  0x0AE6, // Gujarati ૦૧૨૩૪૫૬૭૮૯
-  0x0B66, // Odia ୦୧୨୩୪୫୬୭୮୯
-  0x0BE6, // Tamil ௦௧௨௩௪௫௬௭௮௯
-  0x0C66, // Telugu ౦౧౨౩౪౫౬౭౮౯
-  0x0CE6, // Kannada ೦೧೨೩೪೫೬೭೮೯
-  0x0D66, // Malayalam ൦൧൨൩൪൫൬൭൮൯
-  0x0DE6, // Sinhala Archaic ෦෧෨෩෪෫෬෭෮෯
-
-  // Southeast Asian scripts
-  0x0E50, // Thai ๐๑๒๓๔๕๖๗๘๙
-  0x0ED0, // Lao ໐໑໒໓໔໕໖໗໘໙
-  0x0F20, // Tibetan ༠༡༢༣༤༥༦༧༨༩
-  0x1040, // Myanmar ၀၁၂၃၄၅၆၇၈၉
-  0x1090, // Myanmar Shan ႐႑႒႓႔႕႖႗႘႙
-  0x17E0, // Khmer ០១២៣៤៥៦៧៨៩
-  0x1810, // Mongolian ᠐᠑᠒᠓᠔᠕᠖᠗᠘᠙
-  0x1946, // Limbu ᥆᥇᥈᥉᥊᥋᥌᥍᥎᥏
-  0x19D0, // New Tai Lue ᧐᧑᧒᧓᧔᧕᧖᧗᧘᧙
-  0x1A80, // Tai Tham Hora ᪀᪁᪂᪃᪄᪅᪆᪇᪈᪉
-  0x1A90, // Tai Tham Tham ᪐᪑᪒᪓᪔᪕᪖᪗᪘᪙
-  0x1B50, // Balinese ᭐᭑᭒᭓᭔᭕᭖᭗᭘᭙
-  0x1BB0, // Sundanese ᮰᮱᮲᮳᮴᮵᮶᮷᮸᮹
-  0x1C40, // Lepcha ᱀᱁᱂᱃᱄᱅᱆᱇᱈᱉
-  0x1C50, // Ol Chiki ᱐᱑᱒᱓᱔᱕᱖᱗᱘᱙
-
-  // Fullwidth (CJK context)
-  0xFF10, // Fullwidth ０１２３４５６７８９
-
-  // Mathematical digit variants (Unicode math block)
-  0x1D7CE, // Mathematical Bold
-  0x1D7D8, // Mathematical Double-Struck
-  0x1D7E2, // Mathematical Sans-Serif
-  0x1D7EC, // Mathematical Sans-Serif Bold
-  0x1D7F6, // Mathematical Monospace
-
-  // Other scripts
-  0x104A0, // Osmanya 𐒠𐒡𐒢𐒣𐒤𐒥𐒦𐒧𐒨𐒩
-  0x10D30, // Hanifi Rohingya 𐴰𐴱𐴲𐴳𐴴𐴵𐴶𐴷𐴸𐴹
-  0x11066, // Brahmi 𑁦𑁧𑁨𑁩𑁪𑁫𑁬𑁭𑁮𑁯
-  0x110F0, // Sora Sompeng 𑃰𑃱𑃲𑃳𑃴𑃵𑃶𑃷𑃸𑃹
-  0x11136, // Chakma 𑄶𑄷𑄸𑄹𑄺𑄻𑄼𑄽𑄾𑄿
-  0x111D0, // Sharada 𑇐𑇑𑇒𑇓𑇔𑇕𑇖𑇗𑇘𑇙
-  0x112F0, // Khudawadi 𑋰𑋱𑋲𑋳𑋴𑋵𑋶𑋷𑋸𑋹
-  0x11450, // Newa 𑑐𑑑𑑒𑑓𑑔𑑕𑑖𑑗𑑘𑑙
-  0x114D0, // Tirhuta 𑓐𑓑𑓒𑓓𑓔𑓕𑓖𑓗𑓘𑓙
-  0x11650, // Modi 𑙐𑙑𑙒𑙓𑙔𑙕𑙖𑙗𑙘𑙙
-  0x116C0, // Takri 𑛀𑛁𑛂𑛃𑛄𑛅𑛆𑛇𑛈𑛉
-  0x11730, // Ahom 𑜰𑜱𑜲𑜳𑜴𑜵𑜶𑜷𑜸𑜹
-  0x118E0, // Warang Citi 𑣠𑣡𑣢𑣣𑣤𑣥𑣦𑣧𑣨𑣩
-  0x11950, // Dives Akuru 𑥐𑥑𑥒𑥓𑥔𑥕𑥖𑥗𑥘𑥙
-  0x11BF0, // Khitan Small Script 𑯰𑯱𑯲𑯳𑯴𑯵𑯶𑯷𑯸𑯹
-  0x11C50, // Bhaiksuki 𑱐𑱑𑱒𑱓𑱔𑱕𑱖𑱗𑱘𑱙
-  0x11D50, // Masaram Gondi 𑵐𑵑𑵒𑵓𑵔𑵕𑵖𑵗𑵘𑵙
-  0x11DA0, // Gunjala Gondi 𑶠𑶡𑶢𑶣𑶤𑶥𑶦𑶧𑶨𑶩
-  0x11F50, // Kawi 𑽐𑽑𑽒𑽓𑽔𑽕𑽖𑽗𑽘𑽙
-  0x16A60, // Mro 𖩠𖩡𖩢𖩣𖩤𖩥𖩦𖩧𖩨𖩩
-  0x16AC0, // Tangsa 𖫀𖫁𖫂𖫃𖫄𖫅𖫆𖫇𖫈𖫉
-  0x16B50, // Pahawh Hmong 𖭐𖭑𖭒𖭓𖭔𖭕𖭖𖭗𖭘𖭙
-  0x1E140, // Nyiakeng Puachue Hmong 𞅀𞅁𞅂𞅃𞅄𞅅𞅆𞅇𞅈𞅉
-  0x1E2F0, // Wancho 𞋰𞋱𞋲𞋳𞋴𞋵𞋶𞋷𞋸𞋹
-  0x1E4F0, // Nag Mundari 𞓰𞓱𞓲𞓳𞓴𞓵𞓶𞓷𞓸𞓹
-  0x1E950, // Adlam 𞥐𞥑𞥒𞥓𞥔𞥕𞥖𞥗𞥘𞥙
-  0x1FBF0, // Segmented digit symbols 🯰🯱🯲🯳🯴🯵🯶🯷🯸🯹
-];
-
-// Build a sparse Map for scripts above 0xFFFF (surrogate-pair range).
-// These can't go into a flat Uint8Array indexed by code point efficiently.
-const NOT_DIGIT = 0xFF;
-const HIGH_MAP = new Map(); // codePoint → digit value (0-9)
-
-const LOW_MAX = 0xFFFF;
-const LOW_MIN = 0x0660; // first non-ASCII digit script
-
-// Flat Uint8Array covering 0x0660 .. 0xFFFF
-const TABLE_OFFSET = LOW_MIN;
-const TABLE_SIZE = LOW_MAX - LOW_MIN + 1;
-const TABLE = new Uint8Array(TABLE_SIZE).fill(NOT_DIGIT);
-
-for (const zero of SCRIPT_ZEROS) {
-  for (let d = 0; d < 10; d++) {
-    const cp = zero + d;
-    if (cp <= LOW_MAX) {
-      TABLE[cp - TABLE_OFFSET] = d;
-    } else {
-      HIGH_MAP.set(cp, d);
-    }
-  }
-}
-
-
-
-;// CONCATENATED MODULE: ./node_modules/anynum/anynum.js
-
-
-
-
-const CHAR_0 = 48; // '0'.charCodeAt(0)
-const CHAR_9 = 57; // '9'.charCodeAt(0)
-const CHAR_MINUS = 45; // '-'.charCodeAt(0)
-
-// Unicode minus/hyphen variants worth normalizing to ASCII '-' in numeric context:
-//   U+2212  MINUS SIGN       − (mathematically correct minus)
-//   U+FF0D  FULLWIDTH HYPHEN-MINUS  － (Japanese fullwidth context)
-//   U+FE63  SMALL HYPHEN-MINUS     ﹣ (small form variant)
-//
-// NOT normalized (deliberate):
-//   U+2013  EN DASH  –  (punctuation, not a numeric sign)
-//   U+2014  EM DASH  —  (punctuation)
-//   U+2010  HYPHEN   ‐  (typographic hyphen)
-//
-// Rationale: only characters a human or locale formatter would plausibly use
-// as a numeric minus sign are normalized. Dashes used for punctuation are left
-// alone to avoid mangling non-numeric strings.
-const MINUS_SET = new Set([0x2212, 0xFF0D, 0xFE63]);
-
-/**
- * Normalize all Unicode decimal digit characters in a string to ASCII (0-9),
- * and normalize Unicode minus variants to ASCII '-' (U+002D).
- *
- * Non-digit, non-minus characters are passed through unchanged.
- *
- * Performance design:
- * - Fast path: if the string has no convertible characters, return it unchanged
- *   (zero allocation).
- * - BMP digits (0x0660..0xFFFF excl. surrogates): flat Uint8Array lookup (O(1)).
- * - Supplementary plane digits (> 0xFFFF, encoded as surrogate pairs): Map lookup.
- * - Minus variants: checked inline with a small fixed Set.
- *
- * @param {string} str
- * @returns {string}
- */
-function anynum(str) {
-  if (typeof str !== 'string') return str;
-
-  const len = str.length;
-  if (len === 0) return str;
-
-  // Scan for first character needing conversion.
-  // If none found, return original string (zero allocation).
-  let firstHit = -1;
-
-  for (let i = 0; i < len; i++) {
-    const cc = str.charCodeAt(i);
-
-    // ASCII digit or ASCII minus — already normalized, skip fast
-    if ((cc >= CHAR_0 && cc <= CHAR_9) || cc === CHAR_MINUS) continue;
-
-    // Below first unicode digit script — check minus variants only
-    if (cc < TABLE_OFFSET) {
-      if (MINUS_SET.has(cc)) { firstHit = i; break; }
-      continue;
-    }
-
-    // Surrogate pairs live in BMP range 0xD800-0xDFFF — check before TABLE
-    if (cc >= 0xD800 && cc <= 0xDBFF) {
-      if (i + 1 < len) {
-        const low = str.charCodeAt(i + 1);
-        if (low >= 0xDC00 && low <= 0xDFFF) {
-          const cp = 0x10000 + ((cc - 0xD800) << 10) + (low - 0xDC00);
-          if (HIGH_MAP.has(cp)) { firstHit = i; break; }
-        }
-      }
-      continue;
-    }
-
-    // BMP non-surrogate: flat table lookup; also check minus variants in this range
-    if (TABLE[cc - TABLE_OFFSET] !== NOT_DIGIT || MINUS_SET.has(cc)) {
-      firstHit = i;
-      break;
-    }
-  }
-
-  // Nothing to replace — return original, zero allocation
-  if (firstHit === -1) return str;
-
-  // Build result: copy unchanged prefix, then convert from firstHit onward
-  const chars = [];
-
-  if (firstHit > 0) chars.push(str.slice(0, firstHit));
-
-  for (let i = firstHit; i < len; i++) {
-    const cc = str.charCodeAt(i);
-
-    // ASCII digit or ASCII minus — pass through
-    if ((cc >= CHAR_0 && cc <= CHAR_9) || cc === CHAR_MINUS) {
-      chars.push(str[i]);
-      continue;
-    }
-
-    // Below TABLE_OFFSET — check minus variants, else pass through
-    if (cc < TABLE_OFFSET) {
-      chars.push(MINUS_SET.has(cc) ? '-' : str[i]);
-      continue;
-    }
-
-    // Surrogate pairs
-    if (cc >= 0xD800 && cc <= 0xDBFF) {
-      if (i + 1 < len) {
-        const low = str.charCodeAt(i + 1);
-        if (low >= 0xDC00 && low <= 0xDFFF) {
-          const cp = 0x10000 + ((cc - 0xD800) << 10) + (low - 0xDC00);
-          const d = HIGH_MAP.get(cp);
-          if (d !== undefined) {
-            chars.push(String.fromCharCode(d + 48));
-            i++; // consume low surrogate
-            continue;
-          }
-        }
-      }
-      chars.push(str[i]);
-      continue;
-    }
-
-    // BMP non-surrogate: flat table lookup + minus variants
-    if (MINUS_SET.has(cc)) {
-      chars.push('-');
-      continue;
-    }
-    const d = TABLE[cc - TABLE_OFFSET];
-    chars.push(d !== NOT_DIGIT ? String.fromCharCode(d + 48) : str[i]);
-  }
-
-  return chars.join('');
-}
-
-
-/* harmony default export */ const anynum_anynum = (anynum);
 ;// CONCATENATED MODULE: ./node_modules/strnum/strnum.js
 const hexRegex = /^[-+]?0x[a-fA-F0-9]+$/;
-const binRegex = /^0b[01]+$/;
-const octRegex = /^0o[0-7]+$/;
 const numRegex = /^([\-\+])?(0*)([0-9]*(\.[0-9]*)?)$/;
-
+// const octRegex = /^0x[a-z0-9]+/;
+// const binRegex = /0x[a-z0-9]+/;
 
 
 const consider = {
     hex: true,
-    binary: false,
-    octal: false,
+    // oct: false,
     leadingZeros: true,
     decimalPoint: "\.",
     eNotation: true,
     //skipLike: /regex/,
     infinity: "original", // "null", "infinity" (Infinity type), "string" ("Infinity" (the string literal))
-    unicode: false,
 };
 
 function toNumber(str, options = {}) {
@@ -64516,23 +61997,16 @@ function toNumber(str, options = {}) {
     if (trimmedStr.length === 0) return str;
     else if (options.skipLike !== undefined && options.skipLike.test(trimmedStr)) return str;
     else if (trimmedStr === "0") return 0;
-
-    if (options.unicode) {
-        trimmedStr = anynum_anynum(trimmedStr);
-        if (trimmedStr === "0") return 0; // re-check after normalization
-    }
-    if (options.hex && hexRegex.test(trimmedStr)) {
+    else if (options.hex && hexRegex.test(trimmedStr)) {
         return parse_int(trimmedStr, 16);
-    } else if (options.binary && binRegex.test(trimmedStr)) {
-        return parse_int(trimmedStr, 2);
-    } else if (options.octal && octRegex.test(trimmedStr)) {
-        return parse_int(trimmedStr, 8);
-    } else if (!isFinite(trimmedStr)) { //Infinity or not a number
-        const num = Number(trimmedStr);
-        if (Number.isNaN(num)) return str; //not a number: always the original string
-        return handleInfinity(str, num, options); //only +/-Infinity reaches here
+        // }else if (options.oct && octRegex.test(str)) {
+        //     return Number.parseInt(val, 8);
+    } else if (!isFinite(trimmedStr)) { //Infinity
+        return handleInfinity(str, Number(trimmedStr), options);
     } else if (trimmedStr.includes('e') || trimmedStr.includes('E')) { //eNotation
         return resolveEnotation(str, trimmedStr, options);
+        // }else if (options.parseBin && binRegex.test(str)) {
+        //     return Number.parseInt(val, 2);
     } else {
         //separate negative sign, leading zeros, and rest number
         const match = numRegex.exec(trimmedStr);
@@ -64542,8 +62016,8 @@ function toNumber(str, options = {}) {
             const leadingZeros = match[2];
             let numTrimmedByZeros = trimZeros(match[3]); //complete num without leading zeros
             const decimalAdjacentToLeadingZeros = sign ? // 0., -00., 000.
-                trimmedStr[leadingZeros.length + 1] === "."
-                : trimmedStr[leadingZeros.length] === ".";
+                str[leadingZeros.length + 1] === "."
+                : str[leadingZeros.length] === ".";
 
             //trim ending zeros for floating number
             if (!options.leadingZeros //leading zeros are not allowed
@@ -64591,8 +62065,8 @@ function resolveEnotation(str, trimmedStr, options) {
         const eChar = notation[3].indexOf("e") === -1 ? "E" : "e";
         const leadingZeros = notation[2];
         const eAdjacentToLeadingZeros = sign ? // 0E.
-            trimmedStr[leadingZeros.length + 1] === eChar
-            : trimmedStr[leadingZeros.length] === eChar;
+            str[leadingZeros.length + 1] === eChar
+            : str[leadingZeros.length] === eChar;
 
         if (leadingZeros.length > 1 && eAdjacentToLeadingZeros) return str;
         else if (leadingZeros.length === 1
@@ -64601,7 +62075,8 @@ function resolveEnotation(str, trimmedStr, options) {
         } else if (leadingZeros.length > 0) {
             // Has leading zeros — only accept if leadingZeros option allows it
             if (options.leadingZeros && !eAdjacentToLeadingZeros) {
-                return Number(trimmedStr); // Number() accepts leading zeros; stripping can leave a mantissa-less ".e0"
+                trimmedStr = (notation[1] || "") + notation[3];
+                return Number(trimmedStr);
             } else return str;
         } else {
             // No leading zeros — always valid e-notation, parse it
@@ -64619,11 +62094,7 @@ function resolveEnotation(str, trimmedStr, options) {
  */
 function trimZeros(numStr) {
     if (numStr && numStr.indexOf(".") !== -1) {//float
-        //remove ending zeros without the O(n^2) backtracking that /0+$/ hits
-        //when the string doesn't end in 0 but has a long internal zero-run
-        let end = numStr.length;
-        while (end > 0 && numStr.charCodeAt(end - 1) === 48 /* '0' */) end--;
-        numStr = numStr.slice(0, end);
+        numStr = numStr.replace(/0+$/, ""); //remove ending zeros
         if (numStr === ".") numStr = "0";
         else if (numStr[0] === ".") numStr = "0" + numStr;
         else if (numStr[numStr.length - 1] === ".") numStr = numStr.substring(0, numStr.length - 1);
@@ -64633,13 +62104,11 @@ function trimZeros(numStr) {
 }
 
 function parse_int(numStr, base) {
-    const str = numStr.trim();
-    if (base === 2 || base === 8) numStr = str.substring(2);
-
+    //polyfill
     if (parseInt) return parseInt(numStr, base);
     else if (Number.parseInt) return Number.parseInt(numStr, base);
     else if (window && window.parseInt) return window.parseInt(numStr, base);
-    else throw new Error("parseInt, Number.parseInt, window.parseInt are not supported");
+    else throw new Error("parseInt, Number.parseInt, window.parseInt are not supported")
 }
 
 /**
@@ -64664,7 +62133,6 @@ function handleInfinity(str, num, options) {
             return str; // Return original string like "1e1000"
     }
 }
-
 ;// CONCATENATED MODULE: ./node_modules/fast-xml-parser/src/ignoreAttributes.js
 function ignoreAttributes_getIgnoreAttributesFn(ignoreAttributes) {
     if (typeof ignoreAttributes === 'function') {
@@ -64721,9 +62189,6 @@ class ExpressionSet {
     /** @type {import('./Expression.js').default[]} expressions containing deep wildcard (..) */
     this._deepWildcards = [];
 
-    /** @type {Map<string, import('./Expression.js').default[]>} terminalTag → deep wildcard expressions */
-    this._deepByTerminalTag = new Map();
-
     /** @type {Set<string>} pattern strings already added — used for deduplication */
     this._patterns = new Set();
 
@@ -64755,14 +62220,7 @@ class ExpressionSet {
     this._patterns.add(expression.pattern);
 
     if (expression.hasDeepWildcard()) {
-      const lastSeg = expression.segments[expression.segments.length - 1];
-      if (lastSeg && lastSeg.type !== 'deep-wildcard' && lastSeg.tag !== '*') {
-        const tag = lastSeg.tag;
-        if (!this._deepByTerminalTag.has(tag)) this._deepByTerminalTag.set(tag, []);
-        this._deepByTerminalTag.get(tag).push(expression);
-      } else {
-        this._deepWildcards.push(expression);
-      }
+      this._deepWildcards.push(expression);
       return this;
     }
 
@@ -64896,13 +62354,7 @@ class ExpressionSet {
       }
     }
 
-    // 3. Deep wildcards — indexed by terminal tag, then unindexed fallback
-    const deepBucket = this._deepByTerminalTag.get(tag);
-    if (deepBucket) {
-      for (let i = 0; i < deepBucket.length; i++) {
-        if (matcher.matches(deepBucket[i])) return deepBucket[i];
-      }
-    }
+    // 3. Deep wildcards — cannot be pre-filtered by depth or tag
     for (let i = 0; i < this._deepWildcards.length; i++) {
       if (matcher.matches(this._deepWildcards[i])) return this._deepWildcards[i];
     }
@@ -64948,6 +62400,7 @@ const BASIC_LATIN = {
   num: '#',
   dollar: '$',
   percent: '%',
+  amp: '&',
   ast: '*',
   commat: '@',
   lowbar: '_',
@@ -65379,6 +62832,9 @@ const CYRILLIC = {
  */
 const MATH = {
   plus: '+',
+  minus: '−',
+  mnplus: '∓',
+  mp: '∓',
   pm: '±',
   times: '×',
   div: '÷',
@@ -65451,6 +62907,10 @@ const MATH = {
   bumpe: '≏',
   bumpeq: '≏',
   HumpEqual: '≏',
+  dotminus: '∸',
+  minusd: '∸',
+  plusdo: '∔',
+  dotplus: '∔',
   le: '≤',
   LessEqual: '≤',
   ge: '≥',
@@ -65566,6 +63026,7 @@ const MATH_ADVANCED = {
   wr: '≀',
   wreath: '≀',
   nsime: '≄',
+  nsimeq: '≄',
   nsimeq: '≄',
   ncong: '≇',
   simne: '≆',
@@ -65683,6 +63144,10 @@ const ARROWS = {
   mapsto: '↦',
   mapstodown: '↧',
   crarr: '↵',
+  nwarrow: '↖',
+  nearrow: '↗',
+  searrow: '↘',
+  swarrow: '↙',
   nleftarrow: '↚',
   nleftrightarrow: '↮',
   nrightarrow: '↛',
@@ -65723,6 +63188,7 @@ const ARROWS = {
   ldrushar: '⥋',
   rdldhar: '⥩',
   lrhard: '⥭',
+  rlhar: '⇌',
   uharr: '↾',
   uharl: '↿',
   dharr: '⇂',
@@ -65738,6 +63204,7 @@ const ARROWS = {
   nhArr: '⇎',
   nlarr: '↚',
   nlArr: '⇍',
+  nrarr: '↛',
   nrArr: '⇏',
   larrb: '⇤',
   LeftArrowBar: '⇤',
@@ -65899,6 +63366,7 @@ const PUNCTUATION = {
   DiacriticalDot: '˙',
   DiacriticalDoubleAcute: '˝',
   grave: '`',
+  acute: '´',
 };
 
 /**
@@ -65912,6 +63380,7 @@ const CURRENCY = {
   yen: '¥',
   euro: '€',
   dollar: '$',
+  euro: '€',
   fnof: 'ƒ',
   inr: '₹',
   af: '؋',
@@ -66011,11 +63480,32 @@ const MISC_SYMBOLS = {
   Vdash: '⊩',
   dashv: '⊣',
   vDash: '⊨',
+  Vdash: '⊩',
   Vvdash: '⊪',
   nvdash: '⊬',
   nvDash: '⊭',
   nVdash: '⊮',
   nVDash: '⊯',
+};
+
+/**
+ * All entities combined (if you need everything)
+ * @type {Record<string, string>}
+ */
+const ALL_ENTITIES = {
+  ...BASIC_LATIN,
+  ...LATIN_ACCENTS,
+  ...LATIN_EXTENDED,
+  ...GREEK,
+  ...CYRILLIC,
+  ...MATH,
+  ...MATH_ADVANCED,
+  ...ARROWS,
+  ...SHAPES,
+  ...PUNCTUATION,
+  ...CURRENCY,
+  ...FRACTIONS,
+  ...MISC_SYMBOLS,
 };
 
 const XML = {
@@ -66058,30 +63548,6 @@ const COMMON_HTML = {
 // ---------------------------------------------------------------------------
 
 
-
-// ---------------------------------------------------------------------------
-// Entity hook action constants
-// ---------------------------------------------------------------------------
-
-/**
- * Action constants for `onExternalEntity` and `onInputEntity` hooks.
- *
- * Use these instead of raw strings to avoid typos:
- *
- * @example
- * import EntityDecoder, { ENTITY_ACTION } from './EntityDecoder.js';
- * const dec = new EntityDecoder({
- *   onInputEntity: (name, value) => ENTITY_ACTION.BLOCK,
- * });
- */
-const ENTITY_ACTION = Object.freeze({
-  /** Resolve and expand the entity normally. */
-  ALLOW: 'allow',
-  /** Silently skip this entity — it will not be registered. */
-  BLOCK: 'block',
-  /** Throw an error, aborting entity registration entirely. */
-  THROW: 'throw',
-});
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -66247,14 +63713,6 @@ class EntityDecoder {
    *   the effective action is max(onNCR, rangeMinimum).
    * @param {'remove'|'throw'} [options.ncr.nullNCR='remove']
    *   Action for U+0000 (null). 'allow' and 'leave' are clamped to 'remove' since null is never safe.
-   * @param {((name: string, value: string) => 'allow'|'block'|'throw')|null} [options.onExternalEntity=null]
-   *   Hook called when an external entity is registered via `setExternalEntities()` or
-   *   `addExternalEntity()`. Return `ENTITY_ACTION.ALLOW` to accept the entity,
-   *   `ENTITY_ACTION.BLOCK` to silently skip it, or `ENTITY_ACTION.THROW` to abort with an error.
-   * @param {((name: string, value: string) => 'allow'|'block'|'throw')|null} [options.onInputEntity=null]
-   *   Hook called when an input entity is registered via `addInputEntities()`. Return
-   *   `ENTITY_ACTION.ALLOW` to accept, `ENTITY_ACTION.BLOCK` to silently skip, or
-   *   `ENTITY_ACTION.THROW` to abort with an error.
    */
   constructor(options = {}) {
     this._limit = options.limit || {};
@@ -66290,43 +63748,6 @@ class EntityDecoder {
     this._ncrXmlVersion = ncrCfg.xmlVersion;
     this._ncrOnLevel = ncrCfg.onLevel;
     this._ncrNullLevel = ncrCfg.nullLevel;
-
-    // --- Registration hooks ---
-    /** @type {((name: string, value: string) => 'allow'|'block'|'throw')|null} */
-    this._onExternalEntity = typeof options.onExternalEntity === 'function'
-      ? options.onExternalEntity
-      : null;
-    /** @type {((name: string, value: string) => 'allow'|'block'|'throw')|null} */
-    this._onInputEntity = typeof options.onInputEntity === 'function'
-      ? options.onInputEntity
-      : null;
-  }
-
-  // -------------------------------------------------------------------------
-  // Private: registration hook dispatch
-  // -------------------------------------------------------------------------
-
-  /**
-   * Invoke a registration hook for a single entity name/value pair.
-   * Returns true when the entity should be accepted, false when it should be
-   * silently skipped (BLOCK), and throws when the hook returns THROW.
-   *
-   * @param {((name: string, value: string) => 'allow'|'block'|'throw')|null} hook
-   * @param {string} name
-   * @param {string} value
-   * @param {string} context  — used in error messages ('external' | 'input')
-   * @returns {boolean}  true = accept, false = skip
-   */
-  _applyRegistrationHook(hook, name, value, context) {
-    if (!hook) return true; // no hook → always accept
-    const action = hook(name, value);
-    if (action === ENTITY_ACTION.BLOCK) return false;
-    if (action === ENTITY_ACTION.THROW) {
-      throw new Error(
-        `[EntityDecoder] Registration of ${context} entity "&${name};" was rejected by hook`
-      );
-    }
-    return true; // ALLOW or any unknown return value → accept
   }
 
   // -------------------------------------------------------------------------
@@ -66336,9 +63757,6 @@ class EntityDecoder {
   /**
    * Replace the full set of persistent external entities.
    * All keys are validated — throws on invalid characters.
-   * If `onExternalEntity` is set, it is called once per entry; entries that
-   * return `ENTITY_ACTION.BLOCK` are silently omitted, `ENTITY_ACTION.THROW`
-   * aborts the whole call.
    * @param {Record<string, string | { regex?: RegExp, val: string }>} map
    */
   setExternalEntities(map) {
@@ -66347,34 +63765,18 @@ class EntityDecoder {
         EntityDecoder_validateEntityName(key);
       }
     }
-    if (!this._onExternalEntity) {
-      this._externalMap = mergeEntityMaps(map);
-      return;
-    }
-    // Hook present — resolve values first, then filter
-    const flat = mergeEntityMaps(map);
-    const filtered = Object.create(null);
-    for (const [name, value] of Object.entries(flat)) {
-      if (this._applyRegistrationHook(this._onExternalEntity, name, value, 'external')) {
-        filtered[name] = value;
-      }
-    }
-    this._externalMap = filtered;
+    this._externalMap = mergeEntityMaps(map);
   }
 
   /**
    * Add a single persistent external entity.
-   * If `onExternalEntity` is set it is called before the entity is stored;
-   * `ENTITY_ACTION.BLOCK` silently skips storage, `ENTITY_ACTION.THROW` raises.
    * @param {string} key
    * @param {string} value
    */
   addExternalEntity(key, value) {
     EntityDecoder_validateEntityName(key);
     if (typeof value === 'string' && value.indexOf('&') === -1) {
-      if (this._applyRegistrationHook(this._onExternalEntity, key, value, 'external')) {
-        this._externalMap[key] = value;
-      }
+      this._externalMap[key] = value;
     }
   }
 
@@ -66385,25 +63787,12 @@ class EntityDecoder {
   /**
    * Inject DOCTYPE entities for the current document.
    * Also resets per-document expansion counters.
-   * If `onInputEntity` is set it is called once per entry; entries returning
-   * `ENTITY_ACTION.BLOCK` are silently omitted, `ENTITY_ACTION.THROW` aborts.
    * @param {Record<string, string | { regx?: RegExp, regex?: RegExp, val: string }>} map
    */
   addInputEntities(map) {
     this._totalExpansions = 0;
     this._expandedLength = 0;
-    if (!this._onInputEntity) {
-      this._inputMap = mergeEntityMaps(map);
-      return;
-    }
-    const flat = mergeEntityMaps(map);
-    const filtered = Object.create(null);
-    for (const [name, value] of Object.entries(flat)) {
-      if (this._applyRegistrationHook(this._onInputEntity, name, value, 'input')) {
-        filtered[name] = value;
-      }
-    }
-    this._inputMap = filtered;
+    this._inputMap = mergeEntityMaps(map);
   }
 
   // -------------------------------------------------------------------------
@@ -66448,7 +63837,7 @@ class EntityDecoder {
   decode(str) {
     if (typeof str !== 'string' || str.length === 0) return str;
     //TODO: check if needed
-    if (str.indexOf('&') === -1) return str; // fast path — no entities at all
+    //if (str.indexOf('&') === -1) return str; // fast path — no entities at all
 
     const original = str;
     const chunks = [];
@@ -66696,1154 +64085,9 @@ class EntityDecoder {
     return this._applyNCRAction(effective, token, cp);
   }
 }
-;// CONCATENATED MODULE: ./node_modules/is-unsafe/src/contexts/sql.js
-/**
- * SQL context patterns — high-precision rules only.
- *
- * These rules have very low false-positive risk and are safe to apply to
- * general user text (names, descriptions, search queries, etc.).
- * All patterns are ReDoS-safe — unlike the `sql-injection` npm package
- * which has an active CVE on its own detection regexes.
- *
- * For exhaustive coverage including noisier heuristics (comment sequences,
- * hex literals, stacked queries with semicolons), use 'SQL-STRICT' instead.
- * Apply 'SQL-STRICT' only to strings that are specifically SQL fragments,
- * not to general free-text fields.
- */
-
-const SQL_PATTERNS = [
-  {
-    id: 'sql-block-comment-open',
-    description: 'SQL block comment open: /* ... */ — unusual in legitimate user text',
-    pattern: /\/\*/,
-  },
-  {
-    id: 'sql-union-select',
-    description: 'UNION SELECT — most common SQL injection aggregation attack',
-    pattern: /\bUNION\s{1,20}(?:ALL\s{1,20})?SELECT\b/i,
-  },
-  {
-    id: 'sql-drop-table',
-    description: 'DROP TABLE — destructive DDL injection',
-    pattern: /\bDROP\s{1,20}TABLE\b/i,
-  },
-  {
-    id: 'sql-drop-database',
-    description: 'DROP DATABASE — destructive DDL injection',
-    pattern: /\bDROP\s{1,20}DATABASE\b/i,
-  },
-  {
-    id: 'sql-insert-into',
-    description: 'INSERT INTO — data injection',
-    pattern: /\bINSERT\s{1,20}INTO\b/i,
-  },
-  {
-    id: 'sql-delete-from',
-    description: 'DELETE FROM — data deletion injection',
-    pattern: /\bDELETE\s{1,20}FROM\b/i,
-  },
-  {
-    id: 'sql-update-set',
-    description: 'UPDATE ... SET — data modification injection',
-    // Allows arbitrary content between UPDATE and SET (table name, alias, etc.)
-    pattern: /\bUPDATE\b[\s\S]{1,60}\bSET\b/i,
-  },
-  {
-    id: 'sql-exec-xp',
-    description: 'EXEC xp_ — MSSQL extended stored procedure execution',
-    pattern: /\bEXEC(?:UTE)?\s{1,20}xp_/i,
-  },
-  {
-    id: 'sql-tautology-string',
-    description: "Classic string tautology: ' OR '1'='1 or \" OR \"1\"=\"1\"",
-    // Last quote is optional — injection may truncate it: ' OR '1'='1--
-    pattern: /'\s{0,10}OR\s{0,10}'[^']{0,20}'\s*=\s*'[^']{0,20}/i,
-  },
-  {
-    id: 'sql-tautology-numeric',
-    description: 'Numeric tautology: OR 1=1',
-    pattern: /\bOR\s{1,10}1\s*=\s*1\b/i,
-  },
-  {
-    id: 'sql-always-true-zero',
-    description: 'Numeric tautology: OR 0=0',
-    pattern: /\bOR\s{1,10}0\s*=\s*0\b/i,
-  },
-  {
-    id: 'sql-sleep-benchmark',
-    description: 'Time-based blind injection: SLEEP() or BENCHMARK()',
-    pattern: /\b(?:SLEEP|BENCHMARK)\s*\(/i,
-  },
-  {
-    id: 'sql-waitfor-delay',
-    description: 'MSSQL time-based blind injection: WAITFOR DELAY',
-    pattern: /\bWAITFOR\s{1,20}DELAY\b/i,
-  },
-  {
-    id: 'sql-char-function',
-    description: 'CHAR() function — used to obfuscate injected strings',
-    pattern: /\bCHAR\s*\(\s*\d{1,3}/i,
-  },
-  {
-    id: 'sql-information-schema',
-    description: 'INFORMATION_SCHEMA — reconnaissance query for table/column enumeration',
-    pattern: /\bINFORMATION_SCHEMA\b/i,
-  },
-];
-
-/* harmony default export */ const sql = (SQL_PATTERNS);
-
-;// CONCATENATED MODULE: ./node_modules/is-unsafe/src/contexts/sql-strict.js
-/**
- * SQL-STRICT context patterns.
- *
- * Extends the base 'SQL' context with three additional rules that are
- * effective at detecting real injections but carry a higher false-positive
- * risk on general free-text input.
- *
- * Use 'SQL-STRICT' when:
- *   - The string is specifically a SQL fragment or database identifier
- *   - You control the input domain (e.g. a dedicated SQL search field)
- *   - You can tolerate occasional false positives in exchange for broader coverage
- *
- * Use 'SQL' (not STRICT) when:
- *   - The field is general user text (names, descriptions, comments)
- *   - False positives would block legitimate content (e.g. "see note -- above")
- *
- * Rules moved here from 'SQL' due to false-positive risk:
- *
- *   sql-line-comment   — "--" fires on "see note -- above", "value--", CSS var(--primary)
- *   sql-stacked-query  — "; SELECT" fires on legitimate prose with semicolons + SQL words
- *   sql-hex-encoding   — "0xDEAD" fires on hex values in technical docs and log output
- */
-
-
-
-const SQL_STRICT_EXTRA = [
-  {
-    id: 'sql-line-comment',
-    description: 'SQL line comment: -- followed by whitespace or end of string',
-    pattern: /--(?:\s|$)/,
-  },
-  {
-    id: 'sql-stacked-query',
-    description: 'Stacked queries: semicolon immediately followed by a SQL keyword',
-    pattern: /;\s{0,10}(?:SELECT|INSERT|UPDATE|DELETE|DROP|CREATE|ALTER|EXEC)\b/i,
-  },
-  {
-    id: 'sql-hex-encoding',
-    description: 'Hex-encoded string injection: 0x41414141 style (MySQL)',
-    pattern: /\b0x[0-9a-f]{4,}/i,
-  },
-];
-
-// SQL-STRICT = all base SQL rules + the three noisy extras
-const SQL_STRICT_PATTERNS = [...sql, ...SQL_STRICT_EXTRA];
-
-/* harmony default export */ const sql_strict = (SQL_STRICT_PATTERNS);
-
-;// CONCATENATED MODULE: ./node_modules/is-unsafe/src/util/decode-entities.js
-/**
- * Decode the HTML character references that matter for markup-context
- * detection.
- *
- * Browsers decode character references in attribute values before they
- * interpret a URL, so `javascript&#58;alert(1)` in an href is the
- * `javascript:` scheme. The HTML/XML/SVG rules match literal characters, so
- * without this step such payloads slip through.
- *
- * Deliberately NOT a full entity decoder. It decodes only:
- *   - decimal refs  &#58;  &#058;  &#00000058;  &#58   (any leading zeros,
- *                   trailing ; optional — browsers accept both)
- *   - hex refs      &#x3a; &#X3A; &#x0000003a; &#x3a   (same)
- *   - named refs    &colon;  &Tab;  &NewLine;
- *       Named refs are CASE-SENSITIVE and REQUIRE the trailing ';', exactly
- *       like a browser (so `&COLON;` and `&colon` are not decoded).
- *       &Tab; / &NewLine; matter because the URL parser strips tab/newline,
- *       so `java&Tab;script:` is still a javascript: URL.
- *
- * It does NOT decode &amp; (single pass only), so double-encoded text such as
- * "&amp;lt;script&amp;gt;" stays literal — a browser renders that as text.
- *
- * All quantifiers are bounded; no ReDoS risk.
- *
- * @param {string} input
- * @returns {string}
- */
-const NAMED = Object.freeze({
-  colon: ':',
-  Tab: '\t',
-  NewLine: '\n',
-});
-
-const ENTITY_RE =
-  /&(?:#[xX]0*([0-9a-fA-F]{1,6});?|#0*([0-9]{1,7});?|([a-zA-Z][a-zA-Z0-9]{1,15});)/g;
-
-function decodeEntities(input) {
-  if (input.indexOf('&') === -1) return input;
-
-  return input.replace(ENTITY_RE, (match, hex, dec, name) => {
-    if (name !== undefined) {
-      return Object.prototype.hasOwnProperty.call(NAMED, name) ? NAMED[name] : match;
-    }
-    const cp = hex !== undefined ? parseInt(hex, 16) : parseInt(dec, 10);
-    if (!Number.isFinite(cp) || cp > 0x10ffff) return match;
-    return String.fromCodePoint(cp);
-  });
-}
-
-;// CONCATENATED MODULE: ./node_modules/is-unsafe/src/contexts/html.js
-/**
- * HTML context patterns.
- *
- * Detects XSS vectors that are dangerous when a string ends up rendered as HTML.
- * All patterns use bounded quantifiers to ensure linear-time matching (ReDoS-safe).
- *
- * Each entry is { pattern: RegExp, id: string, description: string }
- * so callers can inspect which rule fired if they need to.
- */
-
-const HTML_PATTERNS = [
-  {
-    id: 'html-script-open',
-    description: '<script opening tag',
-    pattern: /<script[\s>/]/i,
-  },
-  {
-    id: 'html-script-close',
-    description: '</script closing tag',
-    pattern: /<\/script[\s>]/i,
-  },
-  {
-    id: 'html-javascript-protocol',
-    description: 'javascript: URI scheme (with optional whitespace/encoding)',
-    // Handles j&#x61;vascript:, j\u0061vascript:, and whitespace variants
-    pattern: /j[\t\n\r ]*a[\t\n\r ]*v[\t\n\r ]*a[\t\n\r ]*s[\t\n\r ]*c[\t\n\r ]*r[\t\n\r ]*i[\t\n\r ]*p[\t\n\r ]*t[\t\n\r ]*:/i,
-  },
-  {
-    id: 'html-vbscript-protocol',
-    description: 'vbscript: URI scheme',
-    pattern: /vbscript[\t\n\r ]*:/i,
-  },
-  {
-    id: 'html-data-html',
-    description: 'data:text/html URI — can execute scripts in browsers',
-    pattern: /data[\t\n\r ]*:[\t\n\r ]*text\/html/i,
-  },
-  {
-    id: 'html-data-xhtml',
-    description: 'data:application/xhtml+xml URI',
-    pattern: /data[\t\n\r ]*:[\t\n\r ]*application\/xhtml/i,
-  },
-  {
-    id: 'html-data-svg',
-    description: 'data:image/svg+xml URI — can execute scripts',
-    pattern: /data[\t\n\r ]*:[\t\n\r ]*image\/svg\+xml/i,
-  },
-  {
-    id: 'html-inline-event-handler',
-    description: 'Inline event handler attributes: onclick=, onerror=, onload=, etc.',
-    // \bon ensures we match a word boundary so "phonetic=" is not caught
-    pattern: /\bon\w{1,30}\s*=/i,
-  },
-  {
-    id: 'html-entity-obfuscated-script',
-    description: 'HTML-entity-encoded <script (e.g. &#x3C;script or &lt;script)',
-    // Entities include optional trailing semicolon: &#x3C; or &#x3C (both valid in HTML5)
-    pattern: /(?:&#x0*3[Cc];?|&#0*60;?|&lt;)\s*script/i,
-  },
-  {
-    id: 'html-entity-obfuscated-javascript',
-    description: 'HTML-entity-encoded javascript: (partial — catches common &#106; or &#x6a; for "j")',
-    pattern: /(?:&#x0*6[Aa];?|&#0*106;?)\s*(?:&#x0*61;?|a)[\s\S]{0,80}script\s*:/i,
-  },
-  {
-    id: 'html-style-expression',
-    description: 'CSS expression() — IE-era code execution in style attributes',
-    pattern: /style[\s\S]{0,20}expression\s*\(/i,
-  },
-  {
-    id: 'html-object-embed',
-    description: '<object or <embed tags that can load active content',
-    pattern: /<(?:object|embed)[\s>/]/i,
-  },
-  {
-    id: 'html-base-tag',
-    description: '<base href= — can hijack all relative URLs on a page',
-    pattern: /<base[\s>]/i,
-  },
-  {
-    id: 'html-meta-refresh',
-    description: '<meta http-equiv="refresh" — can redirect users',
-    pattern: /<meta[\s\S]{0,40}http-equiv[\s\S]{0,20}refresh/i,
-  },
-  {
-    id: 'html-srcdoc',
-    description: 'srcdoc= attribute on iframes — embeds HTML that can run scripts',
-    pattern: /srcdoc\s*=/i,
-  },
-  {
-    id: 'html-iframe',
-    description: '<iframe tag',
-    pattern: /<iframe[\s>/]/i,
-  },
-  {
-    id: 'html-form',
-    description: '<form tag — can be used for phishing / credential harvesting injection',
-    pattern: /<form[\s>/]/i,
-  },
-];
-
-/* harmony default export */ const html = (HTML_PATTERNS);
-
-;// CONCATENATED MODULE: ./node_modules/is-unsafe/src/contexts/xml.js
-/**
- * XML context patterns.
- *
- * Detects injection vectors that are specifically dangerous when a string
- * is inserted into an XML document (not HTML rendering context).
- *
- * Key distinction from HTML: these patterns target parser-level attacks —
- * things that can confuse or subvert an XML parser, trigger external entity
- * resolution, or inject DTD content. HTML rendering concerns (XSS) belong
- * in the HTML context.
- */
-
-const XML_PATTERNS = [
-  {
-    id: 'xml-cdata-injection',
-    description: 'CDATA section injection: <![CDATA[ breaks out of text node context',
-    pattern: /<!\[CDATA\[/i,
-  },
-  {
-    id: 'xml-cdata-close',
-    description: 'CDATA close sequence: ]]> can terminate an enclosing CDATA section',
-    pattern: /\]\]>/,
-  },
-  {
-    id: 'xml-processing-instruction',
-    description: 'XML processing instruction: <?xml-stylesheet or <?php etc.',
-    pattern: /<\?(?:xml[\- ]|php|asp)/i,
-  },
-  {
-    id: 'xml-doctype-injection',
-    description: 'DOCTYPE declaration embedded in content — can define entities',
-    // Match <!DOCTYPE followed by end-of-string, whitespace, or [ (internal subset)
-    pattern: /<!DOCTYPE(?:[\s[]|$)/i,
-  },
-  {
-    id: 'xml-entity-system',
-    description: 'SYSTEM keyword — used in external entity declarations (XXE)',
-    pattern: /\bSYSTEM\s+["']/i,
-  },
-  {
-    id: 'xml-entity-public',
-    description: 'PUBLIC keyword — used in external entity declarations (XXE)',
-    pattern: /\bPUBLIC\s+["']/i,
-  },
-  {
-    id: 'xml-entity-declaration',
-    description: '<!ENTITY declaration — defines entities, potential XXE or entity expansion',
-    pattern: /<!ENTITY[\s%]/i,
-  },
-  {
-    id: 'xml-billion-laughs',
-    description: 'Entity reference chaining / billion laughs: repeated &eX; style references',
-    // Heuristic: 3+ consecutive entity refs suggests expansion attack
-    pattern: /(?:&\w{1,20};){3,}/,
-  },
-  {
-    id: 'xml-namespace-confusion',
-    description: 'xmlns: attribute injection — can redefine namespaces to confuse parsers',
-    // pattern: /\bxmlns\s*(?::\w{1,40})?\s*=/i,
-    pattern: /\bxmlns(?::\w{1,40})?\s*=/i,
-  },
-  {
-    id: 'xml-comment-injection',
-    description: '<!-- comment injection — can hide content from some parsers',
-    pattern: /<!--/,
-  },
-  {
-    id: 'xml-comment-close',
-    description: '--> closes an enclosing XML comment',
-    pattern: /-->/,
-  },
-  {
-    id: 'xml-pi-close',
-    description: '?> closes an enclosing processing instruction',
-    pattern: /\?>/,
-  },
-];
-
-/* harmony default export */ const xml = (XML_PATTERNS);
-
-;// CONCATENATED MODULE: ./node_modules/is-unsafe/src/contexts/svg.js
-/**
- * SVG context patterns.
- *
- * SVG is XML-based but renders in browsers, giving it a unique attack surface
- * that combines XML parser behaviour with browser rendering and JavaScript execution.
- *
- * Many of these vectors bypass HTML sanitizers that don't understand SVG semantics
- * (DOMPurify has documented bypass vulnerabilities specifically in SVG/XML context).
- */
-
-const SVG_PATTERNS = [
-  {
-    id: 'svg-script-element',
-    description: '<script element inside SVG executes JavaScript',
-    pattern: /<script[\s>/]/i,
-  },
-  {
-    id: 'svg-xlink-href-javascript',
-    description: 'xlink:href with javascript: — classic SVG XSS via <a> or <use>',
-    pattern: /xlink\s*:\s*href\s*=\s*["']?\s*javascript\s*:/i,
-  },
-  {
-    id: 'svg-href-javascript',
-    description: 'href= with javascript: in SVG context (<a>, <animate>, etc.)',
-    pattern: /href\s*=\s*["']?\s*javascript\s*:/i,
-  },
-  {
-    id: 'svg-foreignobject',
-    description: '<foreignObject embeds HTML inside SVG — can execute scripts',
-    pattern: /<foreignObject[\s>/]/i,
-  },
-  {
-    id: 'svg-use-external',
-    description: '<use xlink:href or href pointing to external resource (non-fragment URL)',
-    // Match <use with href= where the value starts with a non-# character (external URL)
-    // [\"'][^#] catches quoted values not starting with #; [^\"'#\s>] catches unquoted
-    pattern: /<use[\s\S]{0,60}(?:xlink\s*:\s*)?href\s*=\s*(?:["'][^#]|[^"'#\s>])/i,
-  },
-  {
-    id: 'svg-animate-href',
-    description: '<animate attributeName="href" — can dynamically change href to javascript:',
-    pattern: /<animate[\s\S]{0,80}attributeName\s*=\s*["'][\s]*href["']/i,
-  },
-  {
-    id: 'svg-animate-xlinkhref',
-    description: '<animate attributeName="xlink:href"',
-    pattern: /<animate[\s\S]{0,80}attributeName\s*=\s*["'][\s]*xlink\s*:\s*href["']/i,
-  },
-  {
-    id: 'svg-set-javascript',
-    description: '<set to="javascript:..." — sets an attribute to a javascript: URI',
-    pattern: /<set[\s\S]{0,80}to\s*=\s*["']?\s*javascript\s*:/i,
-  },
-  {
-    id: 'svg-event-handler',
-    description: 'SVG-specific event handler attributes: onload=, onerror=, onactivate=, etc.',
-    pattern: /\bon(?:load|error|activate|begin|end|repeat|focus|blur|click|mouse\w{1,20}|key\w{1,20})\s*=/i,
-  },
-  {
-    id: 'svg-handler-generic',
-    description: 'Generic on* handler catch-all for SVG attributes',
-    pattern: /\bon\w{1,30}\s*=/i,
-  },
-  {
-    id: 'svg-filter-feimage',
-    description: '<feImage href= — filter primitive that can load external resources',
-    pattern: /<feImage[\s\S]{0,80}(?:xlink\s*:\s*)?href\s*=/i,
-  },
-  {
-    id: 'svg-image-external',
-    description: '<image xlink:href with http/https or javascript protocol',
-    pattern: /<image[\s\S]{0,80}(?:xlink\s*:\s*)?href\s*=\s*["']?\s*(?:https?|javascript)\s*:/i,
-  },
-  {
-    id: 'svg-style-javascript',
-    description: 'style= attribute containing javascript: (e.g. background:url(javascript:...))',
-    pattern: /style\s*=[\s\S]{0,60}javascript\s*:/i,
-  },
-];
-
-/* harmony default export */ const svg = (SVG_PATTERNS);
-
-;// CONCATENATED MODULE: ./node_modules/is-unsafe/src/contexts/shell.js
-/**
- * SHELL context patterns.
- *
- * Detects shell injection vectors and path traversal patterns.
- * Designed for use when a string will be passed to a shell command,
- * used as a file path, or interpolated into OS-level operations.
- */
-
-const SHELL_PATTERNS = [
-  {
-    id: 'shell-path-traversal-unix',
-    description: 'Unix path traversal: ../  — climbing the directory tree',
-    pattern: /\.\.\//,
-  },
-  {
-    id: 'shell-path-traversal-windows',
-    description: 'Windows path traversal: ..\\ — climbing the directory tree',
-    pattern: /\.\.\\/,
-  },
-  {
-    id: 'shell-path-traversal-encoded',
-    description: 'URL-encoded path traversal: %2e%2e or %2f variants',
-    pattern: /%2e%2e|%2f\.\.|\.\.%2f/i,
-  },
-  {
-    id: 'shell-null-byte',
-    description: 'Null byte injection: \\x00 or %00 — truncates strings in C-backed functions',
-    pattern: /\x00|%00/,
-  },
-  {
-    id: 'shell-semicolon',
-    description: 'Semicolon command separator: cmd1; cmd2',
-    pattern: /;/,
-  },
-  {
-    id: 'shell-pipe',
-    description: 'Pipe operator: cmd1 | cmd2',
-    pattern: /\|/,
-  },
-  {
-    id: 'shell-and-operator',
-    description: 'AND operator: cmd1 && cmd2',
-    pattern: /&&/,
-  },
-  {
-    id: 'shell-or-operator',
-    description: 'OR operator: cmd1 || cmd2',
-    pattern: /\|\|/,
-  },
-  {
-    id: 'shell-backtick',
-    description: 'Backtick command substitution: `cmd`',
-    pattern: /`/,
-  },
-  {
-    id: 'shell-dollar-paren',
-    description: 'Dollar-paren command substitution: $(cmd)',
-    pattern: /\$\(/,
-  },
-  {
-    id: 'shell-dollar-brace',
-    description: 'Dollar-brace variable expansion: ${var} — can be abused for injection',
-    pattern: /\$\{/,
-  },
-  {
-    id: 'shell-redirect-out',
-    description: 'Output redirection: cmd > file or cmd >> file',
-    pattern: />{1,2}/,
-  },
-  {
-    id: 'shell-redirect-in',
-    description: 'Input redirection: cmd < file',
-    pattern: /</,
-  },
-  {
-    id: 'shell-newline-injection',
-    description: 'Newline injection: \\n or \\r — can inject new shell commands',
-    pattern: /[\n\r]/,
-  },
-  {
-    id: 'shell-glob-star',
-    description: 'Glob expansion: * or ? — can expand to unintended files',
-    // Only flag when combined with path separators to reduce false positives
-    pattern: /[/\\][*?]/,
-  },
-  {
-    id: 'shell-absolute-root',
-    description: 'Absolute root path injection: string starting with / or \\ (Windows UNC)',
-    pattern: /^(?:\/|\\\\)/,
-  },
-  {
-    id: 'shell-windows-drive',
-    description: 'Windows drive letter path injection: C:\\ or D:/',
-    pattern: /^[a-zA-Z]:[/\\]/,
-  },
-  {
-    id: 'shell-curl-wget',
-    description: 'curl/wget with URL or flags — can exfiltrate data or download payloads',
-    // Require a URL scheme (http/https/ftp) or a flag (-) to reduce false positives
-    // "curl is a tool" won't match; "curl http://..." or "curl -s ..." will
-    pattern: /\b(?:curl|wget)\s+(?:https?:\/\/|ftp:\/\/|-)/i,
-  },
-];
-
-/* harmony default export */ const shell = (SHELL_PATTERNS);
-
-;// CONCATENATED MODULE: ./node_modules/is-unsafe/src/contexts/redos.js
-/**
- * REDOS context patterns.
- *
- * Detects strings that, if used as regular expressions, could cause
- * catastrophic backtracking (ReDoS — Regular Expression Denial of Service).
- *
- * These patterns detect the structural forms that lead to exponential or
- * polynomial backtracking in NFA-based regex engines (V8, PCRE, Java, etc.).
- *
- * Use this context when user-supplied strings will be compiled into RegExp objects.
- */
-
-const REDOS_PATTERNS = [
-  {
-    id: 'redos-nested-quantifier-plus',
-    description: 'Nested + quantifier inside a group with outer quantifier: (a+)+, (.+b)*, etc.',
-    // Matches any group containing a + quantifier, with an outer * or + — catches (a+)+, (.+b)*, etc.
-    pattern: /\([^)]*\+[^)]*\)[+*]/,
-  },
-  {
-    id: 'redos-nested-quantifier-star',
-    description: 'Nested * quantifier: (a*)* or (a*)+ — catastrophic backtracking',
-    pattern: /\([^)]*\*[^)]*\)[*+]/,
-  },
-  {
-    id: 'redos-nested-groups',
-    description: 'Doubly nested quantified groups: ((a+)+) — guaranteed catastrophic',
-    pattern: /\(\([^)]{0,40}\)[+*]\)[+*]/,
-  },
-  {
-    id: 'redos-alternation-overlap',
-    description: 'Overlapping alternation under quantifier: (a|a)+ — ambiguous NFA paths',
-    // Detect repeated identical alternatives under a quantifier
-    pattern: /\(([^|()]{1,20})\|(?:\1)(?:\|[^|()]{1,20}){0,5}\)[+*?]{1,2}/,
-  },
-  {
-    id: 'redos-star-plus-concat',
-    description: '(x*x)+ pattern — triggers super-linear backtracking',
-    pattern: /\([^)]{0,10}\*[^)]{0,10}\)[+*]/,
-  },
-  {
-    id: 'redos-dot-star-greedy',
-    description: '(.*){n,} or (.+){n,} — repeated greedy dot quantifiers',
-    pattern: /\(\.[*+]\)\{?\d/,
-  },
-  {
-    id: 'redos-large-repetition',
-    description: 'Very large fixed or range repetition count {1000,} or {1000,n} — denial of service via backtracking',
-    // Matches { followed by 4+ digits (≥1000), then optional ,digits }
-    pattern: /\{\d{4,}(?:,\d*)?\}/,
-  },
-  {
-    id: 'redos-catastrophic-alternation',
-    description: 'Long alternation with many similar branches — polynomial backtracking risk',
-    // Heuristic: 10+ pipe-separated alternatives in a single group
-    pattern: /\([^)]{0,200}(?:\|[^|)]{0,50}){9,}\)/,
-  },
-];
-
-/* harmony default export */ const redos = (REDOS_PATTERNS);
-
-;// CONCATENATED MODULE: ./node_modules/is-unsafe/src/contexts/nosql.js
-/**
- * NOSQL context patterns.
- *
- * Detects injection vectors specific to NoSQL databases (primarily MongoDB)
- * and JavaScript-evaluated queries.
- *
- * Attack categories:
- *   1. MongoDB query operator injection: $where, $ne, $gt, $regex, $or, $and, etc.
- *      These operators, when injected into a JSON query object, can bypass
- *      authentication or exfiltrate data without knowing passwords.
- *
- *   2. JavaScript execution: $where clauses execute arbitrary JS server-side.
- *
- *   3. Prototype pollution: __proto__, constructor.prototype — can corrupt
- *      the prototype chain of all objects in the Node.js process.
- *
- * Pattern note: MongoDB operators appear as JSON keys. In JSON, keys are
- * quoted: {"$where": ...} so the pattern must allow an optional closing
- * quote between the operator name and the colon: /\$where["'\s]*:/
- */
-
-// Shared suffix: optional closing quote/whitespace before the colon
-// Handles: $op: (bare), "$op": (JSON), '$op': (single-quoted)
-const SEP = /["'\s]*:/;
-const nosql_sep = '["\'\\s]*:';
-
-const NOSQL_PATTERNS = [
-  // ─── MongoDB $ operator injection ────────────────────────────────────────
-  {
-    id: 'nosql-where-operator',
-    description: '$where — executes arbitrary JavaScript server-side in MongoDB',
-    pattern: new RegExp(`\\$where${nosql_sep}`, 'i'),
-  },
-  {
-    id: 'nosql-ne-operator',
-    description: '$ne — "not equal" operator used to bypass equality checks',
-    pattern: new RegExp(`\\$ne${nosql_sep}`, 'i'),
-  },
-  {
-    id: 'nosql-gt-operator',
-    description: '$gt — "greater than" used to bypass password/value checks',
-    pattern: new RegExp(`\\$gte?${nosql_sep}`, 'i'),
-  },
-  {
-    id: 'nosql-lt-operator',
-    description: '$lt / $lte — "less than" bypass variants',
-    pattern: new RegExp(`\\$lte?${nosql_sep}`, 'i'),
-  },
-  {
-    id: 'nosql-regex-operator',
-    description: '$regex — can be used to extract data character by character (blind injection)',
-    pattern: new RegExp(`\\$regex${nosql_sep}`, 'i'),
-  },
-  {
-    id: 'nosql-or-operator',
-    description: '$or — logical OR; used to create always-true conditions',
-    pattern: new RegExp(`\\$or${nosql_sep}\\s*\\[`, 'i'),
-  },
-  {
-    id: 'nosql-and-operator',
-    description: '$and — logical AND operator injection',
-    pattern: new RegExp(`\\$and${nosql_sep}\\s*\\[`, 'i'),
-  },
-  {
-    id: 'nosql-nor-operator',
-    description: '$nor — logical NOR operator injection',
-    pattern: new RegExp(`\\$nor${nosql_sep}\\s*\\[`, 'i'),
-  },
-  {
-    id: 'nosql-exists-operator',
-    description: '$exists — can enumerate fields to determine schema',
-    pattern: new RegExp(`\\$exists${nosql_sep}`, 'i'),
-  },
-  {
-    id: 'nosql-in-operator',
-    description: '$in — matches any value in a list; can enumerate values',
-    pattern: new RegExp(`\\$in${nosql_sep}\\s*\\[`, 'i'),
-  },
-  {
-    id: 'nosql-expr-operator',
-    description: '$expr — allows aggregation expressions in queries (MongoDB 3.6+)',
-    pattern: new RegExp(`\\$expr${nosql_sep}`, 'i'),
-  },
-  {
-    id: 'nosql-function-operator',
-    description: '$function — executes arbitrary JavaScript in MongoDB 4.4+',
-    pattern: new RegExp(`\\$function${nosql_sep}`, 'i'),
-  },
-  {
-    id: 'nosql-accumulator-operator',
-    description: '$accumulator — custom aggregation with arbitrary JS execution',
-    pattern: new RegExp(`\\$accumulator${nosql_sep}`, 'i'),
-  },
-  // ─── Prototype pollution ─────────────────────────────────────────────────
-  {
-    id: 'nosql-proto-pollution',
-    description: '__proto__ — prototype pollution via object key injection',
-    pattern: /__proto__/,
-  },
-  {
-    id: 'nosql-constructor-prototype',
-    description: 'constructor.prototype — alternative prototype pollution vector (dot notation or JSON key)',
-    // Matches dot-notation (obj.constructor.prototype) and JSON key adjacency
-    // ("constructor": {"prototype": ...})
-    pattern: /constructor[\s"':.,{\[]*prototype/i,
-  },
-  {
-    id: 'nosql-proto-bracket',
-    description: '["__proto__"] — bracket-notation prototype pollution',
-    pattern: /\[["']__proto__["']\]/,
-  },
-];
-
-/* harmony default export */ const nosql = (NOSQL_PATTERNS);
-
-;// CONCATENATED MODULE: ./node_modules/is-unsafe/src/contexts/log.js
-/**
- * LOG context patterns.
- *
- * Detects injection vectors that are dangerous when a string is written
- * to a log file, passed to a logging framework, or interpolated into
- * a log message that will be parsed or displayed.
- *
- * Attack categories:
- *   1. CRLF injection — injects fake log lines by embedding newlines
- *   2. Log4Shell (CVE-2021-44228) — ${jndi:...} triggers JNDI lookup in Log4j
- *   3. SSTI in log templates — {{...}}, #{...} trigger template evaluation
- *      if the log message is passed through a template engine
- *   4. Null byte injection — truncates log entries in some implementations
- *   5. ANSI escape injection — manipulates terminal output when logs are
- *      tailed in a terminal (colour codes, cursor movement, etc.)
- *
- * Note: Newline characters (\n, \r) will produce false positives for
- * multi-line legitimate values. Use this context only for single-line
- * log field values (usernames, IDs, request parameters, etc.).
- */
-
-const LOG_PATTERNS = [
-  // ─── CRLF / newline injection ─────────────────────────────────────────────
-  {
-    id: 'log-crlf-injection',
-    description: 'CRLF injection: literal \\r or \\n embeds fake log lines',
-    pattern: /[\r\n]/,
-  },
-  {
-    id: 'log-url-encoded-crlf',
-    description: 'URL-encoded CRLF: %0d, %0a, %0D, %0A — decoded by some log parsers',
-    pattern: /%0[dDaA]/,
-  },
-  {
-    id: 'log-unicode-newline',
-    description: 'Unicode newline variants: U+2028 (line separator), U+2029 (paragraph separator)',
-    pattern: /[\u2028\u2029]/,
-  },
-
-  // ─── Log4Shell / JNDI injection (CVE-2021-44228) ─────────────────────────
-  {
-    id: 'log-log4shell-jndi',
-    description: 'Log4Shell: ${jndi:...} triggers remote code execution in Apache Log4j',
-    pattern: /\$\{jndi\s*:/i,
-  },
-  {
-    id: 'log-log4shell-obfuscated',
-    description: 'Obfuscated Log4Shell: ${::-j}... lookup-bypass prefix used to evade WAF detection',
-    // ${::- is the Log4j lookup-bypass escape sequence; presence alone is suspicious
-    pattern: /\$\{::-/,
-  },
-  {
-    id: 'log-log4j-lookup',
-    description: 'Log4j lookup syntax: ${env:...}, ${sys:...}, ${ctx:...} — data exfiltration',
-    pattern: /\$\{(?:env|sys|ctx|main|map|sd|web|docker|k8s|spring)\s*:/i,
-  },
-
-  // ─── Server-Side Template Injection (SSTI) in log messages ───────────────
-  {
-    id: 'log-ssti-double-brace',
-    description: 'SSTI double-brace: {{expression}} — Jinja2, Twig, Handlebars, etc.',
-    pattern: /\{\{[\s\S]{0,80}\}\}/,
-  },
-  {
-    id: 'log-ssti-hash-brace',
-    description: 'SSTI hash-brace: #{expression} — Thymeleaf, Velocity, Ruby ERB',
-    pattern: /#\{[\s\S]{0,80}\}/,
-  },
-  {
-    id: 'log-ssti-dollar-brace',
-    description: 'SSTI/EL injection: ${expression with operators or method calls} — JSP EL, Freemarker, SpEL',
-    // Require that the ${...} content looks like an expression, not a plain variable name.
-    // Flags if the content contains: . ( * + operators, or known SSTI keywords.
-    // This avoids flagging ${PATH}, ${HOME} etc. (plain shell variables).
-    pattern: /\$\{[^}]*(?:\.|\(|\*|\+|\bclass\b|\bruntime\b|\bprocess\b|\bexec\b)[^}]{0,80}\}/i,
-  },
-  {
-    id: 'log-ssti-percent-tag',
-    description: 'SSTI ERB/ASP tag: <%= expression %> — Ruby ERB, ASP',
-    pattern: /<%=[\s\S]{0,80}%>/,
-  },
-
-  // ─── Null byte ────────────────────────────────────────────────────────────
-  {
-    id: 'log-null-byte',
-    description: 'Null byte: \\x00 or %00 — can truncate log entries in C-backed loggers',
-    pattern: /\x00|%00/,
-  },
-
-  // ─── ANSI escape injection ────────────────────────────────────────────────
-  {
-    id: 'log-ansi-escape',
-    description: 'ANSI escape sequence: ESC[ — can manipulate terminal output when logs are tailed',
-    pattern: /\x1b\[/,
-  },
-];
-
-/* harmony default export */ const contexts_log = (LOG_PATTERNS);
-
-;// CONCATENATED MODULE: ./node_modules/is-unsafe/src/index.js
-/**
- * is-unsafe v2
- *
- * Zero-dependency, DOM-free, pure predicate for detecting unsafe strings
- * across HTML, XML, SVG, SQL, SQL-STRICT, SHELL, REDOS, NOSQL, and LOG contexts.
- *
- * v2 change: contexts are imported as named pattern arrays rather than resolved
- * via a string-keyed registry. This makes each context independently
- * tree-shakeable — bundlers can drop any context you never import.
- *
- * @module is-unsafe
- */
-
-// ─── Context pattern arrays (named exports) ────────────────────────────────
-// Import only the ones you need. Each is independently tree-shakeable.
-
-
-
-
-
-
-
-
-
-
-// SQL-STRICT needs a quoted identifier because of the hyphen
-
-
-
-// Markup contexts are also matched against an entity-decoded copy of the input,
-// because browsers decode HTML character references before interpreting a URL
-// scheme (e.g. javascript&#58;… is a javascript: URL).
-
-
-// ─── VALID_CONTEXTS convenience re-export ─────────────────────────────────
-// Importing this pulls in ALL contexts. Use it only when you need all of them
-// (e.g. for validation UI, tooling, or exhaustive audits).
-// If you only need a subset, import the named contexts directly instead.
-
-
-
-
-
-
-
-
-
-
-// ─── Attach labels to named contexts ──────────────────────────────────────
-// Each built-in PatternList carries its canonical name so matchList can read
-// list.label directly — no registry lookup needed at match time.
-// Custom PatternLists default to 'CUSTOM' unless the caller sets list.label.
-
-html.label       = 'HTML';
-xml.label        = 'XML';
-svg.label        = 'SVG';
-
-// Markup contexts: also test an entity-decoded copy (see util/decode-entities.js).
-// Non-markup contexts (SQL, SHELL, LOG, …) are matched byte-for-byte as supplied.
-html.decodeEntities = true;
-xml.decodeEntities  = true;
-svg.decodeEntities  = true;
-sql.label        = 'SQL';
-sql_strict.label = 'SQL-STRICT';
-shell.label      = 'SHELL';
-redos.label      = 'REDOS';
-nosql.label      = 'NOSQL';
-contexts_log.label        = 'LOG';
-
-const VALID_CONTEXTS = Object.freeze({
-  HTML: html,
-  XML: xml,
-  SVG: svg,
-  SQL: sql,
-  'SQL-STRICT': sql_strict,
-  SHELL: shell,
-  REDOS: redos,
-  NOSQL: nosql,
-  LOG: contexts_log,
-});
-
-// ─── Types ────────────────────────────────────────────────────────────────
-
-/**
- * @typedef {{ id: string, description: string, pattern: RegExp }} Rule
- */
-
-/**
- * @typedef {Rule[]} PatternList
- */
-
-/**
- * @typedef {Object} MatchResult
- * @property {string} context     - Label identifying which context matched ('HTML', 'CUSTOM', etc.)
- * @property {string} id          - Rule identifier
- * @property {string} description - Human-readable description of what was matched
- * @property {RegExp} pattern     - The pattern that matched
- */
-
-// ─── Internal helpers ──────────────────────────────────────────────────────
-
-/**
- * @param {unknown} value
- */
-function assertString(value) {
-  if (typeof value !== 'string') {
-    throw new TypeError(
-      `is-unsafe: first argument must be a string, got ${typeof value}`
-    );
-  }
-}
-
-/**
- * @param {unknown} context
- */
-function assertContext(context) {
-  if (context instanceof RegExp) return;
-
-  if (Array.isArray(context)) {
-    if (context.length === 0) {
-      throw new TypeError('is-unsafe: context must not be an empty array');
-    }
-    // Detect array-of-arrays vs flat pattern list
-    if (Array.isArray(context[0])) {
-      // Array of PatternLists
-      for (const list of context) {
-        if (!Array.isArray(list) || list.length === 0) {
-          throw new TypeError(
-            'is-unsafe: each context in the array must be a non-empty pattern array (PatternList)'
-          );
-        }
-      }
-    }
-    // else: flat PatternList — trust it, no deep validation needed
-    return;
-  }
-
-  throw new TypeError(
-    `is-unsafe: second argument must be a PatternList (e.g. HTML), ` +
-    `an array of PatternLists (e.g. [HTML, XML]), or a RegExp. Got: ${typeof context}`
-  );
-}
-
-/**
- * Normalise any valid context arg into an array of PatternLists.
- *
- * @param {Rule[]|Rule[][]|RegExp} context
- * @returns {{ lists: Rule[][]|null, regex: RegExp|null }}
- */
-function normalise(context) {
-  if (context instanceof RegExp) return { lists: null, regex: context };
-  // Distinguish PatternList (array of rule objects) from array of PatternLists
-  if (Array.isArray(context[0])) return { lists: context, regex: null };
-  return { lists: [context], regex: null };
-}
-
-/**
- * For markup contexts, return an entity-decoded copy of `value` to test
- * alongside the raw input, or null when there is nothing extra to test.
- *
- * @param {string} value
- * @param {Rule[]} list
- * @returns {string|null}
- */
-function decodedCopy(value, list) {
-  if (!list.decodeEntities) return null;
-  const decoded = decodeEntities(value);
-  return decoded === value ? null : decoded;
-}
-
-/**
- * Test value against a single PatternList. Returns the first MatchResult or null.
- *
- * @param {string} value
- * @param {Rule[]} list
- * @returns {MatchResult|null}
- */
-function matchList(value, list) {
-  const label = list.label ?? 'CUSTOM';
-  const decoded = decodedCopy(value, list);
-  for (const rule of list) {
-    if (rule.pattern.test(value) || (decoded !== null && rule.pattern.test(decoded))) {
-      return { context: label, id: rule.id, description: rule.description, pattern: rule.pattern };
-    }
-  }
-  return null;
-}
-
-// ─── Public API ───────────────────────────────────────────────────────────
-
-/**
- * Returns `true` if `value` is unsafe in the given context(s), `false` otherwise.
- *
- * @param {string} value - The string to test
- * @param {PatternList | PatternList[] | RegExp} context
- *   - A PatternList imported from is-unsafe (e.g. `HTML`, `XML`)
- *   - An array of PatternLists — returns true if unsafe in **any** of them
- *   - A custom RegExp — returns true if the pattern matches
- * @returns {boolean}
- *
- * @example
- * import { isUnsafe, HTML, SQL } from 'is-unsafe';
- *
- * isUnsafe('<script>alert(1)</script>', HTML)       // true
- * isUnsafe('hello world', HTML)                     // false
- * isUnsafe('value', [HTML, SQL])                    // false
- * isUnsafe('value', /my-pattern/i)                  // false
- */
-function isUnsafe(value, context) {
-  assertString(value);
-  assertContext(context);
-
-  const { lists, regex } = normalise(context);
-
-  if (regex) return regex.test(value);
-
-  for (const list of lists) {
-    if (matchList(value, list) !== null) return true;
-  }
-  return false;
-}
-
-/**
- * Like `isUnsafe`, but returns the first `MatchResult` describing **why**
- * the value was flagged, or `null` if it is safe.
- *
- * @param {string} value
- * @param {PatternList | PatternList[] | RegExp} context
- * @returns {MatchResult|null}
- *
- * @example
- * import { whyUnsafe, HTML } from 'is-unsafe';
- *
- * whyUnsafe('<script>alert(1)</script>', HTML)
- * // { context: 'HTML', id: 'html-script-open', description: '...', pattern: /.../ }
- */
-function whyUnsafe(value, context) {
-  assertString(value);
-  assertContext(context);
-
-  const { lists, regex } = normalise(context);
-
-  if (regex) {
-    return regex.test(value)
-      ? { context: 'CUSTOM', id: 'custom-regex', description: 'Matched caller-supplied pattern', pattern: regex }
-      : null;
-  }
-
-  for (const list of lists) {
-    const result = matchList(value, list);
-    if (result !== null) return result;
-  }
-  return null;
-}
-
-/**
- * Returns **all** matching rules across the given context(s), or an empty
- * array if the value is safe. Useful for comprehensive auditing.
- *
- * @param {string} value
- * @param {PatternList | PatternList[] | RegExp} context
- * @returns {MatchResult[]}
- */
-function allUnsafe(value, context) {
-  assertString(value);
-  assertContext(context);
-
-  const { lists, regex } = normalise(context);
-  const results = [];
-
-  if (regex) {
-    if (regex.test(value)) {
-      results.push({ context: 'CUSTOM', id: 'custom-regex', description: 'Matched caller-supplied pattern', pattern: regex });
-    }
-    return results;
-  }
-
-  for (const list of lists) {
-    const label = list.label ?? 'CUSTOM';
-    const decoded = decodedCopy(value, list);
-    for (const rule of list) {
-      if (rule.pattern.test(value) || (decoded !== null && rule.pattern.test(decoded))) {
-        results.push({ context: label, id: rule.id, description: rule.description, pattern: rule.pattern });
-      }
-    }
-  }
-
-  return results;
-}
-
-
-/* harmony default export */ const is_unsafe_src = ((/* unused pure expression or super */ null && (isUnsafe)));
-
 ;// CONCATENATED MODULE: ./node_modules/fast-xml-parser/src/xmlparser/OrderedObjParser.js
 
 ///@ts-check
-
-
 
 
 
@@ -67929,7 +64173,6 @@ class OrderedObjParser {
     this.ignoreAttributesFn = ignoreAttributes_getIgnoreAttributesFn(this.options.ignoreAttributes)
     this.entityExpansionCount = 0;
     this.currentExpandedLength = 0;
-    this.doctypefound = false;
     let namedEntities = { ...XML };
     if (this.options.entityDecoder) {
       this.entityDecoder = this.options.entityDecoder
@@ -67943,18 +64186,16 @@ class OrderedObjParser {
           maxTotalExpansions: this.options.processEntities.maxTotalExpansions,
           maxExpandedLength: this.options.processEntities.maxExpandedLength,
           applyLimitsTo: this.options.processEntities.appliesTo,
-        },
-        // onExternalEntity: (name, value) => isUnsafe(value) ? 'block' : 'allow',
-        onInputEntity: (name, value) =>
-          //TODO: VALID_CONTEXTS.HTML should be set only if this.options.htmlEntities
-          isUnsafe(value, [html, xml]) ? ENTITY_ACTION.BLOCK : ENTITY_ACTION.ALLOW,
-
+        }
         //postCheck: resolved => resolved
       });
     }
 
     // Initialize path matcher for path-expression-matcher
     this.matcher = new Matcher();
+
+    // Live read-only proxy of matcher — PEM creates and caches this internally.
+    // All user callbacks receive this instead of the mutable matcher.
     this.readonlyMatcher = this.matcher.readOnly();
 
     // Flag to track if current node is a stop node (optimization)
@@ -68038,14 +64279,7 @@ function resolveNameSpace(tagname) {
 
 //TODO: change regex to capture NS
 //const attrsRegx = new RegExp("([\\w\\-\\.\\:]+)\\s*=\\s*(['\"])((.|\n)*?)\\2","gm");
-// The value is matched with a negated class per quote type rather than a lazy `[\s\S]*?` up to a
-// backreference, which is much slower on long values (SVG paths, data URIs)
-const attrsRegx = /([^\s=]+)\s*(=\s*(?:"([^"]*)"|'([^']*)'))?/gm;
-
-// value inside double quotes, or inside single quotes, or undefined when there is no value
-function attrValue(match) {
-  return match[3] !== undefined ? match[3] : match[4];
-}
+const attrsRegx = new RegExp('([^\\s=]+)\\s*(=\\s*([\'"])([\\s\\S]*?)\\3)?', 'gm');
 
 function buildAttributesMap(attrStr, jPath, tagName, force = false) {
   const options = this.options;
@@ -68065,7 +64299,7 @@ function buildAttributesMap(attrStr, jPath, tagName, force = false) {
 
     for (let i = 0; i < len; i++) {
       const attrName = this.resolveNameSpace(matches[i][1]);
-      const oldVal = attrValue(matches[i]);
+      const oldVal = matches[i][4];
 
       if (attrName.length && oldVal !== undefined) {
         let val = oldVal;
@@ -68101,7 +64335,7 @@ function buildAttributesMap(attrStr, jPath, tagName, force = false) {
         }
         aName = sanitizeName(aName, options);
 
-        if (attrValue(matches[i]) !== undefined) {
+        if (matches[i][4] !== undefined) {
           // Reuse already-processed value — no double entity replacement
           const oldVal = processedVals[i];
 
@@ -68132,15 +64366,7 @@ function buildAttributesMap(attrStr, jPath, tagName, force = false) {
   }
 }
 const parseXml = function (xmlData) {
-  const options = this.options;
-  const crlfPositions = options.captureMetaData ? [] : undefined;
-  xmlData = xmlData.replace(/\r\n?/g, options.captureMetaData ? (newline, index) => {
-    if (newline.length === 2) {
-      // Store the position after earlier CRLF pairs have been normalized.
-      crlfPositions.push(index - crlfPositions.length);
-    }
-    return "\n";
-  } : "\n");
+  xmlData = xmlData.replace(/\r\n?/g, "\n"); //TODO: remove this line
   const xmlObj = new XmlNode('!xml');
   let currentNode = xmlObj;
   let textData = "";
@@ -68152,7 +64378,7 @@ const parseXml = function (xmlData) {
   // Reset entity expansion counters for this document
   this.entityExpansionCount = 0;
   this.currentExpandedLength = 0;
-  this.doctypefound = false;
+  const options = this.options;
   const docTypeReader = new DocTypeReader(options.processEntities);
   const xmlLen = xmlData.length;
   for (let i = 0; i < xmlLen; i++) {//for each char in XML data
@@ -68192,12 +64418,7 @@ const parseXml = function (xmlData) {
         this.matcher.pop();
         this.isCurrentNodeStopNode = false; // Reset flag when closing tag
 
-        //a closing tag with no matching opening tag leaves the stack empty
-        currentNode = this.tagsNodeStack.pop() || xmlObj;//avoid recursion, set the parent tag scope
-
-        if (options.captureMetaData && currentNode) {
-          currentNode.addEndIndex(getOriginalIndex(closeIndex + 1, crlfPositions));
-        }
+        currentNode = this.tagsNodeStack.pop();//avoid recursion, set the parent tag scope
         textData = "";
         i = closeIndex;
       } else if (c1 === 63) { //'?'
@@ -68210,7 +64431,6 @@ const parseXml = function (xmlData) {
         if (attsMap) {
           const ver = attsMap[this.options.attributeNamePrefix + "version"];
           this.entityDecoder.setXmlVersion(Number(ver) || 1.0);
-          docTypeReader.setXmlVersion(Number(ver) || 1.0);
         }
         if ((options.ignoreDeclaration && tagData.tagName === "?xml") || options.ignorePiTags) {
           //do nothing
@@ -68222,13 +64442,7 @@ const parseXml = function (xmlData) {
           if (tagData.tagName !== tagData.tagExp && tagData.attrExpPresent && options.ignoreAttributes !== true) {
             childNode[":@"] = attsMap
           }
-          const startIndex = options.captureMetaData ? getOriginalIndex(i, crlfPositions) : i;
-          this.addChild(currentNode, childNode, this.readonlyMatcher, startIndex);
-
-          if (options.captureMetaData) {
-            // closeIndex points at '?' of the closing '?>'
-            currentNode.addEndIndex(getOriginalIndex(tagData.closeIndex + 2, crlfPositions));
-          }
+          this.addChild(currentNode, childNode, this.readonlyMatcher, i);
         }
 
 
@@ -68247,8 +64461,6 @@ const parseXml = function (xmlData) {
         i = endIndex;
       } else if (c1 === 33
         && xmlData.charCodeAt(i + 2) === 68) { //'!D'
-        if (this.doctypefound) throw new Error("Multiple DOCTYPE declarations found.");
-        this.doctypefound = true;
         const result = docTypeReader.readDocType(xmlData, i);
         this.entityDecoder.addInputEntities(result.entities);
         i = result.i;
@@ -68359,7 +64571,7 @@ const parseXml = function (xmlData) {
           this.isCurrentNodeStopNode = this.isItStopNode();
         }
 
-        const startIndex = options.captureMetaData ? getOriginalIndex(i, crlfPositions) : i;
+        const startIndex = i;
         if (this.isCurrentNodeStopNode) {
           let tagContent = "";
 
@@ -68393,10 +64605,6 @@ const parseXml = function (xmlData) {
           this.isCurrentNodeStopNode = false; // Reset flag
 
           this.addChild(currentNode, childNode, this.readonlyMatcher, startIndex);
-
-          if (options.captureMetaData) {
-            currentNode.addEndIndex(getOriginalIndex(i + 1, crlfPositions));
-          }
         } else {
           //selfClosing tag
           if (isSelfClosing) {
@@ -68407,10 +64615,6 @@ const parseXml = function (xmlData) {
               childNode[":@"] = prefixedAttrs;
             }
             this.addChild(currentNode, childNode, this.readonlyMatcher, startIndex);
-
-            if (options.captureMetaData) {
-              currentNode.addEndIndex(getOriginalIndex(closeIndex + 1, crlfPositions));
-            }
             this.matcher.pop(); // Pop self-closing tag
             this.isCurrentNodeStopNode = false; // Reset flag
           }
@@ -68420,10 +64624,6 @@ const parseXml = function (xmlData) {
               childNode[":@"] = prefixedAttrs;
             }
             this.addChild(currentNode, childNode, this.readonlyMatcher, startIndex);
-
-            if (options.captureMetaData) {
-              currentNode.addEndIndex(getOriginalIndex(result.closeIndex + 1, crlfPositions));
-            }
             this.matcher.pop(); // Pop unpaired tag
             this.isCurrentNodeStopNode = false; // Reset flag
             i = result.closeIndex;
@@ -68453,17 +64653,6 @@ const parseXml = function (xmlData) {
     }
   }
   return xmlObj.child;
-}
-
-function getOriginalIndex(index, crlfPositions) {
-  let low = 0;
-  let high = crlfPositions.length;
-  while (low < high) {
-    const middle = Math.floor((low + high) / 2);
-    if (crlfPositions[middle] < index) low = middle + 1;
-    else high = middle;
-  }
-  return index + low;
 }
 
 function addChild(currentNode, childNode, matcher, startIndex) {
@@ -68556,6 +64745,7 @@ function isItStopNode() {
 function tagExpWithClosingIndex(xmlData, i, closingChar = ">") {
   //TODO: ignore boolean attributes in tag expression
   //TODO: if ignore attributes, dont read full attribute expression but the end. But read for xml declaration
+  let attrBoundary = 0;
   const len = xmlData.length;
   const closeCode0 = closingChar.charCodeAt(0);
   const closeCode1 = closingChar.length > 1 ? closingChar.charCodeAt(1) : -1;
@@ -68566,10 +64756,10 @@ function tagExpWithClosingIndex(xmlData, i, closingChar = ">") {
   for (let index = i; index < len; index++) {
     const code = xmlData.charCodeAt(index);
 
-    if (code === 34 || code === 39) { // " or '
-      // Skip the quoted value in one step: nothing inside it can close the tag
-      index = xmlData.indexOf(xmlData[index], index + 1);
-      if (index === -1) return;
+    if (attrBoundary) {
+      if (code === attrBoundary) attrBoundary = 0;
+    } else if (code === 34 || code === 39) { // " or '
+      attrBoundary = code;
     } else if (code === closeCode0) {
       if (closeCode1 !== -1) {
         if (xmlData.charCodeAt(index + 1) === closeCode1) {
@@ -68580,7 +64770,7 @@ function tagExpWithClosingIndex(xmlData, i, closingChar = ">") {
         result += xmlData.substring(segmentStart, index);
         return { data: result, index };
       }
-    } else if (code === 9) { // \t - only replace with space outside attribute values
+    } else if (code === 9 && !attrBoundary) { // \t - only replace with space outside attribute values
       // Flush accumulated segment, add space, start new segment
       result += xmlData.substring(segmentStart, index) + ' ';
       segmentStart = index + 1;
@@ -68643,8 +64833,6 @@ function readStopNodeData(xmlData, tagName, i) {
   const startIndex = i;
   // Starting at 1 since we already have an open tag
   let openTagCount = 1;
-  let lenient = false; // set once a quote-aware tag scan fails
-  let nextGt = -1; // cached index of the next '>'
 
   const xmllen = xmlData.length;
   for (; i < xmllen; i++) {
@@ -68676,29 +64864,14 @@ function readStopNodeData(xmlData, tagName, i) {
         const closeIndex = findClosingIndex(xmlData, "]]>", i, "StopNode is not closed.") - 2;
         i = closeIndex;
       } else {
-        const tagData = lenient ? undefined : readTagExp(xmlData, i, false);
+        const tagData = readTagExp(xmlData, i, '>')
 
         if (tagData) {
-          const openTagName = tagData.tagName;
+          const openTagName = tagData && tagData.tagName;
           if (openTagName === tagName && tagData.tagExp[tagData.tagExp.length - 1] !== "/") {
             openTagCount++;
           }
           i = tagData.closeIndex;
-        } else {
-          // no closing '>'. use lenient approach to find '<' instead of readTagExp, to avoid repeated rescans.
-          lenient = true;
-          if (nextGt < i) {
-            nextGt = xmlData.indexOf(">", i);
-            if (nextGt === -1) return; // no '>' left, so no closing tag can follow
-          }
-          const nextLt = xmlData.indexOf("<", i + 1);
-          if (nextLt === -1 || nextLt > nextGt) { // looks like a real tag
-            const exp = xmlData.substring(i + 1, nextGt);
-            const sep = exp.search(/\s/);
-            const name = sep === -1 ? exp : exp.substring(0, sep);
-            if (name === tagName && exp[exp.length - 1] !== "/") openTagCount++;
-            i = nextGt;
-          } // else: treat this '<' as plain text
         }
       }
     }
@@ -68827,10 +65000,6 @@ function compress(arr, options, matcher, readonlyMatcher) {
       let val = compress(tagObj[property], options, matcher, readonlyMatcher);
       const isLeaf = isLeafTag(val, options);
 
-      if (Object.keys(val).length === 0 && options.alwaysCreateTextNode) {
-        val[options.textNodeName] = "";
-      }
-
       if (tagObj[":@"]) {
         assignAttributes(val, tagObj[":@"], readonlyMatcher, options);
       } else if (Object.keys(val).length === 1 && val[options.textNodeName] !== undefined && !options.alwaysCreateTextNode) {
@@ -68932,7 +65101,6 @@ function isLeafTag(obj, options) {
   return false;
 }
 ;// CONCATENATED MODULE: ./node_modules/fast-xml-parser/src/xmlparser/XMLParser.js
-/* global Uint8Array */
 
 
 
@@ -68953,12 +65121,7 @@ class XMLParser {
      */
     parse(xmlData, validationOption) {
         if (typeof xmlData !== "string" && xmlData.toString) {
-            if (xmlData instanceof Uint8Array &&
-                !(typeof Buffer !== "undefined" && Buffer.isBuffer(xmlData))) {
-                xmlData = new TextDecoder("utf-8", { ignoreBOM: true }).decode(xmlData);
-            } else {
-                xmlData = xmlData.toString();
-            }
+            xmlData = xmlData.toString();
         } else if (typeof xmlData !== "string") {
             throw new Error("XML data is accepted in String or Bytes[] form.")
         }
@@ -69091,8 +65254,7 @@ async function parseXML(str, opts = {}) {
         delete parsedXml["?xml"];
     }
     if (!opts.includeRoot) {
-        const key = Object.keys(parsedXml)[0];
-        if (key !== undefined) {
+        for (const key of Object.keys(parsedXml)) {
             const value = parsedXml[key];
             return typeof value === "object" ? { ...value } : value;
         }
@@ -69584,4871 +65746,6 @@ class BufferScheduler {
     }
 }
 //# sourceMappingURL=BufferScheduler.js.map
-;// CONCATENATED MODULE: ./node_modules/@azure/storage-common/dist/esm/crc64.js
-// Copyright (c) Microsoft Corporation.
-// Licensed under the MIT License.
-
-var NativeCRC64 = (() => {
-  var _scriptDir = typeof document !== 'undefined' && document.currentScript ? document.currentScript.src : undefined;
-  return (
-function(NativeCRC64) {
-  NativeCRC64 = NativeCRC64 || {};
-
-
-
-// The Module object: Our interface to the outside world. We import
-// and export values on it. There are various ways Module can be used:
-// 1. Not defined. We create it here
-// 2. A function parameter, function(Module) { ..generated code.. }
-// 3. pre-run appended it, var Module = {}; ..generated code..
-// 4. External script tag defines var Module.
-// We need to check if Module already exists (e.g. case 3 above).
-// Substitution will be replaced with actual code on later stage of the build,
-// this way Closure Compiler will not mangle it (e.g. case 4. above).
-// Note that if you want to run closure, and also to use Module
-// after the generated code, you will need to define   var Module = {};
-// before the code. Then that object will be used in the code, and you
-// can continue to use Module afterwards as well.
-var Module = typeof NativeCRC64 != 'undefined' ? NativeCRC64 : {};
-
-// See https://caniuse.com/mdn-javascript_builtins_object_assign
-
-// See https://caniuse.com/mdn-javascript_builtins_bigint64array
-
-// Set up the promise that indicates the Module is initialized
-var readyPromiseResolve, readyPromiseReject;
-Module['ready'] = new Promise(function(resolve, reject) {
-  readyPromiseResolve = resolve;
-  readyPromiseReject = reject;
-});
-["_malloc","_free","_emscripten_bind_VoidPtr___destroy___0","_emscripten_bind_Crc64Hash_Crc64Hash_0","_emscripten_bind_Crc64Hash_OnAppend_2","_emscripten_bind_Crc64Hash_OnFinal_3","_emscripten_bind_Crc64Hash___destroy___0","_fflush","onRuntimeInitialized"].forEach((prop) => {
-  if (!Object.getOwnPropertyDescriptor(Module['ready'], prop)) {
-    Object.defineProperty(Module['ready'], prop, {
-      get: () => abort('You are getting ' + prop + ' on the Promise object, instead of the instance. Use .then() to get called back with the instance, see the MODULARIZE docs in src/settings.js'),
-      set: () => abort('You are setting ' + prop + ' on the Promise object, instead of the instance. Use .then() to get called back with the instance, see the MODULARIZE docs in src/settings.js'),
-    });
-  }
-});
-
-// --pre-jses are emitted after the Module integration code, so that they can
-// refer to Module (if they choose; they can also define Module)
-
-
-// Sometimes an existing Module object exists with properties
-// meant to overwrite the default module functionality. Here
-// we collect those properties and reapply _after_ we configure
-// the current environment's defaults to avoid having to be so
-// defensive during initialization.
-var moduleOverrides = Object.assign({}, Module);
-
-var arguments_ = [];
-var thisProgram = './this.program';
-var quit_ = (status, toThrow) => {
-  throw toThrow;
-};
-
-// Determine the runtime environment we are in. You can customize this by
-// setting the ENVIRONMENT setting at compile time (see settings.js).
-
-// Attempt to auto-detect the environment
-var ENVIRONMENT_IS_WEB = typeof window == 'object';
-var ENVIRONMENT_IS_WORKER = typeof importScripts == 'function';
-// N.b. Electron.js environment is simultaneously a NODE-environment, but
-// also a web environment.
-var ENVIRONMENT_IS_NODE = typeof process == 'object' && typeof process.versions == 'object' && typeof process.versions.node == 'string';
-var ENVIRONMENT_IS_SHELL = !ENVIRONMENT_IS_WEB && !ENVIRONMENT_IS_NODE && !ENVIRONMENT_IS_WORKER;
-
-if (Module['ENVIRONMENT']) {
-  throw new Error('Module.ENVIRONMENT has been deprecated. To force the environment, use the ENVIRONMENT compile-time option (for example, -sENVIRONMENT=web or -sENVIRONMENT=node)');
-}
-
-// `/` should be present at the end if `scriptDirectory` is not empty
-var scriptDirectory = '';
-function locateFile(path) {
-  if (Module['locateFile']) {
-    return Module['locateFile'](path, scriptDirectory);
-  }
-  return scriptDirectory + path;
-}
-
-// Hooks that are implemented differently in different runtime environments.
-var read_,
-    readAsync,
-    readBinary,
-    setWindowTitle;
-
-// Normally we don't log exceptions but instead let them bubble out the top
-// level where the embedding environment (e.g. the browser) can handle
-// them.
-// However under v8 and node we sometimes exit the process direcly in which case
-// its up to use us to log the exception before exiting.
-// If we fix https://github.com/emscripten-core/emscripten/issues/15080
-// this may no longer be needed under node.
-function logExceptionOnExit(e) {
-  if (e instanceof ExitStatus) return;
-  let toLog = e;
-  if (e && typeof e == 'object' && e.stack) {
-    toLog = [e, e.stack];
-  }
-  err('exiting due to exception: ' + toLog);
-}
-
-if (ENVIRONMENT_IS_NODE) {
-  if (typeof process == 'undefined' || !process.release || process.release.name !== 'node') throw new Error('not compiled for this environment (did you build to HTML and try to run it not on the web, or set ENVIRONMENT to something - like node - and run it someplace else - like on the web?)');
-  // The wasm is base64-embedded (see `binaryInString`) and loaded via `getBinary()`,
-  // so the Node fs/path read hooks emitted by Emscripten are never exercised and
-  // have been removed. This keeps the file free of Node built-in imports so it can be
-  // consumed as-is by web bundlers and by ESM-to-CommonJS bundlers (see issue #39057).
-  if (process['argv'].length > 1) {
-    thisProgram = process['argv'][1].replace(/\\/g, '/');
-  }
-
-  arguments_ = process['argv'].slice(2);
-
-  // MODULARIZE will export the module in the proper place outside, we don't need to export here
-
-  process['on']('uncaughtException', function(ex) {
-    // suppress ExitStatus exceptions from showing an error
-    if (!(ex instanceof ExitStatus)) {
-      throw ex;
-    }
-  });
-
-  // Without this older versions of node (< v15) will log unhandled rejections
-  // but return 0, which is not normally the desired behaviour.  This is
-  // not be needed with node v15 and about because it is now the default
-  // behaviour:
-  // See https://nodejs.org/api/cli.html#cli_unhandled_rejections_mode
-  process['on']('unhandledRejection', function(reason) { throw reason; });
-
-  quit_ = (status, toThrow) => {
-    if (keepRuntimeAlive()) {
-      process['exitCode'] = status;
-      throw toThrow;
-    }
-    logExceptionOnExit(toThrow);
-    process['exit'](status);
-  };
-
-  Module['inspect'] = function () { return '[Emscripten Module object]'; };
-
-} else
-if (ENVIRONMENT_IS_SHELL) {
-
-  if ((typeof process == 'object' && typeof require === 'function') || typeof window == 'object' || typeof importScripts == 'function') throw new Error('not compiled for this environment (did you build to HTML and try to run it not on the web, or set ENVIRONMENT to something - like node - and run it someplace else - like on the web?)');
-
-  if (typeof scriptArgs != 'undefined') {
-    arguments_ = scriptArgs;
-  } else if (typeof arguments != 'undefined') {
-    arguments_ = arguments;
-  }
-
-  if (typeof quit == 'function') {
-    quit_ = (status, toThrow) => {
-      logExceptionOnExit(toThrow);
-      quit(status);
-    };
-  }
-
-  if (typeof print != 'undefined') {
-    // Prefer to use print/printErr where they exist, as they usually work better.
-    if (typeof console == 'undefined') console = /** @type{!Console} */({});
-    console.log = /** @type{!function(this:Console, ...*): undefined} */ (print);
-    console.warn = console.error = /** @type{!function(this:Console, ...*): undefined} */ (typeof printErr != 'undefined' ? printErr : print);
-  }
-
-} else
-
-// Note that this includes Node.js workers when relevant (pthreads is enabled).
-// Node.js workers are detected as a combination of ENVIRONMENT_IS_WORKER and
-// ENVIRONMENT_IS_NODE.
-if (ENVIRONMENT_IS_WEB || ENVIRONMENT_IS_WORKER) {
-  if (!(typeof window == 'object' || typeof importScripts == 'function')) throw new Error('not compiled for this environment (did you build to HTML and try to run it not on the web, or set ENVIRONMENT to something - like node - and run it someplace else - like on the web?)');
-  // The XHR-based read hooks emitted by Emscripten are unused because the wasm is
-  // base64-embedded; they have been removed so the file contains no DOM/XHR I/O.
-} else
-{
-  throw new Error('environment detection error');
-}
-
-var out = Module['print'] || console.log.bind(console);
-var err = Module['printErr'] || console.warn.bind(console);
-
-// Merge back in the overrides
-Object.assign(Module, moduleOverrides);
-// Free the object hierarchy contained in the overrides, this lets the GC
-// reclaim data used e.g. in memoryInitializerRequest, which is a large typed array.
-moduleOverrides = null;
-checkIncomingModuleAPI();
-
-// Emit code to handle expected values on the Module object. This applies Module.x
-// to the proper local x. This has two benefits: first, we only emit it if it is
-// expected to arrive, and second, by using a local everywhere else that can be
-// minified.
-
-if (Module['arguments']) arguments_ = Module['arguments'];legacyModuleProp('arguments', 'arguments_');
-
-if (Module['thisProgram']) thisProgram = Module['thisProgram'];legacyModuleProp('thisProgram', 'thisProgram');
-
-if (Module['quit']) quit_ = Module['quit'];legacyModuleProp('quit', 'quit_');
-
-// perform assertions in shell.js after we set up out() and err(), as otherwise if an assertion fails it cannot print the message
-// Assertions on removed incoming Module JS APIs.
-assert(typeof Module['memoryInitializerPrefixURL'] == 'undefined', 'Module.memoryInitializerPrefixURL option was removed, use Module.locateFile instead');
-assert(typeof Module['pthreadMainPrefixURL'] == 'undefined', 'Module.pthreadMainPrefixURL option was removed, use Module.locateFile instead');
-assert(typeof Module['cdInitializerPrefixURL'] == 'undefined', 'Module.cdInitializerPrefixURL option was removed, use Module.locateFile instead');
-assert(typeof Module['filePackagePrefixURL'] == 'undefined', 'Module.filePackagePrefixURL option was removed, use Module.locateFile instead');
-assert(typeof Module['read'] == 'undefined', 'Module.read option was removed (modify read_ in JS)');
-assert(typeof Module['readAsync'] == 'undefined', 'Module.readAsync option was removed (modify readAsync in JS)');
-assert(typeof Module['readBinary'] == 'undefined', 'Module.readBinary option was removed (modify readBinary in JS)');
-assert(typeof Module['setWindowTitle'] == 'undefined', 'Module.setWindowTitle option was removed (modify setWindowTitle in JS)');
-assert(typeof Module['TOTAL_MEMORY'] == 'undefined', 'Module.TOTAL_MEMORY has been renamed Module.INITIAL_MEMORY');
-legacyModuleProp('read', 'read_');
-legacyModuleProp('readAsync', 'readAsync');
-legacyModuleProp('readBinary', 'readBinary');
-legacyModuleProp('setWindowTitle', 'setWindowTitle');
-var IDBFS = 'IDBFS is no longer included by default; build with -lidbfs.js';
-var PROXYFS = 'PROXYFS is no longer included by default; build with -lproxyfs.js';
-var WORKERFS = 'WORKERFS is no longer included by default; build with -lworkerfs.js';
-var NODEFS = 'NODEFS is no longer included by default; build with -lnodefs.js';
-
-assert(!ENVIRONMENT_IS_SHELL, "shell environment detected but not enabled at build time.  Add 'shell' to `-sENVIRONMENT` to enable.");
-
-
-
-
-var STACK_ALIGN = 16;
-var POINTER_SIZE = 4;
-
-function getNativeTypeSize(type) {
-  switch (type) {
-    case 'i1': case 'i8': case 'u8': return 1;
-    case 'i16': case 'u16': return 2;
-    case 'i32': case 'u32': return 4;
-    case 'i64': case 'u64': return 8;
-    case 'float': return 4;
-    case 'double': return 8;
-    default: {
-      if (type[type.length - 1] === '*') {
-        return POINTER_SIZE;
-      }
-      if (type[0] === 'i') {
-        const bits = Number(type.substr(1));
-        assert(bits % 8 === 0, 'getNativeTypeSize invalid bits ' + bits + ', type ' + type);
-        return bits / 8;
-      }
-      return 0;
-    }
-  }
-}
-
-// include: runtime_debug.js
-
-
-function legacyModuleProp(prop, newName) {
-  if (!Object.getOwnPropertyDescriptor(Module, prop)) {
-    Object.defineProperty(Module, prop, {
-      configurable: true,
-      get: function() {
-        abort('Module.' + prop + ' has been replaced with plain ' + newName + ' (the initial value can be provided on Module, but after startup the value is only looked for on a local variable of that name)');
-      }
-    });
-  }
-}
-
-function ignoredModuleProp(prop) {
-  if (Object.getOwnPropertyDescriptor(Module, prop)) {
-    abort('`Module.' + prop + '` was supplied but `' + prop + '` not included in INCOMING_MODULE_JS_API');
-  }
-}
-
-// forcing the filesystem exports a few things by default
-function isExportedByForceFilesystem(name) {
-  return name === 'FS_createPath' ||
-         name === 'FS_createDataFile' ||
-         name === 'FS_createPreloadedFile' ||
-         name === 'FS_unlink' ||
-         name === 'addRunDependency' ||
-         // The old FS has some functionality that WasmFS lacks.
-         name === 'FS_createLazyFile' ||
-         name === 'FS_createDevice' ||
-         name === 'removeRunDependency';
-}
-
-function missingLibrarySymbol(sym) {
-  if (typeof globalThis !== 'undefined' && !Object.getOwnPropertyDescriptor(globalThis, sym)) {
-    Object.defineProperty(globalThis, sym, {
-      configurable: true,
-      get: function() {
-        // Can't `abort()` here because it would break code that does runtime
-        // checks.  e.g. `if (typeof SDL === 'undefined')`.
-        var msg = '`' + sym + '` is a library symbol and not included by default; add it to your library.js __deps or to DEFAULT_LIBRARY_FUNCS_TO_INCLUDE on the command line';
-        // DEFAULT_LIBRARY_FUNCS_TO_INCLUDE requires the name as it appears in
-        // library.js, which means $name for a JS name with no prefix, or name
-        // for a JS name like _name.
-        var librarySymbol = sym;
-        if (!librarySymbol.startsWith('_')) {
-          librarySymbol = '$' + sym;
-        }
-        msg += " (e.g. -sDEFAULT_LIBRARY_FUNCS_TO_INCLUDE=" + librarySymbol + ")";
-        if (isExportedByForceFilesystem(sym)) {
-          msg += '. Alternatively, forcing filesystem support (-sFORCE_FILESYSTEM) can export this for you';
-        }
-        warnOnce(msg);
-        return undefined;
-      }
-    });
-  }
-}
-
-function unexportedRuntimeSymbol(sym) {
-  if (!Object.getOwnPropertyDescriptor(Module, sym)) {
-    Object.defineProperty(Module, sym, {
-      configurable: true,
-      get: function() {
-        var msg = "'" + sym + "' was not exported. add it to EXPORTED_RUNTIME_METHODS (see the FAQ)";
-        if (isExportedByForceFilesystem(sym)) {
-          msg += '. Alternatively, forcing filesystem support (-sFORCE_FILESYSTEM) can export this for you';
-        }
-        abort(msg);
-      }
-    });
-  }
-}
-
-// end include: runtime_debug.js
-
-
-// === Preamble library stuff ===
-
-// Documentation for the public APIs defined in this file must be updated in:
-//    site/source/docs/api_reference/preamble.js.rst
-// A prebuilt local version of the documentation is available at:
-//    site/build/text/docs/api_reference/preamble.js.txt
-// You can also build docs locally as HTML or other formats in site/
-// An online HTML version (which may be of a different version of Emscripten)
-//    is up at http://kripken.github.io/emscripten-site/docs/api_reference/preamble.js.html
-
-var wasmBinary;
-if (Module['wasmBinary']) wasmBinary = Module['wasmBinary'];legacyModuleProp('wasmBinary', 'wasmBinary');
-var noExitRuntime = Module['noExitRuntime'] || true;legacyModuleProp('noExitRuntime', 'noExitRuntime');
-
-if (typeof WebAssembly != 'object') {
-  abort('no native wasm support detected');
-}
-
-// Wasm globals
-
-var wasmMemory;
-
-//========================================
-// Runtime essentials
-//========================================
-
-// whether we are quitting the application. no code should run after this.
-// set in exit() and abort()
-var ABORT = false;
-
-// set by exit() and abort().  Passed to 'onExit' handler.
-// NOTE: This is also used as the process return code code in shell environments
-// but only when noExitRuntime is false.
-var EXITSTATUS;
-
-/** @type {function(*, string=)} */
-function assert(condition, text) {
-  if (!condition) {
-    abort('Assertion failed' + (text ? ': ' + text : ''));
-  }
-}
-
-// We used to include malloc/free by default in the past. Show a helpful error in
-// builds with assertions.
-
-// include: runtime_strings.js
-
-
-// runtime_strings.js: String related runtime functions that are part of both
-// MINIMAL_RUNTIME and regular runtime.
-
-var UTF8Decoder = typeof TextDecoder != 'undefined' ? new TextDecoder('utf8') : undefined;
-
-/**
- * Given a pointer 'idx' to a null-terminated UTF8-encoded string in the given
- * array that contains uint8 values, returns a copy of that string as a
- * Javascript String object.
- * heapOrArray is either a regular array, or a JavaScript typed array view.
- * @param {number} idx
- * @param {number=} maxBytesToRead
- * @return {string}
- */
-function UTF8ArrayToString(heapOrArray, idx, maxBytesToRead) {
-  var endIdx = idx + maxBytesToRead;
-  var endPtr = idx;
-  // TextDecoder needs to know the byte length in advance, it doesn't stop on
-  // null terminator by itself.  Also, use the length info to avoid running tiny
-  // strings through TextDecoder, since .subarray() allocates garbage.
-  // (As a tiny code save trick, compare endPtr against endIdx using a negation,
-  // so that undefined means Infinity)
-  while (heapOrArray[endPtr] && !(endPtr >= endIdx)) ++endPtr;
-
-  if (endPtr - idx > 16 && heapOrArray.buffer && UTF8Decoder) {
-    return UTF8Decoder.decode(heapOrArray.subarray(idx, endPtr));
-  }
-  var str = '';
-  // If building with TextDecoder, we have already computed the string length
-  // above, so test loop end condition against that
-  while (idx < endPtr) {
-    // For UTF8 byte structure, see:
-    // http://en.wikipedia.org/wiki/UTF-8#Description
-    // https://www.ietf.org/rfc/rfc2279.txt
-    // https://tools.ietf.org/html/rfc3629
-    var u0 = heapOrArray[idx++];
-    if (!(u0 & 0x80)) { str += String.fromCharCode(u0); continue; }
-    var u1 = heapOrArray[idx++] & 63;
-    if ((u0 & 0xE0) == 0xC0) { str += String.fromCharCode(((u0 & 31) << 6) | u1); continue; }
-    var u2 = heapOrArray[idx++] & 63;
-    if ((u0 & 0xF0) == 0xE0) {
-      u0 = ((u0 & 15) << 12) | (u1 << 6) | u2;
-    } else {
-      if ((u0 & 0xF8) != 0xF0) warnOnce('Invalid UTF-8 leading byte ' + ptrToString(u0) + ' encountered when deserializing a UTF-8 string in wasm memory to a JS string!');
-      u0 = ((u0 & 7) << 18) | (u1 << 12) | (u2 << 6) | (heapOrArray[idx++] & 63);
-    }
-
-    if (u0 < 0x10000) {
-      str += String.fromCharCode(u0);
-    } else {
-      var ch = u0 - 0x10000;
-      str += String.fromCharCode(0xD800 | (ch >> 10), 0xDC00 | (ch & 0x3FF));
-    }
-  }
-  return str;
-}
-
-/**
- * Given a pointer 'ptr' to a null-terminated UTF8-encoded string in the
- * emscripten HEAP, returns a copy of that string as a Javascript String object.
- *
- * @param {number} ptr
- * @param {number=} maxBytesToRead - An optional length that specifies the
- *   maximum number of bytes to read. You can omit this parameter to scan the
- *   string until the first \0 byte. If maxBytesToRead is passed, and the string
- *   at [ptr, ptr+maxBytesToReadr[ contains a null byte in the middle, then the
- *   string will cut short at that byte index (i.e. maxBytesToRead will not
- *   produce a string of exact length [ptr, ptr+maxBytesToRead[) N.B. mixing
- *   frequent uses of UTF8ToString() with and without maxBytesToRead may throw
- *   JS JIT optimizations off, so it is worth to consider consistently using one
- * @return {string}
- */
-function UTF8ToString(ptr, maxBytesToRead) {
-  return ptr ? UTF8ArrayToString(HEAPU8, ptr, maxBytesToRead) : '';
-}
-
-/**
- * Copies the given Javascript String object 'str' to the given byte array at
- * address 'outIdx', encoded in UTF8 form and null-terminated. The copy will
- * require at most str.length*4+1 bytes of space in the HEAP.  Use the function
- * lengthBytesUTF8 to compute the exact number of bytes (excluding null
- * terminator) that this function will write.
- *
- * @param {string} str - The Javascript string to copy.
- * @param {ArrayBufferView|Array<number>} heap - The array to copy to. Each
- *                                               index in this array is assumed
- *                                               to be one 8-byte element.
- * @param {number} outIdx - The starting offset in the array to begin the copying.
- * @param {number} maxBytesToWrite - The maximum number of bytes this function
- *                                   can write to the array.  This count should
- *                                   include the null terminator, i.e. if
- *                                   maxBytesToWrite=1, only the null terminator
- *                                   will be written and nothing else.
- *                                   maxBytesToWrite=0 does not write any bytes
- *                                   to the output, not even the null
- *                                   terminator.
- * @return {number} The number of bytes written, EXCLUDING the null terminator.
- */
-function stringToUTF8Array(str, heap, outIdx, maxBytesToWrite) {
-  // Parameter maxBytesToWrite is not optional. Negative values, 0, null,
-  // undefined and false each don't write out any bytes.
-  if (!(maxBytesToWrite > 0))
-    return 0;
-
-  var startIdx = outIdx;
-  var endIdx = outIdx + maxBytesToWrite - 1; // -1 for string null terminator.
-  for (var i = 0; i < str.length; ++i) {
-    // Gotcha: charCodeAt returns a 16-bit word that is a UTF-16 encoded code
-    // unit, not a Unicode code point of the character! So decode
-    // UTF16->UTF32->UTF8.
-    // See http://unicode.org/faq/utf_bom.html#utf16-3
-    // For UTF8 byte structure, see http://en.wikipedia.org/wiki/UTF-8#Description
-    // and https://www.ietf.org/rfc/rfc2279.txt
-    // and https://tools.ietf.org/html/rfc3629
-    var u = str.charCodeAt(i); // possibly a lead surrogate
-    if (u >= 0xD800 && u <= 0xDFFF) {
-      var u1 = str.charCodeAt(++i);
-      u = 0x10000 + ((u & 0x3FF) << 10) | (u1 & 0x3FF);
-    }
-    if (u <= 0x7F) {
-      if (outIdx >= endIdx) break;
-      heap[outIdx++] = u;
-    } else if (u <= 0x7FF) {
-      if (outIdx + 1 >= endIdx) break;
-      heap[outIdx++] = 0xC0 | (u >> 6);
-      heap[outIdx++] = 0x80 | (u & 63);
-    } else if (u <= 0xFFFF) {
-      if (outIdx + 2 >= endIdx) break;
-      heap[outIdx++] = 0xE0 | (u >> 12);
-      heap[outIdx++] = 0x80 | ((u >> 6) & 63);
-      heap[outIdx++] = 0x80 | (u & 63);
-    } else {
-      if (outIdx + 3 >= endIdx) break;
-      if (u > 0x10FFFF) warnOnce('Invalid Unicode code point ' + ptrToString(u) + ' encountered when serializing a JS string to a UTF-8 string in wasm memory! (Valid unicode code points should be in range 0-0x10FFFF).');
-      heap[outIdx++] = 0xF0 | (u >> 18);
-      heap[outIdx++] = 0x80 | ((u >> 12) & 63);
-      heap[outIdx++] = 0x80 | ((u >> 6) & 63);
-      heap[outIdx++] = 0x80 | (u & 63);
-    }
-  }
-  // Null-terminate the pointer to the buffer.
-  heap[outIdx] = 0;
-  return outIdx - startIdx;
-}
-
-/**
- * Copies the given Javascript String object 'str' to the emscripten HEAP at
- * address 'outPtr', null-terminated and encoded in UTF8 form. The copy will
- * require at most str.length*4+1 bytes of space in the HEAP.
- * Use the function lengthBytesUTF8 to compute the exact number of bytes
- * (excluding null terminator) that this function will write.
- *
- * @return {number} The number of bytes written, EXCLUDING the null terminator.
- */
-function stringToUTF8(str, outPtr, maxBytesToWrite) {
-  assert(typeof maxBytesToWrite == 'number', 'stringToUTF8(str, outPtr, maxBytesToWrite) is missing the third parameter that specifies the length of the output buffer!');
-  return stringToUTF8Array(str, HEAPU8,outPtr, maxBytesToWrite);
-}
-
-/**
- * Returns the number of bytes the given Javascript string takes if encoded as a
- * UTF8 byte array, EXCLUDING the null terminator byte.
- *
- * @param {string} str - JavaScript string to operator on
- * @return {number} Length, in bytes, of the UTF8 encoded string.
- */
-function lengthBytesUTF8(str) {
-  var len = 0;
-  for (var i = 0; i < str.length; ++i) {
-    // Gotcha: charCodeAt returns a 16-bit word that is a UTF-16 encoded code
-    // unit, not a Unicode code point of the character! So decode
-    // UTF16->UTF32->UTF8.
-    // See http://unicode.org/faq/utf_bom.html#utf16-3
-    var c = str.charCodeAt(i); // possibly a lead surrogate
-    if (c <= 0x7F) {
-      len++;
-    } else if (c <= 0x7FF) {
-      len += 2;
-    } else if (c >= 0xD800 && c <= 0xDFFF) {
-      len += 4; ++i;
-    } else {
-      len += 3;
-    }
-  }
-  return len;
-}
-
-// end include: runtime_strings.js
-// Memory management
-
-var HEAP,
-/** @type {!ArrayBuffer} */
-  buffer,
-/** @type {!Int8Array} */
-  HEAP8,
-/** @type {!Uint8Array} */
-  HEAPU8,
-/** @type {!Int16Array} */
-  HEAP16,
-/** @type {!Uint16Array} */
-  HEAPU16,
-/** @type {!Int32Array} */
-  HEAP32,
-/** @type {!Uint32Array} */
-  HEAPU32,
-/** @type {!Float32Array} */
-  HEAPF32,
-/** @type {!Float64Array} */
-  HEAPF64;
-
-function updateGlobalBufferAndViews(buf) {
-  buffer = buf;
-  Module['HEAP8'] = HEAP8 = new Int8Array(buf);
-  Module['HEAP16'] = HEAP16 = new Int16Array(buf);
-  Module['HEAP32'] = HEAP32 = new Int32Array(buf);
-  Module['HEAPU8'] = HEAPU8 = new Uint8Array(buf);
-  Module['HEAPU16'] = HEAPU16 = new Uint16Array(buf);
-  Module['HEAPU32'] = HEAPU32 = new Uint32Array(buf);
-  Module['HEAPF32'] = HEAPF32 = new Float32Array(buf);
-  Module['HEAPF64'] = HEAPF64 = new Float64Array(buf);
-}
-
-var STACK_SIZE = 5242880;
-if (Module['STACK_SIZE']) assert(STACK_SIZE === Module['STACK_SIZE'], 'the stack size can no longer be determined at runtime')
-
-var INITIAL_MEMORY = Module['INITIAL_MEMORY'] || 16777216;legacyModuleProp('INITIAL_MEMORY', 'INITIAL_MEMORY');
-
-assert(INITIAL_MEMORY >= STACK_SIZE, 'INITIAL_MEMORY should be larger than STACK_SIZE, was ' + INITIAL_MEMORY + '! (STACK_SIZE=' + STACK_SIZE + ')');
-
-// check for full engine support (use string 'subarray' to avoid closure compiler confusion)
-assert(typeof Int32Array != 'undefined' && typeof Float64Array !== 'undefined' && Int32Array.prototype.subarray != undefined && Int32Array.prototype.set != undefined,
-       'JS engine does not provide full typed array support');
-
-// If memory is defined in wasm, the user can't provide it.
-assert(!Module['wasmMemory'], 'Use of `wasmMemory` detected.  Use -sIMPORTED_MEMORY to define wasmMemory externally');
-assert(INITIAL_MEMORY == 16777216, 'Detected runtime INITIAL_MEMORY setting.  Use -sIMPORTED_MEMORY to define wasmMemory dynamically');
-
-// include: runtime_init_table.js
-// In regular non-RELOCATABLE mode the table is exported
-// from the wasm module and this will be assigned once
-// the exports are available.
-var wasmTable;
-
-// end include: runtime_init_table.js
-// include: runtime_stack_check.js
-
-
-// Initializes the stack cookie. Called at the startup of main and at the startup of each thread in pthreads mode.
-function writeStackCookie() {
-  var max = _emscripten_stack_get_end();
-  assert((max & 3) == 0);
-  // If the stack ends at address zero we write our cookies 4 bytes into the
-  // stack.  This prevents interference with the (separate) address-zero check
-  // below.
-  if (max == 0) {
-    max += 4;
-  }
-  // The stack grow downwards towards _emscripten_stack_get_end.
-  // We write cookies to the final two words in the stack and detect if they are
-  // ever overwritten.
-  HEAPU32[((max)>>2)] = 0x2135467;
-  HEAPU32[(((max)+(4))>>2)] = 0x89BACDFE;
-  // Also test the global address 0 for integrity.
-  HEAPU32[0] = 0x63736d65; /* 'emsc' */
-}
-
-function checkStackCookie() {
-  if (ABORT) return;
-  var max = _emscripten_stack_get_end();
-  // See writeStackCookie().
-  if (max == 0) {
-    max += 4;
-  }
-  var cookie1 = HEAPU32[((max)>>2)];
-  var cookie2 = HEAPU32[(((max)+(4))>>2)];
-  if (cookie1 != 0x2135467 || cookie2 != 0x89BACDFE) {
-    abort('Stack overflow! Stack cookie has been overwritten at ' + ptrToString(max) + ', expected hex dwords 0x89BACDFE and 0x2135467, but received ' + ptrToString(cookie2) + ' ' + ptrToString(cookie1));
-  }
-  // Also test the global address 0 for integrity.
-  if (HEAPU32[0] !== 0x63736d65 /* 'emsc' */) {
-    abort('Runtime error: The application has corrupted its heap memory area (address zero)!');
-  }
-}
-
-// end include: runtime_stack_check.js
-// include: runtime_assertions.js
-
-
-// Endianness check
-(function() {
-  var h16 = new Int16Array(1);
-  var h8 = new Int8Array(h16.buffer);
-  h16[0] = 0x6373;
-  if (h8[0] !== 0x73 || h8[1] !== 0x63) throw 'Runtime error: expected the system to be little-endian! (Run with -sSUPPORT_BIG_ENDIAN to bypass)';
-})();
-
-// end include: runtime_assertions.js
-var __ATPRERUN__  = []; // functions called before the runtime is initialized
-var __ATINIT__    = []; // functions called during startup
-var __ATEXIT__    = []; // functions called during shutdown
-var __ATPOSTRUN__ = []; // functions called after the main() is called
-
-var runtimeInitialized = false;
-
-function keepRuntimeAlive() {
-  return noExitRuntime;
-}
-
-function preRun() {
-
-  if (Module['preRun']) {
-    if (typeof Module['preRun'] == 'function') Module['preRun'] = [Module['preRun']];
-    while (Module['preRun'].length) {
-      addOnPreRun(Module['preRun'].shift());
-    }
-  }
-
-  callRuntimeCallbacks(__ATPRERUN__);
-}
-
-function initRuntime() {
-  assert(!runtimeInitialized);
-  runtimeInitialized = true;
-
-  checkStackCookie();
-
-  
-  callRuntimeCallbacks(__ATINIT__);
-}
-
-function postRun() {
-  checkStackCookie();
-
-  if (Module['postRun']) {
-    if (typeof Module['postRun'] == 'function') Module['postRun'] = [Module['postRun']];
-    while (Module['postRun'].length) {
-      addOnPostRun(Module['postRun'].shift());
-    }
-  }
-
-  callRuntimeCallbacks(__ATPOSTRUN__);
-}
-
-function addOnPreRun(cb) {
-  __ATPRERUN__.unshift(cb);
-}
-
-function addOnInit(cb) {
-  __ATINIT__.unshift(cb);
-}
-
-function addOnExit(cb) {
-}
-
-function addOnPostRun(cb) {
-  __ATPOSTRUN__.unshift(cb);
-}
-
-// include: runtime_math.js
-
-
-// https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Math/imul
-
-// https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Math/fround
-
-// https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Math/clz32
-
-// https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Math/trunc
-
-assert(Math.imul, 'This browser does not support Math.imul(), build with LEGACY_VM_SUPPORT or POLYFILL_OLD_MATH_FUNCTIONS to add in a polyfill');
-assert(Math.fround, 'This browser does not support Math.fround(), build with LEGACY_VM_SUPPORT or POLYFILL_OLD_MATH_FUNCTIONS to add in a polyfill');
-assert(Math.clz32, 'This browser does not support Math.clz32(), build with LEGACY_VM_SUPPORT or POLYFILL_OLD_MATH_FUNCTIONS to add in a polyfill');
-assert(Math.trunc, 'This browser does not support Math.trunc(), build with LEGACY_VM_SUPPORT or POLYFILL_OLD_MATH_FUNCTIONS to add in a polyfill');
-
-// end include: runtime_math.js
-// A counter of dependencies for calling run(). If we need to
-// do asynchronous work before running, increment this and
-// decrement it. Incrementing must happen in a place like
-// Module.preRun (used by emcc to add file preloading).
-// Note that you can add dependencies in preRun, even though
-// it happens right before run - run will be postponed until
-// the dependencies are met.
-var runDependencies = 0;
-var runDependencyWatcher = null;
-var dependenciesFulfilled = null; // overridden to take different actions when all run dependencies are fulfilled
-var runDependencyTracking = {};
-
-function getUniqueRunDependency(id) {
-  var orig = id;
-  while (1) {
-    if (!runDependencyTracking[id]) return id;
-    id = orig + Math.random();
-  }
-}
-
-function addRunDependency(id) {
-  runDependencies++;
-
-  if (Module['monitorRunDependencies']) {
-    Module['monitorRunDependencies'](runDependencies);
-  }
-
-  if (id) {
-    assert(!runDependencyTracking[id]);
-    runDependencyTracking[id] = 1;
-    if (runDependencyWatcher === null && typeof setInterval != 'undefined') {
-      // Check for missing dependencies every few seconds
-      runDependencyWatcher = setInterval(function() {
-        if (ABORT) {
-          clearInterval(runDependencyWatcher);
-          runDependencyWatcher = null;
-          return;
-        }
-        var shown = false;
-        for (var dep in runDependencyTracking) {
-          if (!shown) {
-            shown = true;
-            err('still waiting on run dependencies:');
-          }
-          err('dependency: ' + dep);
-        }
-        if (shown) {
-          err('(end of list)');
-        }
-      }, 10000);
-    }
-  } else {
-    err('warning: run dependency added without ID');
-  }
-}
-
-function removeRunDependency(id) {
-  runDependencies--;
-
-  if (Module['monitorRunDependencies']) {
-    Module['monitorRunDependencies'](runDependencies);
-  }
-
-  if (id) {
-    assert(runDependencyTracking[id]);
-    delete runDependencyTracking[id];
-  } else {
-    err('warning: run dependency removed without ID');
-  }
-  if (runDependencies == 0) {
-    if (runDependencyWatcher !== null) {
-      clearInterval(runDependencyWatcher);
-      runDependencyWatcher = null;
-    }
-    if (dependenciesFulfilled) {
-      var callback = dependenciesFulfilled;
-      dependenciesFulfilled = null;
-      callback(); // can add another dependenciesFulfilled
-    }
-  }
-}
-
-/** @param {string|number=} what */
-function abort(what) {
-  if (Module['onAbort']) {
-    Module['onAbort'](what);
-  }
-
-  what = 'Aborted(' + what + ')';
-  // TODO(sbc): Should we remove printing and leave it up to whoever
-  // catches the exception?
-  err(what);
-
-  ABORT = true;
-  EXITSTATUS = 1;
-
-  // Use a wasm runtime error, because a JS error might be seen as a foreign
-  // exception, which means we'd run destructors on it. We need the error to
-  // simply make the program stop.
-  // FIXME This approach does not work in Wasm EH because it currently does not assume
-  // all RuntimeErrors are from traps; it decides whether a RuntimeError is from
-  // a trap or not based on a hidden field within the object. So at the moment
-  // we don't have a way of throwing a wasm trap from JS. TODO Make a JS API that
-  // allows this in the wasm spec.
-
-  // Suppress closure compiler warning here. Closure compiler's builtin extern
-  // defintion for WebAssembly.RuntimeError claims it takes no arguments even
-  // though it can.
-  // TODO(https://github.com/google/closure-compiler/pull/3913): Remove if/when upstream closure gets fixed.
-  /** @suppress {checkTypes} */
-  var e = new WebAssembly.RuntimeError(what);
-
-  readyPromiseReject(e);
-  // Throw the error whether or not MODULARIZE is set because abort is used
-  // in code paths apart from instantiation where an exception is expected
-  // to be thrown when abort is called.
-  throw e;
-}
-
-// {{MEM_INITIALIZER}}
-
-// include: memoryprofiler.js
-
-
-// end include: memoryprofiler.js
-// show errors on likely calls to FS when it was not included
-var FS = {
-  error: function() {
-    abort('Filesystem support (FS) was not included. The problem is that you are using files from JS, but files were not used from C/C++, so filesystem support was not auto-included. You can force-include filesystem support with -sFORCE_FILESYSTEM');
-  },
-  init: function() { FS.error() },
-  createDataFile: function() { FS.error() },
-  createPreloadedFile: function() { FS.error() },
-  createLazyFile: function() { FS.error() },
-  open: function() { FS.error() },
-  mkdev: function() { FS.error() },
-  registerDevice: function() { FS.error() },
-  analyzePath: function() { FS.error() },
-  loadFilesFromDB: function() { FS.error() },
-
-  ErrnoError: function ErrnoError() { FS.error() },
-};
-Module['FS_createDataFile'] = FS.createDataFile;
-Module['FS_createPreloadedFile'] = FS.createPreloadedFile;
-
-// include: URIUtils.js
-
-
-// Prefix of data URIs emitted by SINGLE_FILE and related options.
-var dataURIPrefix = 'data:application/octet-stream;base64,';
-
-// Indicates whether filename is a base64 data URI.
-function isDataURI(filename) {
-  // Prefix of data URIs emitted by SINGLE_FILE and related options.
-  return filename.startsWith(dataURIPrefix);
-}
-
-// Indicates whether filename is delivered via file protocol (as opposed to http/https)
-function isFileURI(filename) {
-  return filename.startsWith('file://');
-}
-
-// end include: URIUtils.js
-/** @param {boolean=} fixedasm */
-function createExportWrapper(name, fixedasm) {
-  return function() {
-    var displayName = name;
-    var asm = fixedasm;
-    if (!fixedasm) {
-      asm = Module['asm'];
-    }
-    assert(runtimeInitialized, 'native function `' + displayName + '` called before runtime initialization');
-    if (!asm[name]) {
-      assert(asm[name], 'exported native function `' + displayName + '` not found');
-    }
-    return asm[name].apply(null, arguments);
-  };
-}
-
-var wasmBinaryFile;
-  wasmBinaryFile = 'crc64.wasm';
-  if (!isDataURI(wasmBinaryFile)) {
-    wasmBinaryFile = locateFile(wasmBinaryFile);
-  }
-
-var binaryInString = ["AGFzbQEAAAABzYCAgAAMYAF/AX9gAAF/YAF/AGAAAGADf35/AX5gA39/fwBgBH9/f38AYAN/f38Bf2AFf39",
-"/f38Bf2AEf39/fwF/YAR/f35/AX5gBH9+f38BfwKPgYCAAAUDZW52BWFib3J0AAMDZW52FmVtc2NyaXB0ZW",
-"5fcmVzaXplX2hlYXAAABZ3YXNpX3NuYXBzaG90X3ByZXZpZXcxCGZkX2Nsb3NlAAAWd2FzaV9zbmFwc2hvd",
-"F9wcmV2aWV3MQhmZF93cml0ZQAJFndhc2lfc25hcHNob3RfcHJldmlldzEHZmRfc2VlawAIA62AgIAALAMF",
-"BgIBAAUGAgEBAAACAAIAAAAHBAQCAgEDAAIAAQIBAQIAAQMBAQEACggLBIWAgIAAAXABBAQFh4CAgAABAYA",
-"CgIACBsiAgIAACn8BQYCAwAILfwFBAAt/AUEAC38BQQALfwBBnJHBAgt/AEGwkcECC38AQZyRwQILfwBBsJ",
-"HBAgt/AEGwkcECC38AQZKSwQILB/qEgIAAGwZtZW1vcnkCABFfX3dhc21fY2FsbF9jdG9ycwAFJWVtc2Nya",
-"XB0ZW5fYmluZF9Wb2lkUHRyX19fZGVzdHJveV9fXzAACCVlbXNjcmlwdGVuX2JpbmRfQ3JjNjRIYXNoX0Ny",
-"YzY0SGFzaF8wAAkkZW1zY3JpcHRlbl9iaW5kX0NyYzY0SGFzaF9PbkFwcGVuZF8yAAsjZW1zY3JpcHRlbl9",
-"iaW5kX0NyYzY0SGFzaF9PbkZpbmFsXzMADCdlbXNjcmlwdGVuX2JpbmRfQ3JjNjRIYXNoX19fZGVzdHJveV",
-"9fXzAADRtfX2VtX2xpYl9kZXBzX3dlYmlkbF9iaW5kZXIDBCFfX2VtX2pzX19hcnJheV9ib3VuZHNfY2hlY",
-"2tfZXJyb3IDBRlfX2luZGlyZWN0X2Z1bmN0aW9uX3RhYmxlAQAQX19lcnJub19sb2NhdGlvbgAPBmZmbHVz",
-"aAAtBm1hbGxvYwARBGZyZWUAEhVlbXNjcmlwdGVuX3N0YWNrX2luaXQAKRllbXNjcmlwdGVuX3N0YWNrX2d",
-"ldF9mcmVlACoZZW1zY3JpcHRlbl9zdGFja19nZXRfYmFzZQArGGVtc2NyaXB0ZW5fc3RhY2tfZ2V0X2VuZA",
-"AsCXN0YWNrU2F2ZQAlDHN0YWNrUmVzdG9yZQAmCnN0YWNrQWxsb2MAJxxlbXNjcmlwdGVuX3N0YWNrX2dld",
-"F9jdXJyZW50ACgTX19zdGFydF9lbV9saWJfZGVwcwMGEl9fc3RvcF9lbV9saWJfZGVwcwMHDV9fc3RhcnRf",
-"ZW1fanMDCAxfX3N0b3BfZW1fanMDCQxkeW5DYWxsX2ppamkALwmJgICAAAEAQQELAxYYGgqtkYGAACwEABA",
-"pC81IAvcCf6EFfiMAIQNBgAEhBCADIARrIQUgBSAANgJ8IAUgATYCeCAFIAI2AnQgBSgCfCEGIAUoAnghBy",
-"AFIAc2AnAgBSgCdCEIIAghCSAJrCH6AiAGKQMIIfsCIPsCIPoCfCH8AiAGIPwCNwMIIAYpAwAh/QJCfyH+A",
-"iD9AiD+AoUh/wIgBSD/AjcDaEIAIYADIAUggAM3A2AgBSgCdCEKIAUoAnQhC0EgIQwgCyAMbyENIAogDWsh",
-"DiAFIA42AlwgBSgCXCEPQcAAIRAgDyERIBAhEiARIBJPIRNBASEUIBMgFHEhFQJAIBVFDQAgBSgCcCEWIAU",
-"gFjYCWEIAIYEDIAUggQM3A1BCACGCAyAFIIIDNwNIQgAhgwMgBSCDAzcDQEIAIYQDIAUghAM3AzggBSkDYC",
-"GFAyAFKAJcIRcgFyEYIBitIYYDIIUDIIYDfCGHA0IgIYgDIIcDIIgDfSGJAyAFIIkDNwMwIAUoAlwhGSAFK",
-"AJ0IRogGiAZayEbIAUgGzYCdCAFKQNoIYoDIAUgigM3A1ACQANAIAUpA2AhiwMgBSkDMCGMAyCLAyGNAyCM",
-"AyGOAyCNAyCOA1QhHEEBIR0gHCAdcSEeIB5FDQEgBSgCWCEfIB8pAwAhjwMgBSkDUCGQAyCPAyCQA4UhkQM",
-"gBSCRAzcDKCAFKAJYISAgICkDCCGSAyAFKQNIIZMDIJIDIJMDhSGUAyAFIJQDNwMgIAUoAlghISAhKQMQIZ",
-"UDIAUpA0AhlgMglQMglgOFIZcDIAUglwM3AxggBSgCWCEiICIpAxghmAMgBSkDOCGZAyCYAyCZA4UhmgMgB",
-"SCaAzcDECAFKQMoIZsDQv8BIZwDIJsDIJwDgyGdA0KADiGeAyCdAyCeA3whnwMgnwOnISNBgIDAAiEkQQMh",
-"JSAjICV0ISYgJCAmaiEnICcpAwAhoAMgBSCgAzcDUCAFKQMoIaEDQgghogMgoQMgogOIIaMDIAUgowM3Ayg",
-"gBSkDICGkA0L/ASGlAyCkAyClA4MhpgNCgA4hpwMgpgMgpwN8IagDIKgDpyEoQYCAwAIhKUEDISogKCAqdC",
-"ErICkgK2ohLCAsKQMAIakDIAUgqQM3A0ggBSkDICGqA0IIIasDIKoDIKsDiCGsAyAFIKwDNwMgIAUpAxghr",
-"QNC/wEhrgMgrQMgrgODIa8DQoAOIbADIK8DILADfCGxAyCxA6chLUGAgMACIS5BAyEvIC0gL3QhMCAuIDBq",
-"ITEgMSkDACGyAyAFILIDNwNAIAUpAxghswNCCCG0AyCzAyC0A4ghtQMgBSC1AzcDGCAFKQMQIbYDQv8BIbc",
-"DILYDILcDgyG4A0KADiG5AyC4AyC5A3whugMgugOnITJBgIDAAiEzQQMhNCAyIDR0ITUgMyA1aiE2IDYpAw",
-"AhuwMgBSC7AzcDOCAFKQMQIbwDQgghvQMgvAMgvQOIIb4DIAUgvgM3AxAgBSkDKCG/A0L/ASHAAyC/AyDAA",
-"4MhwQNCgAwhwgMgwQMgwgN8IcMDIMMDpyE3QYCAwAIhOEEDITkgNyA5dCE6IDggOmohOyA7KQMAIcQDIAUp",
-"A1AhxQMgxQMgxAOFIcYDIAUgxgM3A1AgBSkDKCHHA0IIIcgDIMcDIMgDiCHJAyAFIMkDNwMoIAUpAyAhygN",
-"C/wEhywMgygMgywODIcwDQoAMIc0DIMwDIM0DfCHOAyDOA6chPEGAgMACIT1BAyE+IDwgPnQhPyA9ID9qIU",
-"AgQCkDACHPAyAFKQNIIdADINADIM8DhSHRAyAFINEDNwNIIAUpAyAh0gNCCCHTAyDSAyDTA4gh1AMgBSDUA",
-"zcDICAFKQMYIdUDQv8BIdYDINUDINYDgyHXA0KADCHYAyDXAyDYA3wh2QMg2QOnIUFBgIDAAiFCQQMhQyBB",
-"IEN0IUQgQiBEaiFFIEUpAwAh2gMgBSkDQCHbAyDbAyDaA4Uh3AMgBSDcAzcDQCAFKQMYId0DQggh3gMg3QM",
-"g3gOIId8DIAUg3wM3AxggBSkDECHgA0L/ASHhAyDgAyDhA4Mh4gNCgAwh4wMg4gMg4wN8IeQDIOQDpyFGQY",
-"CAwAIhR0EDIUggRiBIdCFJIEcgSWohSiBKKQMAIeUDIAUpAzgh5gMg5gMg5QOFIecDIAUg5wM3AzggBSkDE",
-"CHoA0IIIekDIOgDIOkDiCHqAyAFIOoDNwMQIAUpAygh6wNC/wEh7AMg6wMg7AODIe0DQoAKIe4DIO0DIO4D",
-"fCHvAyDvA6chS0GAgMACIUxBAyFNIEsgTXQhTiBMIE5qIU8gTykDACHwAyAFKQNQIfEDIPEDIPADhSHyAyA",
-"FIPIDNwNQIAUpAygh8wNCCCH0AyDzAyD0A4gh9QMgBSD1AzcDKCAFKQMgIfYDQv8BIfcDIPYDIPcDgyH4A0",
-"KACiH5AyD4AyD5A3wh+gMg+gOnIVBBgIDAAiFRQQMhUiBQIFJ0IVMgUSBTaiFUIFQpAwAh+wMgBSkDSCH8A",
-"yD8AyD7A4Uh/QMgBSD9AzcDSCAFKQMgIf4DQggh/wMg/gMg/wOIIYAEIAUggAQ3AyAgBSkDGCGBBEL/ASGC",
-"BCCBBCCCBIMhgwRCgAohhAQggwQghAR8IYUEIIUEpyFVQYCAwAIhVkEDIVcgVSBXdCFYIFYgWGohWSBZKQM",
-"AIYYEIAUpA0AhhwQghwQghgSFIYgEIAUgiAQ3A0AgBSkDGCGJBEIIIYoEIIkEIIoEiCGLBCAFIIsENwMYIA",
-"UpAxAhjARC/wEhjQQgjAQgjQSDIY4EQoAKIY8EII4EII8EfCGQBCCQBKchWkGAgMACIVtBAyFcIFogXHQhX",
-"SBbIF1qIV4gXikDACGRBCAFKQM4IZIEIJIEIJEEhSGTBCAFIJMENwM4IAUpAxAhlARCCCGVBCCUBCCVBIgh",
-"lgQgBSCWBDcDECAFKQMoIZcEQv8BIZgEIJcEIJgEgyGZBEKACCGaBCCZBCCaBHwhmwQgmwSnIV9BgIDAAiF",
-"gQQMhYSBfIGF0IWIgYCBiaiFjIGMpAwAhnAQgBSkDUCGdBCCdBCCcBIUhngQgBSCeBDcDUCAFKQMoIZ8EQg",
-"ghoAQgnwQgoASIIaEEIAUgoQQ3AyggBSkDICGiBEL/ASGjBCCiBCCjBIMhpARCgAghpQQgpAQgpQR8IaYEI",
-"KYEpyFkQYCAwAIhZUEDIWYgZCBmdCFnIGUgZ2ohaCBoKQMAIacEIAUpA0ghqAQgqAQgpwSFIakEIAUgqQQ3",
-"A0ggBSkDICGqBEIIIasEIKoEIKsEiCGsBCAFIKwENwMgIAUpAxghrQRC/wEhrgQgrQQgrgSDIa8EQoAIIbA",
-"EIK8EILAEfCGxBCCxBKchaUGAgMACIWpBAyFrIGkga3QhbCBqIGxqIW0gbSkDACGyBCAFKQNAIbMEILMEIL",
-"IEhSG0BCAFILQENwNAIAUpAxghtQRCCCG2BCC1BCC2BIghtwQgBSC3BDcDGCAFKQMQIbgEQv8BIbkEILgEI",
-"LkEgyG6BEKACCG7BCC6BCC7BHwhvAQgvASnIW5BgIDAAiFvQQMhcCBuIHB0IXEgbyBxaiFyIHIpAwAhvQQg",
-"BSkDOCG+BCC+BCC9BIUhvwQgBSC/BDcDOCAFKQMQIcAEQgghwQQgwAQgwQSIIcIEIAUgwgQ3AxAgBSkDKCH",
-"DBEL/ASHEBCDDBCDEBIMhxQRCgAYhxgQgxQQgxgR8IccEIMcEpyFzQYCAwAIhdEEDIXUgcyB1dCF2IHQgdm",
-"ohdyB3KQMAIcgEIAUpA1AhyQQgyQQgyASFIcoEIAUgygQ3A1AgBSkDKCHLBEIIIcwEIMsEIMwEiCHNBCAFI",
-"M0ENwMoIAUpAyAhzgRC/wEhzwQgzgQgzwSDIdAEQoAGIdEEINAEINEEfCHSBCDSBKcheEGAgMACIXlBAyF6",
-"IHggenQheyB5IHtqIXwgfCkDACHTBCAFKQNIIdQEINQEINMEhSHVBCAFINUENwNIIAUpAyAh1gRCCCHXBCD",
-"WBCDXBIgh2AQgBSDYBDcDICAFKQMYIdkEQv8BIdoEINkEINoEgyHbBEKABiHcBCDbBCDcBHwh3QQg3QSnIX",
-"1BgIDAAiF+QQMhfyB9IH90IYABIH4ggAFqIYEBIIEBKQMAId4EIAUpA0Ah3wQg3wQg3gSFIeAEIAUg4AQ3A",
-"0AgBSkDGCHhBEIIIeIEIOEEIOIEiCHjBCAFIOMENwMYIAUpAxAh5ARC/wEh5QQg5AQg5QSDIeYEQoAGIecE",
-"IOYEIOcEfCHoBCDoBKchggFBgIDAAiGDAUEDIYQBIIIBIIQBdCGFASCDASCFAWohhgEghgEpAwAh6QQgBSk",
-"DOCHqBCDqBCDpBIUh6wQgBSDrBDcDOCAFKQMQIewEQggh7QQg7AQg7QSIIe4EIAUg7gQ3AxAgBSkDKCHvBE",
-"L/ASHwBCDvBCDwBIMh8QRCgAQh8gQg8QQg8gR8IfMEIPMEpyGHAUGAgMACIYgBQQMhiQEghwEgiQF0IYoBI",
-"IgBIIoBaiGLASCLASkDACH0BCAFKQNQIfUEIPUEIPQEhSH2BCAFIPYENwNQIAUpAygh9wRCCCH4BCD3BCD4",
-"BIgh+QQgBSD5BDcDKCAFKQMgIfoEQv8BIfsEIPoEIPsEgyH8BEKABCH9BCD8BCD9BHwh/gQg/gSnIYwBQYC",
-"AwAIhjQFBAyGOASCMASCOAXQhjwEgjQEgjwFqIZABIJABKQMAIf8EIAUpA0ghgAUggAUg/wSFIYEFIAUggQ",
-"U3A0ggBSkDICGCBUIIIYMFIIIFIIMFiCGEBSAFIIQFNwMgIAUpAxghhQVC/wEhhgUghQUghgWDIYcFQoAEI",
-"YgFIIcFIIgFfCGJBSCJBachkQFBgIDAAiGSAUEDIZMBIJEBIJMBdCGUASCSASCUAWohlQEglQEpAwAhigUg",
-"BSkDQCGLBSCLBSCKBYUhjAUgBSCMBTcDQCAFKQMYIY0FQgghjgUgjQUgjgWIIY8FIAUgjwU3AxggBSkDECG",
-"QBUL/ASGRBSCQBSCRBYMhkgVCgAQhkwUgkgUgkwV8IZQFIJQFpyGWAUGAgMACIZcBQQMhmAEglgEgmAF0IZ",
-"kBIJcBIJkBaiGaASCaASkDACGVBSAFKQM4IZYFIJYFIJUFhSGXBSAFIJcFNwM4IAUpAxAhmAVCCCGZBSCYB",
-"SCZBYghmgUgBSCaBTcDECAFKQMoIZsFQv8BIZwFIJsFIJwFgyGdBUKAAiGeBSCdBSCeBXwhnwUgnwWnIZsB",
-"QYCAwAIhnAFBAyGdASCbASCdAXQhngEgnAEgngFqIZ8BIJ8BKQMAIaAFIAUpA1AhoQUgoQUgoAWFIaIFIAU",
-"gogU3A1AgBSkDKCGjBUIIIaQFIKMFIKQFiCGlBSAFIKUFNwMoIAUpAyAhpgVC/wEhpwUgpgUgpwWDIagFQo",
-"ACIakFIKgFIKkFfCGqBSCqBachoAFBgIDAAiGhAUEDIaIBIKABIKIBdCGjASChASCjAWohpAEgpAEpAwAhq",
-"wUgBSkDSCGsBSCsBSCrBYUhrQUgBSCtBTcDSCAFKQMgIa4FQgghrwUgrgUgrwWIIbAFIAUgsAU3AyAgBSkD",
-"GCGxBUL/ASGyBSCxBSCyBYMhswVCgAIhtAUgswUgtAV8IbUFILUFpyGlAUGAgMACIaYBQQMhpwEgpQEgpwF",
-"0IagBIKYBIKgBaiGpASCpASkDACG2BSAFKQNAIbcFILcFILYFhSG4BSAFILgFNwNAIAUpAxghuQVCCCG6BS",
-"C5BSC6BYghuwUgBSC7BTcDGCAFKQMQIbwFQv8BIb0FILwFIL0FgyG+BUKAAiG/BSC+BSC/BXwhwAUgwAWnI",
-"aoBQYCAwAIhqwFBAyGsASCqASCsAXQhrQEgqwEgrQFqIa4BIK4BKQMAIcEFIAUpAzghwgUgwgUgwQWFIcMF",
-"IAUgwwU3AzggBSkDECHEBUIIIcUFIMQFIMUFiCHGBSAFIMYFNwMQIAUpAyghxwVC/wEhyAUgxwUgyAWDIck",
-"FQgAhygUgyQUgygV8IcsFIMsFpyGvAUGAgMACIbABQQMhsQEgrwEgsQF0IbIBILABILIBaiGzASCzASkDAC",
-"HMBSAFKQNQIc0FIM0FIMwFhSHOBSAFIM4FNwNQIAUpAyAhzwVC/wEh0AUgzwUg0AWDIdEFQgAh0gUg0QUg0",
-"gV8IdMFINMFpyG0AUGAgMACIbUBQQMhtgEgtAEgtgF0IbcBILUBILcBaiG4ASC4ASkDACHUBSAFKQNIIdUF",
-"INUFINQFhSHWBSAFINYFNwNIIAUpAxgh1wVC/wEh2AUg1wUg2AWDIdkFQgAh2gUg2QUg2gV8IdsFINsFpyG",
-"5AUGAgMACIboBQQMhuwEguQEguwF0IbwBILoBILwBaiG9ASC9ASkDACHcBSAFKQNAId0FIN0FINwFhSHeBS",
-"AFIN4FNwNAIAUpAxAh3wVC/wEh4AUg3wUg4AWDIeEFQgAh4gUg4QUg4gV8IeMFIOMFpyG+AUGAgMACIb8BQ",
-"QMhwAEgvgEgwAF0IcEBIL8BIMEBaiHCASDCASkDACHkBSAFKQM4IeUFIOUFIOQFhSHmBSAFIOYFNwM4IAUp",
-"A2Ah5wVCICHoBSDnBSDoBXwh6QUgBSDpBTcDYCAFKAJYIcMBQSAhxAEgwwEgxAFqIcUBIAUgxQE2AlgMAAs",
-"AC0IAIeoFIAUg6gU3A2ggBSgCWCHGASDGASkDACHrBSAFKQNQIewFIOsFIOwFhSHtBSAFKQNoIe4FIO4FIO",
-"0FhSHvBSAFIO8FNwNoIAUpA2gh8AVCCCHxBSDwBSDxBYgh8gUgBSkDaCHzBUL/ASH0BSDzBSD0BYMh9QUg9",
-"QWnIccBQYCAwQIhyAFBAyHJASDHASDJAXQhygEgyAEgygFqIcsBIMsBKQMAIfYFIPIFIPYFhSH3BSAFIPcF",
-"NwNoIAUpA2gh+AVCCCH5BSD4BSD5BYgh+gUgBSkDaCH7BUL/ASH8BSD7BSD8BYMh/QUg/QWnIcwBQYCAwQI",
-"hzQFBAyHOASDMASDOAXQhzwEgzQEgzwFqIdABINABKQMAIf4FIPoFIP4FhSH/BSAFIP8FNwNoIAUpA2ghgA",
-"ZCCCGBBiCABiCBBoghggYgBSkDaCGDBkL/ASGEBiCDBiCEBoMhhQYghQanIdEBQYCAwQIh0gFBAyHTASDRA",
-"SDTAXQh1AEg0gEg1AFqIdUBINUBKQMAIYYGIIIGIIYGhSGHBiAFIIcGNwNoIAUpA2ghiAZCCCGJBiCIBiCJ",
-"BoghigYgBSkDaCGLBkL/ASGMBiCLBiCMBoMhjQYgjQanIdYBQYCAwQIh1wFBAyHYASDWASDYAXQh2QEg1wE",
-"g2QFqIdoBINoBKQMAIY4GIIoGII4GhSGPBiAFII8GNwNoIAUpA2ghkAZCCCGRBiCQBiCRBoghkgYgBSkDaC",
-"GTBkL/ASGUBiCTBiCUBoMhlQYglQanIdsBQYCAwQIh3AFBAyHdASDbASDdAXQh3gEg3AEg3gFqId8BIN8BK",
-"QMAIZYGIJIGIJYGhSGXBiAFIJcGNwNoIAUpA2ghmAZCCCGZBiCYBiCZBoghmgYgBSkDaCGbBkL/ASGcBiCb",
-"BiCcBoMhnQYgnQanIeABQYCAwQIh4QFBAyHiASDgASDiAXQh4wEg4QEg4wFqIeQBIOQBKQMAIZ4GIJoGIJ4",
-"GhSGfBiAFIJ8GNwNoIAUpA2ghoAZCCCGhBiCgBiChBoghogYgBSkDaCGjBkL/ASGkBiCjBiCkBoMhpQYgpQ",
-"anIeUBQYCAwQIh5gFBAyHnASDlASDnAXQh6AEg5gEg6AFqIekBIOkBKQMAIaYGIKIGIKYGhSGnBiAFIKcGN",
-"wNoIAUpA2ghqAZCCCGpBiCoBiCpBoghqgYgBSkDaCGrBkL/ASGsBiCrBiCsBoMhrQYgrQanIeoBQYCAwQIh",
-"6wFBAyHsASDqASDsAXQh7QEg6wEg7QFqIe4BIO4BKQMAIa4GIKoGIK4GhSGvBiAFIK8GNwNoIAUoAlgh7wE",
-"g7wEpAwghsAYgBSkDSCGxBiCwBiCxBoUhsgYgBSkDaCGzBiCzBiCyBoUhtAYgBSC0BjcDaCAFKQNoIbUGQg",
-"ghtgYgtQYgtgaIIbcGIAUpA2ghuAZC/wEhuQYguAYguQaDIboGILoGpyHwAUGAgMECIfEBQQMh8gEg8AEg8",
-"gF0IfMBIPEBIPMBaiH0ASD0ASkDACG7BiC3BiC7BoUhvAYgBSC8BjcDaCAFKQNoIb0GQgghvgYgvQYgvgaI",
-"Ib8GIAUpA2ghwAZC/wEhwQYgwAYgwQaDIcIGIMIGpyH1AUGAgMECIfYBQQMh9wEg9QEg9wF0IfgBIPYBIPg",
-"BaiH5ASD5ASkDACHDBiC/BiDDBoUhxAYgBSDEBjcDaCAFKQNoIcUGQgghxgYgxQYgxgaIIccGIAUpA2ghyA",
-"ZC/wEhyQYgyAYgyQaDIcoGIMoGpyH6AUGAgMECIfsBQQMh/AEg+gEg/AF0If0BIPsBIP0BaiH+ASD+ASkDA",
-"CHLBiDHBiDLBoUhzAYgBSDMBjcDaCAFKQNoIc0GQgghzgYgzQYgzgaIIc8GIAUpA2gh0AZC/wEh0QYg0AYg",
-"0QaDIdIGINIGpyH/AUGAgMECIYACQQMhgQIg/wEggQJ0IYICIIACIIICaiGDAiCDAikDACHTBiDPBiDTBoU",
-"h1AYgBSDUBjcDaCAFKQNoIdUGQggh1gYg1QYg1gaIIdcGIAUpA2gh2AZC/wEh2QYg2AYg2QaDIdoGINoGpy",
-"GEAkGAgMECIYUCQQMhhgIghAIghgJ0IYcCIIUCIIcCaiGIAiCIAikDACHbBiDXBiDbBoUh3AYgBSDcBjcDa",
-"CAFKQNoId0GQggh3gYg3QYg3gaIId8GIAUpA2gh4AZC/wEh4QYg4AYg4QaDIeIGIOIGpyGJAkGAgMECIYoC",
-"QQMhiwIgiQIgiwJ0IYwCIIoCIIwCaiGNAiCNAikDACHjBiDfBiDjBoUh5AYgBSDkBjcDaCAFKQNoIeUGQgg",
-"h5gYg5QYg5gaIIecGIAUpA2gh6AZC/wEh6QYg6AYg6QaDIeoGIOoGpyGOAkGAgMECIY8CQQMhkAIgjgIgkA",
-"J0IZECII8CIJECaiGSAiCSAikDACHrBiDnBiDrBoUh7AYgBSDsBjcDaCAFKQNoIe0GQggh7gYg7QYg7gaII",
-"e8GIAUpA2gh8AZC/wEh8QYg8AYg8QaDIfIGIPIGpyGTAkGAgMECIZQCQQMhlQIgkwIglQJ0IZYCIJQCIJYC",
-"aiGXAiCXAikDACHzBiDvBiDzBoUh9AYgBSD0BjcDaCAFKAJYIZgCIJgCKQMQIfUGIAUpA0Ah9gYg9QYg9ga",
-"FIfcGIAUpA2gh+AYg+AYg9waFIfkGIAUg+QY3A2ggBSkDaCH6BkIIIfsGIPoGIPsGiCH8BiAFKQNoIf0GQv",
-"8BIf4GIP0GIP4GgyH/BiD/BqchmQJBgIDBAiGaAkEDIZsCIJkCIJsCdCGcAiCaAiCcAmohnQIgnQIpAwAhg",
-"Acg/AYggAeFIYEHIAUggQc3A2ggBSkDaCGCB0IIIYMHIIIHIIMHiCGEByAFKQNoIYUHQv8BIYYHIIUHIIYH",
-"gyGHByCHB6chngJBgIDBAiGfAkEDIaACIJ4CIKACdCGhAiCfAiChAmohogIgogIpAwAhiAcghAcgiAeFIYk",
-"HIAUgiQc3A2ggBSkDaCGKB0IIIYsHIIoHIIsHiCGMByAFKQNoIY0HQv8BIY4HII0HII4HgyGPByCPB6chow",
-"JBgIDBAiGkAkEDIaUCIKMCIKUCdCGmAiCkAiCmAmohpwIgpwIpAwAhkAcgjAcgkAeFIZEHIAUgkQc3A2ggB",
-"SkDaCGSB0IIIZMHIJIHIJMHiCGUByAFKQNoIZUHQv8BIZYHIJUHIJYHgyGXByCXB6chqAJBgIDBAiGpAkED",
-"IaoCIKgCIKoCdCGrAiCpAiCrAmohrAIgrAIpAwAhmAcglAcgmAeFIZkHIAUgmQc3A2ggBSkDaCGaB0IIIZs",
-"HIJoHIJsHiCGcByAFKQNoIZ0HQv8BIZ4HIJ0HIJ4HgyGfByCfB6chrQJBgIDBAiGuAkEDIa8CIK0CIK8CdC",
-"GwAiCuAiCwAmohsQIgsQIpAwAhoAcgnAcgoAeFIaEHIAUgoQc3A2ggBSkDaCGiB0IIIaMHIKIHIKMHiCGkB",
-"yAFKQNoIaUHQv8BIaYHIKUHIKYHgyGnByCnB6chsgJBgIDBAiGzAkEDIbQCILICILQCdCG1AiCzAiC1Amoh",
-"tgIgtgIpAwAhqAcgpAcgqAeFIakHIAUgqQc3A2ggBSkDaCGqB0IIIasHIKoHIKsHiCGsByAFKQNoIa0HQv8",
-"BIa4HIK0HIK4HgyGvByCvB6chtwJBgIDBAiG4AkEDIbkCILcCILkCdCG6AiC4AiC6AmohuwIguwIpAwAhsA",
-"cgrAcgsAeFIbEHIAUgsQc3A2ggBSkDaCGyB0IIIbMHILIHILMHiCG0ByAFKQNoIbUHQv8BIbYHILUHILYHg",
-"yG3ByC3B6chvAJBgIDBAiG9AkEDIb4CILwCIL4CdCG/AiC9AiC/AmohwAIgwAIpAwAhuAcgtAcguAeFIbkH",
-"IAUguQc3A2ggBSgCWCHBAiDBAikDGCG6ByAFKQM4IbsHILoHILsHhSG8ByAFKQNoIb0HIL0HILwHhSG+ByA",
-"FIL4HNwNoIAUpA2ghvwdCCCHAByC/ByDAB4ghwQcgBSkDaCHCB0L/ASHDByDCByDDB4MhxAcgxAenIcICQY",
-"CAwQIhwwJBAyHEAiDCAiDEAnQhxQIgwwIgxQJqIcYCIMYCKQMAIcUHIMEHIMUHhSHGByAFIMYHNwNoIAUpA",
-"2ghxwdCCCHIByDHByDIB4ghyQcgBSkDaCHKB0L/ASHLByDKByDLB4MhzAcgzAenIccCQYCAwQIhyAJBAyHJ",
-"AiDHAiDJAnQhygIgyAIgygJqIcsCIMsCKQMAIc0HIMkHIM0HhSHOByAFIM4HNwNoIAUpA2ghzwdCCCHQByD",
-"PByDQB4gh0QcgBSkDaCHSB0L/ASHTByDSByDTB4Mh1Acg1AenIcwCQYCAwQIhzQJBAyHOAiDMAiDOAnQhzw",
-"IgzQIgzwJqIdACINACKQMAIdUHINEHINUHhSHWByAFINYHNwNoIAUpA2gh1wdCCCHYByDXByDYB4gh2QcgB",
-"SkDaCHaB0L/ASHbByDaByDbB4Mh3Acg3AenIdECQYCAwQIh0gJBAyHTAiDRAiDTAnQh1AIg0gIg1AJqIdUC",
-"INUCKQMAId0HINkHIN0HhSHeByAFIN4HNwNoIAUpA2gh3wdCCCHgByDfByDgB4gh4QcgBSkDaCHiB0L/ASH",
-"jByDiByDjB4Mh5Acg5AenIdYCQYCAwQIh1wJBAyHYAiDWAiDYAnQh2QIg1wIg2QJqIdoCINoCKQMAIeUHIO",
-"EHIOUHhSHmByAFIOYHNwNoIAUpA2gh5wdCCCHoByDnByDoB4gh6QcgBSkDaCHqB0L/ASHrByDqByDrB4Mh7",
-"Acg7AenIdsCQYCAwQIh3AJBAyHdAiDbAiDdAnQh3gIg3AIg3gJqId8CIN8CKQMAIe0HIOkHIO0HhSHuByAF",
-"IO4HNwNoIAUpA2gh7wdCCCHwByDvByDwB4gh8QcgBSkDaCHyB0L/ASHzByDyByDzB4Mh9Acg9AenIeACQYC",
-"AwQIh4QJBAyHiAiDgAiDiAnQh4wIg4QIg4wJqIeQCIOQCKQMAIfUHIPEHIPUHhSH2ByAFIPYHNwNoIAUpA2",
-"gh9wdCCCH4ByD3ByD4B4gh+QcgBSkDaCH6B0L/ASH7ByD6ByD7B4Mh/Acg/AenIeUCQYCAwQIh5gJBAyHnA",
-"iDlAiDnAnQh6AIg5gIg6AJqIekCIOkCKQMAIf0HIPkHIP0HhSH+ByAFIP4HNwNoIAUpA2Ah/wdCICGACCD/",
-"ByCACHwhgQggBSCBCDcDYAtCACGCCCAFIIIINwMIAkADQCAFKQMIIYMIIAUoAnQh6gIg6gIh6wIg6wKsIYQ",
-"IIIMIIYUIIIQIIYYIIIUIIIYIVCHsAkEBIe0CIOwCIO0CcSHuAiDuAkUNASAFKQNoIYcIQgghiAgghwggiA",
-"iIIYkIIAUpA2ghigggBSgCcCHvAiAFKQNgIYsIIIsIpyHwAiDvAiDwAmoh8QIg8QItAAAh8gJB/wEh8wIg8",
-"gIg8wJxIfQCIPQCrSGMCCCKCCCMCIUhjQhC/wEhjgggjQggjgiDIY8III8IpyH1AkGAgMECIfYCQQMh9wIg",
-"9QIg9wJ0IfgCIPYCIPgCaiH5AiD5AikDACGQCCCJCCCQCIUhkQggBSCRCDcDaCAFKQMIIZIIQgEhkwggkgg",
-"gkwh8IZQIIAUglAg3AwggBSkDYCGVCEIBIZYIIJUIIJYIfCGXCCAFIJcINwNgDAALAAsgBSkDaCGYCEJ/IZ",
-"kIIJgIIJkIhSGaCCAGIJoINwMADwudAgIcfwV+IwAhBEEgIQUgBCAFayEGIAYkACAGIAA2AhwgBiABNgIYI",
-"AYgAjYCFCAGIAM2AhAgBigCHCEHIAYoAhghCCAGKAIUIQkgByAIIAkQBiAGKAIQIQogBiAKNgIMQQAhCyAG",
-"IAs2AggCQANAIAYoAgghDEEIIQ0gDCEOIA0hDyAOIA9JIRBBASERIBAgEXEhEiASRQ0BIAcpAwAhICAGKAI",
-"IIRNBAyEUIBMgFHQhFSAVIRYgFq0hISAgICGIISJC/wEhIyAiICODISQgJKchFyAGKAIMIRggBigCCCEZIB",
-"ggGWohGiAaIBc6AAAgBigCCCEbQQEhHCAbIBxqIR0gBiAdNgIIDAALAAtBICEeIAYgHmohHyAfJAAPC14BD",
-"H8jACEBQRAhAiABIAJrIQMgAyQAIAMgADYCDCADKAIMIQRBACEFIAQhBiAFIQcgBiAHRiEIQQEhCSAIIAlx",
-"IQoCQCAKDQAgBBAUC0EQIQsgAyALaiEMIAwkAA8LNQIEfwF+QRAhACAAEBMhAUIAIQQgASAENwMAQQghAiA",
-"BIAJqIQMgAyAENwMAIAEQChogAQ8LPAIEfwJ+IwAhAUEQIQIgASACayEDIAMgADYCDCADKAIMIQRCACEFIA",
-"QgBTcDAEIAIQYgBCAGNwMIIAQPC1kBCH8jACEDQRAhBCADIARrIQUgBSQAIAUgADYCDCAFIAE2AgggBSACN",
-"gIEIAUoAgwhBiAFKAIIIQcgBSgCBCEIIAYgByAIEAZBECEJIAUgCWohCiAKJAAPC2kBCX8jACEEQRAhBSAE",
-"IAVrIQYgBiQAIAYgADYCDCAGIAE2AgggBiACNgIEIAYgAzYCACAGKAIMIQcgBigCCCEIIAYoAgQhCSAGKAI",
-"AIQogByAIIAkgChAHQRAhCyAGIAtqIQwgDCQADwteAQx/IwAhAUEQIQIgASACayEDIAMkACADIAA2AgwgAy",
-"gCDCEEQQAhBSAEIQYgBSEHIAYgB0YhCEEBIQkgCCAJcSEKAkAgCg0AIAQQFAtBECELIAMgC2ohDCAMJAAPC",
-"wcAPwBBEHQLBwBBlJLBAgtUAQJ/QQAoAoCQwQIiASAAQQdqQXhxIgJqIQACQAJAIAJFDQAgACABTQ0BCwJA",
-"IAAQDk0NACAAEAFFDQELQQAgADYCgJDBAiABDwsQD0EwNgIAQX8LviwBC38jAEEQayIBJAACQAJAAkACQAJ",
-"AAkACQAJAAkACQAJAAkACQAJAAkAgAEH0AUsNAAJAQQAoApiSwQIiAkEQIABBC2pBeHEgAEELSRsiA0EDdi",
-"IEdiIAQQNxRQ0AAkACQCAAQX9zQQFxIARqIgVBA3QiBEHAksECaiIAIARByJLBAmooAgAiBCgCCCIDRw0AQ",
-"QAgAkF+IAV3cTYCmJLBAgwBCyADIAA2AgwgACADNgIICyAEQQhqIQAgBCAFQQN0IgVBA3I2AgQgBCAFaiIE",
-"IAQoAgRBAXI2AgQMDwsgA0EAKAKgksECIgZNDQECQCAARQ0AAkACQCAAIAR0QQIgBHQiAEEAIABrcnEiAEE",
-"AIABrcWgiBEEDdCIAQcCSwQJqIgUgAEHIksECaigCACIAKAIIIgdHDQBBACACQX4gBHdxIgI2ApiSwQIMAQ",
-"sgByAFNgIMIAUgBzYCCAsgACADQQNyNgIEIAAgA2oiByAEQQN0IgQgA2siBUEBcjYCBCAAIARqIAU2AgACQ",
-"CAGRQ0AIAZBeHFBwJLBAmohA0EAKAKsksECIQQCQAJAIAJBASAGQQN2dCIIcQ0AQQAgAiAIcjYCmJLBAiAD",
-"IQgMAQsgAygCCCEICyADIAQ2AgggCCAENgIMIAQgAzYCDCAEIAg2AggLIABBCGohAEEAIAc2AqySwQJBACA",
-"FNgKgksECDA8LQQAoApySwQIiCUUNASAJQQAgCWtxaEECdEHIlMECaigCACIHKAIEQXhxIANrIQQgByEFAk",
-"ADQAJAIAUoAhAiAA0AIAVBFGooAgAiAEUNAgsgACgCBEF4cSADayIFIAQgBSAESSIFGyEEIAAgByAFGyEHI",
-"AAhBQwACwALIAcoAhghCgJAIAcoAgwiCCAHRg0AIAcoAggiAEEAKAKoksECSRogACAINgIMIAggADYCCAwO",
-"CwJAIAdBFGoiBSgCACIADQAgBygCECIARQ0DIAdBEGohBQsDQCAFIQsgACIIQRRqIgUoAgAiAA0AIAhBEGo",
-"hBSAIKAIQIgANAAsgC0EANgIADA0LQX8hAyAAQb9/Sw0AIABBC2oiAEF4cSEDQQAoApySwQIiBkUNAEEAIQ",
-"sCQCADQYACSQ0AQR8hCyADQf///wdLDQAgA0EmIABBCHZnIgBrdkEBcSAAQQF0a0E+aiELC0EAIANrIQQCQ",
-"AJAAkACQCALQQJ0QciUwQJqKAIAIgUNAEEAIQBBACEIDAELQQAhACADQQBBGSALQQF2ayALQR9GG3QhB0EA",
-"IQgDQAJAIAUoAgRBeHEgA2siAiAETw0AIAIhBCAFIQggAg0AQQAhBCAFIQggBSEADAMLIAAgBUEUaigCACI",
-"CIAIgBSAHQR12QQRxakEQaigCACIFRhsgACACGyEAIAdBAXQhByAFDQALCwJAIAAgCHINAEEAIQhBAiALdC",
-"IAQQAgAGtyIAZxIgBFDQMgAEEAIABrcWhBAnRByJTBAmooAgAhAAsgAEUNAQsDQCAAKAIEQXhxIANrIgIgB",
-"EkhBwJAIAAoAhAiBQ0AIABBFGooAgAhBQsgAiAEIAcbIQQgACAIIAcbIQggBSEAIAUNAAsLIAhFDQAgBEEA",
-"KAKgksECIANrTw0AIAgoAhghCwJAIAgoAgwiByAIRg0AIAgoAggiAEEAKAKoksECSRogACAHNgIMIAcgADY",
-"CCAwMCwJAIAhBFGoiBSgCACIADQAgCCgCECIARQ0DIAhBEGohBQsDQCAFIQIgACIHQRRqIgUoAgAiAA0AIA",
-"dBEGohBSAHKAIQIgANAAsgAkEANgIADAsLAkBBACgCoJLBAiIAIANJDQBBACgCrJLBAiEEAkACQCAAIANrI",
-"gVBEEkNAEEAIAU2AqCSwQJBACAEIANqIgc2AqySwQIgByAFQQFyNgIEIAQgAGogBTYCACAEIANBA3I2AgQM",
-"AQtBAEEANgKsksECQQBBADYCoJLBAiAEIABBA3I2AgQgBCAAaiIAIAAoAgRBAXI2AgQLIARBCGohAAwNCwJ",
-"AQQAoAqSSwQIiByADTQ0AQQAgByADayIENgKkksECQQBBACgCsJLBAiIAIANqIgU2ArCSwQIgBSAEQQFyNg",
-"IEIAAgA0EDcjYCBCAAQQhqIQAMDQsCQAJAQQAoAvCVwQJFDQBBACgC+JXBAiEEDAELQQBCfzcC/JXBAkEAQ",
-"oCggICAgAQ3AvSVwQJBACABQQxqQXBxQdiq1aoFczYC8JXBAkEAQQA2AoSWwQJBAEEANgLUlcECQYAgIQQL",
-"QQAhACAEIANBL2oiBmoiAkEAIARrIgtxIgggA00NDEEAIQACQEEAKALQlcECIgRFDQBBACgCyJXBAiIFIAh",
-"qIgkgBU0NDSAJIARLDQ0LAkACQEEALQDUlcECQQRxDQACQAJAAkACQAJAQQAoArCSwQIiBEUNAEHYlcECIQ",
-"ADQAJAIAAoAgAiBSAESw0AIAUgACgCBGogBEsNAwsgACgCCCIADQALC0EAEBAiB0F/Rg0DIAghAgJAQQAoA",
-"vSVwQIiAEF/aiIEIAdxRQ0AIAggB2sgBCAHakEAIABrcWohAgsgAiADTQ0DAkBBACgC0JXBAiIARQ0AQQAo",
-"AsiVwQIiBCACaiIFIARNDQQgBSAASw0ECyACEBAiACAHRw0BDAULIAIgB2sgC3EiAhAQIgcgACgCACAAKAI",
-"EakYNASAHIQALIABBf0YNAQJAIANBMGogAksNACAAIQcMBAsgBiACa0EAKAL4lcECIgRqQQAgBGtxIgQQEE",
-"F/Rg0BIAQgAmohAiAAIQcMAwsgB0F/Rw0CC0EAQQAoAtSVwQJBBHI2AtSVwQILIAgQECEHQQAQECEAIAdBf",
-"0YNBSAAQX9GDQUgByAATw0FIAAgB2siAiADQShqTQ0FC0EAQQAoAsiVwQIgAmoiADYCyJXBAgJAIABBACgC",
-"zJXBAk0NAEEAIAA2AsyVwQILAkACQEEAKAKwksECIgRFDQBB2JXBAiEAA0AgByAAKAIAIgUgACgCBCIIakY",
-"NAiAAKAIIIgANAAwFCwALAkACQEEAKAKoksECIgBFDQAgByAATw0BC0EAIAc2AqiSwQILQQAhAEEAIAI2At",
-"yVwQJBACAHNgLYlcECQQBBfzYCuJLBAkEAQQAoAvCVwQI2ArySwQJBAEEANgLklcECA0AgAEEDdCIEQciSw",
-"QJqIARBwJLBAmoiBTYCACAEQcySwQJqIAU2AgAgAEEBaiIAQSBHDQALQQAgAkFYaiIAQXggB2tBB3FBACAH",
-"QQhqQQdxGyIEayIFNgKkksECQQAgByAEaiIENgKwksECIAQgBUEBcjYCBCAHIABqQSg2AgRBAEEAKAKAlsE",
-"CNgK0ksECDAQLIAAtAAxBCHENAiAEIAVJDQIgBCAHTw0CIAAgCCACajYCBEEAIARBeCAEa0EHcUEAIARBCG",
-"pBB3EbIgBqIgU2ArCSwQJBAEEAKAKkksECIAJqIgcgAGsiADYCpJLBAiAFIABBAXI2AgQgBCAHakEoNgIEQ",
-"QBBACgCgJbBAjYCtJLBAgwDC0EAIQgMCgtBACEHDAgLAkAgB0EAKAKoksECIghPDQBBACAHNgKoksECIAch",
-"CAsgByACaiEFQdiVwQIhAAJAAkACQAJAA0AgACgCACAFRg0BIAAoAggiAA0ADAILAAsgAC0ADEEIcUUNAQt",
-"B2JXBAiEAA0ACQCAAKAIAIgUgBEsNACAFIAAoAgRqIgUgBEsNAwsgACgCCCEADAALAAsgACAHNgIAIAAgAC",
-"gCBCACajYCBCAHQXggB2tBB3FBACAHQQhqQQdxG2oiCyADQQNyNgIEIAVBeCAFa0EHcUEAIAVBCGpBB3Eba",
-"iICIAsgA2oiA2shAAJAIAIgBEcNAEEAIAM2ArCSwQJBAEEAKAKkksECIABqIgA2AqSSwQIgAyAAQQFyNgIE",
-"DAgLAkAgAkEAKAKsksECRw0AQQAgAzYCrJLBAkEAQQAoAqCSwQIgAGoiADYCoJLBAiADIABBAXI2AgQgAyA",
-"AaiAANgIADAgLIAIoAgQiBEEDcUEBRw0GIARBeHEhBgJAIARB/wFLDQAgAigCCCIFIARBA3YiCEEDdEHAks",
-"ECaiIHRhoCQCACKAIMIgQgBUcNAEEAQQAoApiSwQJBfiAId3E2ApiSwQIMBwsgBCAHRhogBSAENgIMIAQgB",
-"TYCCAwGCyACKAIYIQkCQCACKAIMIgcgAkYNACACKAIIIgQgCEkaIAQgBzYCDCAHIAQ2AggMBQsCQCACQRRq",
-"IgUoAgAiBA0AIAIoAhAiBEUNBCACQRBqIQULA0AgBSEIIAQiB0EUaiIFKAIAIgQNACAHQRBqIQUgBygCECI",
-"EDQALIAhBADYCAAwEC0EAIAJBWGoiAEF4IAdrQQdxQQAgB0EIakEHcRsiCGsiCzYCpJLBAkEAIAcgCGoiCD",
-"YCsJLBAiAIIAtBAXI2AgQgByAAakEoNgIEQQBBACgCgJbBAjYCtJLBAiAEIAVBJyAFa0EHcUEAIAVBWWpBB",
-"3EbakFRaiIAIAAgBEEQakkbIghBGzYCBCAIQRBqQQApAuCVwQI3AgAgCEEAKQLYlcECNwIIQQAgCEEIajYC",
-"4JXBAkEAIAI2AtyVwQJBACAHNgLYlcECQQBBADYC5JXBAiAIQRhqIQADQCAAQQc2AgQgAEEIaiEHIABBBGo",
-"hACAHIAVJDQALIAggBEYNACAIIAgoAgRBfnE2AgQgBCAIIARrIgdBAXI2AgQgCCAHNgIAAkAgB0H/AUsNAC",
-"AHQXhxQcCSwQJqIQACQAJAQQAoApiSwQIiBUEBIAdBA3Z0IgdxDQBBACAFIAdyNgKYksECIAAhBQwBCyAAK",
-"AIIIQULIAAgBDYCCCAFIAQ2AgwgBCAANgIMIAQgBTYCCAwBC0EfIQACQCAHQf///wdLDQAgB0EmIAdBCHZn",
-"IgBrdkEBcSAAQQF0a0E+aiEACyAEIAA2AhwgBEIANwIQIABBAnRByJTBAmohBQJAAkACQEEAKAKcksECIgh",
-"BASAAdCICcQ0AQQAgCCACcjYCnJLBAiAFIAQ2AgAgBCAFNgIYDAELIAdBAEEZIABBAXZrIABBH0YbdCEAIA",
-"UoAgAhCANAIAgiBSgCBEF4cSAHRg0CIABBHXYhCCAAQQF0IQAgBSAIQQRxaiICQRBqKAIAIggNAAsgAkEQa",
-"iAENgIAIAQgBTYCGAsgBCAENgIMIAQgBDYCCAwBCyAFKAIIIgAgBDYCDCAFIAQ2AgggBEEANgIYIAQgBTYC",
-"DCAEIAA2AggLQQAoAqSSwQIiACADTQ0AQQAgACADayIENgKkksECQQBBACgCsJLBAiIAIANqIgU2ArCSwQI",
-"gBSAEQQFyNgIEIAAgA0EDcjYCBCAAQQhqIQAMCAsQD0EwNgIAQQAhAAwHC0EAIQcLIAlFDQACQAJAIAIgAi",
-"gCHCIFQQJ0QciUwQJqIgQoAgBHDQAgBCAHNgIAIAcNAUEAQQAoApySwQJBfiAFd3E2ApySwQIMAgsgCUEQQ",
-"RQgCSgCECACRhtqIAc2AgAgB0UNAQsgByAJNgIYAkAgAigCECIERQ0AIAcgBDYCECAEIAc2AhgLIAJBFGoo",
-"AgAiBEUNACAHQRRqIAQ2AgAgBCAHNgIYCyAGIABqIQAgAiAGaiICKAIEIQQLIAIgBEF+cTYCBCADIABBAXI",
-"2AgQgAyAAaiAANgIAAkAgAEH/AUsNACAAQXhxQcCSwQJqIQQCQAJAQQAoApiSwQIiBUEBIABBA3Z0IgBxDQ",
-"BBACAFIAByNgKYksECIAQhAAwBCyAEKAIIIQALIAQgAzYCCCAAIAM2AgwgAyAENgIMIAMgADYCCAwBC0EfI",
-"QQCQCAAQf///wdLDQAgAEEmIABBCHZnIgRrdkEBcSAEQQF0a0E+aiEECyADIAQ2AhwgA0IANwIQIARBAnRB",
-"yJTBAmohBQJAAkACQEEAKAKcksECIgdBASAEdCIIcQ0AQQAgByAIcjYCnJLBAiAFIAM2AgAgAyAFNgIYDAE",
-"LIABBAEEZIARBAXZrIARBH0YbdCEEIAUoAgAhBwNAIAciBSgCBEF4cSAARg0CIARBHXYhByAEQQF0IQQgBS",
-"AHQQRxaiIIQRBqKAIAIgcNAAsgCEEQaiADNgIAIAMgBTYCGAsgAyADNgIMIAMgAzYCCAwBCyAFKAIIIgAgA",
-"zYCDCAFIAM2AgggA0EANgIYIAMgBTYCDCADIAA2AggLIAtBCGohAAwCCwJAIAtFDQACQAJAIAggCCgCHCIF",
-"QQJ0QciUwQJqIgAoAgBHDQAgACAHNgIAIAcNAUEAIAZBfiAFd3EiBjYCnJLBAgwCCyALQRBBFCALKAIQIAh",
-"GG2ogBzYCACAHRQ0BCyAHIAs2AhgCQCAIKAIQIgBFDQAgByAANgIQIAAgBzYCGAsgCEEUaigCACIARQ0AIA",
-"dBFGogADYCACAAIAc2AhgLAkACQCAEQQ9LDQAgCCAEIANqIgBBA3I2AgQgCCAAaiIAIAAoAgRBAXI2AgQMA",
-"QsgCCADQQNyNgIEIAggA2oiByAEQQFyNgIEIAcgBGogBDYCAAJAIARB/wFLDQAgBEF4cUHAksECaiEAAkAC",
-"QEEAKAKYksECIgVBASAEQQN2dCIEcQ0AQQAgBSAEcjYCmJLBAiAAIQQMAQsgACgCCCEECyAAIAc2AgggBCA",
-"HNgIMIAcgADYCDCAHIAQ2AggMAQtBHyEAAkAgBEH///8HSw0AIARBJiAEQQh2ZyIAa3ZBAXEgAEEBdGtBPm",
-"ohAAsgByAANgIcIAdCADcCECAAQQJ0QciUwQJqIQUCQAJAAkAgBkEBIAB0IgNxDQBBACAGIANyNgKcksECI",
-"AUgBzYCACAHIAU2AhgMAQsgBEEAQRkgAEEBdmsgAEEfRht0IQAgBSgCACEDA0AgAyIFKAIEQXhxIARGDQIg",
-"AEEddiEDIABBAXQhACAFIANBBHFqIgJBEGooAgAiAw0ACyACQRBqIAc2AgAgByAFNgIYCyAHIAc2AgwgByA",
-"HNgIIDAELIAUoAggiACAHNgIMIAUgBzYCCCAHQQA2AhggByAFNgIMIAcgADYCCAsgCEEIaiEADAELAkAgCk",
-"UNAAJAAkAgByAHKAIcIgVBAnRByJTBAmoiACgCAEcNACAAIAg2AgAgCA0BQQAgCUF+IAV3cTYCnJLBAgwCC",
-"yAKQRBBFCAKKAIQIAdGG2ogCDYCACAIRQ0BCyAIIAo2AhgCQCAHKAIQIgBFDQAgCCAANgIQIAAgCDYCGAsg",
-"B0EUaigCACIARQ0AIAhBFGogADYCACAAIAg2AhgLAkACQCAEQQ9LDQAgByAEIANqIgBBA3I2AgQgByAAaiI",
-"AIAAoAgRBAXI2AgQMAQsgByADQQNyNgIEIAcgA2oiBSAEQQFyNgIEIAUgBGogBDYCAAJAIAZFDQAgBkF4cU",
-"HAksECaiEDQQAoAqySwQIhAAJAAkBBASAGQQN2dCIIIAJxDQBBACAIIAJyNgKYksECIAMhCAwBCyADKAIII",
-"QgLIAMgADYCCCAIIAA2AgwgACADNgIMIAAgCDYCCAtBACAFNgKsksECQQAgBDYCoJLBAgsgB0EIaiEACyAB",
-"QRBqJAAgAAuDDQEHfwJAIABFDQAgAEF4aiIBIABBfGooAgAiAkF4cSIAaiEDAkAgAkEBcQ0AIAJBA3FFDQE",
-"gASABKAIAIgJrIgFBACgCqJLBAiIESQ0BIAIgAGohAAJAAkACQCABQQAoAqySwQJGDQACQCACQf8BSw0AIA",
-"EoAggiBCACQQN2IgVBA3RBwJLBAmoiBkYaAkAgASgCDCICIARHDQBBAEEAKAKYksECQX4gBXdxNgKYksECD",
-"AULIAIgBkYaIAQgAjYCDCACIAQ2AggMBAsgASgCGCEHAkAgASgCDCIGIAFGDQAgASgCCCICIARJGiACIAY2",
-"AgwgBiACNgIIDAMLAkAgAUEUaiIEKAIAIgINACABKAIQIgJFDQIgAUEQaiEECwNAIAQhBSACIgZBFGoiBCg",
-"CACICDQAgBkEQaiEEIAYoAhAiAg0ACyAFQQA2AgAMAgsgAygCBCICQQNxQQNHDQJBACAANgKgksECIAMgAk",
-"F+cTYCBCABIABBAXI2AgQgAyAANgIADwtBACEGCyAHRQ0AAkACQCABIAEoAhwiBEECdEHIlMECaiICKAIAR",
-"w0AIAIgBjYCACAGDQFBAEEAKAKcksECQX4gBHdxNgKcksECDAILIAdBEEEUIAcoAhAgAUYbaiAGNgIAIAZF",
-"DQELIAYgBzYCGAJAIAEoAhAiAkUNACAGIAI2AhAgAiAGNgIYCyABQRRqKAIAIgJFDQAgBkEUaiACNgIAIAI",
-"gBjYCGAsgASADTw0AIAMoAgQiAkEBcUUNAAJAAkACQAJAAkAgAkECcQ0AAkAgA0EAKAKwksECRw0AQQAgAT",
-"YCsJLBAkEAQQAoAqSSwQIgAGoiADYCpJLBAiABIABBAXI2AgQgAUEAKAKsksECRw0GQQBBADYCoJLBAkEAQ",
-"QA2AqySwQIPCwJAIANBACgCrJLBAkcNAEEAIAE2AqySwQJBAEEAKAKgksECIABqIgA2AqCSwQIgASAAQQFy",
-"NgIEIAEgAGogADYCAA8LIAJBeHEgAGohAAJAIAJB/wFLDQAgAygCCCIEIAJBA3YiBUEDdEHAksECaiIGRho",
-"CQCADKAIMIgIgBEcNAEEAQQAoApiSwQJBfiAFd3E2ApiSwQIMBQsgAiAGRhogBCACNgIMIAIgBDYCCAwECy",
-"ADKAIYIQcCQCADKAIMIgYgA0YNACADKAIIIgJBACgCqJLBAkkaIAIgBjYCDCAGIAI2AggMAwsCQCADQRRqI",
-"gQoAgAiAg0AIAMoAhAiAkUNAiADQRBqIQQLA0AgBCEFIAIiBkEUaiIEKAIAIgINACAGQRBqIQQgBigCECIC",
-"DQALIAVBADYCAAwCCyADIAJBfnE2AgQgASAAQQFyNgIEIAEgAGogADYCAAwDC0EAIQYLIAdFDQACQAJAIAM",
-"gAygCHCIEQQJ0QciUwQJqIgIoAgBHDQAgAiAGNgIAIAYNAUEAQQAoApySwQJBfiAEd3E2ApySwQIMAgsgB0",
-"EQQRQgBygCECADRhtqIAY2AgAgBkUNAQsgBiAHNgIYAkAgAygCECICRQ0AIAYgAjYCECACIAY2AhgLIANBF",
-"GooAgAiAkUNACAGQRRqIAI2AgAgAiAGNgIYCyABIABBAXI2AgQgASAAaiAANgIAIAFBACgCrJLBAkcNAEEA",
-"IAA2AqCSwQIPCwJAIABB/wFLDQAgAEF4cUHAksECaiECAkACQEEAKAKYksECIgRBASAAQQN2dCIAcQ0AQQA",
-"gBCAAcjYCmJLBAiACIQAMAQsgAigCCCEACyACIAE2AgggACABNgIMIAEgAjYCDCABIAA2AggPC0EfIQICQC",
-"AAQf///wdLDQAgAEEmIABBCHZnIgJrdkEBcSACQQF0a0E+aiECCyABIAI2AhwgAUIANwIQIAJBAnRByJTBA",
-"mohBAJAAkACQAJAQQAoApySwQIiBkEBIAJ0IgNxDQBBACAGIANyNgKcksECIAQgATYCACABIAQ2AhgMAQsg",
-"AEEAQRkgAkEBdmsgAkEfRht0IQIgBCgCACEGA0AgBiIEKAIEQXhxIABGDQIgAkEddiEGIAJBAXQhAiAEIAZ",
-"BBHFqIgNBEGooAgAiBg0ACyADQRBqIAE2AgAgASAENgIYCyABIAE2AgwgASABNgIIDAELIAQoAggiACABNg",
-"IMIAQgATYCCCABQQA2AhggASAENgIMIAEgADYCCAtBAEEAKAK4ksECQX9qIgFBfyABGzYCuJLBAgsLMQEBf",
-"yAAQQEgABshAQJAA0AgARARIgANAQJAECIiAEUNACAAEQMADAELCxAAAAsgAAsGACAAEBILBAAgAAsLACAA",
-"KAI8EBUQAgsVAAJAIAANAEEADwsQDyAANgIAQX8L4wIBB38jAEEgayIDJAAgAyAAKAIcIgQ2AhAgACgCFCE",
-"FIAMgAjYCHCADIAE2AhggAyAFIARrIgE2AhQgASACaiEGIANBEGohBEECIQcCQAJAAkACQAJAIAAoAjwgA0",
-"EQakECIANBDGoQAxAXRQ0AIAQhBQwBCwNAIAYgAygCDCIBRg0CAkAgAUF/Sg0AIAQhBQwECyAEIAEgBCgCB",
-"CIISyIJQQN0aiIFIAUoAgAgASAIQQAgCRtrIghqNgIAIARBDEEEIAkbaiIEIAQoAgAgCGs2AgAgBiABayEG",
-"IAUhBCAAKAI8IAUgByAJayIHIANBDGoQAxAXRQ0ACwsgBkF/Rw0BCyAAIAAoAiwiATYCHCAAIAE2AhQgACA",
-"BIAAoAjBqNgIQIAIhAQwBC0EAIQEgAEEANgIcIABCADcDECAAIAAoAgBBIHI2AgAgB0ECRg0AIAIgBSgCBG",
-"shAQsgA0EgaiQAIAELNwEBfyMAQRBrIgMkACAAIAEgAkH/AXEgA0EIahAwEBchAiADKQMIIQEgA0EQaiQAQ",
-"n8gASACGwsNACAAKAI8IAEgAhAZCwIACwIACw4AQZCWwQIQG0GUlsECCwkAQZCWwQIQHAsEAEEBCwIACwcA",
-"IAAoAgALCQBBnJbBAhAhCwYAIAAkAQsEACMBCwQAIwALBgAgACQACxIBAn8jACAAa0FwcSIBJAAgAQsEACM",
-"ACxMAQYCAwAIkA0EAQQ9qQXBxJAILBwAjACMCawsEACMDCwQAIwILuAIBA38CQCAADQBBACEBAkBBACgCmJ",
-"bBAkUNAEEAKAKYlsECEC0hAQsCQEEAKAKYkcECRQ0AQQAoApiRwQIQLSABciEBCwJAEB0oAgAiAEUNAANAQ",
-"QAhAgJAIAAoAkxBAEgNACAAEB8hAgsCQCAAKAIUIAAoAhxGDQAgABAtIAFyIQELAkAgAkUNACAAECALIAAo",
-"AjgiAA0ACwsQHiABDwtBACECAkAgACgCTEEASA0AIAAQHyECCwJAAkACQCAAKAIUIAAoAhxGDQAgAEEAQQA",
-"gACgCJBEHABogACgCFA0AQX8hASACDQEMAgsCQCAAKAIEIgEgACgCCCIDRg0AIAAgASADa6xBASAAKAIoEQ",
-"QAGgtBACEBIABBADYCHCAAQgA3AxAgAEIANwIEIAJFDQELIAAQIAsgAQsNACABIAIgAyAAEQQACyMBAX4gA",
-"CABIAKtIAOtQiCGhCAEEC4hBSAFQiCIpxAjIAWnCxMAIAAgAacgAUIgiKcgAiADEAQLC7aSgYAABABBgIDA",
-"AguAkAEAAAAAAAAAADGyfhfBM8W4CfdqdtFBU0U4RRRhEHKW/RLu1eyig6aKI1yr+2OwYzIbGb+ac8L1zyq",
-"rwY2y8TB3T088gRYhlCF+/UKW1xJRmUa4VvfHYMdkdwoo4AZTAtxdoelttKIyq2wTl3p1kfcTVFaDG2XjYe",
-"5l5P0MpNCkVp6eeAItQihDrywGFexx7fuXaRJ0/AN7BqbbbGM9ML6+jHCt7o/Bjsm9wtP5TvJLcYWHx5heg",
-"N2MtDW5j5+zGDTR0USDO2O8YuBjOpT6UHna2CYu9eoi7yfplFDiKxEqn8M/kW+Z4Bro8o3veFjT31DKyPsZ",
-"SKFJrft6hQ6JkowVPD3xBFqEUIYNj48Tm7eVPjXKm3KLxQPDBHjlZUr2xnsu0yTo+Af2DB9hWv85NDO0JyR",
-"OnilGpUkWljCJ6HVg8XNyzYVMpcSnQsCzko2WAR96hafzneSX4ks32eRc11JaYZwYae4mYi1QLmZ+LxWnlW",
-"hrch8/ZzFoWdkMCP5U9NCio4kGd8Z4xZMR9xG29b19q1TjcKaHK4Ca5p1nZ7TuOLBNXOrVRd5Pgf8i/RR2G",
-"/e5ujacBASNCogISIvFN0iy7ey1h2Hn7OTcXsuQoNQpXOQb3/Gwpr+h1amh5nGVehn/AmBrw2RKbs6wHnwC",
-"V4/W9vUKHRIlGSvHR3QK0xbckxPpdVHnLng4IlsLRiYdvYAaHh8nNm8rfSusYTD3XO7FAQegvUWt3rIwtd6",
-"qhJ4bCgjwysuU7I33OUK03FXfSE9cpknQ8Q/sGW0UN8cwPCmhVVEjpiBOv1xk412x4X165E5InDxTjEqTf/",
-"riK5K/jytHv/ZKgs0Z1nYNiF1D/txujXcNU8psUHu8xXNEC1+Vw4SAZyUbLQM+tTIZMtoexoafmdi/aO/28",
-"a4rpqip3DNJlm6yybmupbSn3MzeeJ1gDMI4MdLcTcRa84pPxR1+AeLLz1ukDQyXH/p9JbPMP1Kn0NbkPn7O",
-"YtDhZJopv/2naNkhjkivjzGV6JPwX2689C0v1IRVvaoovh5m+kJ8me0GJiPuI2zre/sXkZA0rdi+Qz06Ubk",
-"fKY40DIgvrt4aS4w0zTvPzmjdcQV/RdgPWxjJYJu41KuLvJ9RKcbDarh5J2ls0qJ6yu/aWN6stbv5KmJydW",
-"04CQgaFUPHEy/IO9+te4IHTthJSVBKMHlZGXqM6LFK/FeQ6AD9gPiCQFHbxUW4vZYhQalTuIkP6DaAmpYAo",
-"6QpuzJrpneSFles81hjz6pTQ83jKvUym+E92iIZMIr+BcDWhsmU3M+3vsFH+lFk9/KqoFeIx5nGQNS3lrsC",
-"IezrFTokSjJW3VlrLeV59+7lHH9M9QthE9SuAVs0OKSrJtLros5d8HAXYJW1D241yC8lgdQfHKM1Hpf/w94",
-"vZo00PD5ObN5W+gWOQFmt7ZNCPctUOL2fBb8MeSovfKzAB2md1yPYfGRRWC+pNBlPoelgar1VCT03FFHYw0",
-"LIDvKse3MCz3r/wttKwXzYu8wHY3KEaLmrvpGeQzYWrmqNVCa4TJOg4x/YM4n+7bciLB2Lsbv51jJei3aAC",
-"YfB821OzqqiRkxBnH65mxA4W4CvuwGjVSw6kN0t/JLnUi1R7uhE9wOvIfU+TBLGsdE2NA2Jqv70xVckfx9X",
-"z0a7QOVM2u/l7XrNV73qmNRfBNqWji8g7BoQu4b8ud3dqG6sR898ZRrvGqaU2aD2K11ksVXqZU4TGHDQRZj",
-"zsyKqDseEqzYLCAHPSjZaBnw5s7Fd92nDxAH2pTznG1U5METbKyYokIFVoCYngvg012QSWDBDy/FvXFdMUV",
-"O5Z5Jt5TJGkoqiKkdO88sge5JddvyN3OFIV+VOuZm98TrBGH8L56owCQSghHFipLmbiLW1wxyzeKhNDY2GC",
-"NJo2tvwvDR2xanpHkiWn7dIGxguP6ctyV/aK+uHn2jdPspZfXqu2qMpC2q4wss+XiWvuhyU+owgMm6J2SzC",
-"yTRTfvtP0fN7SkS/yIpp2dCLyQ05uh7oYvXezAp/ptAn4b/ceOlb4ZWfqB1LLOM1O57zKXOISASJ4OToQE3",
-"wPMz0hfgy2w0NfoqSOQEetSfVSx+L8C7CFmc1CErD63ouIiFpWrF9hx+QX36bgrg/enSicj9SHGlLxtxl/m",
-"HZ0XODyATuE08sQjG2Ey8gipRomneendG641koCYlc4n9bYW0d6EyQ6aZQ32P/jaMsHqul5vEEMaALmheY5",
-"sUCZbOiUoyH1XDzTpPg8pAUQzb2uUszHaayBoGI+U0KZ4HDObC8WWt381XEgQ4nfLbAkHzk6tpwEhA0KtVY",
-"pGfTI/GS7R2wBsNRZ2/cr84RAmKi1/YED5ywk5Kgx7Zxi3GgVxj/82XqYdLB5c5BG/2g4QRdCQZv93P32M4",
-"4tBHgssQddgDxBYGitouLMUN7lmOFTjMb6Lob0XR+RCpaxAwQR7v8Eh/QbQA1LQEjra56wQbouUZJU3Zl1k",
-"zvd/stYaTliVdPvjkAtJcfqn4MRxd1pNoSVKeGmsdV6mVlFfiNBmYv3V1Q7OwWFLkgbOKS+9cnfJiXmBf1X",
-"rXwjaYqaeKfhjU1nm99g4/0o8iv3QOUTsdmcIV2whn8NlYHtMS8Dj0Fk7+MgahvLXcFQr0z1njsRMD62Ncr",
-"dEiUZKzpZVVjiaehFNEgQQKZ1Tfp4JI/FVjm8lHKOf6Y6hfCJvuLgI8rJAeew86U7jtWkWPyfOr5+mVU2wA",
-"AAAAAAAAASEfgaLc09/b7HVeJPU832bNat+GKe8Avnag5Sii4t4bV79kin4xAcGa1bsMV94BfLvKOq6LDd6",
-"lRwuTMA1a2ORmFBKS0YkHPqt+zRT4ZgeDimFMtiS12Fsxq3YYr7gG/hC097pza9kk3d4oPFqE2Zn8wamehl",
-"cGQooTJmQesbHPqwynxsJibhVmZnhA641uqEd5+eI3XrFw/LPDTLxTb9XdrELuYICwDxDGnWhJb7CyMdkcy",
-"pW8b2vNGLVUE+tpKuwHNPbPOLbwIW3rcObXtk0AcmrSOgRplbu4UHyxCbcwmqfR3m3aaOpXzQ5YRDVoV3bS",
-"j/qY5reNECZMzD1jZ5gxOc1u4bC4QvxTEujIX7j/3UyTShSMZydmhqnkn4G5gkeZKEZDUmZYivP3wGq9ZuW",
-"r7HZitm65PFct3/wwOb99djJeXuzqYKe7WIHYxQVgGppHAHoZ1r/CIY061JLbYWcAkrt2Tgi+vc34ZPBn57",
-"4A7OflUrs0YduaNWqoI9LWVrsq6wr/AQmMdkA0jNbuCTFXX7UuCj3W6eyVj4CBMAhMzYoOIl3j15YA4NGkd",
-"AzXKyH/UAao3wjy3T75mC6IDrP8IXg68lvRaTFLp7zbtNHUEFQmHgdnDgyrnhywjGrQqYqBnRJQuQ9zR+tC",
-"lHlWD85m9MM2pYXQF44GxP02Wa/mrxlFX+qKcDxic5rZw2VwgUNsG3sftq9Z+KYh1ZS7cfzZuaB3SGiuJhT",
-"Tf/Fhh66bNcz+U71UcULJDVfNOwN3A+gS1m/n0KjZJXgJ6c4/qGQEZ4hLEux3vL+tsuWZ4akZnrIzR0Uyds",
-"NT2OzBbN12fnLHbWOwDqmlBBXimSjoHiglCmM79DvB8uhgvL3d1MFPyX89HwEHHpdytQexigrAMlOqhhNW2",
-"R/onsBZlX82H1W/39g3o+XAjEMecaklssbNYgHwC/lhGRevay+N0I4Zqo50ri8MXcZyNb6UgYdQGNcUoRUj",
-"W4PHDdnLyqVybMew+NRLB66/GGqeIIgxCzrIf78/CZPX6RelclXWFf4GFxhTSle3ItXIwOiAbRmp2BZlyZ/",
-"su3ULyb8E9TM9XOTJAiXqsp+ANxbb2SsbAQZgEJr4NJqj2rPPQDVeRSXzXM/9FEHEhy+PECWvi/4ppILOgI",
-"6Uf4t4URFaQ/6gDVG+Eedi4SGvjW3OPBQzrlUVi3mxNSwv98lYpmv4RvBx4Lem1tlZcdM8ZHkOYpNLfbdpp",
-"6tDjMrfa7p4cY7mFVlCVXjMr/mU+56GpxVTOD1lGNGhVHInvMfEAn6Ov01jQe3tfjOeUuLjMT6h6yWY2E26",
-"M39OBIdZ72bgoJTJ7YZpTw+gKejyB8uT3H/ytkPQnyQoOxuXXFE9+PvkwVo2jrvRFOR8eykPGQ3HO6TA4zW",
-"3hsrlAeH8tBVaGTrbLJZrk3P2OmYNieoxryXlv/FIQ68pcuP+0FfCDfWhPCQdPR2L3E48mTwinCkAneNBh+",
-"imh4uQPeSm9yclV0PiPmud+KN+rOKDSoJ5AaJ/PVg8UPb7OpmK1R1Pd1nmSlUP0CWo38+lVbLxOil9E3aKa",
-"krwE9OYe1TPa++ScUSoixWmhU33bUeLqIeazFWxlFRxe1tlyzfDUjBaRORp6xCN6pcuO+/C/41XtjG6TR4s",
-"Uo8N+4DjlSGMKizkAUFJ8lPw4Y7ex2AdU03AkV9lvM6Ml6ZlnFMZS1yCh3od8cWYg1hKEMJ37HeD5WsPQ9U",
-"wpFw90MV5e7upgpjx2vjZZ3pdQjywJ19OlV3/Ha+m/ZJGgibhbg9jFBGEZ8BxjsHIwlu9DRtRR+EtWwAsBN",
-"DlPf6E2JfO6ku281p9ttFr6Woghad7u7RvQ8+FGlqkNc2fHFrBLHa6Nwf67UwNaTuV2ykylsAD5BPyxjIr4",
-"RxlsS4V7fNa1l8fpRgzVnvJ3r15y+yMtqMBO1Ak7DGXvICZjPcz6Gt9KQcKoDWpSmKopdZz6nOHCHcj/5zq",
-"zqYX9oEjTzUWHd3ML6hC67M8wk2NdJE0afGokgtdfjTU0LcTqYGt6w04RRRiEnGU/BlalcDOoksm1DBKRud",
-"NS5v1L8vkO56UQ07l8Uqwk0rmb/pw6GxAlTyikK9uRa+VgYOPLsyZfEpYf06HUh8rTBleUQbww/iTw5M72X",
-"bqF5N+siRY1DbETKYJ7mJ6vcmSAyjx49hhGk3Z5Zs8Xkj1TWTEhL38lCaSv7JWMgYMwCUyk0mzpNAT+uheI",
-"2wi+fz6VX887YAlLyWNxPbXLq4i+yjl6VaMcvEk8iiDiQpbHiRPCZwIqIfN+5b1XaE2AZr919RCIJTdSSIN",
-"GSj/EvSmIrA4N36wKHX9aIP9RB6jeCPNouLFvH+r/BdviBo6VkT8qk6Xm5iKlyNwKGNYri8S82UJfNkM88E",
-"sv8QWBoraLiwC5QmHKAb989pew72GjfAtf3/cPCRRI/KlsrbjonjM8hiTqWIApB8twW9oy54iSCuATndKPP",
-"6b9FqDHZW613T056ICFBgLpys/GcgutoCq9Zo4168UXHkqQPW9cJJ1lir91KLxMKlF9SaicH7KMaNCq4Nv/",
-"2jtcJ1xTgUg7sSfncxvGqFMGExCFNTQm+KTQZyx9c8aQE+SQ2s4pcXGZn1D1hm6RGS6rpwP5Xvt+jz5mk7E",
-"ZGxY4CpFlAkOs97JxUUpKBEyfBUWmvGT2wjSnhtEVLLEiXBCyJuOf65W9msnmzNesddUt/RE6AAAAAAAAAA",
-"BdMxKlPcGwcbpmJEp7gmHj51U270ZD0ZIfXt/MpSIa8kJtzWmY46qDpTj7ht6gexH4C+kj42HLYFUvKcEYY",
-"+3QCBw7ZCWiXaHvSQ2LY+GMM7J6Hy5eIDxCSnH2Db1B9yIXQuSogIBHU/AX0kfGw5bBrSTA4vsCJrDBzcXa",
-"YuADlZz+139fIbPke6vhkBliYnYmmPM1JKPSB96TGhbHwhlng6AIs/oDqRZk9T5cvEB4hDnGLPmBgcj1lOL",
-"sG3qD7kXJ0f6+R0JeNC6EyFEBAY+mc7fa9DzAP9eLvDPX36H0t9aPIXLiYETGMdoXnaQjlVRs6QU4meIlJe",
-"kIHO2W5t4etDsOSKsnbm9Tbjin7WS//Q5dKgLQpQ+M9lbDITPExOyrZdGEDgV0nUww52tIRqUPEQP1znWHF",
-"X68JzUsjoUzzuEUJ4mzRIO/BkERZvUHUi1bcgPDyMbiXKN56uArpyk8/kr4RRZmmU0ZH86qUCVI30Qs3A9t",
-"5PiuKMXZN/QG3Yt19suSycdt+pKj/X2PhLxoz5Dv2LJFDBk3mwb7USTHeWqoFF5s5XcIjf0isSqmpprQzjA",
-"UF2cW633q8PbsZTBbINniU9GkgCrHjNS8l+dRuJq/xhmqJuHJYrQvOklHKqk/hz2fdIaa2NjSC3AyxUtKhe",
-"EZ1Q8E+zvSETjaLc29PY8iKn8QDA1MaHcckFZP3N41RA41a45sr81P5xaI76fPkHz1s7UuF753KcNc823GL",
-"Coa0fnOrHZdhz4RGzWuUO3aDQO+CG/gnD1YNVFOLDEOYGsn9HPtgX+YYM7XkIxKH8VT3HKtTfpuIgbqnesO",
-"K/x/Nfg41s+bjRPc/QBPLb6oTu/vpXLsDtmputlKNK/fS/SJy+8Jbm86DIIizOoPpFpRsTBp184UK7bkBoa",
-"RjcW569cUI6xMdchG89TBV05TeBvAxmRqj+MJ/JXwiyzMMpuhpuIuEQ2C6lmtCw3ybEmKBJ4ZqM+t+fvjyy",
-"9Hie4oab74PeK0L5gYOxkkN7srYyNmKjaShurTUoF/AH3AqQLA3EwS2P1osrEkR/v7Hgl50Xl06V4jyMmgn",
-"iHfsWWLGDLDEs0UWEqoQ242DfajSI7zMwUfU56JPoLUUCm82MrvEIljOxnlC19hcWjSOgZqlAEsW8CfO6sk",
-"cMsO9nB96PXilj3k1UApRZP61OHt2ctgtqfn80jkCtDHQLLFp6JJAVUdgdcCn4ixJOWKPiF86XpEuLkshEE",
-"oyjVf7BprB2sbpwLfCM46qqvWr/vILMGojWbyyNqJ/Gk9FxWd7Ga6KuyFSK7+w4frXPSwpRfgZIqXlO2WBU",
-"VZSyflCsMzqh8I9ndX8CEPIslGBqQjcLRbmnt7+RBiEWZbywoeRVT+IBgamEN2Rlsd2arpu32veP64YYnmT",
-"r3dw3nR+AEbizKFOgBqXCiZl7j7sBvxDFl1Q/mWq6w/S9B+OCbaS2p9Pzh790gWWW+aBbpHOe5Shrnm24xZ",
-"s2GUHNsaPChUNKLznVntugkHsFagmF3LZe61bjl6eO443afLBLvIn9+IkSRC+BkNgruDgX85qXx6sGqinFh",
-"iHCeDeAehmdJtwNZO6OfaA/+d5VxN2huzjjDBnK8hGZU+bfKOChzYJU+Kp7jlWpv03deUqkBnWkSsL59DY4",
-"Q7j8xyrFHGufo/vZX5Zyn/ue4vyMp1jMJ4Xl5NK2xZzXylZRAYfvzwvRUU901IE7b+xIaqflq2iz9091J1s",
-"5VoXr+XD0ahMFWfD+boE5ffE9zedLUghXouHW4FGARFmNUfSLVFN1c96N74xKJiYdKunSlW/1Fzd5NcmScH",
-"WppUcD1SR1ppiPFN/OI2vTy+Hgu/M6TgD6y7Nn6D1YzmqYOvnKbw0dW7JpJdFoE2gI3J1B7HE2uzn2zp33d",
-"ik7h2Twq+vALOi2TqN38McyneUgVxPN3hdO1AoEz9bZDZyYBCt/9LIIT6kueKPvtRY6+kCMx9KsM+nLat8b",
-"yassaXX44S3VHSm6RNKy8c4aN88XvEaV8wMSHCaWFUnoBAdjJIbnZXxkYrAVrLS5Z2N8xUbCQN1aelkWd+g",
-"TAUF9RpbJei03XctDRfhQfutGzF0wqz6Kj3vVeOOaFNlTYNJiMdYa9uNCuWfi5zClP1m+eZe0XlFbZKdcRI",
-"V0Aod/oEPEO+Y8sWMWRhcKzG9teBFYYlmimwlFCH2xaIjI1V4Pa3/420FLfF0+rMnxEpdnWiDZmp/m81pDB",
-"QqrtbUvQUQaihUnixld8h9ZJA3YxUb1ASx3Yyyhe+wk/0ZJf31g6z4tCkdQzUKAO/47bQMRWYcli2gD93Vk",
-"ngBYWSmkqX+ZH9jnu5qfYy8aC9aRyUN4KAR+hf89J0UxIa201W77XjY586VIPgsRhYwglGJt1wqCklXHDJm",
-"zN5u3hvYmym8snKgGSLT0WTAqrdV5nqeFKy2zoCrwU+EWNJZzG9oAPQ0zjKFX1C+NL1iJcmb+fFE0X5cHNZ",
-"CINQlGstQEutvpEkGtVLoo5d8O96iHiwK2AxXwtvLYbEJnKOmTIelGEbsz7oXveRWYJRG80DxIP8v5CrvOS",
-"RtRP503ouuaKntsQSyl9BqU6VJ3MBPxyaXDAasrFO+89q31zxYNym/Hh6YTDQrQvYuJiaMvYdVuuqPafzRm",
-"yxvpzS4bCX/uyNjnfccSePFIZnVD8Q7O9JtXXxAtFcnq7gQx5Eko0M89NRu3lTPX0AAAAAAAAAAF6RFQ9Ib",
-"Nu/17G8RsP+b0uJIKlJi5K09K5jeY2G/d+W8PJsgs6RBCl50sXLRQOw3SdD0MQNb2tiN1RlQl7dZhlpxXBN",
-"FrG9puDl2QSdIwlSvnTMC9VP0u2ZNxzP2CC5j8emCcCQTGIwToagiRve1sQQF7WGU7INe26oyoS8us0yMDn",
-"fi/TWFo25GXbCf0SieeeIY803KHnGwMuzCTpHEqSeWqYGcivJGxd6D0/5uX3vSesaQLHVplBZ/K/G4merKw",
-"dtusmqC3CUjk0TgCGZxGDQ3AaPafUf3/ef1ktkmnS9qQ7DRCz2rwIgLmoNp2Qb9n6/fwLvCMBJ3FCVCXl1m",
-"2WCwYAGMRlA2gvhKU+6i/QuVXA8QPLnL5FyM+yE/4hE8yyi+Yu35J9MpYJQwjx2K7j7E0XNdBrwB+sE8Esn",
-"qP18tZXlRG/EJsM8tUwN5FaSN2IkWQKsOkmIRWeJxqFVIuob9pzJ6Tn5VZLWNYBiq02hzEcgjyrHlh6y+F+",
-"Nxc9WV+xpSoKNo43oZUnjywYxORw72PbETl3ioxybJgBDMonBQgozDwteUn7LKppGgMzmipW7j0nIoD01ha",
-"w6z5sSME7bPS/A037r8VIdholY7F8FDIyThhCAhLorz0NCHe/v2HVeVk1VgzRn/H7/BN4RgJOi7+oLln1bL",
-"LihKhPy6jbL5jA/HLqG7XRvEJZVMRRZgDGBg1p5eII/FsJTnnQX6V1IU0aRPHsy4sFz79i36YYWn+L61/+F",
-"XamP9U9RrDdQ0tFkWl7kW4ttWETzF2/JP5kG1eYYJ6XkJiGWNtwqyo9Efwcj02KmVPv2J4qa6TTgD6i2n5W",
-"hWDuw1gngl05Q+/mImPWYBjwgRgG4XNGNrpSyXylJ3sXCTw14apkayK0kbyb7jBWAwf/Qr9slXAtTSyTxSj",
-"BTQz+Qm+FdhdUQjZ3gv8yQ2ljhRl827DmT03Pyq2h9LJybHykUTz78WJZwQnYRr+lX3hyZyZiPQB5Vji09x",
-"h5VER3i9oJk8b8ai5+trjpgqhXD83YRs0ADXEhhwuXt0RZTAA0ZWsqSxpcNYnI4lAPTmEUOqYcdI3rRzpwd",
-"c0Oyb96G8MbMU6XaWNVCy7cNNM9XnS4QCIQUZh4WvKT82oVzEV7Qf0P9xqPVU78UIaNXttob08+eKncfk5B",
-"Be2p05gqc2C2g1QpZdZ43JWCcVMhgkX9JuyPd6MnY9NsP14N53Ne8t9RopDoME7HYvwr6qxkc+bRktXOLsF",
-"VyJtBBLRqlWjpKC/49DRDcafgGhWOcBdMhlN066rysmqoGac60LbmV4mqycZNuaVHvBdkTzf98XqdpAqxE3",
-"9UXLPu2WBpOwBhkl23nG9DCfrfztKJFQddx/59vHcxhfjh0DdvpkvBrNzxhAFa1s7vzMQ5rNOsirvx5YrCL",
-"YgIHtfLwBH88kxK6upzfwCyEpzzpLtK7chWyM6FCCQT7NRt6KtC98KWkDnVivGZPgufesW/TDS3cdsu+J7/",
-"WklVWYvesLWJmC8d3+ORBudl1eAj6C0l5kCvpHfVDJaIvosm0vMi3Ftv8WKGzgNvNZNsbcXeNtKYGhYpkeM",
-"XYfbkMqs0xTkrJTVI72D4GJhLyQixtuFWUH4kcvXi3HfjENpWd0f6WanDCywzE8d4Gq33sTxQ102nAH7LeA",
-"TqbBRugO/6ocxCXr1Rlb718WPt068eAV3fOhi/HmRFCeIbq9HgQMesxDXhAjE6g/j5FFJszaeMu+kh78FE3",
-"cjv1ABcr7r5SkryLhZ8a4MOHs8PpRKXw1DI1kFtJ3q5FJzrYN5JhJ2WOc1OlJpV59Jt8G8n9Kl63S7gWppZ",
-"IACZet17KTfeJBvf+1Vj5A9eX4vGdNCK8qSid83I84vX3uYj8OlA5Sn6ZIbWxwo2+IAg0uvmuVgEHS+R+9M",
-"E9Y1na8XG8rebc0PpYODc/UiiOa003f1OJl558+LEs4YTswO3tvmSNX1NJzUT37x/rpxdcUfinczAYMB+BP",
-"KocW3pujpQz4nCAxeeuPXpp4jQxuT8odSGO746jcehtRRmCaf3g/WINdVnWdMBUK4bn7SIqUUEkzos2nQ0S",
-"keDD5F3/U4OE74uIhkDaoy2mABoytIQyOKlIdukLlCWNLxvE5HDKtJggU6g/z0OUMWnYOos7HQUkZpBWUIQ",
-"6RvSinTk75mTX4a3VVeBZ7fdI5F7HVK2zZl3rFquPEs3ZIun5o09bk0g35rHPlOQaaJ6vOl0gEET5i6ByMf",
-"uvY7pbZH9ekM09K05rNzJLcrQL5yK8oP+G6pryLfTMJDn6jUerp34pQqQcUqTvEvL9LTz77WSARglzre7iL",
-"OydtlTuPiYhg/bUCn8rKWnvLWuDX4Jg4n2Zn93Ol2+qEUIgfyF9ZDxsGQwhsGhrdADCs6iQwSL/knZH9gHU",
-"Lbf+rfjRQgTpupHGmo/TEeby/R0lBvO4r3lvqdFYYq2gMQNybkh1GCZisX8VFuQNKSrdpKqfxKRgoU8QXsF",
-"VsW/pI8vh5hZhq+RMoIO4h3SkrCB7PDGn3e0nss/IbzbI4m/eFHcRibfggNbUPk8You/Iug+BxjgLpkMou3",
-"WYqR6pC0Rgyr/qzm0GKwuo4XvbYk5H0BdoW3IrxdVk4zbKZySNub9cJt3Sot4Lsid4TMetlmdpmPFsbuQd9",
-"d1sr/1761WZBtOIvqsvWPZtsdYvviAQmrYOXw8XaZsIAvoBngJm02TZRQAAAAAAAAAAdw3hKr0Wpj7uGsJV",
-"ei1MfZkXI3/HO+pD3DWEq/RamPqrOGWBSUw+xDIvRv6Od9SHRSKn1DNhcrnT+J8PupPpwaT1fiUHhU//PeJ",
-"dWsC+pbxK77xwfagDgg/NG6ROyXE7eMD6jvPf1wXh19nxNOQ9RpbaONuJ8pt4zWKoRycBCre6b0ltmhesiS",
-"N4ahJdLEbKVHWLOOA64PQRVyzs01uSTWZazcZuTTRz/03uual23jCIQA+TFGB4Dh6aN0idkuN2aZfWYiCER",
-"UjwgPUd57+vC4eNFDdaqQk1wq+z42nIe4y1olLJ1N7dsiy1cbYT5TfxW7iQnK7zkc/xVsfXHSTNWoZbJv2g",
-"MmtkH0wFgmcJgSdoQeSo2h8nGS1jQ3zpflWgWm6iVlRo857DeYEpk1MZ3bR0YAMuRb/jIq5Y2Ke3JJtVo7n",
-"yGqGCpcy0mo3dmmjmu7l7p2CMztj+m9xzU+28YYmWPVnu+xpfEIEeJinA8BxnjP8MlNZWIjw0b5A6JcftSz",
-"mOuoczYdPSLq3FQAiLkKUjTO/9Hi2u4AHrO85/XxeXDAoRc2n5KQ4bKW60UhNqeRbIRAlEtVTvzPCfgLYuL",
-"JjBEbU9oIgSAdYyyvqbYlF229PgR43EbzP5dDR07LbWRPSVHsn6EOjd47ZhDsH6q6ruV0uz11yV4q2OrztI",
-"mrWVoG+Fhl48iwy3TPpBZdbIe7qt0PxzcPY+mAoEzxICT0mV6y5yBKRx0ILIUbU/TjKnjyl7CCnoDDFVEaC",
-"B23N0RljwijzN1UrfT9P1+/Y/CahCMt9G4Jk37WCVC3WB646abXQhyJdNsAN6V14PrKfzdHe2dLK6Ac0vzy",
-"boHEmQAljCx8KhXzY8wdXkvWZk3H+22AWX23J6QfP6okPoEwj4hPdDaVUFrsYd4GAWkj5EhWrtgTwvKOK7/",
-"De556baecOLOljNG8zf/RIte7Lc9zW+ZSCamGHhk4AgAj1MUoDhOVcP3GbvlkcHzhj/GSitrUS5FR4zlbsL",
-"ehP7SXgmbFfvZPaoUpt68dH94YstXEEbkorsagfhV72sz87N09I2zxW4wyz5byBpKyHUD4aoG4NoVtnurBU",
-"NJVbAA9Z3nP++LrcON10h6RgQLhkUIubS8lNZFPUIW8RUbRw2UtxopSbUazuz9tWzgOryLJCJEohqqYUhca",
-"OvnsyX3pnhPwFtXViplAAVvHv7ZjCDI2p7QBElR47CQMZWtxsCrGWU9TfFonWhhL5IIWOc7LanwY8aid+bu",
-"0brMgwv4Q1hfjC7/rSZemyfGgboEqfje7xlwdP45JR2XU98xV7a0VT6m0+kLGOmWRux8rKKXT9OOM41iWAe",
-"SEPZ5IifxiCvyIoHJLbtX9jFay2ZoEthQdJIUl6boSI236l4440HHHP9DqzQ7HWlBPDvhm3605ud58z5qsE",
-"52OrqLdMX15/mfDAVCJ4lBJ4LPfQiIzOioJIq113kCEjj5Sc2d1ke7t2gBZGjan+cZNcIcInXaTpaTh9T9h",
-"BS0Bk5ErLcrUR2J2KqIkADt+foFafDar6hQdaMsOAVeZqrlfu9AT/EjA2rvp+m6/ftfxLJkkfBSvvZLFCFZ",
-"L6NwDNvJ4iFlDDWlVGxUr1PuSQOKcZfXGUEMqgXX0h/GsMJQlQoRZ4wfh/kam1nOeRNfpbTGmrYzvBoMO2D",
-"ffuxN1ParvRwGpuKRXyQXp5N0DmSIAUpk6z6hISGO7CEj4VDv2x4x4lur/6pykaCq8l7zci4//WmKFFw3h7",
-"BbLELLrfl9IIbvOoECvNSvI1m0t+DAcnE+msz9T4Xb/pjfBCK+SyFuRRx8aBEOiOHUVNWdHdbUT4mXrdeyk",
-"33AL9JlCENdh1DyER1C7Bgu32T/OWXHpMqsuTxBL2jhYyMfeYnwmS+Zs8K68bo2ajA8U/JYTzqybJIOMSAF",
-"lffFHah06NpkOT+NdbeQkMt8lgLQAR6mKQAw3M3CZuyGRZlTa4euM3eLY8O2RNZ52M7KTCcMf4zUFpbies8",
-"HxntTP23cis8Zip3F/QFJt1Ml2Gxyk1lBKgf/nfqOmjlgqLo0dSjf8b9ZdM7l9RyJ9fYxZ2pkVCAA+uk7xD",
-"mXWEpVrJJLn9KQlaRiaNtCEejfCyfBVOenZunpW2eK+mQeo0YezgVcIdZ8t9A0lYHirjYYlZ0aEKoHwxRNw",
-"bRNaX+JuwhoO+sst1ZKxpKrNu/PHOWDOySgAes7zj/fV33Ck3FhenbY24dbrpC0jEgGRCPkP/Elx5cMihEz",
-"KXlpys/yW5xs0OZsijqEbaIqdrFJQs7C54P5FP/M+CCbJScJPLSyj96MqK95fG1+EHY4croEJ9FV37fj8q3",
-"S3Y2DGb4x1ZhyyCqWGHQdR4MG0AbFt2UNLEN5iW8M8N/Atq6sMs+IlW/zByOUikBKnj39s0lJOAAxeFQ82A",
-"GR9T2gCJKFwum/kuWhHSOHIWBjK1uN/kRZKsxu8gJb8tccLhJU3EYxr1aBV/1T4HRniXCZB8M9tx/D39yuT",
-"Kz/tjbTBPLi8TzOfHxBW21XeQajjY+h/Yq6fukiyghyHFRazgl27AHBlyKEpjNFjmfS6ltX/b8euhGSEfi4",
-"FpErWTvk9GBKP3aaQ65bJeOw0N+LcarrGSANHPM7Ba6wr6iqfQ3n0hZxtWkFR0iXv/4TLM2YuVlFbs7vtdI",
-"WHOzhX6ccJxrEsE8CZGRttYEZwKQhrLJET+NQeeLU+OsKSt/AAAAAAAAAADlUZmWzImUFsqjMi2ZEyktL/K",
-"ru1WavTuUR2VaMidSWnEW/Mz+rsZMXuRXd6s0e3e7tc7hZ73vYSiPyrRkTqS0zd5TIqjHMKLiLPiZ/V2NmQ",
-"d9YQ8x1BmPvMiv7lZp9u5ZmTZ4muBi+HZrncPPet/DkzoEVQPzS9U7jQIxmrqRXd7cm6dWMwVL8S4wHAOpu",
-"HAUf6mKzyAsZq/KZ2uoncMHSpv+/WQUVxFlaVVGMY7qKoA4zND9B348EwLIhf70Nen2U1ETMn2h/9mh+qhn",
-"5xzEPPBjPqtuiNKHRa3fzNNns2IUNEkAWvOlTeaf8lXATp6otwZkmUnaiHYaBWI0dSO7k0uc9Pj8t628uTd",
-"PrWYKllnortlh756A4l1gOAZSceEHDPmuytvl9yj+UhWfQVjMza/Lg1PIzNpelc/WUDuHD7vEVkCcshMZlD",
-"b9+8koriJxZ2RtBaE6NMrSqoxiHNVVL4MzGq6VQUMAcZih+w/8eOUgATc3hmhuTZcHU67Psuaoxp7FYkYm8",
-"Ic0NX433JvLYmWs6PtVD93Z0GIJnOjgvDyB+59QYXSqE3NQJAX7yZH2IsmyyXJdh2UYzefKgRZSgElUcQYI",
-"gkSvu//KU5I/f0rqZlyfG6tp8V+ovfimRAgUDjErNC/QHjv8mpBhtW0l3q0DBq08+TOHp52cO8yfQmL2BAr",
-"3RQtUTQSvsaLftm+oVTYnblYieRPg+MYJ680Y9rFhUMViWQ7ZQ8rrkPjkNTwSU31ccXAjryhXKF+CO/ZKec",
-"6+kwuv4GWLZQXGkRLbgNr8kwoYhs07bzJybaVprN4+q+ShLP268cwAX/S2QIEUnZnJOD/Ul7wqn62hdg4fW",
-"XsGO23/mgl2ia2AOGUnMpPYNBb07LMkKG3695NRXEXNPGNhX9jIU+LOyNoKQnVoB59RTMbL4X6UpVUZxTiq",
-"q3H0zI8JsT69XgZnNFwrg4a7V/6ikKIXkADiMEP3H/jx5bOp1TuWbOfKQQJubgzR3C8Qm/iihUXK8b2Y/g+",
-"5vPkU7AFowzAo7zseqtOWqpXU3k8zRVojAcJl+v2kPZ7uo4CrZDLxF3q1r1nPiaSNx45KCFYfaARTmNkyUk",
-"pr9xhNPGPL3Kd+jFsTkWBn8uQxYPbA+fE+baV2TXU3EFnQSheoJK6GlVneAYfWBT3Aw2M6YoecqwxK9yzKM",
-"JrPlQMtpC9hA1lZirmyAJOo4gwQBInlwjF0wJmQn153/5WnJH/+uyZmA2ut6+iU1M24PjdW03GFVC7yvsLF",
-"4r9Qe/FNiRAH7sntPcQdBigcYlZoXqA9zU37wKTXNCt2+DUhw2rbSpOprLcP409cvFsHDFp58mdZCp6alvB",
-"mcQ5POzl3mD+F6x6ir7sRq5PE7AkU7osWqCG9kIIiAoK+mgheY0W/bd9/Wcf1iTb5yVCrbE7crETytfr12B",
-"Al0OQmwPGNE9abMcORaBvfXw8n7GPDoIrFshwJMlo2RkwmCrKHlNch8clrV9YNQe14XX14JKb6uOLgRp11P",
-"2x0a3RQNcI5CO0irtjQk6CeIas6zv9hCyV0MYf1GjCSs7i4E+OhhVxS3wX8gkTUxcQTjGiUayZuf0YW1a+O",
-"d/fpip9BuR1N87yJbAps+BxqKkXlnnrX7sGREH8jQTK/WAfc9rdXiQqW5rtLWDZsWw9wd8LMIEOppMsiWHE",
-"bpvg9Xe7R5Q14VT5bQ+0cPp0Ep82PZIgosvYMdtr+NRNXp5XgFnehBewSWwFxyk5kCUPCl71D2nImsWks6N",
-"lnScPg8LokUPNfUNr07yejuIq1i2156yosnJp5xsK+sJGnfyhfVHI5BbHEnZG1FYTq0CHMCCPZDX7GDj6jm",
-"IyXw/3rbzoOQB5X60PYPGrZV41jpoml/BXeGXWJew5HQESkTmwql9GMzTBY159ZMOtw3zkyzsCmJ/lLLx08",
-"ax1yY/YU+G3yi77qYgJrV/bevRkp144Gb0hxkL3BofTE8yQKAPpEpV1l6IOU7P8Qk4SPPnuNGkEKEkO375s",
-"1s6GpFi1SoNDiOD/apMa2ieimpUxUoMdsuT8zgN000UNLlIjVR4nqphoNHhnOHfwdr8P/fnPynfj+Wmmy+m",
-"aL1wzx0udg27AyXWhEK+lPpqFnbBEoGgRzRDb1h+STkGVrxF48sQktXo6Vx6p9gLlINSAJSxo9VinQcZDd1",
-"rTCP/+DO2aDLn8EGtKi8E+n6xKyZaSU1u4xmlc0PQIaZ6WMeMaWuU/9GLedlw8vg3SMoSYiwc7kyWPAw3NY",
-"WChA99bsgfPjfdpK7QnQanWxU977mupuILKglS5/u/e2fikBOFBJXA0rs7wDtRjFm+c6KBUOrQt6gIfHdOv",
-"8kuxMDlNixA45VxmU7lkhX6DB1R16T//yo8d4IYN8GqM6UbSoF2o1UZHq4TKqUdAACHwtuz5Ha7XGnUoG0S",
-"aO5F8Lho9FMKEW9LDTFfgLREdtJh+cbB3XfWlzHG8nyDIs8OXQ5rPeHd5bXoV8DuX4j8LISfWa80M6DCkuS",
-"HWSpmuVv+LB4YSJmT4Et1tcv2zIp5J70sipxH+h9uKbEiEhLjhgLhKGNw7ck9t7iDsM640KTbcBrxpQOMSs",
-"0LxAe7VpXTocNdRtmpv2gUmvaVZ/ym8XhSb9QOzwa0KG1baVCaHy1EpcIoMmU1lvH8afuMMCwPnTTwuueLc",
-"OGLTy5M+d5peOeHtw2bIUPDUt4c3iV0Wlo+FoWfQAAAAAAAAAAH+du6PRNu0K/jp3R6Nt2hWBp8zkcls3H/",
-"x17o5G27Qrg+hVLZftWSECT5nJ5bZuPn3SImo0gIM0+OvcHY22aVeHdme+XICEXQbRq1ou27NCeUwQ+f/tX",
-"kgEnjKTy23dfHsDiTAaWzB2+qRF1GgAB2mFOf53uTbqY/DXuTsabdOuj0oCmMtbPqQO7c58uQAJu3Fwdd9o",
-"NuSxDKJXtVy2Z4VzP+wWjYCKj/KYIPL/272QjQWbUS7tUJoIPGUml9u6+Xeh3oVG7Vfz9gYSYTS2YOyJm6n",
-"C5YCN5vRJi6jRAA7Si9QwCwA249gKc/zvcm3Ux3XuR0yjWznNizzkL2f8f2n0oV+MtsqSY3UGk2jEkaV8Cp",
-"soyxWnSHZ3SQqhISfLQgjUsQLwESZIiXN95oJKEVf27sZFU3z8XXPXODLqShY+DEqDkTt8+zSN7U91SSfMK",
-"/Jw9NaYESEhj6LWvKyRohXwP20ffadPH3GYofsP/HgADgUaWN7KlQp7610UfZGsxwR25resp0HNhdEqU978",
-"dtL6TJHwD8qb2Iees5o7Shjs+AMIOep89eZ5pMTdmCfC+QY5f35JES/zgwCBCfAnxZD8nTqqIREomn069k5",
-"TSh+FAqdN7YJ88o9/dW+HtvxxuwDo1CRnypyxgU8YwBWRq67+0qNjxKdGpBZ5yF/O+P/SaeRz/B/OEtjoQ7",
-"8YbZUlx5feBLu8o8jN6gwm0YgjS/mVkZ1yWRWm8xQ2UZYrTpHsa6vqNfp4fObukhRCQ06WhZEPr+GSeHuPE",
-"KhjBeAjTJBvNdimMRWhmhLn+swFlSKubXpBb9Sjz6Ts3Y2Lpvj4u5NANih3zhWx5q5xZNSVLHyZM8rHBaPB",
-"dhiUBiN3+PZpZwm9gKbOG2Ma25/qkk6YV2VGJElDeHVd5OHorTEjQkKbfFMO4BWvSB5FrXlZI0UrYdgW2og",
-"VqCHgf9o++k6fPp/iYZ0reHI04jBD9x/48QCdrfhUzs4cChwKNLC8lSsVY5ePE22jxh+dRSxwqQSAu+LYl9",
-"N4Mm2xY39bNwppWq4c4uCU21+3pGEwwv7v3zSQHq15XT7p2ZqfCrW5TLLuheCXDhqdhAOPZa7wbSSy6ewaM",
-"0vO9YQE5puUhyqH3zP55Ak8iVbp3vOZ2x7jYmldx+ZGpUCzX7DNZ+FppMEEh9IYfNIHEDJq2G2SlUuzaVMV",
-"Eg8u6GJfvh+TqOIMEASJAOw1Wa/BMmQKked7xfWy5z7uesBmJIQKNG/dDIJW3z0rEEC3IYfp0CGVeUlWPt8",
-"6Qurk8vXv6ddIa0M+EZ2y4FcU3oWyTIQNXWkMp9h4BI5pFpEce6kyY2OXNtCf22lUfOirazwKX7l2R2EH58",
-"/XJpE4/LxEHuHLm7lbcKBsuvyExsbLA72MEY67FOlpiQySusSJUspYOn+wRS6eLiphSK86syWN+1elpb+K2",
-"/pCYU/GwBdgWZNXosxBsKy94QyV0z4tFx4wOnjZQ/81dAS6++08Yo7X1YwW573FQjOn1yH4wlj5kHbhzPK3",
-"tr7c1br1P8grBX8EjBg1SYzJm3bXLyo2EXI4p+HCIEvDUFKTYUEUNF7r8UJXrB61+ScVMAybAcpknLbhOnY",
-"LT11iwVgMnGgwwNliiTpxYrFnFYb7YUZ9zvquJSpXq3ezKIxPHtcoQ8y1N+zP4cVJTRL7CL268lYyj0CrbI",
-"wfXMxd48ioK1n4s8BYa3kdtPIyZ5SPC0aD7U36LyzacG7nMCgNRu7w7dNPtbblP8YA2c4SegFNnTfGsY/Bo",
-"pyr2sw0tj/VJZ0wr0srhHb0q92lyoxIkobw6rq1EfMxV8YHsMjD0VtjRoSEt15q+LJwaY42+aYcwCtekUlk",
-"Hb8RHbObPIpa87JGilZDF+FQY3BnXMKwLbQRK1BDvS2WF8AdvUnA/7R99J0+fb9iD94lq9N3PsXDOlfw5Gh",
-"BWHiZhsYJYsRhhu4/8OMBu/w9Te7GDgs6W/GpnJ05FEXGSgpNq9QeOBRoYHkrVypHidPDqB26IMYuHyfaRo",
-"0/ubOkhAtwYDVRGM+4AS/ZQy6FdBvQGTRJryK4/6JCA1bQvwNcc3TuXK1tITZH9G1o0vCalZbCgGJTV1Zx5",
-"Jm3fSzK7dI1r1p3qfMTpYyZsBTWbqgGXa9dHlfJZOIv9GoBKFTfQf7ChwtVhv0rykIEPyobRogbdOk1q7yK",
-"bGkv3irUITHPuBkzIKHPdoMbQgrt3lLNIMp05+df9QHEuC/Q+CBoumdpGT3yXbqYDV2ZvsYiJyOujK9TzKO",
-"A70r+9GTT3B1U6S/CidlZJKqelvRjuia5ET1Hwo6wpx7d2TWZua/Yg2Z65K9UpaVRRBDQL9eR2sz/swEZOp",
-"tbazNXc0INhCT2iPSidOCO2iQrl2bTpiqluZA0t+VLICQeXNDFvnw/W4PncxSIkTUmUcUZIAgSAVnMfrrxP",
-"v8L2GuyXoNlyBSn9gn9UlMlHiLP94rrZc99XVJMKTpTInfc9YDNSAgVaKNoO26ZPvhi3roZBK2+e1ahJ6Kn",
-"fIiWXCCAbkMO06FDXx3V4N/lTEkq85KsfL51hFVuKQ+tiJiO1Mnl69/Tr5GrVF5IDuVCm9aGfCI6ZcGvqRv",
-"HgetTLKUovAtlmQgbulchsMZIPvaw0hhOsfEIHNOthfUSID7x2SwiOfZSZcbGU7+CVYNTK8wubaA/t9Oo+F",
-"HwG5xm5UXy0FfXeBS+cu2vymzbxYif5wAAAAAAAAAAAPUEklguvLBreZ584nqhVWuMmu66VB3l1vI8+cT1Q",
-"qvWBzhrnNv+G72LooUmj+P+vX6mF36hX07Hdu6q2s1cYseD6jiC4+DSrA9w1ji3/Tes+nREYJlBhxGE0lMe",
-"OB7JEXHWwUYWonl6/Uwv/EK/nHoISL2kbAMsju3cVbWbucSOGNjH7bUFdOWUQilX4RiR5WFGuw/PpCFYH+C",
-"scW77b1jq5D4pQEffM2Z+0JMUWjozk3pCyzrmikmbMv9vVuWmSW42bTd4WRYi4qyDjSxE8yIXqBHVAvhDn2",
-"kOBqujpw2fnAqU840bvfQQkHpJ2QZY9OWU6BH3uuh3SC7zORGqvXe9KmFhPxYNHDGwj9trC+gcxLQdg0W3W",
-"KG6Egr95OgWoU8WmKXKVKbKw4x2H55JQ8o2iORHsPXzsD7AWePc9t+wy8TLu/JKb9tHXiUBpleK27Jat1mI",
-"6zpmzPygJym0dGY5+DJ/BwjEDbVi3MVTFSENQGZOnX2pkfml8qaMihN5+VD2NNSkr8mS3GzabvCyLJIpaEg",
-"23g6cL1fOX0h/UdIvosrNEFHtYkQuUCOqBfCHRNtUsfIrTDc+0xwMVkdPGz4mGJ4OafOrVaqCcLQ97k5VX4",
-"bi7BNS/ughIPWSsg2w6NQkZ8qcsQCDWL6JcMis5YOtuhso5hBVhQPLviAEjU+F9s8seCox/+56VcLCfiwa7",
-"o9RUJpQkKpT8fdH5PHP5FME89W833NUOIhpOwaLbrE4fW2pXqXSAUJ1JRT6ydEtQoAhhqLnbZ0pDLtoGLNw",
-"eCn5v/pAnczIlIcZ7T48k4aUch1/ZhIvNv/+h5HcRjLT/wuDA4RojmML7hfrlZ80iwsbE3nNsYg7YJeJl3f",
-"lld5gYo0FL8spbt0cKxJRanYg3ekvgAlEypC2ZbVusxDXdbaQsfzrPmvFzJj5QU9SaOnMbf3TF3zUWafhZz",
-"2tKMm8pxRjr/UGdQwaasW4i6cqQhqfwSrTiZbycRNbxGndixdx5l9WMfM3p/JL5U0ZFSfy8r7h30E7m0KZM",
-"nsx+2+Gp5nHf6OjQToXJLnZtN3gZVkkTN0mhc7Z6U/AR8g/msQMTzVDWme0eLw1PQvnw9h7kDXID3Wb9scg",
-"XkSVmyGi2sVesZEJeYxmdePPNx4HLTk74zozjF8DhYuItqli5VeYbohDrfC9eSTefKY5GKyOnjZ8Uz2K9KA",
-"ihhffp2RO9D9jFyqj9hbag9OqVAXhaHvcnaqhAXMwVWAtwS2bnYoBfcjB2J8P0i/BeLvQ17J2Q8JUuyXTIC",
-"5tfuTQqUnOlDljAdBcTVzMF9+xbSLrS7K2gP9t1+/Z6pg8TwZbdTdQzCGqBq5xpQjinRoKB5Z9QQganwryk",
-"u8ZJqYvYX4IAaNyu8phiwyT+1wHetz1qoSF/Vg03ACuFt3T5IS3jDT4Z4f5Ybd5MGo/qUXRzXF415vFRv3N",
-"hHxFw+v6TaYI5qt5v+eopv3iOSGRWxgbg0QuXzAEVht2QLwHHrjmcPraUr1KpQNwD97A5WQZs4TqSij0k6N",
-"bhB9Ouqy9H+vvk9RUFukCDu9m0MZOx76+Uhh20TBm4fBS7XJDaEhdQDlh6K3SHEClOZTsP4oy/BVDnKSCLl",
-"7/OUNpoBB2cEOJKOU6/swkXmwoED5slAri3JVumHvqq72SlZuc6bKFASL+FwYHCNEcx/7iApVQ/6B3fU+4j",
-"ngZsCJ9urwcIDcMkhY2JvKaYxF3FsMiYMJNrcervYR3vOzyiatIgOXkwk45wMQaC16WU9zAMR6ZBrjvbLo5",
-"ViSi1OxAusxStvr6UPDRQMhYQK5NFdG1zMoYgPGlbMtq3WYhrutsPm5PPg8SWwey9KGEWw++B0fwM9x1sw7",
-"zomTbzYIJ5vNXYEmVrLVWmNv6py/4qLOYLv41d9YUAyVQWCIJd0tNJaVcsFFZ9/1OKcZe6w3qGE7cwsyzI1",
-"aoNNSKcRdPVYQ0IY7jT2HpNF+tFA31NfTRX1gQn60bSGHiJraI07oXL+LTshqLlKufiV8o9DHAtnqJqixma",
-"e4Kyo8EXcNhDJfQj/FZUTkiK2DkfcO/g3Y2heSIxy3bWIo1WfZhOqX51XtZA2Wo/ddpyzKP/0ZHg3QuMnr7",
-"1B+tyJ5IcrNpu8HLskiHt/vj73cCIwstFVm7aucj/imHAZXWV56Aj5B/NIkZnnWLAicaNan1+RHsnU4oTPU",
-"MFX7FYJT8AemBltSXLhQBHIUEjLmSpGqQH+o27Y9BamUbeG7DM/HXG71vEGJsv9fuuf1ITNAPvGIjE/IYze",
-"q8lyeBqjZxWsafbzwOWnJ2xmprrlZ0zsat5vFA7CDTI60T9dK0Dm+TEG1TxcqvMN0QmFdXkoGMbXsUzbko1",
-"ZGIe+HJK3D7LTj4THMwWB09bfi5d6IAM4HdkzXtTLpnnDiTwOne4kkgiC6+T8mc6H/GLktLW8TGw3ZFx9G1",
-"fpLek0Uy1ScmvGIjPzqdmoLQYQ8/z5kI2v7dv1RDA+ZgqsBaVLYHdDiEfOrpyKFjRiUjpOk9pfEeC58UgrE",
-"/H6RfgvGCRDuN/HE+QXahr2XthoSpdlSr97WoOBkd2DEZD/wl/B0tNYtX0plMoFOTnClzxgKgppcOcV16ss",
-"sqDeDLCWdXy98JcpMn2+ex10HPN0vYy7EiRV1vZWR72q7fs9UxeZ7aW9shjR/FLmclfTbzvppgZ9B5pKuQJ",
-"tAMXONKEcQ7NQyp59hJ6oeFAAAAAAAAAAB5iTUwyPBuf/ISa2CQ4d3+i5teUFgRs4GPtkGYc+ViyfY/dKi7",
-"FQy2faQq+OMEvzcELR/IK/TRSHX+FGi07BymDHchWHwcctmH7H8IJA3BWP5lSjjs/a8n+khV8McJfm+DwWD",
-"AD/kQEAhaPpBX6KORcdMLoJ8Yze6Bb76IO//gePjmi7jzD44Hc33V6KsePYYK9ODYY+5T+Q7Z/xBIGoKxd1",
-"DKIIDq7M78y5Rw2PtfT4VCoUAQCzEw9JGq4I8T/N6NGJ/QR+OSoQaDwYAf8iEgfwr0sNcCT197J+t4/PaeF",
-"wKu3kg0BvBoiTWAGGwXQ+nwvLUopOctlgLffBF3/sHxe1ZJIb8Or47wzRdx5x8cD4lEIkEv73JwjWk9iQQb",
-"ozj04Ai5zOvNR397VumU+n7GBvJj2VwKELl3IWh5wxLdVw6oXUkL4rMohTMDGVPzAKn8ujYpmwNu1viXKeG",
-"w97+egR4c0XgH0eEKhUKBIBZiYHMMd7Ho5gwfg7DCmUwBIYn6OfephPFP9nGiqfnc4Px3CCucyRQQkggMBo",
-"MBP+RDQHWPtjH3FC0//hToYa8Fnr6Hnd1RZ/XwwfZO1vH47T0vj8fjwTAdU1AEXL2RaAzg0X3ViKGg/I6ue",
-"fiXaYsIX+YAcaJZQ/gxmYvq/Akb6YIY8mPJOdMZ7GdvLW56vdpa1xakW0p1KjSonT8FGi07hynktjAq5cvp",
-"VuCbL+LOPzgemRIa0gbPVmESiUSCXt7l4GsAcbKWLoufGtN6Egk2RnFjWk8iwcYoDujBEXKZ15uPkUgkQlE",
-"n9fCVZTuKetMkuOzsDrqyI0rHZ3dQ6uoy+UYe/mXaIsKXOe5C0PKGJbqvl8vlwk7V1NAcULuSFsRnUWXZjq",
-"LeNAkuYfSRavXA2GYYfaRaPTC2GZPm+gplIQWY6m/POq3Ra+ebvMSaMsmmCeI18ar6Och2aa6v+qIoe/cQJ",
-"5rKatgViBQKhQJBLMTAbYOwMoncqr/mGO5i0c0ZPp+R21IZPXdBbfISa8okmyYUeydbAtT1WZ/geQtaxUbY",
-"5mlMO5I1KKfiRFPzucH575vNZsNxMZeQEFY4kykgJBFp3w2j4dBKbhgMBgN+yIeAYYUzM7Y46f/qHm1j7il",
-"afpOXWFMm2TQBl7pHmw0t5UnuM3Krxd2LNmWoLPudzDi3HCEZy1U8Vsjsnazj8dt7XpUUmdM5KxUhHo/Hg2",
-"E6pqBnBvKzqcrI32Mr7XuCPhmXGqLYS0rOd+iROYYbEt/EaeiwsyvaL6oWmWO4i0U3Z/jg6o27jccJh2tx0",
-"+vV1roGEvjm2x0m1HkW1fkTNtIFMW9czCP+ImtO5MeSc6Yz2M+dTqdDbsO2sLXJS6wpk2yazEB+nOFjAuVH",
-"2yDMuXKxZD5SFfxxgt8bOn8KNFp2DlND9j8EkoZgLMhtYVTKl9OtseRUZAJnvdLAN1/EnX9wPLm+avRVjx5",
-"DMiU0pA2ercJLrAGUxW7DvU+BHlzumhL1NggrbCZqfIq9k3U8fnvPC8QaQAy2i6F0NKb1JBJsjOJNL8AU2p",
-"zinca0nkSCjVEcvz2rdEp9P2O7ELS8YYnuK8KZgYypeYBUSQLf3PFoM9Uwi+rsOZhdqkFY4UymgJBEONHUf",
-"G5w/juzSoosNmFNusrDvxz+kSPFzu6g1NVl8o23Z5XkHZWc8jz8y7RFhC9zRXX+hI10QQy3Fje9Xm2ta86f",
-"Ao2WncMURQRc3c6McJU8jWntBnwe6jigdiUtiM+iQSlDFeV4od3Ksh1FvWkSXLM7KHV1mXwjwugj1eqBsc2",
-"7YRblInHfsjD6SLV6YGwzSXN9hbKQAkxNXmJNmWTTBDTXV31RlL17v0wJLQmFDvrGxTwdwXVghTZ5iTVlkk",
-"0TT/C8Ba1iI2zEa+JV9XOQ7b3i12U9g/6Suc/IrRZ3L9rARv2d3odBpUvdo82GlvIkMlSW/U5mnFtDh51d0",
-"X5RtToOqG0Zjj/KsZX2PUGfjEvIHMMNiW/iNMwx3MWimzN8tbjp9WprXQM+I7elMnrugkeqgpX6ioD92uQl",
-"1pRJNk2jbRDmXLlYMij2TrYEqOuzUX97hsxYhcxVUmRO56xUhCzbUX4vXDr7p0APLndNiXreyToev73nBa8",
-"aMb4gpSrr1pMEjuhVRJRdCFresET3FSSBb+54tJlqIKxwJlNASCJZJUUWm7AmXdK+G0bDoZXcqzcudgtR+6",
-"Nbi5ter7bWNSICrm5nRrhKqZnwPj9XC8vQEMUO96dltNQ92sbcU7T8rbTv9hSj2oMmL7GmTLJpAl+mhJaEQ",
-"gd9LnWPNhtaypNX/LoG06qk7Nxn5FaLuxdtpe7RZkNLeRKhw86uaL+oWthK+56gT8YlU9GlzvhedaQqWJD+",
-"MK4b29g7Wcfjt/e8obJs9ytHmcMqKTKnc1YqQlOgB5e7pkQ9V40YX5BSlXUuBC1vWKL7CqWfcz8As0iL3BZ",
-"GD8hDJvStxU2vV1vrGtRMeJ+fq4VlX9cmz8e6NuQmXhP/D0pYmyJzDDckvonTW/o5B+xO56zQYWdXtF9ULa",
-"noUmd8rzpSWVTnT9hIF8Qg3dJ/ELh5u6tGjC9Iqco60s+5H4BZpEXW4qbXq611Da9rk+djXRtyJPDNtztMq",
-"PNdefiH87zGjCyq8ydspAtiVSPGF6RUZR3euJhH/EXWnKcxrXc0tbjjoxyyvx9BaavalYeP17EH1FEO2d+P",
-"oLRVKIfs70dQ2ioAQYCQwQILnAEgS1AAAAAAAAUAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
-"AAAIAAAADAAAAEEtQAAAAAAAAAAAAAAAAAAIAAAAAAAAAAAAAAAAAAAD//////////wAAAAAAAAAAAAAAAA",
-"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAhIUAAAQZyRwQILFCRpb",
-"nRBcnJheUZyb21TdHJpbmcAAEGwkcECC2Ioc2l6ZV90IGlkeCwgc2l6ZV90IHNpemUpPDo6PnsgdGhyb3cg",
-"J0FycmF5IGluZGV4ICcgKyBpZHggKyAnIG91dCBvZiBib3VuZHM6IFswLCcgKyBzaXplICsgJyknOyB9AA=="
-].join("");
-
-function _base64ToArrayBuffer(base64) {
-  var binary_string = window.atob(base64);
-  var len = binary_string.length;
-  var bytes = new Uint8Array(len);
-  for (var i = 0; i < len; i++) {
-      bytes[i] = binary_string.charCodeAt(i);
-  }
-  return bytes;
-}
-
-function getBinary(file) {
-  if (typeof Buffer == "function"){
-    return Buffer.from(binaryInString, "base64");
-  }
-  else {
-    return _base64ToArrayBuffer(binaryInString);
-  }
-}
-
-function getBinaryPromise() {
-  // If we don't have the binary yet, try to to load it asynchronously.
-  // Fetch has some additional restrictions over XHR, like it can't be used on a file:// url.
-  // See https://github.com/github/fetch/pull/92#issuecomment-140665932
-  // Cordova or Electron apps are typically loaded from a file:// url.
-  // So use fetch if it is available and the url is not a file, otherwise fall back to XHR.
-  // if (!wasmBinary && (ENVIRONMENT_IS_WEB || ENVIRONMENT_IS_WORKER)) {
-  //   if (typeof fetch == 'function'
-  //     && !isFileURI(wasmBinaryFile)
-  //   ) {
-  //     return fetch(wasmBinaryFile, { credentials: 'same-origin' }).then(function(response) {
-  //       if (!response['ok']) {
-  //         throw "failed to load wasm binary file at '" + wasmBinaryFile + "'";
-  //       }
-  //       return response['arrayBuffer']();
-  //     }).catch(function () {
-  //         return getBinary(wasmBinaryFile);
-  //     });
-  //   }
-  //   else {
-  //     if (readAsync) {
-  //       // fetch is not available or url is file => try XHR (readAsync uses XHR internally)
-  //       return new Promise(function(resolve, reject) {
-  //         readAsync(wasmBinaryFile, function(response) { resolve(new Uint8Array(/** @type{!ArrayBuffer} */(response))) }, reject)
-  //       });
-  //     }
-  //   }
-  // }
-
-  // Otherwise, getBinary should be able to get it synchronously
-  return Promise.resolve().then(function() { return getBinary(wasmBinaryFile); });
-}
-
-// Create the wasm instance.
-// Receives the wasm imports, returns the exports.
-function createWasm() {
-  // prepare imports
-  var info = {
-    'env': asmLibraryArg,
-    'wasi_snapshot_preview1': asmLibraryArg,
-  };
-  // Load the wasm module and create an instance of using native support in the JS engine.
-  // handle a generated wasm instance, receiving its exports and
-  // performing other necessary setup
-  /** @param {WebAssembly.Module=} module*/
-  function receiveInstance(instance, module) {
-    var exports = instance.exports;
-
-    Module['asm'] = exports;
-
-    wasmMemory = Module['asm']['memory'];
-    assert(wasmMemory, "memory not found in wasm exports");
-    // This assertion doesn't hold when emscripten is run in --post-link
-    // mode.
-    // TODO(sbc): Read INITIAL_MEMORY out of the wasm file in post-link mode.
-    //assert(wasmMemory.buffer.byteLength === 16777216);
-    updateGlobalBufferAndViews(wasmMemory.buffer);
-
-    wasmTable = Module['asm']['__indirect_function_table'];
-    assert(wasmTable, "table not found in wasm exports");
-
-    addOnInit(Module['asm']['__wasm_call_ctors']);
-
-    removeRunDependency('wasm-instantiate');
-
-  }
-  // we can't run yet (except in a pthread, where we have a custom sync instantiator)
-  addRunDependency('wasm-instantiate');
-
-  // Prefer streaming instantiation if available.
-  // Async compilation can be confusing when an error on the page overwrites Module
-  // (for example, if the order of elements is wrong, and the one defining Module is
-  // later), so we save Module and check it later.
-  var trueModule = Module;
-  function receiveInstantiationResult(result) {
-    // 'result' is a ResultObject object which has both the module and instance.
-    // receiveInstance() will swap in the exports (to Module.asm) so they can be called
-    assert(Module === trueModule, 'the Module object should not be replaced during async compilation - perhaps the order of HTML elements is wrong?');
-    trueModule = null;
-    // TODO: Due to Closure regression https://github.com/google/closure-compiler/issues/3193, the above line no longer optimizes out down to the following line.
-    // When the regression is fixed, can restore the above USE_PTHREADS-enabled path.
-    receiveInstance(result['instance']);
-  }
-
-  function instantiateArrayBuffer(receiver) {
-    return getBinaryPromise().then(function(binary) {
-      return WebAssembly.instantiate(binary, info);
-    }).then(function (instance) {
-      return instance;
-    }).then(receiver, function(reason) {
-      err('failed to asynchronously prepare wasm: ' + reason);
-
-      // Warn on some common problems.
-      if (isFileURI(wasmBinaryFile)) {
-        err('warning: Loading from a file URI (' + wasmBinaryFile + ') is not supported in most browsers. See https://emscripten.org/docs/getting_started/FAQ.html#how-do-i-run-a-local-webserver-for-testing-why-does-my-program-stall-in-downloading-or-preparing');
-      }
-      abort(reason);
-    });
-  }
-
-  function instantiateAsync() {
-    // if (!wasmBinary &&
-    //     typeof WebAssembly.instantiateStreaming == 'function' &&
-    //     !isDataURI(wasmBinaryFile) &&
-    //     // Don't use streaming for file:// delivered objects in a webview, fetch them synchronously.
-    //     !isFileURI(wasmBinaryFile) &&
-    //     // Avoid instantiateStreaming() on Node.js environment for now, as while
-    //     // Node.js v18.1.0 implements it, it does not have a full fetch()
-    //     // implementation yet.
-    //     //
-    //     // Reference:
-    //     //   https://github.com/emscripten-core/emscripten/pull/16917
-    //     !ENVIRONMENT_IS_NODE &&
-    //     typeof fetch == 'function') {
-    //   return fetch(wasmBinaryFile, { credentials: 'same-origin' }).then(function(response) {
-    //     // Suppress closure warning here since the upstream definition for
-    //     // instantiateStreaming only allows Promise<Repsponse> rather than
-    //     // an actual Response.
-    //     // TODO(https://github.com/google/closure-compiler/pull/3913): Remove if/when upstream closure is fixed.
-    //     /** @suppress {checkTypes} */
-    //     var result = WebAssembly.instantiateStreaming(response, info);
-
-    //     return result.then(
-    //       receiveInstantiationResult,
-    //       function(reason) {
-    //         // We expect the most common failure cause to be a bad MIME type for the binary,
-    //         // in which case falling back to ArrayBuffer instantiation should work.
-    //         err('wasm streaming compile failed: ' + reason);
-    //         err('falling back to ArrayBuffer instantiation');
-    //         return instantiateArrayBuffer(receiveInstantiationResult);
-    //       });
-    //   });
-    // } else {
-      return instantiateArrayBuffer(receiveInstantiationResult);
-    //}
-  }
-
-  // User shell pages can write their own Module.instantiateWasm = function(imports, successCallback) callback
-  // to manually instantiate the Wasm module themselves. This allows pages to run the instantiation parallel
-  // to any other async startup actions they are performing.
-  // Also pthreads and wasm workers initialize the wasm instance through this path.
-  if (Module['instantiateWasm']) {
-    try {
-      var exports = Module['instantiateWasm'](info, receiveInstance);
-      return exports;
-    } catch(e) {
-      err('Module.instantiateWasm callback failed with error: ' + e);
-        // If instantiation fails, reject the module ready promise.
-        readyPromiseReject(e);
-    }
-  }
-
-  // If instantiation fails, reject the module ready promise.
-  instantiateAsync().catch(readyPromiseReject);
-  return {}; // no exports yet; we'll fill them in later
-}
-
-// Globals used by JS i64 conversions (see makeSetValue)
-var tempDouble;
-var tempI64;
-
-// === Body ===
-
-var ASM_CONSTS = {
-  
-};
-function array_bounds_check_error(idx,size) { throw 'Array index ' + idx + ' out of bounds: [0,' + size + ')'; }
-
-
-
-
-  /** @constructor */
-  function ExitStatus(status) {
-      this.name = 'ExitStatus';
-      this.message = 'Program terminated with exit(' + status + ')';
-      this.status = status;
-    }
-
-  function callRuntimeCallbacks(callbacks) {
-      while (callbacks.length > 0) {
-        // Pass the module as the first argument.
-        callbacks.shift()(Module);
-      }
-    }
-
-  
-    /**
-     * @param {number} ptr
-     * @param {string} type
-     */
-  function getValue(ptr, type = 'i8') {
-      if (type.endsWith('*')) type = '*';
-      switch (type) {
-        case 'i1': return HEAP8[((ptr)>>0)];
-        case 'i8': return HEAP8[((ptr)>>0)];
-        case 'i16': return HEAP16[((ptr)>>1)];
-        case 'i32': return HEAP32[((ptr)>>2)];
-        case 'i64': return HEAP32[((ptr)>>2)];
-        case 'float': return HEAPF32[((ptr)>>2)];
-        case 'double': return HEAPF64[((ptr)>>3)];
-        case '*': return HEAPU32[((ptr)>>2)];
-        default: abort('invalid type for getValue: ' + type);
-      }
-      return null;
-    }
-
-  function ptrToString(ptr) {
-      return '0x' + ptr.toString(16).padStart(8, '0');
-    }
-
-  
-    /**
-     * @param {number} ptr
-     * @param {number} value
-     * @param {string} type
-     */
-  function setValue(ptr, value, type = 'i8') {
-      if (type.endsWith('*')) type = '*';
-      switch (type) {
-        case 'i1': HEAP8[((ptr)>>0)] = value; break;
-        case 'i8': HEAP8[((ptr)>>0)] = value; break;
-        case 'i16': HEAP16[((ptr)>>1)] = value; break;
-        case 'i32': HEAP32[((ptr)>>2)] = value; break;
-        case 'i64': (tempI64 = [value>>>0,(tempDouble=value,(+(Math.abs(tempDouble))) >= 1.0 ? (tempDouble > 0.0 ? ((Math.min((+(Math.floor((tempDouble)/4294967296.0))), 4294967295.0))|0)>>>0 : (~~((+(Math.ceil((tempDouble - +(((~~(tempDouble)))>>>0))/4294967296.0)))))>>>0) : 0)],HEAP32[((ptr)>>2)] = tempI64[0],HEAP32[(((ptr)+(4))>>2)] = tempI64[1]); break;
-        case 'float': HEAPF32[((ptr)>>2)] = value; break;
-        case 'double': HEAPF64[((ptr)>>3)] = value; break;
-        case '*': HEAPU32[((ptr)>>2)] = value; break;
-        default: abort('invalid type for setValue: ' + type);
-      }
-    }
-
-  function warnOnce(text) {
-      if (!warnOnce.shown) warnOnce.shown = {};
-      if (!warnOnce.shown[text]) {
-        warnOnce.shown[text] = 1;
-        if (ENVIRONMENT_IS_NODE) text = 'warning: ' + text;
-        err(text);
-      }
-    }
-
-  function _abort() {
-      abort('native code called abort()');
-    }
-
-  function getHeapMax() {
-      // Stay one Wasm page short of 4GB: while e.g. Chrome is able to allocate
-      // full 4GB Wasm memories, the size will wrap back to 0 bytes in Wasm side
-      // for any code that deals with heap sizes, which would require special
-      // casing all heap size related code to treat 0 specially.
-      return 2147483648;
-    }
-  
-  function emscripten_realloc_buffer(size) {
-      try {
-        // round size grow request up to wasm page size (fixed 64KB per spec)
-        wasmMemory.grow((size - buffer.byteLength + 65535) >>> 16); // .grow() takes a delta compared to the previous size
-        updateGlobalBufferAndViews(wasmMemory.buffer);
-        return 1 /*success*/;
-      } catch(e) {
-        err('emscripten_realloc_buffer: Attempted to grow heap from ' + buffer.byteLength  + ' bytes to ' + size + ' bytes, but got error: ' + e);
-      }
-      // implicit 0 return to save code size (caller will cast "undefined" into 0
-      // anyhow)
-    }
-  function _emscripten_resize_heap(requestedSize) {
-      var oldSize = HEAPU8.length;
-      requestedSize = requestedSize >>> 0;
-      // With multithreaded builds, races can happen (another thread might increase the size
-      // in between), so return a failure, and let the caller retry.
-      assert(requestedSize > oldSize);
-  
-      // Memory resize rules:
-      // 1.  Always increase heap size to at least the requested size, rounded up
-      //     to next page multiple.
-      // 2a. If MEMORY_GROWTH_LINEAR_STEP == -1, excessively resize the heap
-      //     geometrically: increase the heap size according to
-      //     MEMORY_GROWTH_GEOMETRIC_STEP factor (default +20%), At most
-      //     overreserve by MEMORY_GROWTH_GEOMETRIC_CAP bytes (default 96MB).
-      // 2b. If MEMORY_GROWTH_LINEAR_STEP != -1, excessively resize the heap
-      //     linearly: increase the heap size by at least
-      //     MEMORY_GROWTH_LINEAR_STEP bytes.
-      // 3.  Max size for the heap is capped at 2048MB-WASM_PAGE_SIZE, or by
-      //     MAXIMUM_MEMORY, or by ASAN limit, depending on which is smallest
-      // 4.  If we were unable to allocate as much memory, it may be due to
-      //     over-eager decision to excessively reserve due to (3) above.
-      //     Hence if an allocation fails, cut down on the amount of excess
-      //     growth, in an attempt to succeed to perform a smaller allocation.
-  
-      // A limit is set for how much we can grow. We should not exceed that
-      // (the wasm binary specifies it, so if we tried, we'd fail anyhow).
-      var maxHeapSize = getHeapMax();
-      if (requestedSize > maxHeapSize) {
-        err('Cannot enlarge memory, asked to go up to ' + requestedSize + ' bytes, but the limit is ' + maxHeapSize + ' bytes!');
-        return false;
-      }
-  
-      let alignUp = (x, multiple) => x + (multiple - x % multiple) % multiple;
-  
-      // Loop through potential heap size increases. If we attempt a too eager
-      // reservation that fails, cut down on the attempted size and reserve a
-      // smaller bump instead. (max 3 times, chosen somewhat arbitrarily)
-      for (var cutDown = 1; cutDown <= 4; cutDown *= 2) {
-        var overGrownHeapSize = oldSize * (1 + 0.2 / cutDown); // ensure geometric growth
-        // but limit overreserving (default to capping at +96MB overgrowth at most)
-        overGrownHeapSize = Math.min(overGrownHeapSize, requestedSize + 100663296 );
-  
-        var newSize = Math.min(maxHeapSize, alignUp(Math.max(requestedSize, overGrownHeapSize), 65536));
-  
-        var replacement = emscripten_realloc_buffer(newSize);
-        if (replacement) {
-  
-          return true;
-        }
-      }
-      err('Failed to grow the heap from ' + oldSize + ' bytes to ' + newSize + ' bytes, not enough memory!');
-      return false;
-    }
-
-  var SYSCALLS = {varargs:undefined,get:function() {
-        assert(SYSCALLS.varargs != undefined);
-        SYSCALLS.varargs += 4;
-        var ret = HEAP32[(((SYSCALLS.varargs)-(4))>>2)];
-        return ret;
-      },getStr:function(ptr) {
-        var ret = UTF8ToString(ptr);
-        return ret;
-      }};
-  function _fd_close(fd) {
-      abort('fd_close called without SYSCALLS_REQUIRE_FILESYSTEM');
-    }
-
-  function convertI32PairToI53Checked(lo, hi) {
-      assert(lo == (lo >>> 0) || lo == (lo|0)); // lo should either be a i32 or a u32
-      assert(hi === (hi|0));                    // hi should be a i32
-      return ((hi + 0x200000) >>> 0 < 0x400001 - !!lo) ? (lo >>> 0) + hi * 4294967296 : NaN;
-    }
-  function _fd_seek(fd, offset_low, offset_high, whence, newOffset) {
-      return 70;
-    }
-
-  var printCharBuffers = [null,[],[]];
-  function printChar(stream, curr) {
-      var buffer = printCharBuffers[stream];
-      assert(buffer);
-      if (curr === 0 || curr === 10) {
-        (stream === 1 ? out : err)(UTF8ArrayToString(buffer, 0));
-        buffer.length = 0;
-      } else {
-        buffer.push(curr);
-      }
-    }
-  function flush_NO_FILESYSTEM() {
-      // flush anything remaining in the buffers during shutdown
-      _fflush(0);
-      if (printCharBuffers[1].length) printChar(1, 10);
-      if (printCharBuffers[2].length) printChar(2, 10);
-    }
-  function _fd_write(fd, iov, iovcnt, pnum) {
-      // hack to support printf in SYSCALLS_REQUIRE_FILESYSTEM=0
-      var num = 0;
-      for (var i = 0; i < iovcnt; i++) {
-        var ptr = HEAPU32[((iov)>>2)];
-        var len = HEAPU32[(((iov)+(4))>>2)];
-        iov += 8;
-        for (var j = 0; j < len; j++) {
-          printChar(fd, HEAPU8[ptr+j]);
-        }
-        num += len;
-      }
-      HEAPU32[((pnum)>>2)] = num;
-      return 0;
-    }
-
-  /** @type {function(string, boolean=, number=)} */
-  function intArrayFromString(stringy, dontAddNull, length) {
-    var len = length > 0 ? length : lengthBytesUTF8(stringy)+1;
-    var u8array = new Array(len);
-    var numBytesWritten = stringToUTF8Array(stringy, u8array, 0, u8array.length);
-    if (dontAddNull) u8array.length = numBytesWritten;
-    return u8array;
-  }
-var ASSERTIONS = true;
-
-function checkIncomingModuleAPI() {
-  ignoredModuleProp('fetchSettings');
-}
-var asmLibraryArg = {
-  "abort": _abort,
-  "array_bounds_check_error": array_bounds_check_error,
-  "emscripten_resize_heap": _emscripten_resize_heap,
-  "fd_close": _fd_close,
-  "fd_seek": _fd_seek,
-  "fd_write": _fd_write
-};
-var asm = createWasm();
-/** @type {function(...*):?} */
-var ___wasm_call_ctors = Module["___wasm_call_ctors"] = createExportWrapper("__wasm_call_ctors");
-
-/** @type {function(...*):?} */
-var _emscripten_bind_VoidPtr___destroy___0 = Module["_emscripten_bind_VoidPtr___destroy___0"] = createExportWrapper("emscripten_bind_VoidPtr___destroy___0");
-
-/** @type {function(...*):?} */
-var _emscripten_bind_Crc64Hash_Crc64Hash_0 = Module["_emscripten_bind_Crc64Hash_Crc64Hash_0"] = createExportWrapper("emscripten_bind_Crc64Hash_Crc64Hash_0");
-
-/** @type {function(...*):?} */
-var _emscripten_bind_Crc64Hash_OnAppend_2 = Module["_emscripten_bind_Crc64Hash_OnAppend_2"] = createExportWrapper("emscripten_bind_Crc64Hash_OnAppend_2");
-
-/** @type {function(...*):?} */
-var _emscripten_bind_Crc64Hash_OnFinal_3 = Module["_emscripten_bind_Crc64Hash_OnFinal_3"] = createExportWrapper("emscripten_bind_Crc64Hash_OnFinal_3");
-
-/** @type {function(...*):?} */
-var _emscripten_bind_Crc64Hash___destroy___0 = Module["_emscripten_bind_Crc64Hash___destroy___0"] = createExportWrapper("emscripten_bind_Crc64Hash___destroy___0");
-
-/** @type {function(...*):?} */
-var ___errno_location = Module["___errno_location"] = createExportWrapper("__errno_location");
-
-/** @type {function(...*):?} */
-var _fflush = Module["_fflush"] = createExportWrapper("fflush");
-
-/** @type {function(...*):?} */
-var _malloc = Module["_malloc"] = createExportWrapper("malloc");
-
-/** @type {function(...*):?} */
-var _free = Module["_free"] = createExportWrapper("free");
-
-/** @type {function(...*):?} */
-var _emscripten_stack_init = Module["_emscripten_stack_init"] = function() {
-  return (_emscripten_stack_init = Module["_emscripten_stack_init"] = Module["asm"]["emscripten_stack_init"]).apply(null, arguments);
-};
-
-/** @type {function(...*):?} */
-var _emscripten_stack_get_free = Module["_emscripten_stack_get_free"] = function() {
-  return (_emscripten_stack_get_free = Module["_emscripten_stack_get_free"] = Module["asm"]["emscripten_stack_get_free"]).apply(null, arguments);
-};
-
-/** @type {function(...*):?} */
-var _emscripten_stack_get_base = Module["_emscripten_stack_get_base"] = function() {
-  return (_emscripten_stack_get_base = Module["_emscripten_stack_get_base"] = Module["asm"]["emscripten_stack_get_base"]).apply(null, arguments);
-};
-
-/** @type {function(...*):?} */
-var _emscripten_stack_get_end = Module["_emscripten_stack_get_end"] = function() {
-  return (_emscripten_stack_get_end = Module["_emscripten_stack_get_end"] = Module["asm"]["emscripten_stack_get_end"]).apply(null, arguments);
-};
-
-/** @type {function(...*):?} */
-var stackSave = Module["stackSave"] = createExportWrapper("stackSave");
-
-/** @type {function(...*):?} */
-var stackRestore = Module["stackRestore"] = createExportWrapper("stackRestore");
-
-/** @type {function(...*):?} */
-var stackAlloc = Module["stackAlloc"] = createExportWrapper("stackAlloc");
-
-/** @type {function(...*):?} */
-var _emscripten_stack_get_current = Module["_emscripten_stack_get_current"] = function() {
-  return (_emscripten_stack_get_current = Module["_emscripten_stack_get_current"] = Module["asm"]["emscripten_stack_get_current"]).apply(null, arguments);
-};
-
-/** @type {function(...*):?} */
-var dynCall_jiji = Module["dynCall_jiji"] = createExportWrapper("dynCall_jiji");
-
-var ___start_em_js = Module['___start_em_js'] = 5261488;
-var ___stop_em_js = Module['___stop_em_js'] = 5261586;
-
-
-
-// === Auto-generated postamble setup entry stuff ===
-
-
-var unexportedRuntimeSymbols = [
-  'run',
-  'UTF8ArrayToString',
-  'UTF8ToString',
-  'stringToUTF8Array',
-  'stringToUTF8',
-  'lengthBytesUTF8',
-  'addOnPreRun',
-  'addOnInit',
-  'addOnPreMain',
-  'addOnExit',
-  'addOnPostRun',
-  'addRunDependency',
-  'removeRunDependency',
-  'FS_createFolder',
-  'FS_createPath',
-  'FS_createDataFile',
-  'FS_createPreloadedFile',
-  'FS_createLazyFile',
-  'FS_createLink',
-  'FS_createDevice',
-  'FS_unlink',
-  'getLEB',
-  'getFunctionTables',
-  'alignFunctionTables',
-  'registerFunctions',
-  'prettyPrint',
-  'getCompilerSetting',
-  'out',
-  'err',
-  'callMain',
-  'abort',
-  'keepRuntimeAlive',
-  'wasmMemory',
-  'stackAlloc',
-  'stackSave',
-  'stackRestore',
-  'getTempRet0',
-  'setTempRet0',
-  'writeStackCookie',
-  'checkStackCookie',
-  'ptrToString',
-  'zeroMemory',
-  'stringToNewUTF8',
-  'exitJS',
-  'getHeapMax',
-  'emscripten_realloc_buffer',
-  'ENV',
-  'ERRNO_CODES',
-  'ERRNO_MESSAGES',
-  'setErrNo',
-  'inetPton4',
-  'inetNtop4',
-  'inetPton6',
-  'inetNtop6',
-  'readSockaddr',
-  'writeSockaddr',
-  'DNS',
-  'getHostByName',
-  'Protocols',
-  'Sockets',
-  'getRandomDevice',
-  'warnOnce',
-  'traverseStack',
-  'UNWIND_CACHE',
-  'convertPCtoSourceLocation',
-  'readEmAsmArgsArray',
-  'readEmAsmArgs',
-  'runEmAsmFunction',
-  'runMainThreadEmAsm',
-  'jstoi_q',
-  'jstoi_s',
-  'getExecutableName',
-  'listenOnce',
-  'autoResumeAudioContext',
-  'dynCallLegacy',
-  'getDynCaller',
-  'dynCall',
-  'handleException',
-  'runtimeKeepalivePush',
-  'runtimeKeepalivePop',
-  'callUserCallback',
-  'maybeExit',
-  'safeSetTimeout',
-  'asmjsMangle',
-  'asyncLoad',
-  'alignMemory',
-  'mmapAlloc',
-  'writeI53ToI64',
-  'writeI53ToI64Clamped',
-  'writeI53ToI64Signaling',
-  'writeI53ToU64Clamped',
-  'writeI53ToU64Signaling',
-  'readI53FromI64',
-  'readI53FromU64',
-  'convertI32PairToI53',
-  'convertI32PairToI53Checked',
-  'convertU32PairToI53',
-  'getCFunc',
-  'ccall',
-  'cwrap',
-  'uleb128Encode',
-  'sigToWasmTypes',
-  'generateFuncType',
-  'convertJsFunctionToWasm',
-  'freeTableIndexes',
-  'functionsInTableMap',
-  'getEmptyTableSlot',
-  'updateTableMap',
-  'addFunction',
-  'removeFunction',
-  'reallyNegative',
-  'unSign',
-  'strLen',
-  'reSign',
-  'formatString',
-  'setValue',
-  'getValue',
-  'PATH',
-  'PATH_FS',
-  'intArrayFromString',
-  'intArrayToString',
-  'AsciiToString',
-  'stringToAscii',
-  'UTF16Decoder',
-  'UTF16ToString',
-  'stringToUTF16',
-  'lengthBytesUTF16',
-  'UTF32ToString',
-  'stringToUTF32',
-  'lengthBytesUTF32',
-  'allocateUTF8',
-  'allocateUTF8OnStack',
-  'writeStringToMemory',
-  'writeArrayToMemory',
-  'writeAsciiToMemory',
-  'SYSCALLS',
-  'getSocketFromFD',
-  'getSocketAddress',
-  'JSEvents',
-  'registerKeyEventCallback',
-  'specialHTMLTargets',
-  'maybeCStringToJsString',
-  'findEventTarget',
-  'findCanvasEventTarget',
-  'getBoundingClientRect',
-  'fillMouseEventData',
-  'registerMouseEventCallback',
-  'registerWheelEventCallback',
-  'registerUiEventCallback',
-  'registerFocusEventCallback',
-  'fillDeviceOrientationEventData',
-  'registerDeviceOrientationEventCallback',
-  'fillDeviceMotionEventData',
-  'registerDeviceMotionEventCallback',
-  'screenOrientation',
-  'fillOrientationChangeEventData',
-  'registerOrientationChangeEventCallback',
-  'fillFullscreenChangeEventData',
-  'registerFullscreenChangeEventCallback',
-  'JSEvents_requestFullscreen',
-  'JSEvents_resizeCanvasForFullscreen',
-  'registerRestoreOldStyle',
-  'hideEverythingExceptGivenElement',
-  'restoreHiddenElements',
-  'setLetterbox',
-  'currentFullscreenStrategy',
-  'restoreOldWindowedStyle',
-  'softFullscreenResizeWebGLRenderTarget',
-  'doRequestFullscreen',
-  'fillPointerlockChangeEventData',
-  'registerPointerlockChangeEventCallback',
-  'registerPointerlockErrorEventCallback',
-  'requestPointerLock',
-  'fillVisibilityChangeEventData',
-  'registerVisibilityChangeEventCallback',
-  'registerTouchEventCallback',
-  'fillGamepadEventData',
-  'registerGamepadEventCallback',
-  'registerBeforeUnloadEventCallback',
-  'fillBatteryEventData',
-  'battery',
-  'registerBatteryEventCallback',
-  'setCanvasElementSize',
-  'getCanvasElementSize',
-  'demangle',
-  'demangleAll',
-  'jsStackTrace',
-  'stackTrace',
-  'ExitStatus',
-  'getEnvStrings',
-  'checkWasiClock',
-  'flush_NO_FILESYSTEM',
-  'dlopenMissingError',
-  'createDyncallWrapper',
-  'setImmediateWrapped',
-  'clearImmediateWrapped',
-  'polyfillSetImmediate',
-  'uncaughtExceptionCount',
-  'exceptionLast',
-  'exceptionCaught',
-  'ExceptionInfo',
-  'exception_addRef',
-  'exception_decRef',
-  'Browser',
-  'setMainLoop',
-  'wget',
-  'FS',
-  'MEMFS',
-  'TTY',
-  'PIPEFS',
-  'SOCKFS',
-  '_setNetworkCallback',
-  'tempFixedLengthArray',
-  'miniTempWebGLFloatBuffers',
-  'heapObjectForWebGLType',
-  'heapAccessShiftForWebGLHeap',
-  'GL',
-  'emscriptenWebGLGet',
-  'computeUnpackAlignedImageSize',
-  'emscriptenWebGLGetTexPixelData',
-  'emscriptenWebGLGetUniform',
-  'webglGetUniformLocation',
-  'webglPrepareUniformLocationsBeforeFirstUse',
-  'webglGetLeftBracePos',
-  'emscriptenWebGLGetVertexAttrib',
-  'writeGLArray',
-  'AL',
-  'SDL_unicode',
-  'SDL_ttfContext',
-  'SDL_audio',
-  'SDL',
-  'SDL_gfx',
-  'GLUT',
-  'EGL',
-  'GLFW_Window',
-  'GLFW',
-  'GLEW',
-  'IDBStore',
-  'runAndAbortIfError',
-  'ALLOC_NORMAL',
-  'ALLOC_STACK',
-  'allocate',
-];
-unexportedRuntimeSymbols.forEach(unexportedRuntimeSymbol);
-var missingLibrarySymbols = [
-  'zeroMemory',
-  'stringToNewUTF8',
-  'exitJS',
-  'setErrNo',
-  'inetPton4',
-  'inetNtop4',
-  'inetPton6',
-  'inetNtop6',
-  'readSockaddr',
-  'writeSockaddr',
-  'getHostByName',
-  'getRandomDevice',
-  'traverseStack',
-  'convertPCtoSourceLocation',
-  'readEmAsmArgs',
-  'runEmAsmFunction',
-  'runMainThreadEmAsm',
-  'jstoi_q',
-  'jstoi_s',
-  'getExecutableName',
-  'listenOnce',
-  'autoResumeAudioContext',
-  'dynCallLegacy',
-  'getDynCaller',
-  'dynCall',
-  'handleException',
-  'runtimeKeepalivePush',
-  'runtimeKeepalivePop',
-  'callUserCallback',
-  'maybeExit',
-  'safeSetTimeout',
-  'asmjsMangle',
-  'asyncLoad',
-  'alignMemory',
-  'mmapAlloc',
-  'writeI53ToI64',
-  'writeI53ToI64Clamped',
-  'writeI53ToI64Signaling',
-  'writeI53ToU64Clamped',
-  'writeI53ToU64Signaling',
-  'readI53FromI64',
-  'readI53FromU64',
-  'convertI32PairToI53',
-  'convertU32PairToI53',
-  'getCFunc',
-  'ccall',
-  'cwrap',
-  'uleb128Encode',
-  'sigToWasmTypes',
-  'generateFuncType',
-  'convertJsFunctionToWasm',
-  'getEmptyTableSlot',
-  'updateTableMap',
-  'addFunction',
-  'removeFunction',
-  'reallyNegative',
-  'unSign',
-  'strLen',
-  'reSign',
-  'formatString',
-  'intArrayToString',
-  'AsciiToString',
-  'stringToAscii',
-  'UTF16ToString',
-  'stringToUTF16',
-  'lengthBytesUTF16',
-  'UTF32ToString',
-  'stringToUTF32',
-  'lengthBytesUTF32',
-  'allocateUTF8',
-  'allocateUTF8OnStack',
-  'writeStringToMemory',
-  'writeArrayToMemory',
-  'writeAsciiToMemory',
-  'getSocketFromFD',
-  'getSocketAddress',
-  'registerKeyEventCallback',
-  'maybeCStringToJsString',
-  'findEventTarget',
-  'findCanvasEventTarget',
-  'getBoundingClientRect',
-  'fillMouseEventData',
-  'registerMouseEventCallback',
-  'registerWheelEventCallback',
-  'registerUiEventCallback',
-  'registerFocusEventCallback',
-  'fillDeviceOrientationEventData',
-  'registerDeviceOrientationEventCallback',
-  'fillDeviceMotionEventData',
-  'registerDeviceMotionEventCallback',
-  'screenOrientation',
-  'fillOrientationChangeEventData',
-  'registerOrientationChangeEventCallback',
-  'fillFullscreenChangeEventData',
-  'registerFullscreenChangeEventCallback',
-  'JSEvents_requestFullscreen',
-  'JSEvents_resizeCanvasForFullscreen',
-  'registerRestoreOldStyle',
-  'hideEverythingExceptGivenElement',
-  'restoreHiddenElements',
-  'setLetterbox',
-  'softFullscreenResizeWebGLRenderTarget',
-  'doRequestFullscreen',
-  'fillPointerlockChangeEventData',
-  'registerPointerlockChangeEventCallback',
-  'registerPointerlockErrorEventCallback',
-  'requestPointerLock',
-  'fillVisibilityChangeEventData',
-  'registerVisibilityChangeEventCallback',
-  'registerTouchEventCallback',
-  'fillGamepadEventData',
-  'registerGamepadEventCallback',
-  'registerBeforeUnloadEventCallback',
-  'fillBatteryEventData',
-  'battery',
-  'registerBatteryEventCallback',
-  'setCanvasElementSize',
-  'getCanvasElementSize',
-  'demangle',
-  'demangleAll',
-  'jsStackTrace',
-  'stackTrace',
-  'getEnvStrings',
-  'checkWasiClock',
-  'createDyncallWrapper',
-  'setImmediateWrapped',
-  'clearImmediateWrapped',
-  'polyfillSetImmediate',
-  'ExceptionInfo',
-  'exception_addRef',
-  'exception_decRef',
-  'setMainLoop',
-  '_setNetworkCallback',
-  'heapObjectForWebGLType',
-  'heapAccessShiftForWebGLHeap',
-  'emscriptenWebGLGet',
-  'computeUnpackAlignedImageSize',
-  'emscriptenWebGLGetTexPixelData',
-  'emscriptenWebGLGetUniform',
-  'webglGetUniformLocation',
-  'webglPrepareUniformLocationsBeforeFirstUse',
-  'webglGetLeftBracePos',
-  'emscriptenWebGLGetVertexAttrib',
-  'writeGLArray',
-  'SDL_unicode',
-  'SDL_ttfContext',
-  'SDL_audio',
-  'GLFW_Window',
-  'runAndAbortIfError',
-  'ALLOC_NORMAL',
-  'ALLOC_STACK',
-  'allocate',
-];
-missingLibrarySymbols.forEach(missingLibrarySymbol)
-
-
-var calledRun;
-
-dependenciesFulfilled = function runCaller() {
-  // If run has never been called, and we should call run (INVOKE_RUN is true, and Module.noInitialRun is not false)
-  if (!calledRun) run();
-  if (!calledRun) dependenciesFulfilled = runCaller; // try this again later, after new deps are fulfilled
-};
-
-function stackCheckInit() {
-  // This is normally called automatically during __wasm_call_ctors but need to
-  // get these values before even running any of the ctors so we call it redundantly
-  // here.
-  _emscripten_stack_init();
-  // TODO(sbc): Move writeStackCookie to native to to avoid this.
-  writeStackCookie();
-}
-
-/** @type {function(Array=)} */
-function run(args) {
-  args = args || arguments_;
-
-  if (runDependencies > 0) {
-    return;
-  }
-
-    stackCheckInit();
-
-  preRun();
-
-  // a preRun added a dependency, run will be called later
-  if (runDependencies > 0) {
-    return;
-  }
-
-  function doRun() {
-    // run may have just been called through dependencies being fulfilled just in this very frame,
-    // or while the async setStatus time below was happening
-    if (calledRun) return;
-    calledRun = true;
-    Module['calledRun'] = true;
-
-    if (ABORT) return;
-
-    initRuntime();
-
-    readyPromiseResolve(Module);
-    if (Module['onRuntimeInitialized']) Module['onRuntimeInitialized']();
-
-    assert(!Module['_main'], 'compiled without a main, but one is present. if you added it from JS, use Module["onRuntimeInitialized"]');
-
-    postRun();
-  }
-
-  if (Module['setStatus']) {
-    Module['setStatus']('Running...');
-    setTimeout(function() {
-      setTimeout(function() {
-        Module['setStatus']('');
-      }, 1);
-      doRun();
-    }, 1);
-  } else
-  {
-    doRun();
-  }
-  checkStackCookie();
-}
-
-function checkUnflushedContent() {
-  // Compiler settings do not allow exiting the runtime, so flushing
-  // the streams is not possible. but in ASSERTIONS mode we check
-  // if there was something to flush, and if so tell the user they
-  // should request that the runtime be exitable.
-  // Normally we would not even include flush() at all, but in ASSERTIONS
-  // builds we do so just for this check, and here we see if there is any
-  // content to flush, that is, we check if there would have been
-  // something a non-ASSERTIONS build would have not seen.
-  // How we flush the streams depends on whether we are in SYSCALLS_REQUIRE_FILESYSTEM=0
-  // mode (which has its own special function for this; otherwise, all
-  // the code is inside libc)
-  var oldOut = out;
-  var oldErr = err;
-  var has = false;
-  out = err = (x) => {
-    has = true;
-  }
-  try { // it doesn't matter if it fails
-    flush_NO_FILESYSTEM();
-  } catch(e) {}
-  out = oldOut;
-  err = oldErr;
-  if (has) {
-    warnOnce('stdio streams had content in them that was not flushed. you should set EXIT_RUNTIME to 1 (see the FAQ), or make sure to emit a newline when you printf etc.');
-    warnOnce('(this may also be due to not including full filesystem support - try building with -sFORCE_FILESYSTEM)');
-  }
-}
-
-if (Module['preInit']) {
-  if (typeof Module['preInit'] == 'function') Module['preInit'] = [Module['preInit']];
-  while (Module['preInit'].length > 0) {
-    Module['preInit'].pop()();
-  }
-}
-
-run();
-
-
-
-
-
-
-// Bindings utilities
-
-/** @suppress {duplicate} (TODO: avoid emitting this multiple times, it is redundant) */
-function WrapperObject() {
-}
-WrapperObject.prototype = Object.create(WrapperObject.prototype);
-WrapperObject.prototype.constructor = WrapperObject;
-WrapperObject.prototype.__class__ = WrapperObject;
-WrapperObject.__cache__ = {};
-Module['WrapperObject'] = WrapperObject;
-
-/** @suppress {duplicate} (TODO: avoid emitting this multiple times, it is redundant)
-    @param {*=} __class__ */
-function getCache(__class__) {
-  return (__class__ || WrapperObject).__cache__;
-}
-Module['getCache'] = getCache;
-
-/** @suppress {duplicate} (TODO: avoid emitting this multiple times, it is redundant)
-    @param {*=} __class__ */
-function wrapPointer(ptr, __class__) {
-  var cache = getCache(__class__);
-  var ret = cache[ptr];
-  if (ret) return ret;
-  ret = Object.create((__class__ || WrapperObject).prototype);
-  ret.ptr = ptr;
-  return cache[ptr] = ret;
-}
-Module['wrapPointer'] = wrapPointer;
-
-/** @suppress {duplicate} (TODO: avoid emitting this multiple times, it is redundant) */
-function castObject(obj, __class__) {
-  return wrapPointer(obj.ptr, __class__);
-}
-Module['castObject'] = castObject;
-
-Module['NULL'] = wrapPointer(0);
-
-/** @suppress {duplicate} (TODO: avoid emitting this multiple times, it is redundant) */
-function destroy(obj) {
-  if (!obj['__destroy__']) throw 'Error: Cannot destroy object. (Did you create it yourself?)';
-  obj['__destroy__']();
-  // Remove from cache, so the object can be GC'd and refs added onto it released
-  delete getCache(obj.__class__)[obj.ptr];
-}
-Module['destroy'] = destroy;
-
-/** @suppress {duplicate} (TODO: avoid emitting this multiple times, it is redundant) */
-function compare(obj1, obj2) {
-  return obj1.ptr === obj2.ptr;
-}
-Module['compare'] = compare;
-
-/** @suppress {duplicate} (TODO: avoid emitting this multiple times, it is redundant) */
-function getPointer(obj) {
-  return obj.ptr;
-}
-Module['getPointer'] = getPointer;
-
-/** @suppress {duplicate} (TODO: avoid emitting this multiple times, it is redundant) */
-function getClass(obj) {
-  return obj.__class__;
-}
-Module['getClass'] = getClass;
-
-// Converts big (string or array) values into a C-style storage, in temporary space
-
-/** @suppress {duplicate} (TODO: avoid emitting this multiple times, it is redundant) */
-var ensureCache = {
-  buffer: 0,  // the main buffer of temporary storage
-  size: 0,   // the size of buffer
-  pos: 0,    // the next free offset in buffer
-  temps: [], // extra allocations
-  needed: 0, // the total size we need next time
-
-  prepare: function() {
-    if (ensureCache.needed) {
-      // clear the temps
-      for (var i = 0; i < ensureCache.temps.length; i++) {
-        Module['_free'](ensureCache.temps[i]);
-      }
-      ensureCache.temps.length = 0;
-      // prepare to allocate a bigger buffer
-      Module['_free'](ensureCache.buffer);
-      ensureCache.buffer = 0;
-      ensureCache.size += ensureCache.needed;
-      // clean up
-      ensureCache.needed = 0;
-    }
-    if (!ensureCache.buffer) { // happens first time, or when we need to grow
-      ensureCache.size += 128; // heuristic, avoid many small grow events
-      ensureCache.buffer = Module['_malloc'](ensureCache.size);
-      assert(ensureCache.buffer);
-    }
-    ensureCache.pos = 0;
-  },
-  alloc: function(array, view) {
-    assert(ensureCache.buffer);
-    var bytes = view.BYTES_PER_ELEMENT;
-    var len = array.length * bytes;
-    len = (len + 7) & -8; // keep things aligned to 8 byte boundaries
-    var ret;
-    if (ensureCache.pos + len >= ensureCache.size) {
-      // we failed to allocate in the buffer, ensureCache time around :(
-      assert(len > 0); // null terminator, at least
-      ensureCache.needed += len;
-      ret = Module['_malloc'](len);
-      ensureCache.temps.push(ret);
-    } else {
-      // we can allocate in the buffer
-      ret = ensureCache.buffer + ensureCache.pos;
-      ensureCache.pos += len;
-    }
-    return ret;
-  },
-  copy: function(array, view, offset) {
-    offset >>>= 0;
-    var bytes = view.BYTES_PER_ELEMENT;
-    switch (bytes) {
-      case 2: offset >>>= 1; break;
-      case 4: offset >>>= 2; break;
-      case 8: offset >>>= 3; break;
-    }
-    for (var i = 0; i < array.length; i++) {
-      view[offset + i] = array[i];
-    }
-  },
-};
-
-/** @suppress {duplicate} (TODO: avoid emitting this multiple times, it is redundant) */
-function ensureString(value) {
-  if (typeof value === 'string') {
-    var intArray = intArrayFromString(value);
-    var offset = ensureCache.alloc(intArray, HEAP8);
-    ensureCache.copy(intArray, HEAP8, offset);
-    return offset;
-  }
-  return value;
-}
-/** @suppress {duplicate} (TODO: avoid emitting this multiple times, it is redundant) */
-function ensureInt8(value) {
-  if (typeof value === 'object') {
-    var offset = ensureCache.alloc(value, HEAP8);
-    ensureCache.copy(value, HEAP8, offset);
-    return offset;
-  }
-  return value;
-}
-/** @suppress {duplicate} (TODO: avoid emitting this multiple times, it is redundant) */
-function ensureInt16(value) {
-  if (typeof value === 'object') {
-    var offset = ensureCache.alloc(value, HEAP16);
-    ensureCache.copy(value, HEAP16, offset);
-    return offset;
-  }
-  return value;
-}
-/** @suppress {duplicate} (TODO: avoid emitting this multiple times, it is redundant) */
-function ensureInt32(value) {
-  if (typeof value === 'object') {
-    var offset = ensureCache.alloc(value, HEAP32);
-    ensureCache.copy(value, HEAP32, offset);
-    return offset;
-  }
-  return value;
-}
-/** @suppress {duplicate} (TODO: avoid emitting this multiple times, it is redundant) */
-function ensureFloat32(value) {
-  if (typeof value === 'object') {
-    var offset = ensureCache.alloc(value, HEAPF32);
-    ensureCache.copy(value, HEAPF32, offset);
-    return offset;
-  }
-  return value;
-}
-/** @suppress {duplicate} (TODO: avoid emitting this multiple times, it is redundant) */
-function ensureFloat64(value) {
-  if (typeof value === 'object') {
-    var offset = ensureCache.alloc(value, HEAPF64);
-    ensureCache.copy(value, HEAPF64, offset);
-    return offset;
-  }
-  return value;
-}
-
-
-// VoidPtr
-/** @suppress {undefinedVars, duplicate} @this{Object} */function VoidPtr() { throw "cannot construct a VoidPtr, no constructor in IDL" }
-VoidPtr.prototype = Object.create(WrapperObject.prototype);
-VoidPtr.prototype.constructor = VoidPtr;
-VoidPtr.prototype.__class__ = VoidPtr;
-VoidPtr.__cache__ = {};
-Module['VoidPtr'] = VoidPtr;
-
-  VoidPtr.prototype['__destroy__'] = VoidPtr.prototype.__destroy__ = /** @suppress {undefinedVars, duplicate} @this{Object} */function() {
-  var self = this.ptr;
-  _emscripten_bind_VoidPtr___destroy___0(self);
-};
-// Crc64Hash
-/** @suppress {undefinedVars, duplicate} @this{Object} */function Crc64Hash() {
-  this.ptr = _emscripten_bind_Crc64Hash_Crc64Hash_0();
-  getCache(Crc64Hash)[this.ptr] = this;
-};;
-Crc64Hash.prototype = Object.create(WrapperObject.prototype);
-Crc64Hash.prototype.constructor = Crc64Hash;
-Crc64Hash.prototype.__class__ = Crc64Hash;
-Crc64Hash.__cache__ = {};
-Module['Crc64Hash'] = Crc64Hash;
-
-Crc64Hash.prototype['OnAppend'] = Crc64Hash.prototype.OnAppend = /** @suppress {undefinedVars, duplicate} @this{Object} */function(data, length) {
-  var self = this.ptr;
-  if (data && typeof data === 'object') data = data.ptr;
-  if (length && typeof length === 'object') length = length.ptr;
-  _emscripten_bind_Crc64Hash_OnAppend_2(self, data, length);
-};;
-
-Crc64Hash.prototype['OnFinal'] = Crc64Hash.prototype.OnFinal = /** @suppress {undefinedVars, duplicate} @this{Object} */function(data, length, result) {
-  var self = this.ptr;
-  if (data && typeof data === 'object') data = data.ptr;
-  if (length && typeof length === 'object') length = length.ptr;
-  if (result && typeof result === 'object') result = result.ptr;
-  _emscripten_bind_Crc64Hash_OnFinal_3(self, data, length, result);
-};;
-
-  Crc64Hash.prototype['__destroy__'] = Crc64Hash.prototype.__destroy__ = /** @suppress {undefinedVars, duplicate} @this{Object} */function() {
-  var self = this.ptr;
-  _emscripten_bind_Crc64Hash___destroy___0(self);
-};
-
-  return NativeCRC64.ready
-}
-);
-})();
-// if (typeof exports === 'object' && typeof module === 'object')
-//   module.exports = NativeCRC64;
-// else if (typeof define === 'function' && define['amd'])
-//   define([], function() { return NativeCRC64; });
-// else if (typeof exports === 'object')
-//   exports["NativeCRC64"] = NativeCRC64;
-
-// ESM-EXPORT-START (rewritten to `module.exports = NativeCRC64;` in dist/commonjs by copyJSFiles.cjs)
-/* harmony default export */ const crc64 = (NativeCRC64);
-// ESM-EXPORT-END
-
-;// CONCATENATED MODULE: ./node_modules/@azure/storage-common/dist/esm/StorageCRC64Calculator.js
-// Copyright (c) Microsoft Corporation.
-// Licensed under the MIT License.
-// @ts-expect-error the crc64 js file is auto generated
-
-/**
- * Class used to calculator CRC64 checksum
- */
-class StorageCRC64Calculator {
-    nativeCrc64Hash;
-    static nativeInstance;
-    constructor() {
-        this.nativeCrc64Hash = new StorageCRC64Calculator.nativeInstance.Crc64Hash();
-    }
-    static initPromise;
-    /**
-     * Initialize environment for CRC64 checksum calculator
-     */
-    static async init() {
-        if (!this.initPromise) {
-            this.initPromise = crc64().then((instance) => {
-                this.nativeInstance = instance;
-                return;
-            });
-        }
-        return this.initPromise;
-    }
-    /**
-     * Append data for CRC64 checksum calculator
-     * @param body - content to be append
-     * @param length - length of the content
-     */
-    append(body, length) {
-        const ptr = StorageCRC64Calculator.nativeInstance._malloc(length);
-        StorageCRC64Calculator.nativeInstance.HEAPU8.set(body, ptr);
-        this.nativeCrc64Hash.OnAppend(ptr, length);
-        StorageCRC64Calculator.nativeInstance._free(ptr);
-    }
-    /**
-     * Complete CRC64 checksum calculating and get the final result.
-     * @param body -
-     * @param length -
-     * @returns
-     */
-    final(body, length) {
-        const ptr = StorageCRC64Calculator.nativeInstance._malloc(length);
-        StorageCRC64Calculator.nativeInstance.HEAPU8.set(body, ptr);
-        const result = StorageCRC64Calculator.nativeInstance._malloc(8);
-        this.nativeCrc64Hash.OnFinal(ptr, length, result);
-        StorageCRC64Calculator.nativeInstance._free(ptr);
-        const resultArray = new Uint8Array(8);
-        resultArray.set(StorageCRC64Calculator.nativeInstance.HEAPU8.subarray(result, result + 8));
-        StorageCRC64Calculator.nativeInstance._free(result);
-        return resultArray;
-    }
-}
-//# sourceMappingURL=StorageCRC64Calculator.js.map
-;// CONCATENATED MODULE: ./node_modules/@azure/storage-common/dist/esm/streamHelpers.js
-// Copyright (c) Microsoft Corporation.
-// Licensed under the MIT License.
-/**
- * Signals the end of a stream by pushing null.
- * In Node.js, this is required to signal the end of a Readable stream.
- * @internal
- */
-function signalStreamEnd(pushData) {
-    pushData(null);
-}
-//# sourceMappingURL=streamHelpers.js.map
-;// CONCATENATED MODULE: ./node_modules/@azure/storage-common/dist/esm/StructuredMessageEncoding.js
-// Copyright (c) Microsoft Corporation.
-// Licensed under the MIT License.
-
-
-const MESSAGE_VERSION = 1;
-const MESSAGE_HEADER_LENGTH = 13;
-const SEGMENT_HEADER_LENGTH = 10;
-const FOOTER_LENGTH = 8;
-const MAX_SEGMENT_CONTENT_LENGTH = 4 * 1024 * 1024;
-var SMRegion;
-(function (SMRegion) {
-    SMRegion[SMRegion["StreamHeader"] = 0] = "StreamHeader";
-    SMRegion[SMRegion["StreamFooter"] = 1] = "StreamFooter";
-    SMRegion[SMRegion["SegmentHeader"] = 2] = "SegmentHeader";
-    SMRegion[SMRegion["SegmentFooter"] = 3] = "SegmentFooter";
-    SMRegion[SMRegion["SegmentContent"] = 4] = "SegmentContent";
-    SMRegion[SMRegion["Completed"] = 5] = "Completed";
-})(SMRegion || (SMRegion = {}));
-class StructuredMessageEncoding_StructuredMessageEncoding {
-    pushData;
-    contentLength;
-    messageLength;
-    constructor(pushData, contentLength) {
-        this.pushData = pushData;
-        this.contentLength = contentLength;
-        this.contentOffset = 0;
-        this.currentDataOffset = 0;
-        this.segmentsCount = Math.ceil(this.contentLength / MAX_SEGMENT_CONTENT_LENGTH);
-        this.messageLength =
-            this.contentLength +
-                MESSAGE_HEADER_LENGTH +
-                (SEGMENT_HEADER_LENGTH + FOOTER_LENGTH) * this.segmentsCount +
-                FOOTER_LENGTH;
-        this.messageHeaderBuffer = new Uint8Array(MESSAGE_HEADER_LENGTH);
-        this.segmentNumber = 0;
-        this.segmentContentLength = 0;
-        this.segmentContentOffset = 0;
-        this.state = SMRegion.StreamHeader;
-        this.segmentCrc64 = new StorageCRC64Calculator();
-        this.messageCrc64 = new StorageCRC64Calculator();
-    }
-    currentDataOffset;
-    contentOffset;
-    segmentsCount;
-    messageHeaderBuffer;
-    segmentNumber;
-    segmentContentLength;
-    segmentContentOffset;
-    segmentCrc64;
-    messageCrc64;
-    state;
-    sourceDataHandler = (data) => {
-        this.currentDataOffset = 0;
-        if (this.state === SMRegion.StreamHeader) {
-            this.handlingMessageHeader();
-        }
-        while (this.segmentNumber < this.segmentsCount) {
-            this.segmentContentLength = Math.min(MAX_SEGMENT_CONTENT_LENGTH, this.contentLength - this.contentOffset);
-            if (this.state === SMRegion.SegmentHeader) {
-                this.handlingSegmentHeader();
-            }
-            if (this.state === SMRegion.SegmentContent) {
-                this.handlingSegmentContent(data);
-            }
-            if (this.state === SMRegion.SegmentFooter) {
-                this.handlingSegmentFooter();
-                this.contentOffset += this.segmentContentLength;
-            }
-            if (this.currentDataOffset === data.length) {
-                break;
-            }
-        }
-        if (this.state === SMRegion.StreamFooter) {
-            this.handlingMessageFooter();
-        }
-    };
-    handlingMessageHeader() {
-        this.messageHeaderBuffer[0] = MESSAGE_VERSION;
-        this.fillInt64(this.messageHeaderBuffer, 1, this.messageLength); // content length
-        this.fillInt16(this.messageHeaderBuffer, 9, 1);
-        this.fillInt16(this.messageHeaderBuffer, 11, this.segmentsCount);
-        this.pushData(this.messageHeaderBuffer);
-        this.state = SMRegion.SegmentHeader;
-    }
-    handlingSegmentHeader() {
-        const segmentHeaderBuffer = new Uint8Array(SEGMENT_HEADER_LENGTH);
-        this.fillInt16(segmentHeaderBuffer, 0, this.segmentNumber + 1);
-        this.fillInt64(segmentHeaderBuffer, 2, this.segmentContentLength);
-        this.segmentContentOffset = 0;
-        this.pushData(segmentHeaderBuffer);
-        this.state = SMRegion.SegmentContent;
-    }
-    handlingSegmentContent(data) {
-        const length = Math.min(this.segmentContentLength - this.segmentContentOffset, data.length - this.currentDataOffset);
-        if (length !== 0) {
-            const current_content = Uint8Array.prototype.slice.call(data, this.currentDataOffset, this.currentDataOffset + length);
-            this.messageCrc64.append(current_content, length);
-            this.segmentCrc64.append(current_content, length);
-            this.pushData(current_content);
-        }
-        this.segmentContentOffset += length;
-        this.currentDataOffset += length;
-        if (this.segmentContentOffset === this.segmentContentLength) {
-            this.state = SMRegion.SegmentFooter;
-        }
-    }
-    handlingSegmentFooter() {
-        const crc64Result = this.segmentCrc64.final(new Uint8Array([]), 0);
-        this.pushData(crc64Result);
-        this.segmentCrc64 = new StorageCRC64Calculator();
-        ++this.segmentNumber;
-        if (this.segmentNumber === this.segmentsCount) {
-            this.state = SMRegion.StreamFooter;
-        }
-        else {
-            this.state = SMRegion.SegmentHeader;
-        }
-    }
-    handlingMessageFooter() {
-        const crc64Result = this.messageCrc64.final(new Uint8Array([]), 0);
-        this.pushData(crc64Result);
-        signalStreamEnd(this.pushData);
-        this.state = SMRegion.Completed;
-    }
-    fillInt64(buffer, offset, input) {
-        if (buffer.length < offset + 8) {
-            throw new Error("Uint8Array length is not expected.");
-        }
-        const view = new DataView(buffer.buffer, buffer.byteOffset + offset, 8);
-        view.setBigUint64(0, BigInt(input), true);
-    }
-    fillInt16(buffer, offset, input) {
-        if (buffer.length < offset + 2) {
-            throw new Error("Uint8Array length is not expected.");
-        }
-        const view = new DataView(buffer.buffer, buffer.byteOffset + offset, 2);
-        view.setUint16(0, input, true);
-    }
-}
-//# sourceMappingURL=StructuredMessageEncoding.js.map
-;// CONCATENATED MODULE: ./node_modules/@azure/storage-common/dist/esm/StructuredMessageEncodingStream.js
-// Copyright (c) Microsoft Corporation.
-// Licensed under the MIT License.
-
-
-
-function StructuredMessageEncodingStream_isNodeReadableStream(source) {
-    return (source !== null &&
-        source instanceof Stream &&
-        typeof source._read === "function" &&
-        typeof source._readableState === "object" &&
-        typeof source.pipe === "function");
-}
-/**
- *
- * To encode structured body for CRC64 content validtion in storage uploading.
- * @param source -
- * @param contentLength -
- * @returns
- */
-async function structuredMessageEncoding(source, contentLength) {
-    if (source === null) {
-        return {
-            body: source,
-            encodedContentLength: contentLength,
-        };
-    }
-    if (StructuredMessageEncodingStream_isNodeReadableStream(source)) {
-        const encodingMessage = new StructuredMessageEncodingStream(source, contentLength, {});
-        return {
-            body: encodingMessage,
-            encodedContentLength: encodingMessage.messageLength(),
-        };
-    }
-    if (typeof source === "function") {
-        const encodingMessage = new StructuredMessageEncodingStream(source(), contentLength, {});
-        return {
-            body: encodingMessage,
-            encodedContentLength: encodingMessage.messageLength(),
-        };
-    }
-    if (source instanceof Blob) {
-        const encoding = await BrowserStream(source, contentLength);
-        return {
-            body: encoding.content,
-            encodedContentLength: encoding.encodedContentLength,
-        };
-    }
-    if (typeof source === "string") {
-        const s = new Readable();
-        s._read = () => { };
-        s.push(source);
-        s.push(null);
-        const stringContentLength = Buffer.byteLength(source);
-        const encodingMessage = await new StructuredMessageEncodingStream(s, stringContentLength, {});
-        return {
-            body: encodingMessage,
-            encodedContentLength: encodingMessage.messageLength(),
-        };
-    }
-    if (source instanceof ArrayBuffer) {
-        const stream = Readable.from(Buffer.from(source));
-        const encodingMessage = await new StructuredMessageEncodingStream(stream, contentLength, {});
-        return {
-            body: encodingMessage,
-            encodedContentLength: encodingMessage.messageLength(),
-        };
-    }
-    if (source instanceof Buffer) {
-        const stream = Readable.from(source);
-        const encodingMessage = await new StructuredMessageEncodingStream(stream, contentLength, {});
-        return {
-            body: encodingMessage,
-            encodedContentLength: encodingMessage.messageLength(),
-        };
-    }
-    if (ArrayBuffer.isView(source)) {
-        const stream = Readable.from(Buffer.from(source.buffer, source.byteOffset, source.byteLength));
-        const encodingMessage = await new StructuredMessageEncodingStream(stream, contentLength, {});
-        return {
-            body: encodingMessage,
-            encodedContentLength: encodingMessage.messageLength(),
-        };
-    }
-    throw new Error("The specified request body type is not supported for CRC64 checksum");
-}
-async function pump(reader, controller, encodingStream) {
-    const { done, value } = await reader.read();
-    // When no more data needs to be consumed, close the stream
-    if (done) {
-        controller.close();
-        return;
-    }
-    // Enqueue the next data chunk into our target stream
-    encodingStream.sourceDataHandler(Buffer.from(value));
-}
-async function BrowserStream(source, contentLength) {
-    const sourceStream = source instanceof Blob ? source.stream() : source;
-    const reader = sourceStream.getReader();
-    let encodingStream = undefined;
-    const stream = new ReadableStream({
-        start(controller) {
-            encodingStream = new StructuredMessageEncoding((data) => {
-                controller.enqueue(data);
-            }, contentLength);
-        },
-        pull(controller) {
-            pump(reader, controller, encodingStream)
-                .then(() => {
-                return;
-            })
-                .catch(function (error) {
-                controller.error(error);
-            });
-        },
-    });
-    const response = new Response(stream);
-    return {
-        content: await response.blob(),
-        encodedContentLength: encodingStream.messageLength,
-    };
-}
-class StructuredMessageEncodingStream extends external_node_stream_.Readable {
-    source;
-    encodingMethods;
-    constructor(source, contentLength, options) {
-        super({ highWaterMark: options.highWaterMark });
-        this.source = source;
-        this.encodingMethods = new StructuredMessageEncoding_StructuredMessageEncoding((dataToHandle) => {
-            if (!this.push(dataToHandle)) {
-                source.pause();
-            }
-        }, contentLength);
-        this.setSourceEventHandlers();
-    }
-    messageLength() {
-        return this.encodingMethods.messageLength;
-    }
-    setSourceEventHandlers() {
-        this.source.on("data", this.sourceDataHandler);
-        this.source.on("end", this.sourceErrorOrEndHandler);
-        this.source.on("error", this.sourceErrorOrEndHandler);
-        // needed for Node14
-        this.source.on("aborted", this.sourceAbortedHandler);
-    }
-    removeSourceEventHandlers() {
-        this.source.removeListener("data", this.sourceDataHandler);
-        this.source.removeListener("end", this.sourceErrorOrEndHandler);
-        this.source.removeListener("error", this.sourceErrorOrEndHandler);
-        this.source.removeListener("aborted", this.sourceAbortedHandler);
-    }
-    sourceDataHandler = (data) => {
-        this.encodingMethods.sourceDataHandler(data);
-    };
-    sourceAbortedHandler = () => {
-        const abortError = new AbortError_AbortError("The operation was aborted.");
-        this.destroy(abortError);
-    };
-    sourceErrorOrEndHandler = (err) => {
-        if (err && err.name === "AbortError") {
-            this.destroy(err);
-            return;
-        }
-        // console.log(
-        //   `Source stream emits end or error, offset: ${
-        //     this.offset
-        //   }, dest end : ${this.end}`
-        // );
-        this.removeSourceEventHandlers();
-    };
-    _read() {
-        this.source.resume();
-    }
-    _destroy(error, callback) {
-        // remove listener from source and release source
-        this.removeSourceEventHandlers();
-        this.source.destroy();
-        callback(error === null ? undefined : error);
-    }
-}
-//# sourceMappingURL=StructuredMessageEncodingStream.js.map
-;// CONCATENATED MODULE: ./node_modules/@azure/storage-common/dist/esm/StructuredMessageDecoding.js
-// Copyright (c) Microsoft Corporation.
-// Licensed under the MIT License.
-
-const StructuredMessageDecoding_MESSAGE_VERSION = 1;
-const StructuredMessageDecoding_MESSAGE_HEADER_LENGTH = 13;
-const StructuredMessageDecoding_SEGMENT_HEADER_LENGTH = 10;
-const StructuredMessageDecoding_FOOTER_LENGTH = 8;
-var StructuredMessageDecoding_SMRegion;
-(function (SMRegion) {
-    SMRegion[SMRegion["StreamHeader"] = 0] = "StreamHeader";
-    SMRegion[SMRegion["StreamFooter"] = 1] = "StreamFooter";
-    SMRegion[SMRegion["SegmentHeader"] = 2] = "SegmentHeader";
-    SMRegion[SMRegion["SegmentFooter"] = 3] = "SegmentFooter";
-    SMRegion[SMRegion["SegmentContent"] = 4] = "SegmentContent";
-})(StructuredMessageDecoding_SMRegion || (StructuredMessageDecoding_SMRegion = {}));
-class StructuredMessageDecoding {
-    pushData;
-    segmentsCount;
-    //   private currentState: SMRegion;
-    currentOffset;
-    currentDataOffset;
-    messageHeaderBuffer;
-    messageHeaderOffset;
-    segmentNumber;
-    segmentHeaderOffset;
-    segmentHeaderBuffer;
-    segmentContentOffset;
-    segmentContentLength;
-    segmentFooterOffset;
-    segmentFooterBuffer;
-    messageFooterOffset;
-    messageFooterBuffer;
-    segmentCrc64;
-    messageCrc64;
-    state;
-    constructor(pushData) {
-        this.pushData = pushData;
-        this.currentOffset = 0;
-        this.segmentsCount = 0;
-        this.messageHeaderOffset = 0;
-        this.messageHeaderBuffer = new Uint8Array(StructuredMessageDecoding_MESSAGE_HEADER_LENGTH);
-        this.currentDataOffset = 0;
-        this.segmentNumber = 0;
-        this.segmentHeaderOffset = 0;
-        this.segmentHeaderBuffer = new Uint8Array(StructuredMessageDecoding_SEGMENT_HEADER_LENGTH);
-        this.segmentContentOffset = 0;
-        this.segmentContentLength = 0;
-        this.state = StructuredMessageDecoding_SMRegion.StreamHeader;
-        this.segmentFooterOffset = 0;
-        this.segmentFooterBuffer = new Uint8Array(StructuredMessageDecoding_FOOTER_LENGTH);
-        this.messageFooterOffset = 0;
-        this.messageFooterBuffer = new Uint8Array(StructuredMessageDecoding_FOOTER_LENGTH);
-        this.segmentCrc64 = new StorageCRC64Calculator();
-        this.messageCrc64 = new StorageCRC64Calculator();
-    }
-    sourceDataHandler = (data) => {
-        this.currentDataOffset = 0;
-        if (this.state === StructuredMessageDecoding_SMRegion.StreamHeader) {
-            this.parseMessageHeader(data);
-        }
-        while (this.segmentNumber < this.segmentsCount && this.currentDataOffset < data.length) {
-            if (this.state === StructuredMessageDecoding_SMRegion.SegmentHeader) {
-                this.parseSegmentHeader(data);
-            }
-            if (this.state === StructuredMessageDecoding_SMRegion.SegmentContent) {
-                this.parseSegmentContent(data);
-            }
-            if (this.state === StructuredMessageDecoding_SMRegion.SegmentFooter) {
-                this.parseSegmentFooter(data);
-            }
-        }
-        if (this.state === StructuredMessageDecoding_SMRegion.StreamFooter) {
-            this.parseMessageFooter(data);
-        }
-    };
-    parseMessageHeader(data) {
-        const length = Math.min(StructuredMessageDecoding_MESSAGE_HEADER_LENGTH - this.messageHeaderOffset, data.length - this.currentDataOffset);
-        this.messageHeaderBuffer.set(Uint8Array.prototype.slice.call(data, this.currentDataOffset, this.currentDataOffset + length), this.messageHeaderOffset);
-        this.currentDataOffset += length;
-        this.messageHeaderOffset += length;
-        this.currentOffset += length;
-        if (this.messageHeaderOffset === StructuredMessageDecoding_MESSAGE_HEADER_LENGTH) {
-            const currentVersion = this.messageHeaderBuffer[0];
-            if (currentVersion !== StructuredMessageDecoding_MESSAGE_VERSION) {
-                throw new Error("Unexpected message version");
-            }
-            this.segmentsCount = this.toInt16(Uint8Array.prototype.slice.call(this.messageHeaderBuffer, 11, 13));
-            this.state = StructuredMessageDecoding_SMRegion.SegmentHeader;
-        }
-    }
-    parseSegmentHeader(data) {
-        const length = Math.min(StructuredMessageDecoding_SEGMENT_HEADER_LENGTH - this.segmentHeaderOffset, data.length - this.currentDataOffset);
-        this.segmentHeaderBuffer.set(Uint8Array.prototype.slice.call(data, this.currentDataOffset, this.currentDataOffset + length), this.segmentHeaderOffset);
-        this.currentDataOffset += length;
-        this.segmentHeaderOffset += length;
-        this.currentOffset += length;
-        if (this.segmentHeaderOffset === StructuredMessageDecoding_SEGMENT_HEADER_LENGTH) {
-            const currentSegmentNumber = this.toInt16(Uint8Array.prototype.slice.call(this.segmentHeaderBuffer, 0, 2));
-            if (currentSegmentNumber !== this.segmentNumber + 1) {
-                throw new Error("Segment number is unexpected.");
-            }
-            this.segmentContentLength = this.toInt64(this.segmentHeaderBuffer, 2);
-            this.segmentContentOffset = 0;
-            this.state = StructuredMessageDecoding_SMRegion.SegmentContent;
-        }
-    }
-    parseSegmentContent(data) {
-        const length = Math.min(this.segmentContentLength - this.segmentContentOffset, data.length - this.currentDataOffset);
-        const dataToHandle = Uint8Array.prototype.slice.call(data, this.currentDataOffset, this.currentDataOffset + length);
-        this.segmentCrc64.append(dataToHandle, length);
-        this.messageCrc64.append(dataToHandle, length);
-        this.pushData(dataToHandle);
-        this.currentDataOffset += length;
-        this.segmentContentOffset += length;
-        this.currentOffset += length;
-        if (this.segmentContentOffset === this.segmentContentLength) {
-            this.state = StructuredMessageDecoding_SMRegion.SegmentFooter;
-        }
-    }
-    parseSegmentFooter(data) {
-        const length = Math.min(StructuredMessageDecoding_FOOTER_LENGTH - this.segmentFooterOffset, data.length - this.currentDataOffset);
-        this.segmentFooterBuffer.set(Uint8Array.prototype.slice.call(data, this.currentDataOffset, this.currentDataOffset + length), this.segmentFooterOffset);
-        this.currentDataOffset += length;
-        this.segmentFooterOffset += length;
-        this.currentOffset += length;
-        if (this.segmentFooterOffset === StructuredMessageDecoding_FOOTER_LENGTH) {
-            const crc64Result = this.segmentCrc64.final(new Uint8Array([]), 0);
-            if (!this.checkCrc64CheckSum(crc64Result, this.segmentFooterBuffer)) {
-                throw new Error(`Segment check sum mismatch, segmentNumber: ${this.segmentNumber}`);
-            }
-            ++this.segmentNumber;
-            if (this.segmentNumber === this.segmentsCount) {
-                this.state = StructuredMessageDecoding_SMRegion.StreamFooter;
-            }
-            else {
-                this.segmentHeaderOffset = 0;
-                this.segmentFooterOffset = 0;
-                this.segmentCrc64 = new StorageCRC64Calculator();
-                this.state = StructuredMessageDecoding_SMRegion.SegmentHeader;
-            }
-        }
-    }
-    parseMessageFooter(data) {
-        const length = Math.min(StructuredMessageDecoding_FOOTER_LENGTH - this.messageFooterOffset, data.length - this.currentDataOffset);
-        this.messageFooterBuffer.set(Uint8Array.prototype.slice.call(data, this.currentDataOffset, this.currentDataOffset + length), this.messageFooterOffset);
-        this.currentDataOffset += length;
-        this.messageFooterOffset += length;
-        this.currentOffset += length;
-        if (this.messageFooterOffset === StructuredMessageDecoding_FOOTER_LENGTH) {
-            const crc64Result = this.messageCrc64.final(new Uint8Array([]), 0);
-            if (!this.checkCrc64CheckSum(crc64Result, this.messageFooterBuffer)) {
-                throw new Error("Check sum mismatch");
-            }
-            this.pushData(null);
-        }
-    }
-    toInt64(input, offset) {
-        if (input.length < offset + 8) {
-            throw new Error("CRC64 buffer error, something wrong with crc64 calculator");
-        }
-        const view = new DataView(input.buffer, input.byteOffset + offset, 8);
-        return Number(view.getBigUint64(0, true));
-    }
-    toInt16(input) {
-        if (input.length !== 2) {
-            throw new Error("CRC64 buffer error, something wrong with crc64 calculator");
-        }
-        return input[0] + input[1] * 256;
-    }
-    checkCrc64CheckSum(first, second) {
-        if (first.length !== 8 || second.length !== 8) {
-            throw new Error("CRC64 buffer error, something wrong with crc64 calculator");
-        }
-        for (let index = 0; index < 8; ++index) {
-            if (first[index] !== second[index]) {
-                return false;
-            }
-        }
-        return true;
-    }
-}
-//# sourceMappingURL=StructuredMessageDecoding.js.map
-;// CONCATENATED MODULE: ./node_modules/@azure/storage-common/dist/esm/StructuredMessageDecodingStream.js
-// Copyright (c) Microsoft Corporation.
-// Licensed under the MIT License.
-
-
-
-/**
- * To decode structured body for CRC64 content validtion in storage downloading.
- * @param source -
- */
-async function structuredMessageDecodingBrowser(source) {
-    /* eslint-disable no-unused-expressions */
-    source;
-    throw new Error("structuredMessageDecodingBrowser is only for Browser");
-}
-/**
- * To decode structured body for CRC64 content validtion in storage downloading.
- * @param source -
- * @param options -
- * @returns
- */
-function structuredMessageDecodingStream(source, options) {
-    return new StructuredMessageDecodingStream(source, options);
-}
-class StructuredMessageDecodingStream extends external_node_stream_.Readable {
-    source;
-    decodingMethods;
-    constructor(source, options) {
-        super({ highWaterMark: options.highWaterMark });
-        this.source = source;
-        this.decodingMethods = new StructuredMessageDecoding((dataToHandle) => {
-            if (!this.push(dataToHandle)) {
-                source.pause();
-            }
-        });
-        this.setSourceEventHandlers();
-    }
-    _read() {
-        this.source.resume();
-    }
-    setSourceEventHandlers() {
-        this.source.on("data", this.sourceDataHandler);
-        this.source.on("end", this.sourceErrorOrEndHandler);
-        this.source.on("error", this.sourceErrorOrEndHandler);
-        // needed for Node14
-        this.source.on("aborted", this.sourceAbortedHandler);
-    }
-    removeSourceEventHandlers() {
-        this.source.removeListener("data", this.sourceDataHandler);
-        this.source.removeListener("end", this.sourceErrorOrEndHandler);
-        this.source.removeListener("error", this.sourceErrorOrEndHandler);
-        this.source.removeListener("aborted", this.sourceAbortedHandler);
-    }
-    sourceDataHandler = (data) => {
-        try {
-            this.decodingMethods.sourceDataHandler(data);
-        }
-        catch (err) {
-            this.destroy(err);
-        }
-    };
-    sourceAbortedHandler = () => {
-        const abortError = new AbortError_AbortError("The operation was aborted.");
-        this.destroy(abortError);
-    };
-    sourceErrorOrEndHandler = (err) => {
-        if (err) {
-            this.destroy(err);
-            return;
-        }
-        this.removeSourceEventHandlers();
-    };
-    _destroy(error, callback) {
-        // remove listener from source and release source
-        this.removeSourceEventHandlers();
-        this.source.destroy();
-        callback(error === null ? undefined : error);
-    }
-}
-//# sourceMappingURL=StructuredMessageDecodingStream.js.map
-;// CONCATENATED MODULE: ./node_modules/@azure/storage-common/node_modules/@azure/core-rest-pipeline/dist/esm/pipeline.js
-// Copyright (c) Microsoft Corporation.
-// Licensed under the MIT License.
-
-/**
- * Creates a totally empty pipeline.
- * Useful for testing or creating a custom one.
- */
-function dist_esm_pipeline_createEmptyPipeline() {
-    return tspCreateEmptyPipeline();
-}
-//# sourceMappingURL=pipeline.js.map
-;// CONCATENATED MODULE: ./node_modules/@azure/storage-common/node_modules/@azure/core-rest-pipeline/dist/esm/log.js
-// Copyright (c) Microsoft Corporation.
-// Licensed under the MIT License.
-
-const core_rest_pipeline_dist_esm_log_logger = esm_createClientLogger("core-rest-pipeline");
-//# sourceMappingURL=log.js.map
-;// CONCATENATED MODULE: ./node_modules/@azure/storage-common/node_modules/@azure/core-rest-pipeline/dist/esm/policies/logPolicy.js
-// Copyright (c) Microsoft Corporation.
-// Licensed under the MIT License.
-
-
-/**
- * The programmatic identifier of the logPolicy.
- */
-const policies_logPolicy_logPolicyName = (/* unused pure expression or super */ null && (tspLogPolicyName));
-/**
- * A policy that logs all requests and responses.
- * @param options - Options to configure logPolicy.
- */
-function esm_policies_logPolicy_logPolicy(options = {}) {
-    return tspLogPolicy({
-        logger: coreLogger.info,
-        ...options,
-    });
-}
-//# sourceMappingURL=logPolicy.js.map
-;// CONCATENATED MODULE: ./node_modules/@azure/storage-common/node_modules/@azure/core-rest-pipeline/dist/esm/policies/redirectPolicy.js
-// Copyright (c) Microsoft Corporation.
-// Licensed under the MIT License.
-
-/**
- * The programmatic identifier of the redirectPolicy.
- */
-const policies_redirectPolicy_redirectPolicyName = (/* unused pure expression or super */ null && (tspRedirectPolicyName));
-/**
- * A policy to follow Location headers from the server in order
- * to support server-side redirection.
- * In the browser, this policy is not used.
- * @param options - Options to control policy behavior.
- */
-function esm_policies_redirectPolicy_redirectPolicy(options = {}) {
-    return tspRedirectPolicy(options);
-}
-//# sourceMappingURL=redirectPolicy.js.map
-;// CONCATENATED MODULE: ./node_modules/@azure/storage-common/node_modules/@azure/core-rest-pipeline/dist/esm/util/userAgentPlatform.js
-// Copyright (c) Microsoft Corporation.
-// Licensed under the MIT License.
-
-
-/**
- * @internal
- */
-function util_userAgentPlatform_getHeaderName() {
-    return "User-Agent";
-}
-/**
- * @internal
- */
-async function esm_util_userAgentPlatform_setPlatformSpecificData(map) {
-    if (process && process.versions) {
-        const osInfo = `${os.type()} ${os.release()}; ${os.arch()}`;
-        if (process.versions.bun) {
-            map.set("Bun", `${process.versions.bun} (${osInfo})`);
-        }
-        else if (process.versions.deno) {
-            map.set("Deno", `${process.versions.deno} (${osInfo})`);
-        }
-        else if (process.versions.node) {
-            map.set("Node", `${process.versions.node} (${osInfo})`);
-        }
-    }
-}
-//# sourceMappingURL=userAgentPlatform.js.map
-;// CONCATENATED MODULE: ./node_modules/@azure/storage-common/node_modules/@azure/core-rest-pipeline/dist/esm/util/userAgent.js
-// Copyright (c) Microsoft Corporation.
-// Licensed under the MIT License.
-
-
-function util_userAgent_getUserAgentString(telemetryInfo) {
-    const parts = [];
-    for (const [key, value] of telemetryInfo) {
-        const token = value ? `${key}/${value}` : key;
-        parts.push(token);
-    }
-    return parts.join(" ");
-}
-/**
- * @internal
- */
-function util_userAgent_getUserAgentHeaderName() {
-    return util_userAgentPlatform_getHeaderName();
-}
-/**
- * @internal
- */
-async function esm_util_userAgent_getUserAgentValue(prefix) {
-    const runtimeInfo = new Map();
-    runtimeInfo.set("core-rest-pipeline", SDK_VERSION);
-    await setPlatformSpecificData(runtimeInfo);
-    const defaultAgent = util_userAgent_getUserAgentString(runtimeInfo);
-    const userAgentValue = prefix ? `${prefix} ${defaultAgent}` : defaultAgent;
-    return userAgentValue;
-}
-//# sourceMappingURL=userAgent.js.map
-;// CONCATENATED MODULE: ./node_modules/@azure/storage-common/node_modules/@azure/core-rest-pipeline/dist/esm/policies/userAgentPolicy.js
-// Copyright (c) Microsoft Corporation.
-// Licensed under the MIT License.
-
-const policies_userAgentPolicy_UserAgentHeaderName = util_userAgent_getUserAgentHeaderName();
-/**
- * The programmatic identifier of the userAgentPolicy.
- */
-const policies_userAgentPolicy_userAgentPolicyName = "userAgentPolicy";
-/**
- * A policy that sets the User-Agent header (or equivalent) to reflect
- * the library version.
- * @param options - Options to customize the user agent value.
- */
-function esm_policies_userAgentPolicy_userAgentPolicy(options = {}) {
-    const userAgentValue = getUserAgentValue(options.userAgentPrefix);
-    return {
-        name: policies_userAgentPolicy_userAgentPolicyName,
-        async sendRequest(request, next) {
-            if (!request.headers.has(policies_userAgentPolicy_UserAgentHeaderName)) {
-                request.headers.set(policies_userAgentPolicy_UserAgentHeaderName, await userAgentValue);
-            }
-            return next(request);
-        },
-    };
-}
-//# sourceMappingURL=userAgentPolicy.js.map
-;// CONCATENATED MODULE: ./node_modules/@azure/storage-common/node_modules/@azure/core-rest-pipeline/dist/esm/util/createFile.js
-// Copyright (c) Microsoft Corporation.
-// Licensed under the MIT License.
-
-/**
- * Create an object that implements the File interface. This object is intended to be
- * passed into RequestBodyType.formData, and is not guaranteed to work as expected in
- * other situations.
- *
- * Use this function to create a File object for use in RequestBodyType.formData in environments
- * where the global File object is unavailable.
- *
- * @param content - the content of the file as a Uint8Array in memory.
- * @param name - the name of the file.
- * @param options - optional metadata about the file, e.g. file name, file size, MIME type.
- */
-function createFile_createFile(content, name, options = {}) {
-    return createRawFile(content, name, options);
-}
-//# sourceMappingURL=createFile.js.map
-;// CONCATENATED MODULE: ./node_modules/@azure/storage-common/node_modules/@azure/core-rest-pipeline/dist/esm/util/file.js
-// Copyright (c) Microsoft Corporation.
-// Licensed under the MIT License.
-function util_file_isNodeReadableStream(x) {
-    return typeof x === "object" && x !== null && "pipe" in x && typeof x.pipe === "function";
-}
-const file_unimplementedMethods = {
-    arrayBuffer: () => {
-        throw new Error("Not implemented");
-    },
-    bytes: () => {
-        throw new Error("Not implemented");
-    },
-    slice: () => {
-        throw new Error("Not implemented");
-    },
-    text: () => {
-        throw new Error("Not implemented");
-    },
-};
-/**
- * Private symbol used as key on objects created using createFile containing the
- * original source of the file object.
- *
- * This is used in Node to access the original Node stream without using Blob#stream, which
- * returns a web stream. This is done to avoid a couple of bugs to do with Blob#stream and
- * Readable#to/fromWeb in Node versions we support:
- * - https://github.com/nodejs/node/issues/42694 (fixed in Node 18.14)
- * - https://github.com/nodejs/node/issues/48916 (fixed in Node 20.6)
- *
- * Once these versions are no longer supported, we may be able to stop doing this.
- *
- * @internal
- */
-const file_rawContent = Symbol("rawContent");
-/**
- * Type guard to check if a given object is a blob-like object with a raw content property.
- */
-function util_file_hasRawContent(x) {
-    return typeof x[file_rawContent] === "function";
-}
-/**
- * Extract the raw content from a given blob-like object. If the input was created using createFile
- * or createFileFromStream, the exact content passed into createFile/createFileFromStream will be used.
- * For true instances of Blob and File, returns the actual blob.
- *
- * @internal
- */
-function util_file_getRawContent(blob) {
-    if (util_file_hasRawContent(blob)) {
-        return blob[file_rawContent]();
-    }
-    else {
-        return blob;
-    }
-}
-/**
- * @internal
- *
- * Creates a File-like object tagged with rawContent for efficient streaming access.
- * Used by the Node createFile to avoid Blob#stream() bugs.
- */
-function file_createRawFile(content, name, options = {}) {
-    return {
-        ...file_unimplementedMethods,
-        type: options.type ?? "",
-        lastModified: options.lastModified ?? new Date().getTime(),
-        webkitRelativePath: options.webkitRelativePath ?? "",
-        size: content.byteLength,
-        name,
-        arrayBuffer: async () => file_toArrayBuffer(content).buffer,
-        stream: () => new Blob([file_toArrayBuffer(content)]).stream(),
-        [file_rawContent]: () => content,
-    };
-}
-/**
- * Create an object that implements the File interface. This object is intended to be
- * passed into RequestBodyType.formData, and is not guaranteed to work as expected in
- * other situations.
- *
- * Use this function to:
- * - Create a File object for use in RequestBodyType.formData in environments where the
- *   global File object is unavailable.
- * - Create a File-like object from a readable stream without reading the stream into memory.
- *
- * @param stream - the content of the file as a callback returning a stream. When a File object made using createFile is
- *                  passed in a request's form data map, the stream will not be read into memory
- *                  and instead will be streamed when the request is made. In the event of a retry, the
- *                  stream needs to be read again, so this callback SHOULD return a fresh stream if possible.
- * @param name - the name of the file.
- * @param options - optional metadata about the file, e.g. file name, file size, MIME type.
- */
-function file_createFileFromStream(stream, name, options = {}) {
-    return {
-        ...file_unimplementedMethods,
-        type: options.type ?? "",
-        lastModified: options.lastModified ?? new Date().getTime(),
-        webkitRelativePath: options.webkitRelativePath ?? "",
-        size: options.size ?? -1,
-        name,
-        stream: () => {
-            const s = stream();
-            if (util_file_isNodeReadableStream(s)) {
-                throw new Error("Not supported: a Node stream was provided as input to createFileFromStream.");
-            }
-            return s;
-        },
-        [file_rawContent]: stream,
-    };
-}
-
-function hasArrayBuffer(source) {
-    return "resize" in source.buffer;
-}
-function file_toArrayBuffer(source) {
-    if (hasArrayBuffer(source)) {
-        // ArrayBuffer — return a copy if the view is a subarray of a larger buffer
-        if (source.byteOffset !== 0 || source.byteLength !== source.buffer.byteLength) {
-            return new Uint8Array(source);
-        }
-        return source;
-    }
-    // SharedArrayBuffer
-    return source.map((x) => x);
-}
-//# sourceMappingURL=file.js.map
-;// CONCATENATED MODULE: ./node_modules/@azure/storage-common/node_modules/@azure/core-rest-pipeline/dist/esm/policies/multipartPolicy.js
-// Copyright (c) Microsoft Corporation.
-// Licensed under the MIT License.
-
-
-/**
- * Name of multipart policy
- */
-const esm_policies_multipartPolicy_multipartPolicyName = (/* unused pure expression or super */ null && (tspMultipartPolicyName));
-/**
- * Pipeline policy for multipart requests
- */
-function esm_policies_multipartPolicy_multipartPolicy() {
-    const tspPolicy = tspMultipartPolicy();
-    return {
-        name: esm_policies_multipartPolicy_multipartPolicyName,
-        sendRequest: async (request, next) => {
-            if (request.multipartBody) {
-                for (const part of request.multipartBody.parts) {
-                    if (hasRawContent(part.body)) {
-                        part.body = getRawContent(part.body);
-                    }
-                }
-            }
-            return tspPolicy.sendRequest(request, next);
-        },
-    };
-}
-//# sourceMappingURL=multipartPolicy.js.map
-;// CONCATENATED MODULE: ./node_modules/@azure/storage-common/node_modules/@azure/core-rest-pipeline/dist/esm/policies/decompressResponsePolicy.js
-// Copyright (c) Microsoft Corporation.
-// Licensed under the MIT License.
-
-/**
- * The programmatic identifier of the decompressResponsePolicy.
- */
-const policies_decompressResponsePolicy_decompressResponsePolicyName = (/* unused pure expression or super */ null && (tspDecompressResponsePolicyName));
-/**
- * A policy to enable response decompression according to Accept-Encoding header
- * https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Accept-Encoding
- */
-function esm_policies_decompressResponsePolicy_decompressResponsePolicy() {
-    return tspDecompressResponsePolicy();
-}
-//# sourceMappingURL=decompressResponsePolicy.js.map
-;// CONCATENATED MODULE: ./node_modules/@azure/storage-common/node_modules/@azure/core-rest-pipeline/dist/esm/policies/defaultRetryPolicy.js
-// Copyright (c) Microsoft Corporation.
-// Licensed under the MIT License.
-
-/**
- * Name of the {@link defaultRetryPolicy}
- */
-const policies_defaultRetryPolicy_defaultRetryPolicyName = (/* unused pure expression or super */ null && (tspDefaultRetryPolicyName));
-/**
- * A policy that retries according to three strategies:
- * - When the server sends a 429 response with a Retry-After header.
- * - When there are errors in the underlying transport layer (e.g. DNS lookup failures).
- * - Or otherwise if the outgoing request fails, it will retry with an exponentially increasing delay.
- */
-function esm_policies_defaultRetryPolicy_defaultRetryPolicy(options = {}) {
-    return tspDefaultRetryPolicy(options);
-}
-//# sourceMappingURL=defaultRetryPolicy.js.map
-;// CONCATENATED MODULE: ./node_modules/@azure/storage-common/node_modules/@azure/core-rest-pipeline/dist/esm/policies/formDataPolicy.js
-// Copyright (c) Microsoft Corporation.
-// Licensed under the MIT License.
-
-/**
- * The programmatic identifier of the formDataPolicy.
- */
-const policies_formDataPolicy_formDataPolicyName = (/* unused pure expression or super */ null && (tspFormDataPolicyName));
-/**
- * A policy that encodes FormData on the request into the body.
- */
-function esm_policies_formDataPolicy_formDataPolicy() {
-    return tspFormDataPolicy();
-}
-//# sourceMappingURL=formDataPolicy.js.map
-;// CONCATENATED MODULE: ./node_modules/@azure/storage-common/node_modules/@azure/core-rest-pipeline/dist/esm/policies/proxyPolicy.js
-// Copyright (c) Microsoft Corporation.
-// Licensed under the MIT License.
-
-/**
- * The programmatic identifier of the proxyPolicy.
- */
-const policies_proxyPolicy_proxyPolicyName = (/* unused pure expression or super */ null && (tspProxyPolicyName));
-/**
- * This method converts a proxy url into `ProxySettings` for use with ProxyPolicy.
- * If no argument is given, it attempts to parse a proxy URL from the environment
- * variables `HTTPS_PROXY` or `HTTP_PROXY`.
- * @param proxyUrl - The url of the proxy to use. May contain authentication information.
- * @deprecated - Internally this method is no longer necessary when setting proxy information.
- */
-function policies_proxyPolicy_getDefaultProxySettings(proxyUrl) {
-    return tspGetDefaultProxySettings(proxyUrl);
-}
-/**
- * A policy that allows one to apply proxy settings to all requests.
- * If not passed static settings, they will be retrieved from the HTTPS_PROXY
- * or HTTP_PROXY environment variables.
- * @param proxySettings - ProxySettings to use on each request.
- * @param options - additional settings, for example, custom NO_PROXY patterns
- */
-function esm_policies_proxyPolicy_proxyPolicy(proxySettings, options) {
-    return tspProxyPolicy(proxySettings, options);
-}
-//# sourceMappingURL=proxyPolicy.js.map
-;// CONCATENATED MODULE: ./node_modules/@azure/storage-common/node_modules/@azure/core-rest-pipeline/dist/esm/policies/agentPolicy.js
-// Copyright (c) Microsoft Corporation.
-// Licensed under the MIT License.
-
-/**
- * Name of the Agent Policy
- */
-const policies_agentPolicy_agentPolicyName = (/* unused pure expression or super */ null && (tspAgentPolicyName));
-/**
- * Gets a pipeline policy that sets http.agent
- */
-function esm_policies_agentPolicy_agentPolicy(agent) {
-    return tspAgentPolicy(agent);
-}
-//# sourceMappingURL=agentPolicy.js.map
-;// CONCATENATED MODULE: ./node_modules/@azure/storage-common/node_modules/@azure/core-rest-pipeline/dist/esm/policies/tlsPolicy.js
-// Copyright (c) Microsoft Corporation.
-// Licensed under the MIT License.
-
-/**
- * Name of the TLS Policy
- */
-const policies_tlsPolicy_tlsPolicyName = (/* unused pure expression or super */ null && (tspTlsPolicyName));
-/**
- * Gets a pipeline policy that adds the client certificate to the HttpClient agent for authentication.
- */
-function esm_policies_tlsPolicy_tlsPolicy(tlsSettings) {
-    return tspTlsPolicy(tlsSettings);
-}
-//# sourceMappingURL=tlsPolicy.js.map
-;// CONCATENATED MODULE: ./node_modules/@azure/storage-common/node_modules/@azure/core-rest-pipeline/dist/esm/restError.js
-// Copyright (c) Microsoft Corporation.
-// Licensed under the MIT License.
-
-/**
- * A custom error type for failed pipeline requests.
- */
-// eslint-disable-next-line @typescript-eslint/no-redeclare
-const dist_esm_restError_RestError = restError_RestError;
-/**
- * Typeguard for RestError
- * @param e - Something caught by a catch clause.
- */
-function dist_esm_restError_isRestError(e) {
-    return restError_isRestError(e);
-}
-//# sourceMappingURL=restError.js.map
-;// CONCATENATED MODULE: ./node_modules/@azure/storage-common/node_modules/@azure/core-rest-pipeline/dist/esm/policies/tracingPolicy.js
-// Copyright (c) Microsoft Corporation.
-// Licensed under the MIT License.
-
-
-
-
-
-
-
-/**
- * The programmatic identifier of the tracingPolicy.
- */
-const tracingPolicy_tracingPolicyName = "tracingPolicy";
-/**
- * A simple policy to create OpenTelemetry Spans for each request made by the pipeline
- * that has SpanOptions with a parent.
- * Requests made without a parent Span will not be recorded.
- * @param options - Options to configure the telemetry logged by the tracing policy.
- */
-function policies_tracingPolicy_tracingPolicy(options = {}) {
-    const userAgentPromise = getUserAgentValue(options.userAgentPrefix);
-    const sanitizer = new Sanitizer({
-        additionalAllowedQueryParameters: options.additionalAllowedQueryParameters,
-    });
-    const tracingClient = tracingPolicy_tryCreateTracingClient();
-    return {
-        name: tracingPolicy_tracingPolicyName,
-        async sendRequest(request, next) {
-            if (!tracingClient) {
-                return next(request);
-            }
-            const userAgent = await userAgentPromise;
-            const spanAttributes = {
-                "http.url": sanitizer.sanitizeUrl(request.url),
-                "http.method": request.method,
-                "http.user_agent": userAgent,
-                requestId: request.requestId,
-            };
-            if (userAgent) {
-                spanAttributes["http.user_agent"] = userAgent;
-            }
-            const { span, tracingContext } = tracingPolicy_tryCreateSpan(tracingClient, request, spanAttributes) ?? {};
-            if (!span || !tracingContext) {
-                return next(request);
-            }
-            try {
-                const response = await tracingClient.withContext(tracingContext, next, request);
-                tracingPolicy_tryProcessResponse(span, response);
-                return response;
-            }
-            catch (err) {
-                tracingPolicy_tryProcessError(span, err);
-                throw err;
-            }
-        },
-    };
-}
-function tracingPolicy_tryCreateTracingClient() {
-    try {
-        return createTracingClient({
-            namespace: "",
-            packageName: "@azure/core-rest-pipeline",
-            packageVersion: SDK_VERSION,
-        });
-    }
-    catch (e) {
-        logger.warning(`Error when creating the TracingClient: ${getErrorMessage(e)}`);
-        return undefined;
-    }
-}
-function tracingPolicy_tryCreateSpan(tracingClient, request, spanAttributes) {
-    try {
-        // As per spec, we do not need to differentiate between HTTP and HTTPS in span name.
-        const { span, updatedOptions } = tracingClient.startSpan(`HTTP ${request.method}`, { tracingOptions: request.tracingOptions }, {
-            spanKind: "client",
-            spanAttributes,
-        });
-        // If the span is not recording, don't do any more work.
-        if (!span.isRecording()) {
-            span.end();
-            return undefined;
-        }
-        // set headers
-        const headers = tracingClient.createRequestHeaders(updatedOptions.tracingOptions.tracingContext);
-        for (const [key, value] of Object.entries(headers)) {
-            request.headers.set(key, value);
-        }
-        return { span, tracingContext: updatedOptions.tracingOptions.tracingContext };
-    }
-    catch (e) {
-        logger.warning(`Skipping creating a tracing span due to an error: ${getErrorMessage(e)}`);
-        return undefined;
-    }
-}
-function tracingPolicy_tryProcessError(span, error) {
-    try {
-        span.setStatus({
-            status: "error",
-            error: isError(error) ? error : undefined,
-        });
-        if (isRestError(error) && error.statusCode) {
-            span.setAttribute("http.status_code", error.statusCode);
-        }
-        span.end();
-    }
-    catch (e) {
-        logger.warning(`Skipping tracing span processing due to an error: ${getErrorMessage(e)}`);
-    }
-}
-function tracingPolicy_tryProcessResponse(span, response) {
-    try {
-        span.setAttribute("http.status_code", response.status);
-        const serviceRequestId = response.headers.get("x-ms-request-id");
-        if (serviceRequestId) {
-            span.setAttribute("serviceRequestId", serviceRequestId);
-        }
-        // Per semantic conventions, only set the status to error if the status code is 4xx or 5xx.
-        // Otherwise, the status MUST remain unset.
-        // https://opentelemetry.io/docs/specs/semconv/http/http-spans/#status
-        if (response.status >= 400) {
-            span.setStatus({
-                status: "error",
-            });
-        }
-        span.end();
-    }
-    catch (e) {
-        logger.warning(`Skipping tracing span processing due to an error: ${getErrorMessage(e)}`);
-    }
-}
-//# sourceMappingURL=tracingPolicy.js.map
-;// CONCATENATED MODULE: ./node_modules/@azure/storage-common/node_modules/@azure/core-rest-pipeline/dist/esm/util/cleanupOnCompletion.js
-// Copyright (c) Microsoft Corporation.
-// Licensed under the MIT License.
-
-
-/**
- * Runs the cleanup callback associated with the response and its request once they are complete.
- */
-function cleanupOnCompletion_cleanupOnRequestResponseCompletion(response, cleanup) {
-    const stream = response?.readableStreamBody;
-    const requestCompletion = response ? getRequestCompletion(response) : undefined;
-    const browserResponseCompletion = response ? getResponseBodyCompletion(response) : undefined;
-    let requestDone = requestCompletion === undefined;
-    let nodeResponseDone = !stream || !stream.readable;
-    let browserResponseDone = browserResponseCompletion === undefined;
-    let cleanedUp = false;
-    const cleanupIfComplete = () => {
-        if (cleanedUp || !requestDone || !nodeResponseDone || !browserResponseDone) {
-            return;
-        }
-        cleanedUp = true;
-        cleanup();
-    };
-    const onResponseComplete = () => {
-        stream?.removeListener("end", onResponseComplete);
-        stream?.removeListener("close", onResponseComplete);
-        stream?.removeListener("error", onResponseComplete);
-        nodeResponseDone = true;
-        try {
-            cleanupIfComplete();
-        }
-        catch (error) {
-            core_rest_pipeline_dist_esm_log_logger.warning("Error cleaning up after response stream completion", error);
-        }
-    };
-    if (!nodeResponseDone && stream) {
-        stream.once("end", onResponseComplete);
-        stream.once("close", onResponseComplete);
-        stream.once("error", onResponseComplete);
-    }
-    if (requestCompletion) {
-        requestCompletion
-            .then(() => {
-            requestDone = true;
-            return cleanupIfComplete();
-        })
-            .catch((error) => {
-            core_rest_pipeline_dist_esm_log_logger.warning("Error cleaning up after request completion", error);
-        });
-    }
-    if (browserResponseCompletion) {
-        browserResponseCompletion
-            .then(() => {
-            browserResponseDone = true;
-            return cleanupIfComplete();
-        })
-            .catch((error) => {
-            core_rest_pipeline_dist_esm_log_logger.warning("Error cleaning up after response body completion", error);
-        });
-    }
-    cleanupIfComplete();
-}
-//# sourceMappingURL=cleanupOnCompletion.js.map
-;// CONCATENATED MODULE: ./node_modules/@azure/storage-common/node_modules/@azure/core-rest-pipeline/dist/esm/policies/wrapAbortSignalLikePolicy.js
-// Copyright (c) Microsoft Corporation.
-// Licensed under the MIT License.
-
-
-const wrapAbortSignalLikePolicy_wrapAbortSignalLikePolicyName = "wrapAbortSignalLikePolicy";
-/**
- * Policy that ensure that any AbortSignalLike is wrapped in a native AbortSignal for processing by the pipeline.
- * Since the ts-http-runtime expects a native AbortSignal, this policy is used to ensure that any AbortSignalLike is wrapped in a native AbortSignal.
- *
- * @returns - created policy
- */
-function policies_wrapAbortSignalLikePolicy_wrapAbortSignalLikePolicy() {
-    return {
-        name: wrapAbortSignalLikePolicy_wrapAbortSignalLikePolicyName,
-        sendRequest: async (request, next) => {
-            if (!request.abortSignal) {
-                return next(request);
-            }
-            const originalAbortSignal = request.abortSignal;
-            const { abortSignal, cleanup } = wrapAbortSignalLike(originalAbortSignal);
-            request.abortSignal = abortSignal;
-            let response;
-            try {
-                response = await next(request);
-                return response;
-            }
-            finally {
-                request.abortSignal = originalAbortSignal;
-                if (cleanup) {
-                    cleanupOnRequestResponseCompletion(response, cleanup);
-                }
-            }
-        },
-    };
-}
-//# sourceMappingURL=wrapAbortSignalLikePolicy.js.map
-;// CONCATENATED MODULE: ./node_modules/@azure/storage-common/node_modules/@azure/core-rest-pipeline/dist/esm/createPipelineFromOptions.js
-// Copyright (c) Microsoft Corporation.
-// Licensed under the MIT License.
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-/**
- * Create a new pipeline with a default set of customizable policies.
- * @param options - Options to configure a custom pipeline.
- */
-function dist_esm_createPipelineFromOptions_createPipelineFromOptions(options) {
-    const pipeline = createEmptyPipeline();
-    if (isNodeLike) {
-        if (options.agent) {
-            pipeline.addPolicy(agentPolicy(options.agent));
-        }
-        if (options.tlsOptions) {
-            pipeline.addPolicy(tlsPolicy(options.tlsOptions));
-        }
-        pipeline.addPolicy(proxyPolicy(options.proxyOptions));
-        pipeline.addPolicy(decompressResponsePolicy());
-    }
-    pipeline.addPolicy(wrapAbortSignalLikePolicy());
-    pipeline.addPolicy(formDataPolicy(), { beforePolicies: [multipartPolicyName] });
-    pipeline.addPolicy(userAgentPolicy(options.userAgentOptions));
-    pipeline.addPolicy(setClientRequestIdPolicy(options.telemetryOptions?.clientRequestIdHeaderName));
-    // The multipart policy is added after policies with no phase, so that
-    // policies can be added between it and formDataPolicy to modify
-    // properties (e.g., making the boundary constant in recorded tests).
-    pipeline.addPolicy(multipartPolicy(), { afterPhase: "Deserialize" });
-    pipeline.addPolicy(defaultRetryPolicy(options.retryOptions), { phase: "Retry" });
-    pipeline.addPolicy(tracingPolicy({ ...options.userAgentOptions, ...options.loggingOptions }), {
-        afterPhase: "Retry",
-    });
-    if (isNodeLike) {
-        // Both XHR and Fetch expect to handle redirects automatically,
-        // so only include this policy when we're in Node.
-        pipeline.addPolicy(redirectPolicy(options.redirectOptions), { afterPhase: "Retry" });
-    }
-    pipeline.addPolicy(logPolicy(options.loggingOptions), { afterPhase: "Sign" });
-    return pipeline;
-}
-//# sourceMappingURL=createPipelineFromOptions.js.map
-;// CONCATENATED MODULE: ./node_modules/@azure/storage-common/node_modules/@azure/core-rest-pipeline/dist/esm/util/wrapAbortSignal.js
-// Copyright (c) Microsoft Corporation.
-// Licensed under the MIT License.
-/**
- * Creates a native AbortSignal which reflects the state of the provided AbortSignalLike.
- * If the AbortSignalLike is already a native AbortSignal, it is returned as is.
- * @param abortSignalLike - The AbortSignalLike to wrap.
- * @returns - An object containing the native AbortSignal and an optional cleanup function. The cleanup function should be called when the AbortSignal is no longer needed.
- */
-function util_wrapAbortSignal_wrapAbortSignalLike(abortSignalLike) {
-    if (abortSignalLike instanceof AbortSignal) {
-        return { abortSignal: abortSignalLike };
-    }
-    if (abortSignalLike.aborted) {
-        return {
-            abortSignal: AbortSignal.abort("reason" in abortSignalLike ? abortSignalLike.reason : undefined),
-        };
-    }
-    const controller = new AbortController();
-    let needsCleanup = true;
-    function cleanup() {
-        if (needsCleanup) {
-            abortSignalLike.removeEventListener("abort", listener);
-            needsCleanup = false;
-        }
-    }
-    function listener() {
-        controller.abort("reason" in abortSignalLike ? abortSignalLike.reason : undefined);
-        cleanup();
-    }
-    abortSignalLike.addEventListener("abort", listener);
-    return { abortSignal: controller.signal, cleanup };
-}
-//# sourceMappingURL=wrapAbortSignal.js.map
-;// CONCATENATED MODULE: ./node_modules/@azure/storage-common/node_modules/@azure/core-rest-pipeline/dist/esm/defaultHttpClient.js
-// Copyright (c) Microsoft Corporation.
-// Licensed under the MIT License.
-
-
-
-/**
- * Create the correct HttpClient for the current environment.
- */
-function dist_esm_defaultHttpClient_createDefaultHttpClient() {
-    const client = defaultHttpClient_createDefaultHttpClient();
-    return {
-        async sendRequest(request) {
-            // we wrap any AbortSignalLike here since the TypeSpec runtime expects a native AbortSignal.
-            // 99% of the time, this should be a no-op since a native AbortSignal is passed in.
-            const originalAbortSignal = request.abortSignal;
-            const { abortSignal, cleanup } = originalAbortSignal
-                ? util_wrapAbortSignal_wrapAbortSignalLike(originalAbortSignal)
-                : {};
-            let response;
-            try {
-                request.abortSignal = abortSignal;
-                response = await client.sendRequest(request);
-                return response;
-            }
-            finally {
-                request.abortSignal = originalAbortSignal;
-                if (cleanup) {
-                    cleanupOnCompletion_cleanupOnRequestResponseCompletion(response, cleanup);
-                }
-            }
-        },
-    };
-}
-//# sourceMappingURL=defaultHttpClient.js.map
-;// CONCATENATED MODULE: ./node_modules/@azure/storage-common/node_modules/@azure/core-rest-pipeline/dist/esm/httpHeaders.js
-// Copyright (c) Microsoft Corporation.
-// Licensed under the MIT License.
-
-/**
- * Creates an object that satisfies the `HttpHeaders` interface.
- * @param rawHeaders - A simple object representing initial headers
- */
-function dist_esm_httpHeaders_createHttpHeaders(rawHeaders) {
-    return tspCreateHttpHeaders(rawHeaders);
-}
-//# sourceMappingURL=httpHeaders.js.map
-;// CONCATENATED MODULE: ./node_modules/@azure/storage-common/node_modules/@azure/core-rest-pipeline/dist/esm/pipelineRequest.js
-// Copyright (c) Microsoft Corporation.
-// Licensed under the MIT License.
-
-/**
- * Creates a new pipeline request with the given options.
- * This method is to allow for the easy setting of default values and not required.
- * @param options - The options to create the request with.
- */
-function dist_esm_pipelineRequest_createPipelineRequest(options) {
-    // Cast required due to difference between ts-http-runtime requiring AbortSignal while core-rest-pipeline allows
-    // the more generic AbortSignalLike. The wrapAbortSignalLike pipeline policy will take care of ensuring that any AbortSignalLike in the request
-    // is converted into a true AbortSignal.
-    return tspCreatePipelineRequest(options);
-}
-//# sourceMappingURL=pipelineRequest.js.map
-;// CONCATENATED MODULE: ./node_modules/@azure/storage-common/node_modules/@azure/core-rest-pipeline/dist/esm/policies/exponentialRetryPolicy.js
-// Copyright (c) Microsoft Corporation.
-// Licensed under the MIT License.
-
-/**
- * The programmatic identifier of the exponentialRetryPolicy.
- */
-const policies_exponentialRetryPolicy_exponentialRetryPolicyName = (/* unused pure expression or super */ null && (tspExponentialRetryPolicyName));
-/**
- * A policy that attempts to retry requests while introducing an exponentially increasing delay.
- * @param options - Options that configure retry logic.
- */
-function policies_exponentialRetryPolicy_exponentialRetryPolicy(options = {}) {
-    return tspExponentialRetryPolicy(options);
-}
-//# sourceMappingURL=exponentialRetryPolicy.js.map
-;// CONCATENATED MODULE: ./node_modules/@azure/storage-common/node_modules/@azure/core-rest-pipeline/dist/esm/policies/systemErrorRetryPolicy.js
-// Copyright (c) Microsoft Corporation.
-// Licensed under the MIT License.
-
-/**
- * Name of the {@link systemErrorRetryPolicy}
- */
-const policies_systemErrorRetryPolicy_systemErrorRetryPolicyName = (/* unused pure expression or super */ null && (tspSystemErrorRetryPolicyName));
-/**
- * A retry policy that specifically seeks to handle errors in the
- * underlying transport layer (e.g. DNS lookup failures) rather than
- * retryable error codes from the server itself.
- * @param options - Options that customize the policy.
- */
-function policies_systemErrorRetryPolicy_systemErrorRetryPolicy(options = {}) {
-    return tspSystemErrorRetryPolicy(options);
-}
-//# sourceMappingURL=systemErrorRetryPolicy.js.map
-;// CONCATENATED MODULE: ./node_modules/@azure/storage-common/node_modules/@azure/core-rest-pipeline/dist/esm/policies/throttlingRetryPolicy.js
-// Copyright (c) Microsoft Corporation.
-// Licensed under the MIT License.
-
-/**
- * Name of the {@link throttlingRetryPolicy}
- */
-const policies_throttlingRetryPolicy_throttlingRetryPolicyName = (/* unused pure expression or super */ null && (tspThrottlingRetryPolicyName));
-/**
- * A policy that retries when the server sends a 429 response with a Retry-After header.
- *
- * To learn more, please refer to
- * https://learn.microsoft.com/azure/azure-resource-manager/resource-manager-request-limits,
- * https://learn.microsoft.com/azure/azure-subscription-service-limits and
- * https://learn.microsoft.com/azure/virtual-machines/troubleshooting/troubleshooting-throttling-errors
- *
- * @param options - Options that configure retry logic.
- */
-function policies_throttlingRetryPolicy_throttlingRetryPolicy(options = {}) {
-    return tspThrottlingRetryPolicy(options);
-}
-//# sourceMappingURL=throttlingRetryPolicy.js.map
-;// CONCATENATED MODULE: ./node_modules/@azure/storage-common/node_modules/@azure/core-rest-pipeline/dist/esm/policies/retryPolicy.js
-// Copyright (c) Microsoft Corporation.
-// Licensed under the MIT License.
-
-
-
-const policies_retryPolicy_retryPolicyLogger = esm_createClientLogger("core-rest-pipeline retryPolicy");
-/**
- * retryPolicy is a generic policy to enable retrying requests when certain conditions are met
- */
-function esm_policies_retryPolicy_retryPolicy(strategies, options = { maxRetries: DEFAULT_RETRY_POLICY_COUNT }) {
-    // Cast is required since the TSP runtime retry strategy type is slightly different
-    // very deep down (using real AbortSignal vs. AbortSignalLike in RestError).
-    // In practice the difference doesn't actually matter.
-    return tspRetryPolicy(strategies, {
-        logger: policies_retryPolicy_retryPolicyLogger,
-        ...options,
-    });
-}
-//# sourceMappingURL=retryPolicy.js.map
-;// CONCATENATED MODULE: ./node_modules/@azure/storage-common/node_modules/@azure/core-rest-pipeline/dist/esm/util/tokenCycler.js
-// Copyright (c) Microsoft Corporation.
-// Licensed under the MIT License.
-
-// Default options for the cycler if none are provided
-const tokenCycler_DEFAULT_CYCLER_OPTIONS = {
-    forcedRefreshWindowInMs: 1000, // Force waiting for a refresh 1s before the token expires
-    retryIntervalInMs: 3000, // Allow refresh attempts every 3s
-    refreshWindowInMs: 1000 * 60 * 2, // Start refreshing 2m before expiry
-};
-/**
- * Converts an an unreliable access token getter (which may resolve with null)
- * into an AccessTokenGetter by retrying the unreliable getter in a regular
- * interval.
- *
- * @param getAccessToken - A function that produces a promise of an access token that may fail by returning null.
- * @param retryIntervalInMs - The time (in milliseconds) to wait between retry attempts.
- * @param refreshTimeout - The timestamp after which the refresh attempt will fail, throwing an exception.
- * @returns - A promise that, if it resolves, will resolve with an access token.
- */
-async function tokenCycler_beginRefresh(getAccessToken, retryIntervalInMs, refreshTimeout) {
-    // This wrapper handles exceptions gracefully as long as we haven't exceeded
-    // the timeout.
-    async function tryGetAccessToken() {
-        if (Date.now() < refreshTimeout) {
-            try {
-                return await getAccessToken();
-            }
-            catch {
-                return null;
-            }
-        }
-        else {
-            const finalToken = await getAccessToken();
-            // Timeout is up, so throw if it's still null
-            if (finalToken === null) {
-                throw new Error("Failed to refresh access token.");
-            }
-            return finalToken;
-        }
-    }
-    let token = await tryGetAccessToken();
-    while (token === null) {
-        await delay(retryIntervalInMs);
-        token = await tryGetAccessToken();
-    }
-    return token;
-}
-/**
- * Creates a token cycler from a credential, scopes, and optional settings.
- *
- * A token cycler represents a way to reliably retrieve a valid access token
- * from a TokenCredential. It will handle initializing the token, refreshing it
- * when it nears expiration, and synchronizes refresh attempts to avoid
- * concurrency hazards.
- *
- * @param credential - the underlying TokenCredential that provides the access
- * token
- * @param tokenCyclerOptions - optionally override default settings for the cycler
- *
- * @returns - a function that reliably produces a valid access token
- */
-function util_tokenCycler_createTokenCycler(credential, tokenCyclerOptions) {
-    let refreshWorker = null;
-    let token = null;
-    let tenantId;
-    const options = {
-        ...tokenCycler_DEFAULT_CYCLER_OPTIONS,
-        ...tokenCyclerOptions,
-    };
-    /**
-     * This little holder defines several predicates that we use to construct
-     * the rules of refreshing the token.
-     */
-    const cycler = {
-        /**
-         * Produces true if a refresh job is currently in progress.
-         */
-        get isRefreshing() {
-            return refreshWorker !== null;
-        },
-        /**
-         * Produces true if the cycler SHOULD refresh (we are within the refresh
-         * window and not already refreshing)
-         */
-        get shouldRefresh() {
-            if (token === null) {
-                return true;
-            }
-            if (cycler.isRefreshing) {
-                return false;
-            }
-            if (token.refreshAfterTimestamp && token.refreshAfterTimestamp < Date.now()) {
-                return true;
-            }
-            return token.expiresOnTimestamp - options.refreshWindowInMs < Date.now();
-        },
-        /**
-         * Produces true if the cycler MUST refresh (null or nearly-expired
-         * token).
-         */
-        get mustRefresh() {
-            return (token === null || token.expiresOnTimestamp - options.forcedRefreshWindowInMs < Date.now());
-        },
-    };
-    /**
-     * Starts a refresh job or returns the existing job if one is already
-     * running.
-     */
-    function refresh(scopes, getTokenOptions) {
-        if (!cycler.isRefreshing) {
-            // We bind `scopes` here to avoid passing it around a lot
-            const tryGetAccessToken = () => credential.getToken(scopes, getTokenOptions);
-            // Take advantage of promise chaining to insert an assignment to `token`
-            // before the refresh can be considered done.
-            refreshWorker = tokenCycler_beginRefresh(tryGetAccessToken, options.retryIntervalInMs, 
-            // If we don't have a token, then we should timeout immediately
-            token?.expiresOnTimestamp ?? Date.now())
-                .then((_token) => {
-                refreshWorker = null;
-                token = _token;
-                tenantId = getTokenOptions.tenantId;
-                return token;
-            })
-                .catch((reason) => {
-                // We also should reset the refresher if we enter a failed state.  All
-                // existing awaiters will throw, but subsequent requests will start a
-                // new retry chain.
-                refreshWorker = null;
-                token = null;
-                tenantId = undefined;
-                throw reason;
-            });
-        }
-        return refreshWorker;
-    }
-    return async (scopes, tokenOptions) => {
-        //
-        // Simple rules:
-        // - If we MUST refresh, then return the refresh task, blocking
-        //   the pipeline until a token is available.
-        // - If we SHOULD refresh, then run refresh but don't return it
-        //   (we can still use the cached token).
-        // - Return the token, since it's fine if we didn't return in
-        //   step 1.
-        //
-        const hasClaimChallenge = Boolean(tokenOptions.claims);
-        const tenantIdChanged = tenantId !== tokenOptions.tenantId;
-        if (hasClaimChallenge) {
-            // If we've received a claim, we know the existing token isn't valid
-            // We want to clear it so that that refresh worker won't use the old expiration time as a timeout
-            token = null;
-        }
-        // If the tenantId passed in token options is different to the one we have
-        // Or if we are in claim challenge and the token was rejected and a new access token need to be issued, we need to
-        // refresh the token with the new tenantId or token.
-        const mustRefresh = tenantIdChanged || hasClaimChallenge || cycler.mustRefresh;
-        if (mustRefresh) {
-            return refresh(scopes, tokenOptions);
-        }
-        if (cycler.shouldRefresh) {
-            refresh(scopes, tokenOptions);
-        }
-        return token;
-    };
-}
-//# sourceMappingURL=tokenCycler.js.map
-;// CONCATENATED MODULE: ./node_modules/@azure/storage-common/node_modules/@azure/core-rest-pipeline/dist/esm/policies/bearerTokenAuthenticationPolicy.js
-// Copyright (c) Microsoft Corporation.
-// Licensed under the MIT License.
-
-
-
-
-/**
- * The programmatic identifier of the bearerTokenAuthenticationPolicy.
- */
-const bearerTokenAuthenticationPolicy_bearerTokenAuthenticationPolicyName = "bearerTokenAuthenticationPolicy";
-/**
- * Try to send the given request.
- *
- * When a response is received, returns a tuple of the response received and, if the response was received
- * inside a thrown RestError, the RestError that was thrown.
- *
- * Otherwise, if an error was thrown while sending the request that did not provide an underlying response, it
- * will be rethrown.
- */
-async function bearerTokenAuthenticationPolicy_trySendRequest(request, next) {
-    try {
-        return [await next(request), undefined];
-    }
-    catch (e) {
-        if (isRestError(e) && e.response) {
-            return [e.response, e];
-        }
-        else {
-            throw e;
-        }
-    }
-}
-/**
- * Default authorize request handler
- */
-async function bearerTokenAuthenticationPolicy_defaultAuthorizeRequest(options) {
-    const { scopes, getAccessToken, request } = options;
-    // Enable CAE true by default
-    const getTokenOptions = {
-        abortSignal: request.abortSignal,
-        tracingOptions: request.tracingOptions,
-        enableCae: true,
-    };
-    const accessToken = await getAccessToken(scopes, getTokenOptions);
-    if (accessToken) {
-        options.request.headers.set("Authorization", `Bearer ${accessToken.token}`);
-    }
-}
-/**
- * We will retrieve the challenge only if the response status code was 401,
- * and if the response contained the header "WWW-Authenticate" with a non-empty value.
- */
-function bearerTokenAuthenticationPolicy_isChallengeResponse(response) {
-    return response.status === 401 && response.headers.has("WWW-Authenticate");
-}
-/**
- * Re-authorize the request for CAE challenge.
- * The response containing the challenge is `options.response`.
- * If this method returns true, the underlying request will be sent once again.
- */
-async function bearerTokenAuthenticationPolicy_authorizeRequestOnCaeChallenge(onChallengeOptions, caeClaims) {
-    const { scopes } = onChallengeOptions;
-    const accessToken = await onChallengeOptions.getAccessToken(scopes, {
-        enableCae: true,
-        claims: caeClaims,
-    });
-    if (!accessToken) {
-        return false;
-    }
-    onChallengeOptions.request.headers.set("Authorization", `${accessToken.tokenType ?? "Bearer"} ${accessToken.token}`);
-    return true;
-}
-/**
- * A policy that can request a token from a TokenCredential implementation and
- * then apply it to the Authorization header of a request as a Bearer token.
- */
-function bearerTokenAuthenticationPolicy_bearerTokenAuthenticationPolicy(options) {
-    const { credential, scopes, challengeCallbacks } = options;
-    const logger = options.logger || coreLogger;
-    const callbacks = {
-        authorizeRequest: challengeCallbacks?.authorizeRequest?.bind(challengeCallbacks) ?? bearerTokenAuthenticationPolicy_defaultAuthorizeRequest,
-        authorizeRequestOnChallenge: challengeCallbacks?.authorizeRequestOnChallenge?.bind(challengeCallbacks),
-    };
-    // This function encapsulates the entire process of reliably retrieving the token
-    // The options are left out of the public API until there's demand to configure this.
-    // Remember to extend `BearerTokenAuthenticationPolicyOptions` with `TokenCyclerOptions`
-    // in order to pass through the `options` object.
-    const getAccessToken = credential
-        ? createTokenCycler(credential /* , options */)
-        : () => Promise.resolve(null);
-    return {
-        name: bearerTokenAuthenticationPolicy_bearerTokenAuthenticationPolicyName,
-        /**
-         * If there's no challenge parameter:
-         * - It will try to retrieve the token using the cache, or the credential's getToken.
-         * - Then it will try the next policy with or without the retrieved token.
-         *
-         * It uses the challenge parameters to:
-         * - Skip a first attempt to get the token from the credential if there's no cached token,
-         *   since it expects the token to be retrievable only after the challenge.
-         * - Prepare the outgoing request if the `prepareRequest` method has been provided.
-         * - Send an initial request to receive the challenge if it fails.
-         * - Process a challenge if the response contains it.
-         * - Retrieve a token with the challenge information, then re-send the request.
-         */
-        async sendRequest(request, next) {
-            if (!request.url.toLowerCase().startsWith("https://")) {
-                throw new Error("Bearer token authentication is not permitted for non-TLS protected (non-https) URLs.");
-            }
-            await callbacks.authorizeRequest({
-                scopes: Array.isArray(scopes) ? scopes : [scopes],
-                request,
-                getAccessToken,
-                logger,
-            });
-            let response;
-            let error;
-            let shouldSendRequest;
-            [response, error] = await bearerTokenAuthenticationPolicy_trySendRequest(request, next);
-            if (bearerTokenAuthenticationPolicy_isChallengeResponse(response)) {
-                let claims = bearerTokenAuthenticationPolicy_getCaeChallengeClaims(response.headers.get("WWW-Authenticate"));
-                // Handle CAE by default when receive CAE claim
-                if (claims) {
-                    let parsedClaim;
-                    // Return the response immediately if claims is not a valid base64 encoded string
-                    try {
-                        parsedClaim = atob(claims);
-                    }
-                    catch (e) {
-                        logger.warning(`The WWW-Authenticate header contains "claims" that cannot be parsed. Unable to perform the Continuous Access Evaluation authentication flow. Unparsable claims: ${claims}`);
-                        return response;
-                    }
-                    shouldSendRequest = await bearerTokenAuthenticationPolicy_authorizeRequestOnCaeChallenge({
-                        scopes: Array.isArray(scopes) ? scopes : [scopes],
-                        response,
-                        request,
-                        getAccessToken,
-                        logger,
-                    }, parsedClaim);
-                    // Send updated request and handle response for RestError
-                    if (shouldSendRequest) {
-                        await disposeResponseBody(response);
-                        [response, error] = await bearerTokenAuthenticationPolicy_trySendRequest(request, next);
-                    }
-                }
-                else if (callbacks.authorizeRequestOnChallenge) {
-                    // Handle custom challenges when client provides custom callback
-                    shouldSendRequest = await callbacks.authorizeRequestOnChallenge({
-                        scopes: Array.isArray(scopes) ? scopes : [scopes],
-                        request,
-                        response,
-                        getAccessToken,
-                        logger,
-                    });
-                    // Send updated request and handle response for RestError
-                    if (shouldSendRequest) {
-                        await disposeResponseBody(response);
-                        [response, error] = await bearerTokenAuthenticationPolicy_trySendRequest(request, next);
-                    }
-                    // If we get another CAE Claim, we will handle it by default and return whatever value we receive for this
-                    if (bearerTokenAuthenticationPolicy_isChallengeResponse(response)) {
-                        claims = bearerTokenAuthenticationPolicy_getCaeChallengeClaims(response.headers.get("WWW-Authenticate") ?? "");
-                        if (claims) {
-                            let parsedClaim;
-                            try {
-                                parsedClaim = atob(claims);
-                            }
-                            catch (e) {
-                                logger.warning(`The WWW-Authenticate header contains "claims" that cannot be parsed. Unable to perform the Continuous Access Evaluation authentication flow. Unparsable claims: ${claims}`);
-                                return response;
-                            }
-                            shouldSendRequest = await bearerTokenAuthenticationPolicy_authorizeRequestOnCaeChallenge({
-                                scopes: Array.isArray(scopes) ? scopes : [scopes],
-                                response,
-                                request,
-                                getAccessToken,
-                                logger,
-                            }, parsedClaim);
-                            // Send updated request and handle response for RestError
-                            if (shouldSendRequest) {
-                                await disposeResponseBody(response);
-                                [response, error] = await bearerTokenAuthenticationPolicy_trySendRequest(request, next);
-                            }
-                        }
-                    }
-                }
-            }
-            if (error) {
-                throw error;
-            }
-            else {
-                return response;
-            }
-        },
-    };
-}
-/**
- * Converts: `Bearer a="b", c="d", Pop e="f", g="h"`.
- * Into: `[ { scheme: 'Bearer', params: { a: 'b', c: 'd' } }, { scheme: 'Pop', params: { e: 'f', g: 'h' } } ]`.
- *
- * @internal
- */
-function bearerTokenAuthenticationPolicy_parseChallenges(challenges) {
-    // Challenge regex seperates the string to individual challenges with different schemes in the format `Scheme a="b", c=d`
-    // The challenge regex captures parameteres with either quotes values or unquoted values
-    const challengeRegex = /(\w+)\s+((?:\w+=(?:"[^"]*"|[^,]*),?\s*)+)/g;
-    // Parameter regex captures the claims group removed from the scheme in the format `a="b"` and `c="d"`
-    // CAE challenge always have quoted parameters. For more reference, https://learn.microsoft.com/entra/identity-platform/claims-challenge
-    const paramRegex = /(\w+)="([^"]*)"/g;
-    const parsedChallenges = [];
-    let match;
-    // Iterate over each challenge match
-    while ((match = challengeRegex.exec(challenges)) !== null) {
-        const scheme = match[1];
-        const paramsString = match[2];
-        const params = {};
-        let paramMatch;
-        // Iterate over each parameter match
-        while ((paramMatch = paramRegex.exec(paramsString)) !== null) {
-            params[paramMatch[1]] = paramMatch[2];
-        }
-        parsedChallenges.push({ scheme, params });
-    }
-    return parsedChallenges;
-}
-/**
- * Parse a pipeline response and look for a CAE challenge with "Bearer" scheme
- * Return the value in the header without parsing the challenge
- * @internal
- */
-function bearerTokenAuthenticationPolicy_getCaeChallengeClaims(challenges) {
-    if (!challenges) {
-        return;
-    }
-    // Find all challenges present in the header
-    const parsedChallenges = bearerTokenAuthenticationPolicy_parseChallenges(challenges);
-    return parsedChallenges.find((x) => x.scheme === "Bearer" && x.params.claims && x.params.error === "insufficient_claims")?.params.claims;
-}
-//# sourceMappingURL=bearerTokenAuthenticationPolicy.js.map
-;// CONCATENATED MODULE: ./node_modules/@azure/storage-common/node_modules/@azure/core-rest-pipeline/dist/esm/policies/auxiliaryAuthenticationHeaderPolicy.js
-// Copyright (c) Microsoft Corporation.
-// Licensed under the MIT License.
-
-
-/**
- * The programmatic identifier of the auxiliaryAuthenticationHeaderPolicy.
- */
-const auxiliaryAuthenticationHeaderPolicy_auxiliaryAuthenticationHeaderPolicyName = "auxiliaryAuthenticationHeaderPolicy";
-const auxiliaryAuthenticationHeaderPolicy_AUTHORIZATION_AUXILIARY_HEADER = "x-ms-authorization-auxiliary";
-async function auxiliaryAuthenticationHeaderPolicy_sendAuthorizeRequest(options) {
-    const { scopes, getAccessToken, request } = options;
-    const getTokenOptions = {
-        abortSignal: request.abortSignal,
-        tracingOptions: request.tracingOptions,
-    };
-    return (await getAccessToken(scopes, getTokenOptions))?.token ?? "";
-}
-/**
- * A policy for external tokens to `x-ms-authorization-auxiliary` header.
- * This header will be used when creating a cross-tenant application we may need to handle authentication requests
- * for resources that are in different tenants.
- * You could see [ARM docs](https://learn.microsoft.com/azure/azure-resource-manager/management/authenticate-multi-tenant) for a rundown of how this feature works
- */
-function auxiliaryAuthenticationHeaderPolicy_auxiliaryAuthenticationHeaderPolicy(options) {
-    const { credentials, scopes } = options;
-    const logger = options.logger || coreLogger;
-    const tokenCyclerMap = new WeakMap();
-    return {
-        name: auxiliaryAuthenticationHeaderPolicy_auxiliaryAuthenticationHeaderPolicyName,
-        async sendRequest(request, next) {
-            if (!request.url.toLowerCase().startsWith("https://")) {
-                throw new Error("Bearer token authentication for auxiliary header is not permitted for non-TLS protected (non-https) URLs.");
-            }
-            if (!credentials || credentials.length === 0) {
-                logger.info(`${auxiliaryAuthenticationHeaderPolicy_auxiliaryAuthenticationHeaderPolicyName} header will not be set due to empty credentials.`);
-                return next(request);
-            }
-            const tokenPromises = [];
-            for (const credential of credentials) {
-                let getAccessToken = tokenCyclerMap.get(credential);
-                if (!getAccessToken) {
-                    getAccessToken = createTokenCycler(credential);
-                    tokenCyclerMap.set(credential, getAccessToken);
-                }
-                tokenPromises.push(auxiliaryAuthenticationHeaderPolicy_sendAuthorizeRequest({
-                    scopes: Array.isArray(scopes) ? scopes : [scopes],
-                    request,
-                    getAccessToken,
-                    logger,
-                }));
-            }
-            const auxiliaryTokens = (await Promise.all(tokenPromises)).filter((token) => Boolean(token));
-            if (auxiliaryTokens.length === 0) {
-                logger.warning(`None of the auxiliary tokens are valid. ${auxiliaryAuthenticationHeaderPolicy_AUTHORIZATION_AUXILIARY_HEADER} header will not be set.`);
-                return next(request);
-            }
-            request.headers.set(auxiliaryAuthenticationHeaderPolicy_AUTHORIZATION_AUXILIARY_HEADER, auxiliaryTokens.map((token) => `Bearer ${token}`).join(", "));
-            return next(request);
-        },
-    };
-}
-//# sourceMappingURL=auxiliaryAuthenticationHeaderPolicy.js.map
-;// CONCATENATED MODULE: ./node_modules/@azure/storage-common/node_modules/@azure/core-rest-pipeline/dist/esm/index.js
-// Copyright (c) Microsoft Corporation.
-// Licensed under the MIT License.
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-//# sourceMappingURL=index.js.map
 ;// CONCATENATED MODULE: ./node_modules/@azure/storage-common/dist/esm/cache.js
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
@@ -74456,32 +65753,11 @@ function auxiliaryAuthenticationHeaderPolicy_auxiliaryAuthenticationHeaderPolicy
 let _defaultHttpClient;
 function cache_getCachedDefaultHttpClient() {
     if (!_defaultHttpClient) {
-        _defaultHttpClient = dist_esm_defaultHttpClient_createDefaultHttpClient();
+        _defaultHttpClient = esm_defaultHttpClient_createDefaultHttpClient();
     }
     return _defaultHttpClient;
 }
 //# sourceMappingURL=cache.js.map
-;// CONCATENATED MODULE: ./node_modules/@azure/storage-common/dist/esm/StorageResponseFormat.js
-// Copyright (c) Microsoft Corporation.
-// Licensed under the MIT License.
-/**
- * Specifies the format the service should use to return list results.
- */
-const StorageResponseFormat = {
-    /**
-     * Default. Currently maps to {@link StorageResponseFormat.Xml}, but may be updated in future releases.
-     */
-    Auto: "Auto",
-    /**
-     * Use XML to return list results.
-     */
-    Xml: "Xml",
-    /**
-     * Use Apache Arrow to return list results.
-     */
-    Arrow: "Arrow",
-};
-//# sourceMappingURL=StorageResponseFormat.js.map
 ;// CONCATENATED MODULE: ./node_modules/@azure/storage-common/dist/esm/policies/RequestPolicy.js
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
@@ -74525,161 +65801,10 @@ class BaseRequestPolicy {
     }
 }
 //# sourceMappingURL=RequestPolicy.js.map
-;// CONCATENATED MODULE: ./node_modules/@azure/storage-common/dist/esm/policies/StorageBrowserPolicy.js
-// Copyright (c) Microsoft Corporation.
-// Licensed under the MIT License.
-
-/**
- * StorageBrowserPolicy will handle differences between Node.js and browser runtime, including:
- *
- * 1. Browsers cache GET/HEAD requests by adding conditional headers such as 'IF_MODIFIED_SINCE'.
- * StorageBrowserPolicy is a policy used to add a timestamp query to GET/HEAD request URL
- * thus avoid the browser cache.
- *
- * 2. Remove cookie header for security
- *
- * 3. Remove content-length header to avoid browsers warning
- *
- * In Node.js, this policy is a no-op pass-through.
- */
-class StorageBrowserPolicy extends BaseRequestPolicy {
-    /**
-     * Creates an instance of StorageBrowserPolicy.
-     * @param nextPolicy -
-     * @param options -
-     */
-    // The base class has a protected constructor. Adding a public one to enable constructing of this class.
-    /* eslint-disable-next-line @typescript-eslint/no-useless-constructor*/
-    constructor(nextPolicy, options) {
-        super(nextPolicy, options);
-    }
-    /**
-     * Sends out request.
-     *
-     * @param request -
-     */
-    async sendRequest(request) {
-        return this._nextPolicy.sendRequest(request);
-    }
-}
-//# sourceMappingURL=StorageBrowserPolicy.js.map
-;// CONCATENATED MODULE: ./node_modules/@azure/storage-common/dist/esm/StorageBrowserPolicyFactory.js
-// Copyright (c) Microsoft Corporation.
-// Licensed under the MIT License.
-
-
-/**
- * StorageBrowserPolicyFactory is a factory class helping generating StorageBrowserPolicy objects.
- */
-class StorageBrowserPolicyFactory {
-    /**
-     * Creates a StorageBrowserPolicyFactory object.
-     *
-     * @param nextPolicy -
-     * @param options -
-     */
-    create(nextPolicy, options) {
-        return new StorageBrowserPolicy(nextPolicy, options);
-    }
-}
-//# sourceMappingURL=StorageBrowserPolicyFactory.js.map
-;// CONCATENATED MODULE: ./node_modules/@azure/storage-common/dist/esm/policies/CredentialPolicy.js
-// Copyright (c) Microsoft Corporation.
-// Licensed under the MIT License.
-
-/**
- * Credential policy used to sign HTTP(S) requests before sending. This is an
- * abstract class.
- */
-class CredentialPolicy extends BaseRequestPolicy {
-    /**
-     * Sends out request.
-     *
-     * @param request -
-     */
-    sendRequest(request) {
-        return this._nextPolicy.sendRequest(this.signRequest(request));
-    }
-    /**
-     * Child classes must implement this method with request signing. This method
-     * will be executed in {@link sendRequest}.
-     *
-     * @param request -
-     */
-    signRequest(request) {
-        // Child classes must override this method with request signing. This method
-        // will be executed in sendRequest().
-        return request;
-    }
-}
-//# sourceMappingURL=CredentialPolicy.js.map
-;// CONCATENATED MODULE: ./node_modules/@azure/storage-common/dist/esm/policies/AnonymousCredentialPolicy.js
-// Copyright (c) Microsoft Corporation.
-// Licensed under the MIT License.
-
-/**
- * AnonymousCredentialPolicy is used with HTTP(S) requests that read public resources
- * or for use with Shared Access Signatures (SAS).
- */
-class AnonymousCredentialPolicy extends CredentialPolicy {
-    /**
-     * Creates an instance of AnonymousCredentialPolicy.
-     * @param nextPolicy -
-     * @param options -
-     */
-    // The base class has a protected constructor. Adding a public one to enable constructing of this class.
-    /* eslint-disable-next-line @typescript-eslint/no-useless-constructor*/
-    constructor(nextPolicy, options) {
-        super(nextPolicy, options);
-    }
-}
-//# sourceMappingURL=AnonymousCredentialPolicy.js.map
-;// CONCATENATED MODULE: ./node_modules/@azure/storage-common/dist/esm/credentials/Credential.js
-// Copyright (c) Microsoft Corporation.
-// Licensed under the MIT License.
-/**
- * Credential is an abstract class for Azure Storage HTTP requests signing. This
- * class will host an credentialPolicyCreator factory which generates CredentialPolicy.
- */
-class Credential {
-    /**
-     * Creates a RequestPolicy object.
-     *
-     * @param _nextPolicy -
-     * @param _options -
-     */
-    create(_nextPolicy, _options) {
-        throw new Error("Method should be implemented in children classes.");
-    }
-}
-//# sourceMappingURL=Credential.js.map
-;// CONCATENATED MODULE: ./node_modules/@azure/storage-common/dist/esm/credentials/AnonymousCredential.js
-// Copyright (c) Microsoft Corporation.
-// Licensed under the MIT License.
-
-
-/**
- * AnonymousCredential provides a credentialPolicyCreator member used to create
- * AnonymousCredentialPolicy objects. AnonymousCredentialPolicy is used with
- * HTTP(S) requests that read public resources or for use with Shared Access
- * Signatures (SAS).
- */
-class AnonymousCredential extends Credential {
-    /**
-     * Creates an {@link AnonymousCredentialPolicy} object.
-     *
-     * @param nextPolicy -
-     * @param options -
-     */
-    create(nextPolicy, options) {
-        return new AnonymousCredentialPolicy(nextPolicy, options);
-    }
-}
-//# sourceMappingURL=AnonymousCredential.js.map
 ;// CONCATENATED MODULE: ./node_modules/@azure/storage-common/dist/esm/utils/constants.js
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
-const utils_constants_SDK_VERSION = "12.5.0";
+const utils_constants_SDK_VERSION = "1.0.0";
 const constants_URLConstants = {
     Parameters: {
         FORCE_BROWSER_NO_CACHE: "_",
@@ -74854,11 +65979,11 @@ function extractConnectionStringParts(connectionString) {
         // Account connection string
         let defaultEndpointsProtocol = "";
         let accountName = "";
-        let accountKey = stringToUint8Array("accountKey", "base64");
+        let accountKey = Buffer.from("accountKey", "base64");
         let endpointSuffix = "";
         // Get account name and key
         accountName = getValueInConnString(connectionString, "AccountName");
-        accountKey = stringToUint8Array(getValueInConnString(connectionString, "AccountKey"), "base64");
+        accountKey = Buffer.from(getValueInConnString(connectionString, "AccountKey"), "base64");
         if (!blobEndpoint) {
             // BlobEndpoint is not present in the Account connection string
             // Can be obtained from `${defaultEndpointsProtocol}://${accountName}.blob.${endpointSuffix}`
@@ -75095,6 +66220,22 @@ function truncatedISO8061Date(date, withMilliseconds = true) {
         : dateString.substring(0, dateString.length - 5) + "Z";
 }
 /**
+ * Base64 encode.
+ *
+ * @param content -
+ */
+function base64encode(content) {
+    return !isNodeLike ? btoa(content) : Buffer.from(content).toString("base64");
+}
+/**
+ * Base64 decode.
+ *
+ * @param encodedString -
+ */
+function base64decode(encodedString) {
+    return !isNodeLike ? atob(encodedString) : Buffer.from(encodedString, "base64").toString();
+}
+/**
  * Generate a 64 bytes base64 block ID string.
  *
  * @param blockIndex -
@@ -75110,7 +66251,7 @@ function generateBlockID(blockIDPrefix, blockIndex) {
     }
     const res = blockIDPrefix +
         padStart(blockIndex.toString(), maxSourceStringLength - blockIDPrefix.length, "0");
-    return uint8ArrayToString(stringToUint8Array(res, "utf-8"), "base64");
+    return base64encode(res);
 }
 /**
  * Delay specified time interval.
@@ -75270,6 +66411,167 @@ function assertResponse(response) {
     throw new TypeError(`Unexpected response object ${response}`);
 }
 //# sourceMappingURL=utils.common.js.map
+;// CONCATENATED MODULE: ./node_modules/@azure/storage-common/dist/esm/policies/StorageBrowserPolicy.js
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT License.
+
+
+
+
+/**
+ * StorageBrowserPolicy will handle differences between Node.js and browser runtime, including:
+ *
+ * 1. Browsers cache GET/HEAD requests by adding conditional headers such as 'IF_MODIFIED_SINCE'.
+ * StorageBrowserPolicy is a policy used to add a timestamp query to GET/HEAD request URL
+ * thus avoid the browser cache.
+ *
+ * 2. Remove cookie header for security
+ *
+ * 3. Remove content-length header to avoid browsers warning
+ */
+class StorageBrowserPolicy extends BaseRequestPolicy {
+    /**
+     * Creates an instance of StorageBrowserPolicy.
+     * @param nextPolicy -
+     * @param options -
+     */
+    // The base class has a protected constructor. Adding a public one to enable constructing of this class.
+    /* eslint-disable-next-line @typescript-eslint/no-useless-constructor*/
+    constructor(nextPolicy, options) {
+        super(nextPolicy, options);
+    }
+    /**
+     * Sends out request.
+     *
+     * @param request -
+     */
+    async sendRequest(request) {
+        if (esm_isNodeLike) {
+            return this._nextPolicy.sendRequest(request);
+        }
+        if (request.method.toUpperCase() === "GET" || request.method.toUpperCase() === "HEAD") {
+            request.url = setURLParameter(request.url, constants_URLConstants.Parameters.FORCE_BROWSER_NO_CACHE, new Date().getTime().toString());
+        }
+        request.headers.remove(constants_HeaderConstants.COOKIE);
+        // According to XHR standards, content-length should be fully controlled by browsers
+        request.headers.remove(constants_HeaderConstants.CONTENT_LENGTH);
+        return this._nextPolicy.sendRequest(request);
+    }
+}
+//# sourceMappingURL=StorageBrowserPolicy.js.map
+;// CONCATENATED MODULE: ./node_modules/@azure/storage-common/dist/esm/StorageBrowserPolicyFactory.js
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT License.
+
+
+/**
+ * StorageBrowserPolicyFactory is a factory class helping generating StorageBrowserPolicy objects.
+ */
+class StorageBrowserPolicyFactory {
+    /**
+     * Creates a StorageBrowserPolicyFactory object.
+     *
+     * @param nextPolicy -
+     * @param options -
+     */
+    create(nextPolicy, options) {
+        return new StorageBrowserPolicy(nextPolicy, options);
+    }
+}
+//# sourceMappingURL=StorageBrowserPolicyFactory.js.map
+;// CONCATENATED MODULE: ./node_modules/@azure/storage-common/dist/esm/policies/CredentialPolicy.js
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT License.
+
+/**
+ * Credential policy used to sign HTTP(S) requests before sending. This is an
+ * abstract class.
+ */
+class CredentialPolicy extends BaseRequestPolicy {
+    /**
+     * Sends out request.
+     *
+     * @param request -
+     */
+    sendRequest(request) {
+        return this._nextPolicy.sendRequest(this.signRequest(request));
+    }
+    /**
+     * Child classes must implement this method with request signing. This method
+     * will be executed in {@link sendRequest}.
+     *
+     * @param request -
+     */
+    signRequest(request) {
+        // Child classes must override this method with request signing. This method
+        // will be executed in sendRequest().
+        return request;
+    }
+}
+//# sourceMappingURL=CredentialPolicy.js.map
+;// CONCATENATED MODULE: ./node_modules/@azure/storage-common/dist/esm/policies/AnonymousCredentialPolicy.js
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT License.
+
+/**
+ * AnonymousCredentialPolicy is used with HTTP(S) requests that read public resources
+ * or for use with Shared Access Signatures (SAS).
+ */
+class AnonymousCredentialPolicy extends CredentialPolicy {
+    /**
+     * Creates an instance of AnonymousCredentialPolicy.
+     * @param nextPolicy -
+     * @param options -
+     */
+    // The base class has a protected constructor. Adding a public one to enable constructing of this class.
+    /* eslint-disable-next-line @typescript-eslint/no-useless-constructor*/
+    constructor(nextPolicy, options) {
+        super(nextPolicy, options);
+    }
+}
+//# sourceMappingURL=AnonymousCredentialPolicy.js.map
+;// CONCATENATED MODULE: ./node_modules/@azure/storage-common/dist/esm/credentials/Credential.js
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT License.
+/**
+ * Credential is an abstract class for Azure Storage HTTP requests signing. This
+ * class will host an credentialPolicyCreator factory which generates CredentialPolicy.
+ */
+class Credential {
+    /**
+     * Creates a RequestPolicy object.
+     *
+     * @param _nextPolicy -
+     * @param _options -
+     */
+    create(_nextPolicy, _options) {
+        throw new Error("Method should be implemented in children classes.");
+    }
+}
+//# sourceMappingURL=Credential.js.map
+;// CONCATENATED MODULE: ./node_modules/@azure/storage-common/dist/esm/credentials/AnonymousCredential.js
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT License.
+
+
+/**
+ * AnonymousCredential provides a credentialPolicyCreator member used to create
+ * AnonymousCredentialPolicy objects. AnonymousCredentialPolicy is used with
+ * HTTP(S) requests that read public resources or for use with Shared Access
+ * Signatures (SAS).
+ */
+class AnonymousCredential extends Credential {
+    /**
+     * Creates an {@link AnonymousCredentialPolicy} object.
+     *
+     * @param nextPolicy -
+     * @param options -
+     */
+    create(nextPolicy, options) {
+        return new AnonymousCredentialPolicy(nextPolicy, options);
+    }
+}
+//# sourceMappingURL=AnonymousCredential.js.map
 ;// CONCATENATED MODULE: ./node_modules/@azure/storage-common/dist/esm/utils/SharedKeyComparator.js
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
@@ -75697,7 +66999,8 @@ class StorageRetryPolicy extends BaseRequestPolicy {
      */
     shouldRetry(isPrimaryRetry, attempt, response, err) {
         if (attempt >= this.retryOptions.maxTries) {
-            storage_common_dist_esm_log_logger.info(`RetryPolicy: Attempt(s) ${attempt} >= maxTries ${this.retryOptions.maxTries}, no further try.`);
+            storage_common_dist_esm_log_logger.info(`RetryPolicy: Attempt(s) ${attempt} >= maxTries ${this.retryOptions
+                .maxTries}, no further try.`);
             return false;
         }
         // Handle network failures, you may need to customize the list when you implement
@@ -75817,6 +67120,9 @@ class StorageRetryPolicyFactory {
 ;// CONCATENATED MODULE: ./node_modules/@azure/storage-common/dist/esm/policies/StorageBrowserPolicyV2.js
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
+
+
+
 /**
  * The programmatic identifier of the StorageBrowserPolicy.
  */
@@ -75824,13 +67130,20 @@ const storageBrowserPolicyName = "storageBrowserPolicy";
 /**
  * storageBrowserPolicy is a policy used to prevent browsers from caching requests
  * and to remove cookies and explicit content-length headers.
- *
- * In Node.js, this policy is a no-op pass-through.
  */
 function storageBrowserPolicy() {
     return {
         name: storageBrowserPolicyName,
         async sendRequest(request, next) {
+            if (esm_isNodeLike) {
+                return next(request);
+            }
+            if (request.method === "GET" || request.method === "HEAD") {
+                request.url = setURLParameter(request.url, constants_URLConstants.Parameters.FORCE_BROWSER_NO_CACHE, new Date().getTime().toString());
+            }
+            request.headers.delete(constants_HeaderConstants.COOKIE);
+            // According to XHR standards, content-length should be fully controlled by browsers
+            request.headers.delete(constants_HeaderConstants.CONTENT_LENGTH);
             return next(request);
         },
     };
@@ -76006,12 +67319,12 @@ function storageRetryPolicy(options = {}) {
                     secondaryHas404 = secondaryHas404 || (!isPrimaryRetry && response.status === 404);
                 }
                 catch (e) {
-                    if (dist_esm_restError_isRestError(e)) {
+                    if (esm_restError_isRestError(e)) {
                         storage_common_dist_esm_log_logger.error(`RetryPolicy: Caught error, message: ${e.message}, code: ${e.code}`);
                         error = e;
                     }
                     else {
-                        storage_common_dist_esm_log_logger.error(`RetryPolicy: Caught error, message: ${error_getErrorMessage(e)}`);
+                        storage_common_dist_esm_log_logger.error(`RetryPolicy: Caught error, message: ${getErrorMessage(e)}`);
                         throw e;
                     }
                 }
@@ -76024,7 +67337,7 @@ function storageRetryPolicy(options = {}) {
             if (response) {
                 return response;
             }
-            throw error ?? new dist_esm_restError_RestError("RetryPolicy failed without known error.");
+            throw error ?? new esm_restError_RestError("RetryPolicy failed without known error.");
         },
     };
 }
@@ -76178,18 +67491,6 @@ function storageRequestFailureDetailsParserPolicy() {
         async sendRequest(request, next) {
             try {
                 const response = await next(request);
-                if (response.status === 400 &&
-                    response.bodyAsText?.includes("<Error><Code>InvalidHeaderValue</Code>") &&
-                    response.bodyAsText.includes("<HeaderName>x-ms-version</HeaderName>")) {
-                    // replace the error message with a more user-friendly one that includes a link to documentation
-                    /* example response text:
-                    `<?xml version="1.0" encoding="utf-8"?>
-          <Error><Code>InvalidHeaderValue</Code><Message>The value for one of the HTTP headers is not in the correct format.
-          RequestId:e5ea566c-101e-001c-1ec4-acf180000000
-          Time:2026-03-05T17:24:34.6688015Z</Message><HeaderName>x-ms-version</HeaderName><HeaderValue>3025-01-01</HeaderValue></Error>`
-                    */
-                    response.bodyAsText = response.bodyAsText.replace(/<Message>.*<\/Message>/s, "<Message>The provided service version is not enabled on this storage account. Please see https://learn.microsoft.com/rest/api/storageservices/versioning-for-the-azure-storage-services for additional information.</Message>");
-                }
                 return response;
             }
             catch (err) {
@@ -76248,41 +67549,31 @@ class UserDelegationKeyCredential {
      * @param stringToSign -
      */
     computeHMACSHA256(stringToSign) {
+        // console.log(`stringToSign: ${JSON.stringify(stringToSign)}`);
         return (0,external_node_crypto_.createHmac)("sha256", this.key).update(stringToSign, "utf8").digest("base64");
     }
 }
 //# sourceMappingURL=UserDelegationKeyCredential.js.map
-;// CONCATENATED MODULE: ./node_modules/@azure/storage-common/dist/esm/indexPlatform.js
-// Copyright (c) Microsoft Corporation.
-// Licensed under the MIT License.
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-//# sourceMappingURL=indexPlatform.js.map
 ;// CONCATENATED MODULE: ./node_modules/@azure/storage-common/dist/esm/index.js
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 //# sourceMappingURL=index.js.map
 ;// CONCATENATED MODULE: ./node_modules/@azure/storage-blob/dist/esm/utils/constants.js
@@ -90645,7 +81936,7 @@ function utils_common_truncatedISO8061Date(date, withMilliseconds = true) {
  *
  * @param content -
  */
-function base64encode(content) {
+function utils_common_base64encode(content) {
     return !esm_isNodeLike ? btoa(content) : Buffer.from(content).toString("base64");
 }
 /**
@@ -90653,7 +81944,7 @@ function base64encode(content) {
  *
  * @param encodedString -
  */
-function base64decode(encodedString) {
+function utils_common_base64decode(encodedString) {
     return !isNodeLike ? atob(encodedString) : Buffer.from(encodedString, "base64").toString();
 }
 /**
@@ -90672,7 +81963,7 @@ function utils_common_generateBlockID(blockIDPrefix, blockIndex) {
     }
     const res = blockIDPrefix +
         utils_common_padStart(blockIndex.toString(), maxSourceStringLength - blockIDPrefix.length, "0");
-    return base64encode(res);
+    return utils_common_base64encode(res);
 }
 /**
  * Delay specified time interval.
@@ -91119,7 +82410,7 @@ class StorageClient_StorageClient {
  * Creates a span using the global tracer.
  * @internal
  */
-const tracingClient = tracingClient_createTracingClient({
+const tracingClient = createTracingClient({
     packageName: "@azure/storage-blob",
     packageVersion: esm_utils_constants_SDK_VERSION,
     namespace: "Microsoft.Storage",
@@ -103175,7 +94466,7 @@ function printCachesListForDiagnostics(key, httpClient, version) {
 }
 function downloadCache(archiveLocation, archivePath, options) {
     return cacheHttpClient_awaiter(this, void 0, void 0, function* () {
-        const archiveUrl = new external_url_namespaceObject.URL(archiveLocation);
+        const archiveUrl = new external_url_.URL(archiveLocation);
         const downloadOptions = getDownloadOptions(options);
         if (archiveUrl.hostname.endsWith('.blob.core.windows.net')) {
             if (downloadOptions.useAzureSdk) {
@@ -105033,228 +96324,6 @@ var Outputs;
     Outputs["CacheHit"] = "cache-hit";
 })(Outputs || (Outputs = {}));
 
-;// CONCATENATED MODULE: ./node_modules/smol-toml/dist/error.js
-/*!
- * Copyright (c) Squirrel Chat et al., All rights reserved.
- * SPDX-License-Identifier: BSD-3-Clause
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *
- * 1. Redistributions of source code must retain the above copyright notice, this
- *    list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright notice,
- *    this list of conditions and the following disclaimer in the
- *    documentation and/or other materials provided with the distribution.
- * 3. Neither the name of the copyright holder nor the names of its contributors
- *    may be used to endorse or promote products derived from this software without
- *    specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
- * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
- * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
- * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
- * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
- * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
- * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
- * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
-function getLineColFromPtr(string, ptr) {
-    let lines = string.slice(0, ptr).split(/\r?\n/);
-    return [lines.length, lines.pop().length + 1];
-}
-function makeCodeBlock(string, line, column) {
-    let lines = string.split(/\r?\n/);
-    let codeblock = '';
-    let numberLen = (Math.log10(line + 1) | 0) + 1;
-    for (let i = line - 1; i <= line + 1; i++) {
-        let l = lines[i - 1];
-        if (!l)
-            continue;
-        codeblock += i.toString().padEnd(numberLen, ' ');
-        codeblock += ':  ';
-        codeblock += l;
-        codeblock += '\n';
-        if (i === line) {
-            codeblock += ' '.repeat(numberLen + column + 2);
-            codeblock += '^\n';
-        }
-    }
-    return codeblock;
-}
-class TomlError extends Error {
-    line;
-    column;
-    codeblock;
-    constructor(message, options) {
-        const [line, column] = getLineColFromPtr(options.toml, options.ptr);
-        const codeblock = makeCodeBlock(options.toml, line, column);
-        super(`Invalid TOML document: ${message}\n\n${codeblock}`, options);
-        this.line = line;
-        this.column = column;
-        this.codeblock = codeblock;
-    }
-    /** @internal */
-    static x(message, ctx, ptr) {
-        throw new TomlError(message, { toml: ctx.s, ptr: ptr ?? ctx.p });
-    }
-}
-
-;// CONCATENATED MODULE: ./node_modules/smol-toml/dist/primitive.js
-/*!
- * Copyright (c) Squirrel Chat et al., All rights reserved.
- * SPDX-License-Identifier: BSD-3-Clause
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *
- * 1. Redistributions of source code must retain the above copyright notice, this
- *    list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright notice,
- *    this list of conditions and the following disclaimer in the
- *    documentation and/or other materials provided with the distribution.
- * 3. Neither the name of the copyright holder nor the names of its contributors
- *    may be used to endorse or promote products derived from this software without
- *    specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
- * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
- * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
- * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
- * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
- * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
- * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
- * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
-
-/** @internal */
-function parseString(ctx) {
-    let startPtr = ctx.p;
-    let c = ctx.s.charCodeAt(ctx.p++);
-    let first = c;
-    let isLiteral = c === 0x27; /* ' */
-    let isMultiline = c === ctx.s.charCodeAt(ctx.p) && c === ctx.s.charCodeAt(ctx.p + 1);
-    if (isMultiline) {
-        // Trim initial newline
-        if ((c = ctx.s.charCodeAt(ctx.p += 2)) === 0xa /* \n */)
-            ctx.p++;
-        else if (c === 0xd /* \r */ && ctx.s.charCodeAt(ctx.p + 1) === 0xa /* \n */)
-            ctx.p += 2;
-    }
-    // For the record: it is not worth it to use a fast-path for literal strings using `indexOf`.
-    // Doing a char-by-char iteration ends up dispatching less instructions, for the same wall-clock runtime.
-    let parsed = '';
-    let sliceStart = ctx.p;
-    // states:
-    //   0 - decoding
-    //   1 - decoding escape
-    //   2 - whitespace escape (no newline encountered yet, must fail on non-whitespace)
-    //   3 - whitespace escape (newline encountered, allowed to transition back to normal decode)
-    let state = 0;
-    for (; ctx.p < ctx.s.length; ctx.p++) {
-        c = ctx.s.charCodeAt(ctx.p);
-        // Deal with newlines first, since that simplifies control character checking and handling across all states
-        if (isMultiline && (c === 0xa /* \n */ || (c === 0xd /* \r */ && ctx.s.charCodeAt(ctx.p + 1) === 0xa /* \n */))) {
-            state = state && 3;
-        }
-        // Control characters are banned in TOML, so we throw an error if we encounter them
-        else if ((c < 0x20 && c !== 0x9 /* \t */) || c === 0x7f) {
-            TomlError.x('control characters are not allowed in strings', ctx);
-        }
-        // The string might terminate while we're parsing through a newline escape.
-        // It must have encountered a newline; otherwise, it'll simply fail in another branch.
-        else if ((!state || state === 3) && c === first && (!isMultiline || (ctx.s.charCodeAt(ctx.p + 1) === first && ctx.s.charCodeAt(ctx.p + 2) === first))) {
-            if (isMultiline) {
-                // If the string ends with 4-5 quotes, then the first 1-2 are part of the string
-                if (ctx.s.charCodeAt(ctx.p + 3) === first)
-                    ctx.p++;
-                if (ctx.s.charCodeAt(ctx.p + 3) === first)
-                    ctx.p++;
-            }
-            // If we're in a newline escape still, then there's nothing to add.
-            if (!state) {
-                // Avoid a useless concat operation if the string can be used as-is.
-                let s = ctx.s.slice(sliceStart, ctx.p);
-                parsed = parsed ? parsed + s : s;
-            }
-            ctx.p += isMultiline ? 3 : 1;
-            return parsed;
-        }
-        // Baseline state; keep moving forward unless an escape sequence starts
-        else if (!state) {
-            if (!isLiteral && c === 0x5c /* \ */) {
-                parsed += ctx.s.slice(sliceStart, (sliceStart = ctx.p));
-                state = 1;
-            }
-        }
-        else if (state === 1) {
-            if (c === 0x78 /* x */ || c === 0x75 /* u */ || c === 0x55 /* U */) { // Unicode escape
-                let errPtr = ctx.p++ - 1;
-                let value = 0;
-                let len = c === 0x78 /* x */ ? 2 : c === 0x75 /* u */ ? 4 : 8;
-                for (let j = 0; j < len; j++, ctx.p++) {
-                    let hex = ctx.s.charCodeAt(ctx.p);
-                    let digit = 
-                    /* 0-9 */ hex >= 0x30 && hex <= 0x39 ? hex - 0x30 :
-                        /* A-F */ hex >= 0x41 && hex <= 0x46 ? hex - 0x41 + 10 :
-                            /* a-f */ hex >= 0x61 && hex <= 0x66 ? hex - 0x61 + 10 : -1;
-                    if (digit < 0)
-                        TomlError.x('invalid non-hex character in unicode escape', ctx);
-                    value = (value << 4) | digit;
-                }
-                // Because JS does bitwise on signed 32bit integers, all 0xfzzzzzzz values are actually seen as negative
-                if (value < 0 || value > 0x10ffff || (value >= 0xd800 && value <= 0xdfff)) {
-                    TomlError.x('invalid unicode escape', ctx, errPtr);
-                }
-                parsed += String.fromCodePoint(value);
-                sliceStart = ctx.p--;
-                state = 0;
-            }
-            // Newline escape sequence. We only need to care about spaces and tabs; newlines are dealt with earlier
-            else if (isMultiline && (c === 0x20 || c === 0x9 /* \t */)) {
-                state = 2;
-            }
-            // Basic escape sequence
-            else {
-                if (c === 0x62 /* b */)
-                    parsed += '\b';
-                else if (c === 0x74 /* t */)
-                    parsed += '\t';
-                else if (c === 0x6e /* n */)
-                    parsed += '\n';
-                else if (c === 0x66 /* f */)
-                    parsed += '\f';
-                else if (c === 0x72 /* r */)
-                    parsed += '\r';
-                else if (c === 0x65 /* e */)
-                    parsed += '\x1b';
-                else if (c === 0x22 /* " */)
-                    parsed += '"';
-                else if (c === 0x5c /* \ */)
-                    parsed += '\\';
-                else
-                    TomlError.x('unrecognised escape sequence', ctx);
-                sliceStart = ctx.p + 1;
-                state = 0;
-            }
-        }
-        // Newline escape continuation: keep moving forward until the first non-whitespace char
-        else if (c !== 0x20 && c !== 0x9 /* \t */) {
-            if (state === 2)
-                TomlError.x('invalid escape: only line-ending whitespace may be escaped', ctx, sliceStart);
-            // State cannot be zero, or we'd have branched earlier already.
-            // If it's a backslash, immediately transition to the escape state so it can be processed.
-            state = !isLiteral && c === 0x5c /* \ */ ? 1 : 0;
-            sliceStart = ctx.p;
-        }
-    }
-    TomlError.x('unfinished string', ctx, startPtr);
-}
-
 ;// CONCATENATED MODULE: ./node_modules/smol-toml/dist/date.js
 /*!
  * Copyright (c) Squirrel Chat et al., All rights reserved.
@@ -105283,67 +96352,38 @@ function parseString(ctx) {
  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-let DATE_TIME_RE = /^(\d{4}-\d{2}-\d{2})?[Tt ]?(?:(\d{2}):\d{2}(?::\d{2}(?:\.\d+)?)?)?(Z|z|[-+]\d{2}:\d{2})?$/i;
+let DATE_TIME_RE = /^(\d{4}-\d{2}-\d{2})?[T ]?(?:(\d{2}):\d{2}(?::\d{2}(?:\.\d+)?)?)?(Z|[-+]\d{2}:\d{2})?$/i;
 class TomlDate extends Date {
     #hasDate = false;
     #hasTime = false;
     #offset = null;
-    constructor(date, fasttype, unsafeDelim) {
+    constructor(date) {
         let hasDate = true;
         let hasTime = true;
         let offset = 'Z';
-        let c;
         if (typeof date === 'string') {
-            if (fasttype)
-                prep: {
-                    // Date-time
-                    if (fasttype < 3) {
-                        if (+date.slice(11, 13) > 23) {
-                            date = '';
-                            break prep;
-                        }
-                        // Local
-                        if (fasttype === 2) {
-                            offset = null;
-                            date += 'Z';
-                        }
-                        // Offset; keep track of offset if not Z
-                        else if ((c = date.charCodeAt(date.length - 1)) !== 0x5a /* Z */ && c !== 0x7a /* z */) {
-                            offset = date.slice(date.length - 6);
-                        }
-                        if (unsafeDelim)
-                            date = date.slice(0, 10) + 'T' + date.slice(11);
-                    }
-                    // Time
-                    else if (fasttype === 4) {
-                        date = +date.slice(0, 2) > 23 ? '' : `0000-01-01T${date}Z`;
-                    }
-                    hasDate = fasttype !== 4;
-                    hasTime = fasttype !== 3;
+            let match = date.match(DATE_TIME_RE);
+            if (match) {
+                if (!match[1]) {
+                    hasDate = false;
+                    date = `0000-01-01T${date}`;
                 }
-            else {
-                let match = date.match(DATE_TIME_RE);
-                if (match) {
-                    if (!match[1]) {
-                        hasDate = false;
-                        date = `0000-01-01T${date}`;
-                    }
-                    hasTime = !!match[2];
-                    // Make sure to use T instead of a space. Breaks in case of extreme values otherwise.
-                    hasTime && date[10] === ' ' && (date = date.replace(' ', 'T'));
-                    // Do not allow rollover hours.
-                    if (match[2] && +match[2] > 23) {
-                        date = '';
-                    }
-                    else {
-                        offset = match[3] || null;
-                        if (!offset && hasTime)
-                            date += 'Z';
-                    }
-                }
-                else {
+                hasTime = !!match[2];
+                // Make sure to use T instead of a space. Breaks in case of extreme values otherwise.
+                hasTime && date[10] === ' ' && (date = date.replace(' ', 'T'));
+                // Do not allow rollover hours.
+                if (match[2] && +match[2] > 23) {
                     date = '';
                 }
+                else {
+                    offset = match[3] || null;
+                    date = date.toUpperCase();
+                    if (!offset && hasTime)
+                        date += 'Z';
+                }
+            }
+            else {
+                date = '';
             }
         }
         super(date);
@@ -105380,7 +96420,7 @@ class TomlDate extends Date {
         if (this.#offset === null)
             return iso.slice(0, -1);
         // Offset DateTime
-        if (this.#offset === 'Z' || this.#offset === 'z')
+        if (this.#offset === 'Z')
             return iso;
         // This part is quite annoying: JS strips the original timezone from the ISO string representation
         // Instead of using a "modified" date and "Z", we restore the representation "as authored"
@@ -105412,7 +96452,405 @@ class TomlDate extends Date {
         return date;
     }
 }
+//# sourceMappingURL=date.js.map
+;// CONCATENATED MODULE: ./node_modules/smol-toml/dist/error.js
+/*!
+ * Copyright (c) Squirrel Chat et al., All rights reserved.
+ * SPDX-License-Identifier: BSD-3-Clause
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright notice, this
+ *    list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ *    this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ * 3. Neither the name of the copyright holder nor the names of its contributors
+ *    may be used to endorse or promote products derived from this software without
+ *    specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+ * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+ * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+function getLineColFromPtr(string, ptr) {
+    let lines = string.slice(0, ptr).split(/\r\n|\n|\r/g);
+    return [lines.length, lines.pop().length + 1];
+}
+function makeCodeBlock(string, line, column) {
+    let lines = string.split(/\r\n|\n|\r/g);
+    let codeblock = '';
+    let numberLen = (Math.log10(line + 1) | 0) + 1;
+    for (let i = line - 1; i <= line + 1; i++) {
+        let l = lines[i - 1];
+        if (!l)
+            continue;
+        codeblock += i.toString().padEnd(numberLen, ' ');
+        codeblock += ':  ';
+        codeblock += l;
+        codeblock += '\n';
+        if (i === line) {
+            codeblock += ' '.repeat(numberLen + column + 2);
+            codeblock += '^\n';
+        }
+    }
+    return codeblock;
+}
+class TomlError extends Error {
+    line;
+    column;
+    codeblock;
+    constructor(message, options) {
+        const [line, column] = getLineColFromPtr(options.toml, options.ptr);
+        const codeblock = makeCodeBlock(options.toml, line, column);
+        super(`Invalid TOML document: ${message}\n\n${codeblock}`, options);
+        this.line = line;
+        this.column = column;
+        this.codeblock = codeblock;
+    }
+}
+//# sourceMappingURL=error.js.map
+;// CONCATENATED MODULE: ./node_modules/smol-toml/dist/primitive.js
+/*!
+ * Copyright (c) Squirrel Chat et al., All rights reserved.
+ * SPDX-License-Identifier: BSD-3-Clause
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright notice, this
+ *    list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ *    this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ * 3. Neither the name of the copyright holder nor the names of its contributors
+ *    may be used to endorse or promote products derived from this software without
+ *    specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+ * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+ * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
 
+
+// let CTRL_REGEX = /[\x00-\x08\x0f-\x1f\x7f]/
+let INT_REGEX = /^((0x[0-9a-fA-F](_?[0-9a-fA-F])*)|(([+-]|0[ob])?\d(_?\d)*))$/;
+let FLOAT_REGEX = /^[+-]?\d(_?\d)*(\.\d(_?\d)*)?([eE][+-]?\d(_?\d)*)?$/;
+let LEADING_ZERO = /^[+-]?0[0-9_]/;
+/** @internal */
+function parseString(str, ptr) {
+    let c = str[ptr++];
+    let first = c;
+    let isLiteral = c === "'";
+    let isMultiline = c === str[ptr] && c === str[ptr + 1];
+    if (isMultiline) {
+        // Trim initial newline
+        if (str[ptr += 2] === '\n')
+            ptr++;
+        else if (str[ptr] === '\r' && str[ptr + 1] === '\n')
+            ptr += 2;
+    }
+    /*
+    The fast path does not seem to bring significant performance gains, so it's commented out.
+    Kept for reference and/or future fafoing.
+
+    Without: spec  5.08 µs/iter    3.88 ipc (99.44% cache)   23.90 branch misses   28.61k cycles    111.01k instructions
+             5MB   115.73 ms/iter  2.51 ipc (98.36% cache)   3.12M branch misses   619.30M cycles   1.56G instructions
+
+    With:    spec  5.09 µs/iter    3.90 ipc (99.46% cache)   24.42 branch misses   28.57k cycles    111.49k instructions
+             5MB   113.89 ms/iter  2.47 ipc (98.38% cache)   3.12M branch misses   611.94M cycles   1.51G instructions
+
+    if (c === "'") {
+        // Literal strings fast path - no transform needs to occur; just grab the str and that's it
+        let endPtr = str.indexOf(isMultiline ? "'''" : "'", ptr)
+        if (endPtr < 0) {
+            throw new TomlError("unfinished string literal", { toml: str, ptr })
+        }
+
+        if (isMultiline) {
+            // If the string ends with 4-5 quotes, then the first 1-2 are part of the string
+            if (str[endPtr + 3] === "'") endPtr++
+            if (str[endPtr + 3] === "'") endPtr++
+        }
+
+        let string = str.slice(ptr, endPtr)
+        if (CTRL_REGEX.test(string)) {
+            let match = string.match(CTRL_REGEX)!
+            throw new TomlError('control characters are not allowed in strings', { toml: str, ptr: ptr + (match.index ?? 0) })
+        }
+        return [string, endPtr + (isMultiline ? 3 : 1)]
+    }
+    */
+    let parsed = '';
+    let sliceStart = ptr;
+    // states:
+    //   0 - decoding
+    //   1 - decoding escape
+    //   2 - whitespace escape (no newline encountered yet, must fail on non-whitespace)
+    //   3 - whitespace escape (newline encountered, allowed to transition back to normal decode)
+    let state = 0;
+    for (let i = ptr; i < str.length; i++) {
+        c = str[i];
+        // Deal with newlines first, since that simplifies control character checking and handling across all states
+        if (isMultiline && (c === '\n' || (c === '\r' && str[i + 1] === '\n'))) {
+            state = state && 3;
+        }
+        // Control characters are banned in TOML, so we throw an error if we encounter them
+        else if ((c < '\x20' && c !== '\t') || c === '\x7f') {
+            throw new TomlError('control characters are not allowed in strings', {
+                toml: str,
+                ptr: i,
+            });
+        }
+        // The string might terminate while we're parsing through a newline escape.
+        // It must have encountered a newline; otherwise, it'll simply fail in another branch.
+        else if ((!state || state === 3) && c === first && (!isMultiline || (str[i + 1] === first && str[i + 2] === first))) {
+            if (isMultiline) {
+                // If the string ends with 4-5 quotes, then the first 1-2 are part of the string
+                if (str[i + 3] === first)
+                    i++;
+                if (str[i + 3] === first)
+                    i++;
+            }
+            return [
+                // If we're in a newline escape still, then there's nothing to add.
+                // Also try to avoid concat if there's nothing to add to parsed, or nothing has been added to parsed.
+                state ? parsed : parsed + str.slice(sliceStart, i),
+                i + (isMultiline ? 3 : 1),
+            ];
+        }
+        else if (!state) {
+            if (!isLiteral && c === '\\') {
+                parsed += str.slice(sliceStart, (sliceStart = i));
+                state = 1;
+            }
+        }
+        else if (state === 1) {
+            if (c === 'x' || c === 'u' || c === 'U') { // Unicode escape
+                let value = 0;
+                let len = c === 'x' ? 2 : c === 'u' ? 4 : 8;
+                for (let j = 0; j < len; j++, i++) {
+                    let hex = str.charCodeAt(i + 1);
+                    let digit = 
+                    /* 0-9 */ hex >= 0x30 && hex <= 0x39 ? hex - 0x30 :
+                        /* A-F */ hex >= 0x41 && hex <= 0x46 ? hex - 0x41 + 10 :
+                            /* a-f */ hex >= 0x61 && hex <= 0x66 ? hex - 0x61 + 10 : -1;
+                    if (digit < 0)
+                        throw new TomlError('invalid non-hex character in unicode escape', { toml: str, ptr: i + 1 });
+                    value = (value << 4) | digit;
+                }
+                // Because JS does bitwise on signed 32bit integers, all 0xfzzzzzzz values are actually seen as negative
+                if (value < 0 || value > 0x10ffff || (value >= 0xd800 && value <= 0xdfff)) {
+                    throw new TomlError('invalid unicode escape', { toml: str, ptr: i });
+                }
+                parsed += String.fromCodePoint(value);
+                sliceStart = i + 1;
+                state = 0;
+            }
+            else if (c === ' ' || c === '\t') { // If it was a newline, it'd have been handled earlier
+                state = 2;
+            }
+            else {
+                if (c === 'b')
+                    parsed += '\b';
+                else if (c === 't')
+                    parsed += '\t';
+                else if (c === 'n')
+                    parsed += '\n';
+                else if (c === 'f')
+                    parsed += '\f';
+                else if (c === 'r')
+                    parsed += '\r';
+                else if (c === 'e')
+                    parsed += '\x1b';
+                else if (c === '"')
+                    parsed += '"';
+                else if (c === '\\')
+                    parsed += '\\';
+                else
+                    throw new TomlError('unrecognized escape sequence', { toml: str, ptr: i });
+                sliceStart = i + 1;
+                state = 0;
+            }
+        }
+        else if (c !== ' ' && c !== '\t') {
+            if (state === 2) {
+                throw new TomlError('invalid escape: only line-ending whitespace may be escaped', {
+                    toml: str,
+                    ptr: sliceStart,
+                });
+            }
+            // State cannot be zero, or we'd have branched earlier already.
+            // If it's a backslash, immediately transition to the escape state so it can be processed.
+            state = !isLiteral && c === '\\' ? 1 : 0;
+            sliceStart = i;
+        }
+    }
+    throw new TomlError('unfinished string', { toml: str, ptr });
+}
+/** @internal */
+function primitive_parseValue(value, toml, ptr, integersAsBigInt) {
+    // Constant values
+    if (value === 'true')
+        return true;
+    if (value === 'false')
+        return false;
+    if (value === '-inf')
+        return -Infinity;
+    if (value === 'inf' || value === '+inf')
+        return Infinity;
+    if (value === 'nan' || value === '+nan' || value === '-nan')
+        return NaN;
+    // Avoid FP representation of -0
+    if (value === '-0')
+        return integersAsBigInt ? 0n : 0;
+    // Numbers
+    let isInt = INT_REGEX.test(value);
+    if (isInt || FLOAT_REGEX.test(value)) {
+        if (LEADING_ZERO.test(value)) {
+            throw new TomlError('leading zeroes are not allowed', {
+                toml: toml,
+                ptr: ptr,
+            });
+        }
+        value = value.replace(/_/g, '');
+        let numeric = +value;
+        if (isNaN(numeric)) {
+            throw new TomlError('invalid number', {
+                toml: toml,
+                ptr: ptr,
+            });
+        }
+        if (isInt) {
+            if ((isInt = !Number.isSafeInteger(numeric)) && !integersAsBigInt) {
+                throw new TomlError('integer value cannot be represented losslessly', {
+                    toml: toml,
+                    ptr: ptr,
+                });
+            }
+            if (isInt || integersAsBigInt === true)
+                numeric = BigInt(value);
+        }
+        return numeric;
+    }
+    const date = new TomlDate(value);
+    if (!date.isValid()) {
+        throw new TomlError('invalid value', {
+            toml: toml,
+            ptr: ptr,
+        });
+    }
+    return date;
+}
+//# sourceMappingURL=primitive.js.map
+;// CONCATENATED MODULE: ./node_modules/smol-toml/dist/util.js
+/*!
+ * Copyright (c) Squirrel Chat et al., All rights reserved.
+ * SPDX-License-Identifier: BSD-3-Clause
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright notice, this
+ *    list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ *    this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ * 3. Neither the name of the copyright holder nor the names of its contributors
+ *    may be used to endorse or promote products derived from this software without
+ *    specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+ * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+ * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+
+/** @internal */
+function indexOfNewline(str, start = 0, end = str.length) {
+    let idx = str.indexOf('\n', start);
+    if (str[idx - 1] === '\r')
+        idx--;
+    return idx <= end ? idx : -1;
+}
+/** @internal */
+function skipComment(str, ptr) {
+    for (let i = ptr; i < str.length; i++) {
+        let c = str[i];
+        if (c === '\n')
+            return i;
+        if (c === '\r' && str[i + 1] === '\n')
+            return i + 1;
+        if ((c < '\x20' && c !== '\t') || c === '\x7f') {
+            throw new TomlError('control characters are not allowed in comments', {
+                toml: str,
+                ptr: ptr,
+            });
+        }
+    }
+    return str.length;
+}
+/** @internal */
+function skipVoid(str, ptr, banNewLines, banComments) {
+    let c;
+    while (1) {
+        while ((c = str[ptr]) === ' ' || c === '\t' || (!banNewLines && (c === '\n' || (c === '\r' && str[ptr + 1] === '\n'))))
+            ptr++;
+        // Tucking the return statement here would save 5 characters >:)
+        // But TypeScript fails to detect there is no way to exit the loop so it complains about the lack of final return
+        if (banComments || c !== '#')
+            break;
+        ptr = skipComment(str, ptr);
+    }
+    return ptr;
+}
+/** @internal */
+function skipUntil(str, ptr, sep, end, banNewLines = false) {
+    if (!end) {
+        ptr = indexOfNewline(str, ptr);
+        return ptr < 0 ? str.length : ptr;
+    }
+    for (let i = ptr; i < str.length; i++) {
+        let c = str[i];
+        if (c === '#') {
+            i = indexOfNewline(str, i);
+            if (i < 0)
+                break;
+        }
+        else if (c === sep) {
+            return i + 1;
+        }
+        else if (c === end || (banNewLines && (c === '\n' || (c === '\r' && str[i + 1] === '\n')))) {
+            return i;
+        }
+    }
+    throw new TomlError('cannot find end of structure', {
+        toml: str,
+        ptr: ptr,
+    });
+}
+//# sourceMappingURL=util.js.map
 ;// CONCATENATED MODULE: ./node_modules/smol-toml/dist/extract.js
 /*!
  * Copyright (c) Squirrel Chat et al., All rights reserved.
@@ -105445,328 +96883,77 @@ class TomlDate extends Date {
 
 
 
-function isDigit(char, base = 10) {
-    return base === 16
-        ? (char > 0x2f && char < 0x3a) || (char > 0x40 && char < 0x47) || (char > 0x60 && char < 0x67)
-        : (char > 0x2f && char < 0x30 + base);
-}
-function isEndOfValue(char, delim) {
-    // Whitespace -- we're permissive on `\r` for performance; it'll be dealt with later anyway
-    return char === 0x20 || char === 0x9 /* \t */ || char === 0xa /* \n */ || char === 0xd /* \r */ ||
-        // Structure end or next value delimiter
-        (delim && (char === delim || char === 0x2c /* , */)) ||
-        // Comment
-        char === 0x23; /* # */
+function sliceAndTrimEndOf(str, startPtr, endPtr) {
+    let value = str.slice(startPtr, endPtr);
+    let commentIdx = value.indexOf('#');
+    if (commentIdx > -1) {
+        // The call to skipComment allows to "validate" the comment
+        // (absence of control characters)
+        skipComment(str, commentIdx);
+        value = value.slice(0, commentIdx);
+    }
+    return [value.trimEnd(), commentIdx];
 }
 /** @internal */
-function extractValue(ctx, end) {
-    let errPtr = ctx.p;
-    let c = ctx.s.charCodeAt(ctx.p);
-    // Structs
-    if (c === 0x5b /* [ */ || c === 0x7b /* { */) {
-        ctx.d-- || TomlError.x('document contains excessively nested structures. aborting.', ctx);
-        let value = c === 0x5b /* [ */
-            ? parseArray(ctx)
-            : parseInlineTable(ctx);
-        ctx.d++;
-        return value;
+function extractValue(str, ptr, end, depth, integersAsBigInt) {
+    if (depth === 0) {
+        throw new TomlError('document contains excessively nested structures. aborting.', {
+            toml: str,
+            ptr: ptr,
+        });
     }
-    // Strings
-    if (c === 0x22 /* " */ || c === 0x27 /* ' */) {
-        return parseString(ctx);
-    }
-    // Booleans
-    // We can fast-path because the first character is enough to know the only possible value
-    if (c === 0x74 /* t */) { // Only possible valid value is `true`
-        if (ctx.s.charCodeAt(++ctx.p) !== 0x72 || ctx.s.charCodeAt(++ctx.p) !== 0x75 || ctx.s.charCodeAt(++ctx.p) !== 0x65)
-            TomlError.x('invalid value', ctx, errPtr);
-        return ctx.p++, true;
-    }
-    if (c === 0x66 /* f */) { // Only possible valid value is `false`
-        if (ctx.s.charCodeAt(++ctx.p) !== 0x61 || ctx.s.charCodeAt(++ctx.p) !== 0x6c || ctx.s.charCodeAt(++ctx.p) !== 0x73 || ctx.s.charCodeAt(++ctx.p) !== 0x65)
-            TomlError.x('invalid value', ctx, errPtr);
-        return ctx.p++, false;
-    }
-    if (c === 0x2b /* + */ || c === 0x2d /* - */) {
-        return parseNumber(ctx, ctx.p, ctx.s.charCodeAt(++ctx.p), 0x2c - c, end);
-    }
-    // Rough heuristic, but `parseDate` falls back to number parsing if it's a false positive.
-    // e.g.: `a = 1\n-------------- = 1` would match this heuristic, but gracefully fallback to numbers.
-    if (ctx.s.charCodeAt(ctx.p + 4) === 0x2d /* - */ && ctx.s.charCodeAt(ctx.p + 7) === 0x2d /* - */) {
-        return parseDate(ctx, c, end);
-    }
-    // Same logic as above; `parseTime` falls back to number parsing if it's a false positive.
-    if (ctx.s.charCodeAt(ctx.p + 2) === 0x3a /* : */) {
-        return parseTime(ctx, c, end);
-    }
-    return parseNumber(ctx, ctx.p, c, 0, end);
-}
-// State:
-// 0: init
-// 1: integer
-// 2: fractional dot
-// 3: fractional
-// 4: exponent letter
-// 5: exponent
-// 6: exponent sign
-// 7: exponent with sign
-// >9: underscore; see below
-//     -> 12: was integer
-//     -> 14: was fractional
-//     -> 16: was exponent
-// states 2-5, 14, 16 are ONLY permitted iif base === 10
-function parseNumber(ctx, startPtr, startChr, sign, endChr) {
-    let c = startChr;
-    let state = 0;
-    let hasUnderscores = false;
-    // (+/-)inf
-    if (c === 0x69 /* i */) {
-        if (ctx.s.charCodeAt(++ctx.p) !== 0x6e || ctx.s.charCodeAt(++ctx.p) !== 0x66)
-            TomlError.x('invalid value', ctx, startPtr);
-        return ctx.p++, (sign || 1) / 0;
-    }
-    // (+/-)nan
-    if (c === 0x6e /* n */) {
-        if (ctx.s.charCodeAt(++ctx.p) !== 0x61 || ctx.s.charCodeAt(++ctx.p) !== 0x6e)
-            TomlError.x('invalid value', ctx, startPtr);
-        return ctx.p++, NaN;
-    }
-    // Leading zero
-    // Only allowed cases: `0<EOV>`, `0.(...)`, `0e(...)`, `0x(...)`, `0b(...)`, `0o(...)`
-    // FWIW, `0e(...)` is a stupid case, but it's not banned per-se so we have to parse it
-    if (c === 0x30 /* 0 */) {
-        if (++ctx.p >= ctx.s.length || isEndOfValue(c = ctx.s.charCodeAt(ctx.p), endChr))
-            return ctx.bi === true ? 0n : 0; // note: conveniently deals with `-0`
-        if (!sign) {
-            if (c === 0x78 /* x */)
-                return parseIntegerBaseN(ctx, startPtr, 16, endChr);
-            else if (c === 0x62 /* b */)
-                return parseIntegerBaseN(ctx, startPtr, 2, endChr);
-            else if (c === 0x6f /* o */)
-                return parseIntegerBaseN(ctx, startPtr, 8, endChr);
-        }
-        if (c === 0x2e /* . */)
-            state = 2;
-        else if (c === 0x65 /* e */ || c === 0x45 /* E */)
-            state = 4;
-        else
-            TomlError.x('illegal leading zero', ctx, startPtr);
-    }
-    // If the 1st char is not a digit by now, then it's not a valid TOML value at all
-    else if (!isDigit(c))
-        TomlError.x('invalid value', ctx, startPtr);
-    while (++ctx.p < ctx.s.length && (c = ctx.s.charCodeAt(ctx.p), !isEndOfValue(c, endChr))) {
-        if (!state)
-            state = 1; // Detects single-digit numbers we can use a fast parse path for
-        // The way the states are numbered is not random: underscores are always permitted in odd-numbered states and
-        // never permitted in even-numbered ones.
-        if (c === 0x5f /* _ */) {
-            if (!(state & 1))
-                TomlError.x('illegal underscore', ctx);
-            state += 11; // 11 is a marker that makes the state even and greater than 9; see the numbering + rationale above
-            hasUnderscores = true;
-        }
-        // Transition to fractional part.
-        else if (state === 1 && c === 0x2e /* . */)
-            state = 2;
-        // Transition to exponent part.
-        else if ((state === 1 || state === 3) && (c === 0x65 /* e */ || c === 0x45 /* E */))
-            state = 4;
-        // + and - are permitted in state 4 only (handled before entering the function for state 0)
-        else if (state === 4 && (c === 0x2b /* + */ || c === 0x2d /* - */)) {
-            state = 6;
-        }
-        // All special cases have been handled; only digits are allowed here
-        else if (!isDigit(c))
-            TomlError.x(`illegal character in numeric literal`, ctx);
-        // Clear state flags
-        else if (state > 9)
-            state -= 11;
-        else if (!(state & 1))
-            state++;
-    }
-    // Single-char number; we can fast-path these very easily.
-    if (!state) {
-        let val = (startChr - 0x30 /* 0 */) * (sign || 1);
-        return ctx.bi === true ? BigInt(val) : val;
-    }
-    // Even-numbered states absolutely require a digit next; not even end of value is permitted
-    if (!(state & 1))
-        TomlError.x('unfinished numeric value', ctx, startPtr);
-    let str = ctx.s.slice(startPtr, ctx.p);
-    if (hasUnderscores)
-        str = str.replaceAll('_', ''); // perf: replaceAll 1.25x faster than replace with a regex
-    return state > 1
-        ? parseFloat(str)
-        : parseInteger(ctx, str, 10, startPtr);
-}
-function parseIntegerBaseN(ctx, startPtr, base, endChr) {
-    let c, underscore = 1;
-    while (++ctx.p < ctx.s.length && (c = ctx.s.charCodeAt(ctx.p), !isEndOfValue(c, endChr))) {
-        if (c === 0x5f /* _ */) {
-            if (underscore & 1)
-                TomlError.x('illegal underscore', ctx);
-            underscore = 3;
-        }
-        // We only need to check if the number is a valid digit, nothing else is permitted
-        else if (!isDigit(c, base))
-            TomlError.x(`illegal character in numeric literal`, ctx);
-        // Clear underscore flag
-        else if (underscore & 1)
-            underscore--;
-    }
-    // Trailing underscore is not allowed
-    if (underscore & 1)
-        TomlError.x('unfinished numeric value', ctx);
-    let str = ctx.s.slice(startPtr + 2, ctx.p);
-    if (underscore)
-        str = str.replaceAll('_', ''); // perf: replaceAll 1.25x faster than replace with a regex
-    return parseInteger(ctx, str, base, startPtr);
-}
-function parseInteger(ctx, str, base, startPtr) {
-    if (ctx.bi !== true)
-        int: {
-            let val = parseInt(str, base);
-            if (!Number.isSafeInteger(val)) {
-                if (ctx.bi)
-                    break int;
-                TomlError.x('integer value cannot be represented losslessly', ctx, startPtr);
+    let c = str[ptr];
+    if (c === '[' || c === '{') {
+        let [value, endPtr] = c === '['
+            ? parseArray(str, ptr, depth, integersAsBigInt)
+            : parseInlineTable(str, ptr, depth, integersAsBigInt);
+        if (end) {
+            endPtr = skipVoid(str, endPtr);
+            if (str[endPtr] === ',')
+                endPtr++;
+            else if (str[endPtr] !== end) {
+                throw new TomlError('expected comma or end of structure', {
+                    toml: str,
+                    ptr: endPtr,
+                });
             }
-            return val;
         }
-    return base === 10 ? BigInt(str) : BigInt((base === 2 ? '0b' : base === 8 ? '0o' : '0x') + str);
-}
-function parseDate(ctx, c, endChr) {
-    let startPtr = ctx.p++, unsafeSeparator;
-    if (!isDigit(c) ||
-        !isDigit(ctx.s.charCodeAt(ctx.p++)) ||
-        !isDigit(ctx.s.charCodeAt(ctx.p++)) ||
-        !isDigit(ctx.s.charCodeAt(ctx.p++))) {
-        return parseNumber(ctx, ctx.p = startPtr, c, 0, endChr);
+        return [value, endPtr];
     }
-    ctx.p += 5;
-    if (!isDigit(ctx.s.charCodeAt(ctx.p++)))
-        TomlError.x('invalid date-time: date part is malformed', ctx, startPtr);
-    if (ctx.p >= ctx.s.length || (((c = ctx.s.charCodeAt(ctx.p)) !== 0x20 || (unsafeSeparator = true, !isDigit(ctx.s.charCodeAt(ctx.p + 1)))) && c !== 0x54 /* T */ && c !== 0x74 /* t */)) {
-        let t = ctx.s.slice(startPtr, ctx.p);
-        return readDate(ctx, t, 3, false, startPtr);
-    }
-    if (ctx.s.charCodeAt(ctx.p += 3) !== 0x3a /* : */)
-        TomlError.x('invalid date-time: time part is malformed', ctx, startPtr);
-    if (ctx.s.charCodeAt(ctx.p += 3) === 0x3a /* : */)
-        ctx.p += 3;
-    if (ctx.s.charCodeAt(ctx.p) === 0x2e /* . */)
-        while (isDigit(ctx.s.charCodeAt(++ctx.p)))
-            ;
-    if (c = ctx.s.charCodeAt(ctx.p)) {
-        if (c === 0x5a /* Z */ || c === 0x7a /* z */) {
-            let t = ctx.s.slice(startPtr, ++ctx.p);
-            return readDate(ctx, t, 1, unsafeSeparator, startPtr, '[+00:00]');
+    if (c === '"' || c === "'") {
+        let [parsed, endPtr] = parseString(str, ptr);
+        if (end) {
+            endPtr = skipVoid(str, endPtr);
+            if (str[endPtr] && str[endPtr] !== ',' && str[endPtr] !== end && str[endPtr] !== '\n' && str[endPtr] !== '\r') {
+                throw new TomlError('unexpected character encountered', {
+                    toml: str,
+                    ptr: endPtr,
+                });
+            }
+            if (str[endPtr] === ',')
+                endPtr++;
         }
-        if (c === 0x2b /* + */ || c === 0x2d /* - */) {
-            // Temporal's ZonedDateTime is weird asf when it comes to dealing with traditional offsets...
-            // It's 1.2x faster to allocate a new string to pass to ZDT than use Instant.toZonedDateTimeISO
-            let t = ctx.s.slice(startPtr, ctx.p += 6);
-            return readDate(ctx, t, 1, unsafeSeparator, startPtr, !ctx.ld && ('[' + ctx.s.slice(ctx.p - 6, ctx.p) + ']'));
-        }
+        return [parsed, endPtr];
     }
-    let t = ctx.s.slice(startPtr, ctx.p);
-    return readDate(ctx, t, 2, unsafeSeparator, startPtr);
+    let endPtr = skipUntil(str, ptr, ',', end);
+    let slice = sliceAndTrimEndOf(str, ptr, endPtr - (str[endPtr - 1] === ',' ? 1 : 0));
+    if (!slice[0]) {
+        throw new TomlError('incomplete key-value declaration: no value specified', {
+            toml: str,
+            ptr: ptr,
+        });
+    }
+    if (end && slice[1] > -1) {
+        endPtr = skipVoid(str, ptr + slice[1]);
+        if (str[endPtr] === ',')
+            endPtr++;
+    }
+    return [
+        primitive_parseValue(slice[0], str, ptr, integersAsBigInt),
+        endPtr,
+    ];
 }
-function parseTime(ctx, c, endChr) {
-    let start = ctx.p;
-    if (!isDigit(c) || !isDigit(ctx.s.charCodeAt(++ctx.p))) {
-        return parseNumber(ctx, --ctx.p, c, 0, endChr);
-    }
-    if (ctx.s.charCodeAt(ctx.p += 4) === 0x3a /* : */)
-        ctx.p += 3;
-    if (ctx.s.charCodeAt(ctx.p) === 0x2e /* . */)
-        while (isDigit(ctx.s.charCodeAt(++ctx.p)))
-            ;
-    let t = ctx.s.slice(start, ctx.p);
-    return readDate(ctx, t, 4, false, start);
-}
-function readDate(ctx, str, type, unsafeDelim, errPtr, temporalSuffix) {
-    if (ctx.ld) {
-        let date = new TomlDate(str, type, unsafeDelim);
-        if (!date.isValid())
-            TomlError.x('invalid date', ctx, errPtr);
-        return date;
-    }
-    try {
-        if (temporalSuffix)
-            str += temporalSuffix;
-        switch (type) {
-            case 1: return Temporal.ZonedDateTime.from(str);
-            case 2: return Temporal.PlainDateTime.from(str);
-            case 3: return Temporal.PlainDate.from(str);
-            case 4: return Temporal.PlainTime.from(str);
-        }
-    }
-    catch (e) {
-        TomlError.x(e instanceof Error ? e.message : '' + e, ctx, errPtr);
-    }
-}
-
-;// CONCATENATED MODULE: ./node_modules/smol-toml/dist/util.js
-/*!
- * Copyright (c) Squirrel Chat et al., All rights reserved.
- * SPDX-License-Identifier: BSD-3-Clause
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *
- * 1. Redistributions of source code must retain the above copyright notice, this
- *    list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright notice,
- *    this list of conditions and the following disclaimer in the
- *    documentation and/or other materials provided with the distribution.
- * 3. Neither the name of the copyright holder nor the names of its contributors
- *    may be used to endorse or promote products derived from this software without
- *    specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
- * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
- * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
- * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
- * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
- * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
- * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
- * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
-
-/** @internal */
-function skipComment(ctx) {
-    for (; ctx.p < ctx.s.length; ctx.p++) {
-        let c = ctx.s.charCodeAt(ctx.p);
-        if (c === 0xa /* \n */)
-            break;
-        if (c === 0xd /* \r */ && ctx.s.charCodeAt(ctx.p + 1) === 0xa /* \n */) {
-            ctx.p++;
-            break;
-        }
-        if ((c < 0x20 && c !== 0x9 /* \t */) || c === 0x7f) {
-            TomlError.x('control characters are not allowed in comments', ctx);
-        }
-    }
-}
-/** @internal */
-function skipVoid(ctx, banNewLines, banComments) {
-    let c;
-    while (ctx.p < ctx.s.length) {
-        while (ctx.p < ctx.s.length && ((c = ctx.s.charCodeAt(ctx.p)) === 0x20 ||
-            c === 0x9 /* \t */ ||
-            (!banNewLines &&
-                (c === 0xa /* \n */ || (c === 0xd /* \r */ && ctx.s.charCodeAt(ctx.p + 1) === 0xa /* \n */)))))
-            ctx.p++;
-        if (banComments || c !== 0x23 /* # */)
-            break;
-        skipComment(ctx);
-    }
-}
-
+//# sourceMappingURL=extract.js.map
 ;// CONCATENATED MODULE: ./node_modules/smol-toml/dist/struct.js
 /*!
  * Copyright (c) Squirrel Chat et al., All rights reserved.
@@ -105799,132 +96986,157 @@ function skipVoid(ctx, banNewLines, banComments) {
 
 
 
+let KEY_PART_RE = /^[a-zA-Z0-9-_]+[ \t]*$/;
 /** @internal */
-function parseKey(ctx, end = 0x3d /* = */) {
-    // States:
-    // 0: before first char
-    // 1: parsing bare key
-    // 2: after key component
-    let startPtr;
-    let state = 0;
+function parseKey(str, ptr, end = '=') {
+    let dot = ptr - 1;
     let parsed = [];
-    let sliceStart;
-    let c = ctx.s.charCodeAt(startPtr = ctx.p);
+    let endPtr = str.indexOf(end, ptr);
+    if (endPtr < 0) {
+        throw new TomlError('incomplete key-value: cannot find end of key', {
+            toml: str,
+            ptr: ptr,
+        });
+    }
     do {
-        // End of key
-        if (c === end) {
-            if (!state)
-                TomlError.x('unexpected end of key', ctx);
-            if (state === 1)
-                parsed.push(ctx.s.slice(sliceStart, ctx.p));
-            return ctx.p++, parsed;
-        }
-        // Dotted key separator
-        else if (c === 0x2e /* . */) {
-            if (!state)
-                TomlError.x('illegal empty bare key', ctx);
-            if (state === 1)
-                parsed.push(ctx.s.slice(sliceStart, ctx.p));
-            state = 0;
-        }
-        // Quoted key
-        else if (!state && (c === 0x22 /* " */ || c === 0x27 /* ' */)) {
-            if (c === ctx.s.charCodeAt(ctx.p + 1) && c === ctx.s.charCodeAt(ctx.p + 2))
-                TomlError.x('illegal quoted key: multiline strings are not allowed', ctx);
-            parsed.push(parseString(ctx));
-            state = 2;
-            ctx.p--;
-        }
-        // Whitespace; no-op in state 0 and 2, end of bare key in state 1
-        else if (c === 0x20 || c === 0x9 /* \t */) {
-            if (state === 1) {
-                parsed.push(ctx.s.slice(sliceStart, ctx.p));
-                state = 2;
+        let c = str[(ptr = ++dot)];
+        // If it's whitespace, ignore
+        if (c !== ' ' && c !== '\t') {
+            // If it's a string
+            if (c === '"' || c === "'") {
+                if (c === str[ptr + 1] && c === str[ptr + 2]) {
+                    throw new TomlError('multiline strings are not allowed in keys', {
+                        toml: str,
+                        ptr: ptr,
+                    });
+                }
+                let [part, eos] = parseString(str, ptr);
+                dot = str.indexOf('.', eos);
+                let strEnd = str.slice(eos, dot < 0 || dot > endPtr ? endPtr : dot);
+                let newLine = indexOfNewline(strEnd);
+                if (newLine > -1) {
+                    throw new TomlError('newlines are not allowed in keys', {
+                        toml: str,
+                        ptr: ptr + dot + newLine,
+                    });
+                }
+                if (strEnd.trimStart()) {
+                    throw new TomlError('found extra tokens after the string part', {
+                        toml: str,
+                        ptr: eos,
+                    });
+                }
+                if (endPtr < eos) {
+                    endPtr = str.indexOf(end, eos);
+                    if (endPtr < 0) {
+                        throw new TomlError('incomplete key-value: cannot find end of key', {
+                            toml: str,
+                            ptr: ptr,
+                        });
+                    }
+                }
+                parsed.push(part);
+            }
+            else {
+                // Normal raw key part consumption and validation
+                dot = str.indexOf('.', ptr);
+                let part = str.slice(ptr, dot < 0 || dot > endPtr ? endPtr : dot);
+                if (!KEY_PART_RE.test(part)) {
+                    throw new TomlError('only letter, numbers, dashes and underscores are allowed in keys', {
+                        toml: str,
+                        ptr: ptr,
+                    });
+                }
+                parsed.push(part.trimEnd());
             }
         }
-        // If state is post-key, no character is allowed; otherwise ensure it's a bare-key component
-        else if (state === 2 || (c < 0x30 && c !== 0x2d /* - */) || (c > 0x39 && c < 0x41) || (c > 0x5a && c < 0x61 && c !== 0x5f /* _ */) || c > 0x7a) {
-            TomlError.x('illegal character in key', ctx);
-        }
-        // Illegal character
-        else if (!state) {
-            state = 1;
-            sliceStart = ctx.p;
-        }
-    } while (c = ctx.s.charCodeAt(++ctx.p));
-    TomlError.x('incomplete key-value: cannot find end of key', ctx, startPtr);
+        // Until there's no more dot
+    } while (dot + 1 && dot < endPtr);
+    return [parsed, skipVoid(str, endPtr + 1, true, true)];
 }
 /** @internal */
-function parseInlineTable(ctx) {
-    let startPtr = ctx.p++;
-    let res = Object.create(null);
+function parseInlineTable(str, ptr, depth, integersAsBigInt) {
+    let res = {};
     let seen = new Set();
     let c;
-    while (ctx.p < ctx.s.length) {
-        skipVoid(ctx);
-        if ((c = ctx.s.charCodeAt(ctx.p)) === 0x7d /* } */) {
-            ctx.p++;
-            return res;
+    ptr++;
+    while ((c = str[ptr++]) !== '}' && c) {
+        if (c === ',') {
+            throw new TomlError('expected value, found comma', {
+                toml: str,
+                ptr: ptr - 1,
+            });
         }
-        let k;
-        let t = res;
-        let hasOwn = false;
-        let errPtr = ctx.p;
-        let key = parseKey(ctx);
-        for (let i = 0; i < key.length; i++) {
-            if (i)
-                t = hasOwn ? t[k] : (t[k] = Object.create(null));
-            k = key[i];
-            if ((hasOwn = Object.hasOwn(t, k)) && (typeof t[k] !== 'object' || seen.has(t[k]))) {
-                TomlError.x('trying to redefine an already defined value', ctx, errPtr);
+        else if (c === '#')
+            ptr = skipComment(str, ptr);
+        else if (c !== ' ' && c !== '\t' && c !== '\n' && c !== '\r') {
+            let k;
+            let t = res;
+            let hasOwn = false;
+            let [key, keyEndPtr] = parseKey(str, ptr - 1);
+            for (let i = 0; i < key.length; i++) {
+                if (i)
+                    t = hasOwn ? t[k] : (t[k] = {});
+                k = key[i];
+                if ((hasOwn = Object.hasOwn(t, k)) && (typeof t[k] !== 'object' || seen.has(t[k]))) {
+                    throw new TomlError('trying to redefine an already defined value', {
+                        toml: str,
+                        ptr: ptr,
+                    });
+                }
+                if (!hasOwn && k === '__proto__') {
+                    Object.defineProperty(t, k, { enumerable: true, configurable: true, writable: true });
+                }
             }
-            let unsafe = k === '__proto__';
-            if (ctx.uk && (unsafe || k === 'constructor')) {
-                t = ctx.uk !== 1 && TomlError.x('document contains an unsafe property', ctx, errPtr);
-                break;
+            if (hasOwn) {
+                throw new TomlError('trying to redefine an already defined value', {
+                    toml: str,
+                    ptr: ptr,
+                });
             }
-            if (!hasOwn && unsafe) {
-                Object.defineProperty(t, k, { enumerable: true, configurable: true, writable: true });
-            }
-        }
-        if (hasOwn) {
-            TomlError.x('trying to redefine an already defined value', ctx, errPtr);
-        }
-        skipVoid(ctx, true, true);
-        let value = extractValue(ctx, 0x7d /* } */);
-        if (t && typeof (t[k] = value) === 'object')
+            let [value, valueEndPtr] = extractValue(str, keyEndPtr, '}', depth - 1, integersAsBigInt);
             seen.add(value);
-        skipVoid(ctx);
-        if ((c = ctx.s.charCodeAt(ctx.p++)) === 0x7d /* } */) {
-            return res;
+            t[k] = value;
+            ptr = valueEndPtr;
         }
-        if (c !== 0x2c /* , */)
-            TomlError.x('expected comma or end of structure', ctx, ctx.p - 1);
     }
-    TomlError.x('unfinished table', ctx, startPtr);
+    if (!c) {
+        throw new TomlError('unfinished table encountered', {
+            toml: str,
+            ptr: ptr,
+        });
+    }
+    return [res, ptr];
 }
 /** @internal */
-function parseArray(ctx) {
-    let startPtr = ctx.p++;
+function parseArray(str, ptr, depth, integersAsBigInt) {
     let res = [];
     let c;
-    while (ctx.p < ctx.s.length) {
-        skipVoid(ctx);
-        if ((c = ctx.s.charCodeAt(ctx.p)) === 0x5d /* ] */) {
-            ctx.p++;
-            return res;
+    ptr++;
+    while ((c = str[ptr++]) !== ']' && c) {
+        if (c === ',') {
+            throw new TomlError('expected value, found comma', {
+                toml: str,
+                ptr: ptr - 1,
+            });
         }
-        res.push(extractValue(ctx, 0x5d /* ] */));
-        skipVoid(ctx);
-        if ((c = ctx.s.charCodeAt(ctx.p++)) === 0x5d /* ] */) {
-            return res;
+        else if (c === '#')
+            ptr = skipComment(str, ptr);
+        else if (c !== ' ' && c !== '\t' && c !== '\n' && c !== '\r') {
+            let e = extractValue(str, ptr - 1, ']', depth - 1, integersAsBigInt);
+            res.push(e[0]);
+            ptr = e[1];
         }
-        if (c !== 0x2c /* , */)
-            TomlError.x('expected comma or end of structure', ctx, ctx.p - 1);
     }
-    TomlError.x('unfinished array', ctx, startPtr);
+    if (!c) {
+        throw new TomlError('unfinished array encountered', {
+            toml: str,
+            ptr: ptr,
+        });
+    }
+    return [res, ptr];
 }
-
+//# sourceMappingURL=struct.js.map
 ;// CONCATENATED MODULE: ./node_modules/smol-toml/dist/parse.js
 /*!
  * Copyright (c) Squirrel Chat et al., All rights reserved.
@@ -105957,7 +97169,7 @@ function parseArray(ctx) {
 
 
 
-function peekTable(ctx, key, table, meta, type) {
+function peekTable(key, table, meta, type) {
     let t = table;
     let m = meta;
     let k;
@@ -105965,7 +97177,7 @@ function peekTable(ctx, key, table, meta, type) {
     let state;
     for (let i = 0; i < key.length; i++) {
         if (i) {
-            t = hasOwn ? t[k] : (t[k] = Object.create(null));
+            t = hasOwn ? t[k] : (t[k] = {});
             m = (state = m[k]).c;
             if (type === 0 /* Type.DOTTED */ && (state.t === 1 /* Type.EXPLICIT */ || state.t === 2 /* Type.ARRAY */)) {
                 return null;
@@ -105981,10 +97193,7 @@ function peekTable(ctx, key, table, meta, type) {
             return null;
         }
         if (!hasOwn) {
-            let unsafe = k === '__proto__';
-            if (ctx.uk && (unsafe || k === 'constructor'))
-                return false;
-            if (unsafe) {
+            if (k === '__proto__') {
                 Object.defineProperty(t, k, { enumerable: true, configurable: true, writable: true });
                 Object.defineProperty(m, k, { enumerable: true, configurable: true, writable: true });
             }
@@ -105993,7 +97202,7 @@ function peekTable(ctx, key, table, meta, type) {
                     ? 3 /* Type.ARRAY_DOTTED */ : type,
                 d: false,
                 i: 0,
-                c: Object.create(null),
+                c: {},
             };
         }
     }
@@ -106007,8 +97216,8 @@ function peekTable(ctx, key, table, meta, type) {
             state.d = true;
             t[k] = [];
         }
-        t[k].push(t = Object.create(null));
-        state.c[state.i++] = (state = { t: 1 /* Type.EXPLICIT */, d: false, i: 0, c: Object.create(null) });
+        t[k].push(t = {});
+        state.c[state.i++] = (state = { t: 1 /* Type.EXPLICIT */, d: false, i: 0, c: {} });
     }
     if (state.d) {
         // Redefining a table!
@@ -106016,81 +97225,67 @@ function peekTable(ctx, key, table, meta, type) {
     }
     state.d = true;
     if (type === 1 /* Type.EXPLICIT */) {
-        t = hasOwn ? t[k] : (t[k] = Object.create(null));
+        t = hasOwn ? t[k] : (t[k] = {});
     }
     else if (type === 0 /* Type.DOTTED */ && hasOwn) {
         return null;
     }
     return [k, t, state.c];
 }
-function validateTablePeek(ctx, peek, ptr) {
-    if (peek === null || ctx.uk === 2)
-        TomlError.x(peek === null
-            ? 'trying to redefine an already defined table or value'
-            : 'document contains an unsafe property', ctx, ptr);
-}
-function parse_parse(toml, options = {}) {
-    let ctx = {
-        s: toml,
-        p: 0,
-        d: options.maxDepth ?? 1000,
-        bi: options.integersAsBigInt ?? false,
-        ld: options.useLegacyDate ?? true,
-        uk: options.unsafeKeyBehaviour === 'throw' ? 2 : options.unsafeKeyBehaviour === 'drop' ? 1 : 0,
-    };
-    let res = Object.create(null);
-    let meta = Object.create(null);
-    let tmp;
-    let skipping = false;
+function parse_parse(toml, { maxDepth = 1000, integersAsBigInt } = {}) {
+    let res = {};
+    let meta = {};
     let tbl = res;
     let m = meta;
-    // BOM is allowed, skip.
-    // JS is UTF-16, so we have to check for the UTF-16 BOM instead of the UTF-8 BOM sequence!
-    if (toml.charCodeAt(0) === 0xfeff)
-        ctx.p++;
-    skipVoid(ctx);
-    while (ctx.p < toml.length) {
-        if (toml.charCodeAt(ctx.p) === 0x5b /* [ */) {
-            let isTableArray = toml.charCodeAt(++ctx.p) === 0x5b; /* [ */
-            tmp = ctx.p += +isTableArray;
-            skipping = false;
-            let k = parseKey(ctx, 0x5d /* ] */);
+    for (let ptr = skipVoid(toml, 0); ptr < toml.length;) {
+        if (toml[ptr] === '[') {
+            let isTableArray = toml[++ptr] === '[';
+            let k = parseKey(toml, (ptr += +isTableArray), ']');
             if (isTableArray) {
-                if (toml.charCodeAt(ctx.p) !== 0x5d /* ] */) {
-                    TomlError.x('expected end of table array declaration', ctx);
+                if (toml[k[1] - 1] !== ']') {
+                    throw new TomlError('expected end of table declaration', {
+                        toml: toml,
+                        ptr: k[1] - 1,
+                    });
                 }
-                ctx.p++;
+                k[1]++;
             }
-            let p = peekTable(ctx, k, res, meta, isTableArray ? 2 /* Type.ARRAY */ : 1 /* Type.EXPLICIT */);
+            let p = peekTable(k[0], res, meta, isTableArray ? 2 /* Type.ARRAY */ : 1 /* Type.EXPLICIT */);
             if (!p) {
-                validateTablePeek(ctx, p, tmp);
-                skipping = true;
+                throw new TomlError('trying to redefine an already defined table or value', {
+                    toml: toml,
+                    ptr: ptr,
+                });
             }
-            else {
-                m = p[2];
-                tbl = p[1];
-            }
+            m = p[2];
+            tbl = p[1];
+            ptr = k[1];
         }
         else {
-            tmp = ctx.p;
-            let k = parseKey(ctx);
-            let p = peekTable(ctx, k, tbl, m, 0 /* Type.DOTTED */);
-            if (!p && !skipping)
-                validateTablePeek(ctx, p, tmp);
-            skipVoid(ctx, true, true);
-            let v = extractValue(ctx, void 0);
-            if (p && !skipping)
-                p[1][p[0]] = v;
+            let k = parseKey(toml, ptr);
+            let p = peekTable(k[0], tbl, m, 0 /* Type.DOTTED */);
+            if (!p) {
+                throw new TomlError('trying to redefine an already defined table or value', {
+                    toml: toml,
+                    ptr: ptr,
+                });
+            }
+            let v = extractValue(toml, k[1], void 0, maxDepth, integersAsBigInt);
+            p[1][p[0]] = v[0];
+            ptr = v[1];
         }
-        skipVoid(ctx, true);
-        if (ctx.p < toml.length && (tmp = toml.charCodeAt(ctx.p)) !== 0xa /* \n */ && (tmp !== 0xd /* \r */ || toml.charCodeAt(ctx.p + 1) !== 0xa /* \n */)) {
-            TomlError.x('each key-value declaration must be followed by an end-of-line', ctx);
+        ptr = skipVoid(toml, ptr, true);
+        if (toml[ptr] && toml[ptr] !== '\n' && toml[ptr] !== '\r') {
+            throw new TomlError('each key-value declaration must be followed by an end-of-line', {
+                toml: toml,
+                ptr: ptr,
+            });
         }
-        skipVoid(ctx);
+        ptr = skipVoid(toml, ptr);
     }
     return res;
 }
-
+//# sourceMappingURL=parse.js.map
 ;// CONCATENATED MODULE: ./node_modules/smol-toml/dist/stringify.js
 /*!
  * Copyright (c) Squirrel Chat et al., All rights reserved.
@@ -106120,30 +97315,13 @@ function parse_parse(toml, options = {}) {
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 let BARE_KEY = /^[a-z0-9-_]+$/i;
-let HAS_WELLFORMED = !!(''.isWellFormed);
 function extendedTypeOf(obj) {
     let type = typeof obj;
     if (type === 'object') {
         if (Array.isArray(obj))
             return 'array';
-        if (typeof obj.getUTCDate === 'function' && obj instanceof Date)
+        if (obj instanceof Date)
             return 'date';
-        if (globalThis.Temporal) {
-            if (obj.until) {
-                if (obj instanceof Temporal.ZonedDateTime)
-                    return 'temporal/tz+uc';
-                if (obj instanceof Temporal.PlainDateTime || obj instanceof Temporal.PlainDate)
-                    return 'temporal/uc';
-                if (obj instanceof Temporal.PlainTime || obj instanceof Temporal.Instant)
-                    return 'temporal';
-                if (obj instanceof Temporal.PlainYearMonth)
-                    return 'temporal/x';
-            }
-            else if ((obj.toPlainDate && obj instanceof Temporal.PlainMonthDay) ||
-                (obj.negated && obj instanceof Temporal.Duration)) {
-                return 'temporal/x';
-            }
-        }
     }
     return type;
 }
@@ -106154,81 +97332,44 @@ function isArrayOfTables(obj) {
     }
     return obj.length != 0;
 }
-function formatWellFormedStringUnchecked(s) {
-    return JSON.stringify(s).replaceAll('\x7f', '\\u007f');
-}
 function formatString(s) {
-    return formatWellFormedStringUnchecked(HAS_WELLFORMED ? s.toWellFormed() : s);
+    return JSON.stringify(s).replace(/\x7f/g, '\\u007f');
 }
-function formatKey(s) {
-    if (BARE_KEY.test(s))
-        return s;
-    if (HAS_WELLFORMED && !s.isWellFormed())
-        throw new RangeError('key contains illegal lone surrogates');
-    return formatWellFormedStringUnchecked(s);
-}
-function stringifyValue(val, type, depth, numberAsFloat, strictTemporal) {
+function stringifyValue(val, type, depth, numberAsFloat) {
     if (depth === 0) {
         throw new Error('Could not stringify the object: maximum object depth exceeded');
     }
-    switch (type) {
-        // @ts-expect-error -- intentional fallthrough case
-        case 'number':
-            if (isNaN(val))
-                return 'nan';
-            if (val === Infinity)
-                return 'inf';
-            if (val === -Infinity)
-                return '-inf';
-            if (Number.isInteger(val) && (numberAsFloat || !Number.isSafeInteger(val)))
-                return val.toFixed(1);
-        case 'bigint':
-        case 'boolean':
-        case 'temporal':
-            return val.toString();
-        case 'string':
-            return formatString(val);
-        case 'date':
-            if (isNaN(val.getTime()))
-                throw new TypeError('cannot serialize invalid date');
-            return val.toISOString();
-        case 'object':
-            return stringifyInlineTable(val, depth, numberAsFloat, strictTemporal);
-        case 'array':
-            return stringifyArray(val, depth, numberAsFloat, strictTemporal);
-        // @ts-expect-error -- intentional fallthrough case
-        case 'temporal/tz+uc':
-            if (strictTemporal) {
-                let tz = val.timeZoneId;
-                let tzc = tz.charCodeAt(0);
-                if (
-                // Classic offset
-                tzc !== 0x2b /* + */ && tzc !== 0x2d /* - */ &&
-                    (
-                    // Fast pre-check pass; see below for the actually accepted values
-                    (tzc !== 0x55 /* U */ && tzc !== 0x47 /* G */ && tzc !== 0x5a /* Z */ && tzc !== 0x45 /* E */) ||
-                        (
-                        // UTC and its aliases; Temporal implementations don't all canonicalise unfortunately
-                        tz !== 'UTC' && tz !== 'UCT' && tz !== 'Universal' && tz !== 'Zulu' &&
-                            // GMT is a TZ but it's for all intents and purposes equivalent to UTC. Safe to downgrade.
-                            !tz.startsWith('GMT') && tz !== 'Greenwich' &&
-                            // Etc/* are all safe to downgrade to offset (either UTC, GMT, or offset)
-                            !tz.startsWith('Etc/')))) {
-                    throw new TypeError('Temporal objects with an IANA timezone are not allowed in Temporal strict mode');
-                }
-            }
-        case 'temporal/uc':
-            if (strictTemporal && val.calendarId !== 'iso8601')
-                throw new TypeError('Temporal objects with a non-default calendar are not allowed in Temporal strict mode');
-            return val.toString({
-                calendarName: 'never',
-                timeZoneName: 'never',
-            });
-        case 'temporal/x':
-            throw new TypeError('Unsupported ' + val[Symbol.toStringTag]);
+    if (type === 'number') {
+        if (isNaN(val))
+            return 'nan';
+        if (val === Infinity)
+            return 'inf';
+        if (val === -Infinity)
+            return '-inf';
+        if (Number.isInteger(val) && (numberAsFloat || !Number.isSafeInteger(val)))
+            return val.toFixed(1);
+        return val.toString();
+    }
+    if (type === 'bigint' || type === 'boolean') {
+        return val.toString();
+    }
+    if (type === 'string') {
+        return formatString(val);
+    }
+    if (type === 'date') {
+        if (isNaN(val.getTime())) {
+            throw new TypeError('cannot serialize invalid date');
+        }
+        return val.toISOString();
+    }
+    if (type === 'object') {
+        return stringifyInlineTable(val, depth, numberAsFloat);
+    }
+    if (type === 'array') {
+        return stringifyArray(val, depth, numberAsFloat);
     }
 }
-function stringifyInlineTable(obj, depth, numberAsFloat, strictTemporal) {
+function stringifyInlineTable(obj, depth, numberAsFloat) {
     let keys = Object.keys(obj);
     if (keys.length === 0)
         return '{}';
@@ -106237,11 +97378,13 @@ function stringifyInlineTable(obj, depth, numberAsFloat, strictTemporal) {
         let k = keys[i];
         if (i)
             res += ', ';
-        res += formatKey(k) + ' = ' + stringifyValue(obj[k], extendedTypeOf(obj[k]), depth - 1, numberAsFloat, strictTemporal);
+        res += BARE_KEY.test(k) ? k : formatString(k);
+        res += ' = ';
+        res += stringifyValue(obj[k], extendedTypeOf(obj[k]), depth - 1, numberAsFloat);
     }
     return res + ' }';
 }
-function stringifyArray(array, depth, numberAsFloat, strictTemporal) {
+function stringifyArray(array, depth, numberAsFloat) {
     if (array.length === 0)
         return '[]';
     let res = '[ ';
@@ -106251,22 +97394,22 @@ function stringifyArray(array, depth, numberAsFloat, strictTemporal) {
         if (array[i] === null || array[i] === void 0) {
             throw new TypeError('arrays cannot contain null or undefined values');
         }
-        res += stringifyValue(array[i], extendedTypeOf(array[i]), depth - 1, numberAsFloat, strictTemporal);
+        res += stringifyValue(array[i], extendedTypeOf(array[i]), depth - 1, numberAsFloat);
     }
     return res + ' ]';
 }
-function stringifyArrayTable(array, key, depth, numberAsFloat, strictTemporal) {
+function stringifyArrayTable(array, key, depth, numberAsFloat) {
     if (depth === 0) {
         throw new Error('Could not stringify the object: maximum object depth exceeded');
     }
     let res = '';
     for (let i = 0; i < array.length; i++) {
         res += `${res && '\n'}[[${key}]]\n`;
-        res += stringifyTable(0, array[i], key, depth, numberAsFloat, strictTemporal);
+        res += stringifyTable(0, array[i], key, depth, numberAsFloat);
     }
     return res;
 }
-function stringifyTable(tableKey, obj, prefix, depth, numberAsFloat, strictTemporal) {
+function stringifyTable(tableKey, obj, prefix, depth, numberAsFloat) {
     if (depth === 0) {
         throw new Error('Could not stringify the object: maximum object depth exceeded');
     }
@@ -106280,18 +97423,18 @@ function stringifyTable(tableKey, obj, prefix, depth, numberAsFloat, strictTempo
             if (type === 'symbol' || type === 'function') {
                 throw new TypeError(`cannot serialize values of type '${type}'`);
             }
-            let key = formatKey(k);
+            let key = BARE_KEY.test(k) ? k : formatString(k);
             if (type === 'array' && isArrayOfTables(obj[k])) {
-                tables += (tables && '\n') + stringifyArrayTable(obj[k], prefix ? `${prefix}.${key}` : key, depth - 1, numberAsFloat, strictTemporal);
+                tables += (tables && '\n') + stringifyArrayTable(obj[k], prefix ? `${prefix}.${key}` : key, depth - 1, numberAsFloat);
             }
             else if (type === 'object') {
                 let tblKey = prefix ? `${prefix}.${key}` : key;
-                tables += (tables && '\n') + stringifyTable(tblKey, obj[k], tblKey, depth - 1, numberAsFloat, strictTemporal);
+                tables += (tables && '\n') + stringifyTable(tblKey, obj[k], tblKey, depth - 1, numberAsFloat);
             }
             else {
                 preamble += key;
                 preamble += ' = ';
-                preamble += stringifyValue(obj[k], type, depth, numberAsFloat, strictTemporal);
+                preamble += stringifyValue(obj[k], type, depth, numberAsFloat);
                 preamble += '\n';
             }
         }
@@ -106302,16 +97445,16 @@ function stringifyTable(tableKey, obj, prefix, depth, numberAsFloat, strictTempo
         ? `${preamble}\n${tables}`
         : preamble || tables;
 }
-function stringify(obj, { maxDepth = 1000, numbersAsFloat = false, strictTemporal = false } = {}) {
+function stringify(obj, { maxDepth = 1000, numbersAsFloat = false } = {}) {
     if (extendedTypeOf(obj) !== 'object') {
         throw new TypeError('stringify can only be called with an object');
     }
-    let str = stringifyTable(0, obj, '', maxDepth, numbersAsFloat, strictTemporal);
+    let str = stringifyTable(0, obj, '', maxDepth, numbersAsFloat);
     if (str[str.length - 1] !== '\n')
         return str + '\n';
     return str;
 }
-
+//# sourceMappingURL=stringify.js.map
 ;// CONCATENATED MODULE: ./node_modules/smol-toml/dist/index.js
 /*!
  * Copyright (c) Squirrel Chat et al., All rights reserved.
@@ -106344,10 +97487,9 @@ function stringify(obj, { maxDepth = 1000, numbersAsFloat = false, strictTempora
 
 
 
+/* harmony default export */ const smol_toml_dist = ({ parse: parse_parse, stringify: stringify, TomlDate: TomlDate, TomlError: TomlError });
 
-/** @deprecated use `import * as ... from 'smol-toml'` instead */
-/* harmony default export */ const dist = ({ parse: parse_parse, stringify: stringify, TomlDate: TomlDate, TomlError: TomlError });
-
+//# sourceMappingURL=index.js.map
 ;// CONCATENATED MODULE: ./src/util.ts
 
 
@@ -107716,7 +98858,7 @@ class BaseDistribution {
                 extPath = await extractZip(renamedArchive);
             }
             else {
-                const _7zPath = external_path_namespaceObject.join(external_path_namespaceObject.dirname((0,external_url_namespaceObject.fileURLToPath)(import.meta.url)), '../..', 'externals', '7zr.exe');
+                const _7zPath = external_path_namespaceObject.join(external_path_namespaceObject.dirname((0,external_url_.fileURLToPath)(import.meta.url)), '../..', 'externals', '7zr.exe');
                 extPath = await extract7z(downloadPath, undefined, _7zPath);
             }
             // 7z extracts to folder matching file name
@@ -108232,7 +99374,7 @@ async function run() {
                 }
             }
         }
-        const matchersPath = external_path_namespaceObject.join(external_path_namespaceObject.dirname((0,external_url_namespaceObject.fileURLToPath)(import.meta.url)), '../..', '.github');
+        const matchersPath = external_path_namespaceObject.join(external_path_namespaceObject.dirname((0,external_url_.fileURLToPath)(import.meta.url)), '../..', '.github');
         core_info(`##[add-matcher]${external_path_namespaceObject.join(matchersPath, 'tsc.json')}`);
         core_info(`##[add-matcher]${external_path_namespaceObject.join(matchersPath, 'eslint-stylish.json')}`);
         core_info(`##[add-matcher]${external_path_namespaceObject.join(matchersPath, 'eslint-compact.json')}`);
