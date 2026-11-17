@@ -151,9 +151,10 @@ Examples:
 
 **Note:** Like the other values, `*` will get the latest [locally-cached Node.js version](https://github.com/actions/runner-images/blob/main/images/ubuntu/Ubuntu2204-Readme.md#nodejs), or the latest version from [actions/node-versions](https://github.com/actions/node-versions/blob/main/versions-manifest.json), depending on the [`check-latest`](docs/advanced-usage.md#check-latest-version) input.
 
-`current`/`latest`/`node` always resolve to the latest [dist version](https://nodejs.org/dist/index.json).
+`current`/`latest`/`node` always resolve to the latest stable version from [dist index](https://nodejs.org/dist/index.json) (prerelease entries are skipped).
 That version is then downloaded from actions/node-versions if possible, or directly from Node.js if not.
-Since it will not be cached always, there is possibility of hitting rate limit when downloading from dist
+If no stable version is available in the dist index, setup fails with an explicit error.
+Since it will not always be cached, there is a possibility of hitting rate limits when downloading from dist.
 
 ### Checking in lockfiles
 
@@ -233,7 +234,11 @@ jobs:
 
 ## Using `setup-node` on GHES
 
-`setup-node` comes pre-installed on the appliance with GHES if Actions is enabled. When dynamically downloading Nodejs distributions, `setup-node` downloads distributions from [`actions/node-versions`](https://github.com/actions/node-versions) on github.com (outside of the appliance). These calls to `actions/node-versions` are made via unauthenticated requests, which are limited to [60 requests per hour per IP](https://docs.github.com/en/rest/overview/resources-in-the-rest-api#rate-limiting). If more requests are made within the time frame, then you will start to see rate-limit errors during downloading that looks like: `##[error]API rate limit exceeded for...`. After that error the action will try to download versions directly from the official site, but it also can have rate limit so it's better to put token.
+`setup-node` comes pre-installed on the appliance with GHES if Actions is enabled. It downloads Node.js distributions from [`actions/node-versions`](https://github.com/actions/node-versions) on github.com, outside the appliance.
+
+Manifest requests use the GitHub API first, with the `token` input for authentication when supplied. If API retrieval fails, the action tries the manifest on `raw.githubusercontent.com`. This fallback also applies when `check-latest` is enabled. If both manifest sources are unavailable, numeric versions can fall back to nodejs.org. LTS aliases require a manifest to resolve the requested version.
+
+Unauthenticated API requests are limited to [60 requests per hour per IP](https://docs.github.com/en/rest/overview/resources-in-the-rest-api#rate-limiting). Supplying a token increases the API rate limit.
 
 To get a higher rate limit, you can [generate a personal access token on github.com](https://github.com/settings/tokens/new) and pass it as the `token` input for the action:
 
