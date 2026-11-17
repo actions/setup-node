@@ -98991,6 +98991,7 @@ var external_node_path_default = /*#__PURE__*/__nccwpck_require__.n(external_nod
 
 
 
+
 const nodeVersionsManifestUrl = 'https://raw.githubusercontent.com/actions/node-versions/main/versions-manifest.json';
 const invalidManifestMessage = 'The manifest fetched is empty, truncated, or does not contain any valid tool release entries.';
 function isValidManifest(manifest) {
@@ -99114,7 +99115,11 @@ class OfficialBuilds extends BaseDistribution {
         let version = '';
         if (this.isLatestSyntax(this.nodeInfo.versionSpec)) {
             core_info(`getting latest node version...`);
-            return versions[0];
+            const stableVersion = versions.find(potential => semver_default().prerelease(potential) === null);
+            if (!stableVersion) {
+                throw new Error(`Unable to find a stable Node version for '${this.nodeInfo.versionSpec}' on platform ${this.osPlat} and architecture ${this.nodeInfo.arch}.`);
+            }
+            return stableVersion;
         }
         version = super.evaluateVersions(versions);
         return version;

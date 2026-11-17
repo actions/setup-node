@@ -993,6 +993,111 @@ describe('setup-node', () => {
         expect(logSpy).toHaveBeenCalledWith('getting latest node version...');
       }
     );
+
+    it.each(['latest', 'current', 'node'])(
+      'skips a newer prerelease and selects the latest stable version for %s',
+      async inputVersion => {
+        // Arrange
+        inputs['node-version'] = inputVersion;
+        const stableVersion = nodeTestDist[0];
+        const prereleaseVersion = {
+          ...nodeTestDist[0],
+          version: 'v99.0.0-alpha.1'
+        };
+
+        os.platform = 'darwin';
+        os.arch = 'x64';
+
+        const cleanStableVersion = stableVersion.version.replace(/^v/, '');
+        const toolPath = path.normalize(
+          `/cache/node/${cleanStableVersion}/x64`
+        );
+
+        findSpy.mockImplementation(() => '');
+        getManifestSpy.mockImplementation(() => {
+          throw new Error('Unable to download manifest');
+        });
+        getJsonSpy.mockImplementation((url: any) => {
+          if (url === nodeVersionsManifestUrl) {
+            throw new Error('Unable to download raw manifest');
+          }
+
+          return {result: [prereleaseVersion, ...nodeTestDist]};
+        });
+        dlSpy.mockImplementation(async () => '/some/temp/path');
+        exSpy.mockImplementation(async () => '/some/other/temp/path');
+        cacheSpy.mockImplementation(async () => toolPath);
+        getExecOutputSpy.mockImplementation(async () => ({
+          stdout: `v${cleanStableVersion}\n`,
+          stderr: '',
+          exitCode: 0
+        }));
+
+        // Act
+        await runWithRetries();
+
+        // assert
+        expect(findSpy).toHaveBeenCalledWith(
+          'node',
+          stableVersion.version,
+          'x64'
+        );
+        expect(findSpy).not.toHaveBeenCalledWith(
+          'node',
+          prereleaseVersion.version,
+          'x64'
+        );
+        expect(dlSpy).toHaveBeenCalledWith(
+          `https://nodejs.org/dist/v${cleanStableVersion}/node-v${cleanStableVersion}-darwin-x64.tar.gz`,
+          undefined,
+          undefined
+        );
+        expect(setFailedSpy).not.toHaveBeenCalled();
+        expect(addPathSpy).toHaveBeenCalledWith(path.join(toolPath, 'bin'));
+      }
+    );
+
+    const prereleaseOnlyIndex = [
+      {...nodeTestDist[0], version: 'v99.0.0-alpha.1'}
+    ];
+
+    it.each([
+      ['latest', 'an empty index', []],
+      ['current', 'an empty index', []],
+      ['node', 'an empty index', []],
+      ['latest', 'a prerelease-only index', prereleaseOnlyIndex],
+      ['current', 'a prerelease-only index', prereleaseOnlyIndex],
+      ['node', 'a prerelease-only index', prereleaseOnlyIndex]
+    ])(
+      'fails with the stable-version error for %s with %s',
+      async (inputVersion, _description, index) => {
+        // Arrange
+        inputs['node-version'] = inputVersion;
+
+        os.platform = 'darwin';
+        os.arch = 'x64';
+
+        findSpy.mockImplementation(() => '');
+        getManifestSpy.mockImplementation(() => {
+          throw new Error('Unable to download manifest');
+        });
+        getJsonSpy.mockImplementation((url: any) => {
+          if (url === nodeVersionsManifestUrl) {
+            throw new Error('Unable to download raw manifest');
+          }
+
+          return {result: index};
+        });
+
+        // Act
+        await runWithRetries();
+
+        // assert
+        expect(setFailedSpy).toHaveBeenCalledWith(
+          `Unable to find a stable Node version for '${inputVersion}' on platform ${os.platform} and architecture ${os.arch}.`
+        );
+      }
+    );
   });
 
   describe('latest alias syntax from cache', () => {
@@ -1017,6 +1122,11 @@ describe('setup-node', () => {
         // assert
 
         expect(logSpy).toHaveBeenCalledWith('getting latest node version...');
+        expect(findSpy).toHaveBeenCalledWith(
+          'node',
+          expectedVersion.version,
+          'x64'
+        );
         expect(logSpy).toHaveBeenCalledWith(`Found in cache @ ${toolPath}`);
       }
     );
