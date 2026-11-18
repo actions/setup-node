@@ -97497,11 +97497,29 @@ function stringify(obj, { maxDepth = 1000, numbersAsFloat = false } = {}) {
 
 
 
+const VOLTA_EXTENDS_CYCLE_ERROR_NAME = 'VoltaExtendsCycleError';
 function getNodeVersionFromFile(versionFilePath) {
+    return getNodeVersionFromFileWithStack(versionFilePath, []);
+}
+function getNodeVersionFromFileWithStack(versionFilePath, resolutionStack) {
+    const resolvedFilePath = external_path_default().resolve(versionFilePath);
+    const normalizedFilePath = process.platform === 'win32'
+        ? resolvedFilePath.toLowerCase()
+        : resolvedFilePath;
+    const cycleStart = resolutionStack.findIndex(filePath => process.platform === 'win32'
+        ? filePath.toLowerCase() === normalizedFilePath
+        : filePath === normalizedFilePath);
+    if (cycleStart !== -1) {
+        const cycle = [...resolutionStack.slice(cycleStart), resolvedFilePath];
+        const error = new Error(`Circular Volta extends reference detected: ${cycle.join(' -> ')}`);
+        error.name = VOLTA_EXTENDS_CYCLE_ERROR_NAME;
+        throw error;
+    }
     if (!external_fs_default().existsSync(versionFilePath)) {
         throw new Error(`The specified node version file at: ${versionFilePath} does not exist`);
     }
     const contents = external_fs_default().readFileSync(versionFilePath, 'utf8');
+    const currentResolutionStack = [...resolutionStack, resolvedFilePath];
     // Try parsing the file as an NPM `package.json` file.
     try {
         const manifest = JSON.parse(contents);
@@ -97531,7 +97549,7 @@ function getNodeVersionFromFile(versionFilePath) {
             if (manifest.volta?.extends) {
                 const extendedFilePath = external_path_default().resolve(external_path_default().dirname(versionFilePath), manifest.volta.extends);
                 core_info('Resolving node version from ' + extendedFilePath);
-                return getNodeVersionFromFile(extendedFilePath);
+                return getNodeVersionFromFileWithStack(extendedFilePath, currentResolutionStack);
             }
             // If contents are an object, we parsed JSON
             // this can happen if node-version-file is a package.json
@@ -97545,7 +97563,11 @@ function getNodeVersionFromFile(versionFilePath) {
             return null;
         }
     }
-    catch {
+    catch (error) {
+        if (error instanceof Error &&
+            error.name === VOLTA_EXTENDS_CYCLE_ERROR_NAME) {
+            throw error;
+        }
         core_info('Node version file is not JSON file');
     }
     // Try parsing the file as a mise `mise.toml` file.
