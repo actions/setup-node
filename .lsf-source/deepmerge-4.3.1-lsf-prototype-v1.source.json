@@ -1,0 +1,202 @@
+{
+  "schema": 1,
+  "profile": "deepmerge-4.3.1-lsf-prototype-v1",
+  "name": "deepmerge",
+  "version": "4.3.1",
+  "trueSourceRole": "development/build dependency of this action; not a claim of production runtime reachability",
+  "upstream": {
+    "url": "https://registry.npmjs.org/deepmerge/-/deepmerge-4.3.1.tgz",
+    "integrity": "sha512-3sUqbMEc77XqpdNO7FRyRog+eW3ph+GYCbj+rK+uYyRMuwsVy0rMiVtPn+QJlKFvWP/1PYpapqYn0Me2knFn+A==",
+    "bytes": 8452,
+    "sha256": "4003a0a348276a95543fa969f561f6b5968629acbbb59d66018dd23e7b8f1d5c",
+    "gitBlob": "1d1560e971dfc484bbe0cb9e8c86bde9140e45b5"
+  },
+  "repair": {
+    "path": ".lsf-source/deepmerge-4.3.1-lsf-prototype-v1.repair.json",
+    "bytes": 3064,
+    "sha256": "e402617d1e791c4bed35768b6c34ba68c370c076551495e738de0731ad2049c7",
+    "gitBlob": "52602f18647aa2f2bd30f046e05bcce2705a761f"
+  },
+  "derived": {
+    "path": ".lsf-source/deepmerge-4.3.1-lsf-prototype-v1.tar",
+    "integrity": "sha512-w9M3UphEGYK/Zn9kkYnPVw7NnQyxE3T7gIcqBv3m4/Fe+LAhnAPZBwgYCqj0/orv2GagYhPGa2OMjqdzp7G0Lg==",
+    "bytes": 51200,
+    "sha256": "c4ca0f4eb3a2464c026bc3dec5d9eaf04544aed24c3fd1d77da95f85e36c369f",
+    "gitBlob": "30e23fad3a82fd30bc3f08e26704a0c0bc84c704"
+  },
+  "packageManifestUnchanged": {
+    "bytes": 1152,
+    "sha256": "f56978e7a6da1a3c6edee41abb54f98584a2fa2680458c48db820ae772fef0c9",
+    "gitBlob": "2b7b1be8c3ad6253396713c5a915eda3fef74462"
+  },
+  "license": {
+    "upstreamPath": "package/license.txt",
+    "unchanged": true,
+    "bytes": 1116,
+    "sha256": "6cfc4687cb2f2d86f4a77e6b526290d3878e5e512f3fec2f4cb36a9cb36f798b",
+    "gitBlob": "5003078718343fc207823c9f543ef906ac59dcbe"
+  },
+  "fileIdentities": [
+    {
+      "path": ".editorconfig",
+      "before": {
+        "bytes": 113,
+        "sha256": "73cc38e40b41f1eea6fd2d98d0ade5324f1ad564c3f111ebd0040b4286d2c25c",
+        "gitBlob": "6244e1b7bf4ec9d050cb53b600c9b7f9c376a7bf"
+      },
+      "after": {
+        "bytes": 113,
+        "sha256": "73cc38e40b41f1eea6fd2d98d0ade5324f1ad564c3f111ebd0040b4286d2c25c",
+        "gitBlob": "6244e1b7bf4ec9d050cb53b600c9b7f9c376a7bf"
+      },
+      "mode": "0o644"
+    },
+    {
+      "path": ".eslintcache",
+      "before": {
+        "bytes": 382,
+        "sha256": "7690c5da38095c17a8c3ce73f3ebdc7bf7d7797c618a9c919c79a6b5e0024012",
+        "gitBlob": "c1321eb470e0026ecce2014fe5a34f408ecba873"
+      },
+      "after": {
+        "bytes": 382,
+        "sha256": "7690c5da38095c17a8c3ce73f3ebdc7bf7d7797c618a9c919c79a6b5e0024012",
+        "gitBlob": "c1321eb470e0026ecce2014fe5a34f408ecba873"
+      },
+      "mode": "0o644"
+    },
+    {
+      "path": "changelog.md",
+      "before": {
+        "bytes": 9785,
+        "sha256": "360f6a3465a3e82f7bc1428cf1dc0cf5e6935a83b97345d172d27a4d8703321e",
+        "gitBlob": "082e0dd393f4dcee8668050a850c7e327762f976"
+      },
+      "after": {
+        "bytes": 9785,
+        "sha256": "360f6a3465a3e82f7bc1428cf1dc0cf5e6935a83b97345d172d27a4d8703321e",
+        "gitBlob": "082e0dd393f4dcee8668050a850c7e327762f976"
+      },
+      "mode": "0o644"
+    },
+    {
+      "path": "dist/cjs.js",
+      "before": {
+        "bytes": 4048,
+        "sha256": "2e5160f84a1141bd927264afe4d15766f1e6cf07daef182b37ff53fea121de7d",
+        "gitBlob": "7c36cbdd06cc22c92d590be3f87a08a91ca06b40"
+      },
+      "after": {
+        "bytes": 4194,
+        "sha256": "c5e9c1f08e7a3b589010133108a3c625806358fa9e1bdaa11f07e9e756f19da0",
+        "gitBlob": "7bddaa8b853a932c64ce63efaa2ba5dead4280d9"
+      },
+      "mode": "0o644"
+    },
+    {
+      "path": "dist/umd.js",
+      "before": {
+        "bytes": 4420,
+        "sha256": "f33e6596482d1fb5c7c427f8ef92f2aa849eea9223acd974176b2fb27ddbf73a",
+        "gitBlob": "4071e7c56ec8e5273fe166f6e723ac460fab8b72"
+      },
+      "after": {
+        "bytes": 4572,
+        "sha256": "b12652d3654f47b08ae43e8b390b66c55987ace6d9a6167c3240744ffa0f28f9",
+        "gitBlob": "50e34096e0e36280789910bc3b136122ff52653e"
+      },
+      "mode": "0o644"
+    },
+    {
+      "path": "index.d.ts",
+      "before": {
+        "bytes": 823,
+        "sha256": "146ba4b99c5feb82663e17a671bf9f53bb39c704cd76345d6c5a801c26372f44",
+        "gitBlob": "46784de5625a962c3c4c68c8fe16078815cce018"
+      },
+      "after": {
+        "bytes": 823,
+        "sha256": "146ba4b99c5feb82663e17a671bf9f53bb39c704cd76345d6c5a801c26372f44",
+        "gitBlob": "46784de5625a962c3c4c68c8fe16078815cce018"
+      },
+      "mode": "0o644"
+    },
+    {
+      "path": "index.js",
+      "before": {
+        "bytes": 3293,
+        "sha256": "12440c84957c1990ea2d5e33dc0091722dc1dc1585c6d20e0c780e568ffa9d30",
+        "gitBlob": "77968aed5d456cccc294f60912ef381fa1e52a7b"
+      },
+      "after": {
+        "bytes": 3439,
+        "sha256": "ba2a6c79e67e10f45a32cfe8f5ea5c5607dc4718be2b37956e9202ea4cdbe1bc",
+        "gitBlob": "7b5e0a9954795812cd5770a17499602967275163"
+      },
+      "mode": "0o644"
+    },
+    {
+      "path": "license.txt",
+      "before": {
+        "bytes": 1116,
+        "sha256": "6cfc4687cb2f2d86f4a77e6b526290d3878e5e512f3fec2f4cb36a9cb36f798b",
+        "gitBlob": "5003078718343fc207823c9f543ef906ac59dcbe"
+      },
+      "after": {
+        "bytes": 1116,
+        "sha256": "6cfc4687cb2f2d86f4a77e6b526290d3878e5e512f3fec2f4cb36a9cb36f798b",
+        "gitBlob": "5003078718343fc207823c9f543ef906ac59dcbe"
+      },
+      "mode": "0o644"
+    },
+    {
+      "path": "package.json",
+      "before": {
+        "bytes": 1152,
+        "sha256": "f56978e7a6da1a3c6edee41abb54f98584a2fa2680458c48db820ae772fef0c9",
+        "gitBlob": "2b7b1be8c3ad6253396713c5a915eda3fef74462"
+      },
+      "after": {
+        "bytes": 1152,
+        "sha256": "f56978e7a6da1a3c6edee41abb54f98584a2fa2680458c48db820ae772fef0c9",
+        "gitBlob": "2b7b1be8c3ad6253396713c5a915eda3fef74462"
+      },
+      "mode": "0o644"
+    },
+    {
+      "path": "readme.md",
+      "before": {
+        "bytes": 5682,
+        "sha256": "202430923abee498512b2f9cbab686a1e7d64759314a503ca0d5aaa29007fc0f",
+        "gitBlob": "79e4e303b0148748b5ef107e6d7f0afa2d665aa6"
+      },
+      "after": {
+        "bytes": 5682,
+        "sha256": "202430923abee498512b2f9cbab686a1e7d64759314a503ca0d5aaa29007fc0f",
+        "gitBlob": "79e4e303b0148748b5ef107e6d7f0afa2d665aa6"
+      },
+      "mode": "0o644"
+    },
+    {
+      "path": "rollup.config.js",
+      "before": {
+        "bytes": 343,
+        "sha256": "abba48beb11daa282e69134e4928ec32737ae6f6d192dd5f00a6e660e032bb25",
+        "gitBlob": "8323ab27e53825fc55e052c54a8869de99d8b874"
+      },
+      "after": {
+        "bytes": 343,
+        "sha256": "abba48beb11daa282e69134e4928ec32737ae6f6d192dd5f00a6e660e032bb25",
+        "gitBlob": "8323ab27e53825fc55e052c54a8869de99d8b874"
+      },
+      "mode": "0o644"
+    }
+  ],
+  "advisory": {
+    "id": "GHSA-gcqx-w48m-w2h4",
+    "modified": "2026-10-27T21:45:04.256048Z"
+  },
+  "notAnUpstreamFixedRelease": true,
+  "forkBuildVerified": false,
+  "runtimeOrSignedSDKQualified": false
+}
