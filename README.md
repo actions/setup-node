@@ -211,6 +211,27 @@ steps:
 ```
 > If your `package.json` file does not include a `packageManager` field set to `npm`, caching will be disabled unless you explicitly enable it. For workflows with elevated privileges or access to sensitive information, we recommend disabling automatic caching for npm by setting `package-manager-cache: false` when caching is not required for secure operation.
 
+**Cache outputs:**
+
+When caching is enabled (through the `cache` input or automatic npm caching), the action sets the following outputs:
+
+- `cache-hit`: `true` if a cache entry was restored, `false` otherwise.
+- `cache-primary-key`: the key used to restore and save the cache. It is built from the runner platform, architecture, package manager and a hash of the dependency file(s).
+- `cache-matched-key`: the key of the cache entry that was restored. Empty when no cache is found. For Yarn Berry projects a cache with the same key prefix can be restored, so this may differ from `cache-primary-key`.
+
+```yaml
+steps:
+- uses: actions/checkout@v7
+- uses: actions/setup-node@v7
+  id: setup-node
+  with:
+    node-version: 24
+    cache: 'npm'
+- run: echo "Restored cache ${{ steps.setup-node.outputs.cache-matched-key }}"
+  if: steps.setup-node.outputs.cache-hit == 'true'
+- run: npm ci
+```
+
 ## Matrix Testing
 
 ```yaml
