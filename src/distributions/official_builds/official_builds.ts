@@ -142,7 +142,7 @@ export default class OfficialBuilds extends BaseDistribution {
     }
 
     if (!toolPath) {
-      toolPath = await this.downloadDirectlyFromNode();
+      toolPath = await this.downloadDirectlyFromNode(nodeJsVersions);
     }
 
     const installedDir = toolPath;
@@ -162,15 +162,30 @@ export default class OfficialBuilds extends BaseDistribution {
     core.addPath(toolPath);
   }
 
-  protected async downloadDirectlyFromNode() {
-    const nodeJsVersions = await this.getNodeJsVersions();
+  protected async downloadDirectlyFromNode(nodeJsVersions?: INodeVersion[]) {
+    nodeJsVersions ??= await this.getNodeJsVersions();
     const versions = this.filterVersions(nodeJsVersions);
     const evaluatedVersion = this.evaluateVersions(versions);
 
     if (!evaluatedVersion) {
-      throw new Error(
-        `Unable to find Node version '${this.nodeInfo.versionSpec}' for platform ${this.osPlat} and architecture ${this.nodeInfo.arch}.`
+      let message = `Unable to find Node version '${this.nodeInfo.versionSpec}' for platform ${this.osPlat} and architecture ${this.nodeInfo.arch}.`;
+      if (!this.nodeInfo.allowAlpha && this.findAlphaVersion(versions)) {
+        message += ` A matching alpha release is available; set 'allow-alpha: true' to use it.`;
+      }
+      throw new Error(message);
+    }
+
+    // The tool cache cannot match prereleases against a range such as `27`, so reuse a cached alpha here.
+    if (semver.prerelease(evaluatedVersion)) {
+      const cachedPath = tc.find(
+        'node',
+        evaluatedVersion,
+        this.translateArchToDistUrl(this.nodeInfo.arch)
       );
+      if (cachedPath) {
+        core.info(`Found in cache @ ${cachedPath}`);
+        return cachedPath;
+      }
     }
 
     const toolName = this.getNodejsDistInfo(evaluatedVersion);
@@ -192,8 +207,6 @@ export default class OfficialBuilds extends BaseDistribution {
   }
 
   protected evaluateVersions(versions: string[]): string {
-    let version = '';
-
     if (this.isLatestSyntax(this.nodeInfo.versionSpec)) {
       core.info(`getting latest node version...`);
 
@@ -210,9 +223,54 @@ export default class OfficialBuilds extends BaseDistribution {
       return stableVersion;
     }
 
-    version = super.evaluateVersions(versions);
+    const version = super.evaluateVersions(versions);
+    if (version || !this.nodeInfo.allowAlpha) {
+      return version;
+    }
 
-    return version;
+    // Only fall back to an alpha when no stable release matches the spec.
+    const alphaVersion = this.findAlphaVersion(versions);
+    if (alphaVersion) {
+      core.info(
+        `No stable release matches '${this.nodeInfo.versionSpec}', using ${alphaVersion}`
+      );
+    }
+
+    return alphaVersion;
+  }
+
+  // Alphas are matched by their release version, so `27.0.0` or `^27.0.0` select `27.0.0-alpha.*`.
+  // Ranges with explicit prerelease bounds are already handled by standard semver.
+  private findAlphaVersion(versions: string[]): string {
+    const {range} = this.validRange(this.nodeInfo.versionSpec);
+    if (!semver.validRange(range) || this.hasPrereleaseBound(range)) {
+      return '';
+    }
+
+    return (
+      versions.find(potential => {
+        const parsed = semver.parse(potential);
+        return (
+          parsed?.prerelease[0] === 'alpha' &&
+          semver.satisfies(
+            `${parsed.major}.${parsed.minor}.${parsed.patch}`,
+            range
+          )
+        );
+      }) ?? ''
+    );
+  }
+
+  private hasPrereleaseBound(range: string): boolean {
+    // semver desugars `27`, `^27.0.0`, etc. into an upper bound such as `<28.0.0-0`; ignore that synthetic `-0`.
+    return new semver.Range(range).set.some(comparators =>
+      comparators.some(({operator, semver: bound}) => {
+        const prerelease = bound.prerelease ?? [];
+        const isSyntheticUpperBound =
+          operator === '<' && prerelease.length === 1 && prerelease[0] === 0;
+        return prerelease.length > 0 && !isSyntheticUpperBound;
+      })
+    );
   }
 
   protected getDistributionUrl(mirror: string): string {

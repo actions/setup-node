@@ -99075,7 +99075,7 @@ class OfficialBuilds extends BaseDistribution {
             core_info('Falling back to download directly from Node');
         }
         if (!toolPath) {
-            toolPath = await this.downloadDirectlyFromNode();
+            toolPath = await this.downloadDirectlyFromNode(nodeJsVersions);
         }
         const installedDir = toolPath;
         if (this.osPlat != 'win32') {
@@ -99090,12 +99090,24 @@ class OfficialBuilds extends BaseDistribution {
         }
         addPath(toolPath);
     }
-    async downloadDirectlyFromNode() {
-        const nodeJsVersions = await this.getNodeJsVersions();
+    async downloadDirectlyFromNode(nodeJsVersions) {
+        nodeJsVersions ??= await this.getNodeJsVersions();
         const versions = this.filterVersions(nodeJsVersions);
         const evaluatedVersion = this.evaluateVersions(versions);
         if (!evaluatedVersion) {
-            throw new Error(`Unable to find Node version '${this.nodeInfo.versionSpec}' for platform ${this.osPlat} and architecture ${this.nodeInfo.arch}.`);
+            let message = `Unable to find Node version '${this.nodeInfo.versionSpec}' for platform ${this.osPlat} and architecture ${this.nodeInfo.arch}.`;
+            if (!this.nodeInfo.allowAlpha && this.findAlphaVersion(versions)) {
+                message += ` A matching alpha release is available; set 'allow-alpha: true' to use it.`;
+            }
+            throw new Error(message);
+        }
+        // The tool cache cannot match prereleases against a range such as `27`, so reuse a cached alpha here.
+        if (semver_default().prerelease(evaluatedVersion)) {
+            const cachedPath = find('node', evaluatedVersion, this.translateArchToDistUrl(this.nodeInfo.arch));
+            if (cachedPath) {
+                core_info(`Found in cache @ ${cachedPath}`);
+                return cachedPath;
+            }
         }
         const toolName = this.getNodejsDistInfo(evaluatedVersion);
         try {
@@ -99112,7 +99124,6 @@ class OfficialBuilds extends BaseDistribution {
         }
     }
     evaluateVersions(versions) {
-        let version = '';
         if (this.isLatestSyntax(this.nodeInfo.versionSpec)) {
             core_info(`getting latest node version...`);
             const stableVersion = versions.find(potential => semver_default().prerelease(potential) === null);
@@ -99121,8 +99132,37 @@ class OfficialBuilds extends BaseDistribution {
             }
             return stableVersion;
         }
-        version = super.evaluateVersions(versions);
-        return version;
+        const version = super.evaluateVersions(versions);
+        if (version || !this.nodeInfo.allowAlpha) {
+            return version;
+        }
+        // Only fall back to an alpha when no stable release matches the spec.
+        const alphaVersion = this.findAlphaVersion(versions);
+        if (alphaVersion) {
+            core_info(`No stable release matches '${this.nodeInfo.versionSpec}', using ${alphaVersion}`);
+        }
+        return alphaVersion;
+    }
+    // Alphas are matched by their release version, so `27.0.0` or `^27.0.0` select `27.0.0-alpha.*`.
+    // Ranges with explicit prerelease bounds are already handled by standard semver.
+    findAlphaVersion(versions) {
+        const { range } = this.validRange(this.nodeInfo.versionSpec);
+        if (!semver_default().validRange(range) || this.hasPrereleaseBound(range)) {
+            return '';
+        }
+        return (versions.find(potential => {
+            const parsed = semver_default().parse(potential);
+            return (parsed?.prerelease[0] === 'alpha' &&
+                semver_default().satisfies(`${parsed.major}.${parsed.minor}.${parsed.patch}`, range));
+        }) ?? '');
+    }
+    hasPrereleaseBound(range) {
+        // semver desugars `27`, `^27.0.0`, etc. into an upper bound such as `<28.0.0-0`; ignore that synthetic `-0`.
+        return new (semver_default()).Range(range).set.some(comparators => comparators.some(({ operator, semver: bound }) => {
+            const prerelease = bound.prerelease ?? [];
+            const isSyntheticUpperBound = operator === '<' && prerelease.length === 1 && prerelease[0] === 0;
+            return prerelease.length > 0 && !isSyntheticUpperBound;
+        }));
     }
     getDistributionUrl(mirror) {
         const url = mirror || 'https://nodejs.org';
@@ -99329,9 +99369,11 @@ async function run() {
             const mirrorToken = getInput('mirror-token');
             const stable = (getInput('stable') || 'true').toUpperCase() === 'TRUE';
             const checkLatest = (getInput('check-latest') || 'false').toUpperCase() === 'TRUE';
+            const allowAlpha = (getInput('allow-alpha') || 'false').toUpperCase() === 'TRUE';
             const nodejsInfo = {
                 versionSpec: version,
                 checkLatest,
+                allowAlpha,
                 auth,
                 stable,
                 arch,

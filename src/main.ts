@@ -47,9 +47,12 @@ export async function run() {
         (core.getInput('stable') || 'true').toUpperCase() === 'TRUE';
       const checkLatest =
         (core.getInput('check-latest') || 'false').toUpperCase() === 'TRUE';
+      const allowAlpha =
+        (core.getInput('allow-alpha') || 'false').toUpperCase() === 'TRUE';
       const nodejsInfo = {
         versionSpec: version,
         checkLatest,
+        allowAlpha,
         auth,
         stable,
         arch,
