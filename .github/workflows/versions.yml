@@ -151,6 +151,32 @@ jobs:
         run: __tests__/verify-node.sh "${{ matrix.node-version }}"
         shell: bash
 
+  allow-alpha:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        node-version: [27, 27.0.0]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Setup Node with allow-alpha
+        uses: ./
+        with:
+          node-version: ${{ matrix.node-version }}
+          allow-alpha: true
+      - name: Verify an alpha is installed
+        run: |
+          nodeVersion=$(node --version)
+          if [[ "$nodeVersion" != *-alpha* ]]; then
+            echo "Expected a Node.js alpha but found $nodeVersion. Move this job to the next alpha release line."
+            exit 1
+          fi
+        shell: bash
+      - name: Verify node and npm
+        run: __tests__/verify-node.sh "${{ matrix.node-version }}"
+        shell: bash
+
   version-file:
     runs-on: ${{ matrix.os }}
     strategy:

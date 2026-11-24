@@ -3,6 +3,7 @@ export interface NodeInputs {
   arch: string;
   auth?: string;
   checkLatest: boolean;
+  allowAlpha: boolean;
   stable: boolean;
   mirror: string;
   mirrorToken: string;

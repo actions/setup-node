@@ -74,6 +74,28 @@ steps:
 - run: npm test
 ```
 
+## Allow alpha releases
+
+The `allow-alpha` input defaults to `false`. Set it to `true` to use an alpha release when no stable release matches the requested version.
+
+Alphas are matched by their release version, so `27`, `27.x`, `27.0.0`, `^27.0.0`, and `~27.0.0` all select the newest Node.js 27 alpha. Ranges with an explicit prerelease bound, such as `>=27.0.0-alpha.3`, use standard semver matching.
+
+Alpha builds are not published for every platform. For example, Node.js 27 alphas are not available for macOS x64, so setup fails on those runners.
+
+```yaml
+steps:
+- uses: actions/checkout@v7
+- uses: actions/setup-node@v7
+  with:
+    node-version: '27'
+    allow-alpha: true
+    package-manager-cache: false # Disable automatic npm caching if not required
+- run: npm ci
+- run: npm test
+```
+
+Exact alpha versions such as `27.0.0-alpha.0.0.0` work without `allow-alpha`.
+
 ## Node version file
 
 The `node-version-file` input accepts a path to a file containing the version of Node.js to be used by a project, for example `.nvmrc`, `.node-version`, `.tool-versions`, `mise.toml`, or `package.json`. If both the `node-version` and the `node-version-file` inputs are provided then the `node-version` input is used.

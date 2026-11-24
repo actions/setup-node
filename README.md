@@ -59,6 +59,10 @@ See [action.yml](action.yml)
     # Default: false
     check-latest: false
 
+    # Allow alpha releases when no stable release matches the version spec.
+    # Default: false
+    allow-alpha: false
+
     # Target architecture for Node to use. Examples: x86, x64. Will use system architecture by default.
     # Default: ''. The action use system architecture by default
     architecture: ''
@@ -255,6 +259,7 @@ If the runner is not able to access github.com, any Nodejs versions requested du
 ## Advanced usage
 
  - [Check latest version](docs/advanced-usage.md#check-latest-version)
+ - [Allow alpha releases](docs/advanced-usage.md#allow-alpha-releases)
  - [Using a node version file](docs/advanced-usage.md#node-version-file)
  - [Using different architectures](docs/advanced-usage.md#architecture)
  - [Using v8 canary versions](docs/advanced-usage.md#v8-canary-versions)
